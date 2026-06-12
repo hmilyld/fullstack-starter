@@ -1,0 +1,45 @@
+# === 前端 ===
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# === 后端 ===
+backend/.venv/
+backend/__pycache__/
+backend/.ruff_cache/
+*.py[cod]
+*.so
+
+# === 数据库 ===
+*.db
+*.sqlite3
+
+# === 环境变量 ===
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# === Docker ===
+docker-compose.override.yml
+
+# === IDE ===
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === 日志 ===
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*

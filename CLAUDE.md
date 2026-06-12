@@ -1,0 +1,64 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+A Chinese-language admin management system ("管理系统") with a React frontend and Python FastAPI backend. Two independent projects sit side-by-side (no monorepo tooling) — each has its own CLAUDE.md with detailed commands and conventions.
+
+- **`frontend/`** — React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4 + shadcn/ui v4 + React Router 7. See `frontend/CLAUDE.md`.
+- **`backend/`** — Python 3.12+ + FastAPI + SQLAlchemy 2.0 async + SQLite (aiosqlite). See `backend/CLAUDE.md`.
+
+## Quick Reference
+
+```bash
+# Frontend (run from frontend/)
+pnpm dev              # Dev server on port 5173
+pnpm build            # Type-check + production build
+pnpm lint             # ESLint
+pnpm format           # Prettier
+
+# Backend (run from backend/)
+uv sync                                    # Install dependencies
+uv run uvicorn app.main:app --reload       # Dev server on port 8000
+uv run ruff check .                        # Lint
+uv run ruff format .                       # Format
+```
+
+No test framework is configured on either side. `pnpm build` and `ruff check` are the verification steps.
+
+## Architecture
+
+```
+Browser → Vite dev server (:5173)
+           └─ /api/* proxied to FastAPI (:8000)
+                └─ Route handler → JWT auth + permission check
+                     └─ CRUD → SQLAlchemy async → SQLite (app.db)
+                          └─ ApiResponse { code: 0, message: "success", data }
+```
+
+**Frontend routing:** Auth pages (`/login`, `/register`) are standalone. All management pages are children of `AdminLayout` wrapped in `ProtectedRoute`.
+
+**Backend auth:** JWT Bearer tokens. The `admin` role (`role_id == "admin"`) is hardcoded to receive ALL permissions.
+
+**API response format:** All endpoints return `{ code: 0, message: "success", data }`. `code === 0` indicates success.
+
+## Key Conventions
+
+- All UI text, API messages, seed data, and comments are in **Chinese**
+- Frontend uses `@/` import alias → `src/` (only alias available)
+- Backend Pydantic schemas use **camelCase** (`roleId`); SQLAlchemy models use **snake_case** (`role_id`)
+- Frontend Prettier: no semicolons, double quotes, 2-space indent
+- Backend Ruff: target py312, line-length 120
+- shadcn/ui components are added via CLI (`npx shadcn@latest add <component>`), never written manually
+- Icons: Lucide React only
+
+## Adding New Features
+
+**New page:** Create page in `frontend/src/pages/<section>/`, add route in `router.tsx`, add sidebar item in `app-sidebar.tsx`, add breadcrumb in `header.tsx`, add API functions in `api.ts`.
+
+**New backend module:** Create `app/modules/<name>/` with `router.py`, `crud.py`, `schemas.py`, `models.py`. Mount in `app/main.py` with `app.include_router(router, prefix="/api")`.
+
+## Seed Data
+
+First startup creates: 5 users (password `123456`), 3 preset roles (`admin`, `user`, `pending_review`), 5 menu + 9 operation permissions. Preset roles cannot be deleted.
