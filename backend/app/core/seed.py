@@ -95,4 +95,4 @@ async def seed_data(db: AsyncSession) -> None:
         )
         db.add(user)
 
-    await db.commit()
+    await db.flush()

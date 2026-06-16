@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import IntegrityError
 
 from app.config import get_settings
 from app.core.seed import seed_data
@@ -25,9 +26,12 @@ settings = get_settings()
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await init_db()
     async with async_session() as session:
-        await seed_data(session)
-        await init_default_presets(session)
-        await session.commit()
+        try:
+            await seed_data(session)
+            await init_default_presets(session)
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
     yield
 
 
