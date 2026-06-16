@@ -139,6 +139,8 @@ export function SystemPage() {
     setSiteSaving(false)
     if (res.code === 0) {
       appToast.success("保存成功")
+      const fresh = await getSystemConfig()
+      if (fresh.code === 0) setConfig(fresh.data)
     } else {
       appToast.error(res.message)
     }
@@ -154,6 +156,8 @@ export function SystemPage() {
     setMaintainSaving(false)
     if (res.code === 0) {
       appToast.success("保存成功")
+      const fresh = await getSystemConfig()
+      if (fresh.code === 0) setConfig(fresh.data)
     } else {
       appToast.error(res.message)
     }
@@ -169,6 +173,8 @@ export function SystemPage() {
     setRegisterSaving(false)
     if (res.code === 0) {
       appToast.success("保存成功")
+      const fresh = await getSystemConfig()
+      if (fresh.code === 0) setConfig(fresh.data)
     } else {
       appToast.error(res.message)
     }
@@ -184,6 +190,8 @@ export function SystemPage() {
     setDefaultSaving(false)
     if (res.code === 0) {
       appToast.success("保存成功")
+      const fresh = await getSystemConfig()
+      if (fresh.code === 0) setConfig(fresh.data)
     } else {
       appToast.error(res.message)
     }
@@ -205,6 +213,8 @@ export function SystemPage() {
     setSmtpSaving(false)
     if (res.code === 0) {
       appToast.success("保存成功")
+      const fresh = await getSystemConfig()
+      if (fresh.code === 0) setConfig(fresh.data)
     } else {
       appToast.error(res.message)
     }
