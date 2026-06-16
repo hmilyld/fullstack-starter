@@ -41,7 +41,7 @@ jobs:
           version: latest
 
       - name: Backend lint
-        run: uv run ruff check .
+        run: uv sync --dev && uv run ruff check .
         working-directory: backend
 
   # ── Job 2: 构建并推送镜像 ──
