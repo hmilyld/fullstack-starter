@@ -43,3 +43,6 @@ logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# === 进程文件 ===
+*.pid
