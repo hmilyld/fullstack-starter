@@ -86,7 +86,7 @@ async def update_me(
         if existing:
             return ApiResponse(code=-1, message="邮箱已被注册")
     updated = await crud.update_user(db, current_user, name=data.name, email=data.email)
-    return ApiResponse(data=UserOut.model_validate(updated).model_dump())
+    return ApiResponse(data=UserOut.from_orm_model(updated).model_dump())
 
 
 @router.put("/me/password")
