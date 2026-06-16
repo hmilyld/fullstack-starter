@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { register } from "@/lib/api"
-import { toast } from "sonner"
+import { appToast } from "@/lib/toast"
 import { useSystemConfig } from "@/components/settings-loader"
 
 export function RegisterPage() {
@@ -37,10 +37,10 @@ export function RegisterPage() {
 
     const res = await register({ username, email, password })
     if (res.code === 0) {
-      toast.success("注册成功")
+      appToast.success("注册成功")
       navigate("/login")
     } else {
-      toast.error(res.message)
+      appToast.error(res.message)
       setSubmitting(false)
     }
   }

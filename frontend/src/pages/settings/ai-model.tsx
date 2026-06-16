@@ -1,9 +1,8 @@
 import * as React from "react"
-import { Spinner } from "@/components/ui/spinner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/shared/loading-button"
-import { TableLoadingRow, TableEmptyRow } from "@/components/shared/table-states"
+import { TableEmptyRow, TableCardSkeleton } from "@/components/shared/table-states"
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { Pagination } from "@/components/shared/pagination"
 import {
@@ -58,7 +57,7 @@ import {
   updateAiModelPreset,
   deleteAiModel as apiDeleteAiModelPreset,
 } from "@/lib/api"
-import { toast } from "sonner"
+import { appToast } from "@/lib/toast"
 
 const PAGE_SIZE = 10
 
@@ -142,14 +141,14 @@ function AiModelPresetManager() {
     if (editingPreset) {
       const res = await updateAiModelPreset(editingPreset.id, editForm)
       if (res.code !== 0) {
-        toast.error(res.message)
+        appToast.error(res.message)
         setEditSubmitting(false)
         return
       }
     } else {
       const res = await createAiModelPreset(editForm)
       if (res.code !== 0) {
-        toast.error(res.message)
+        appToast.error(res.message)
         setEditSubmitting(false)
         return
       }
@@ -216,9 +215,7 @@ function AiModelPresetManager() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="flex min-h-[200px] items-center justify-center">
-            <Spinner />加载中...
-          </div>
+          <TableCardSkeleton colSpan={8} />
         ) : (
           <Table>
             <TableHeader>
@@ -521,7 +518,7 @@ export function AiModelPage() {
         isDefault: editForm.isDefault,
       })
       if (res.code !== 0) {
-        toast.error(res.message)
+        appToast.error(res.message)
         setEditSubmitting(false)
         return
       }
@@ -535,7 +532,7 @@ export function AiModelPage() {
         isDefault: editForm.isDefault,
       })
       if (res.code !== 0) {
-        toast.error(res.message)
+        appToast.error(res.message)
         setEditSubmitting(false)
         return
       }
@@ -607,33 +604,36 @@ export function AiModelPage() {
         </TabsList>
 
         <TabsContent value="models" className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle>模型列表</CardTitle>
-                  <CardDescription>共 {total} 个模型配置</CardDescription>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <div className="relative w-full sm:w-64">
-                    <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="搜索别名或模型名称..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-8"
-                    />
+          {tableLoading ? (
+            <TableCardSkeleton colSpan={7} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle>模型列表</CardTitle>
+                    <CardDescription>共 {total} 个模型配置</CardDescription>
                   </div>
-                  {hasPermission("ai_models.create") && (
-                    <Button onClick={handleAdd} className="w-full sm:w-auto">
-                      <PlusIcon data-icon="inline-start" />
-                      新增模型
-                    </Button>
-                  )}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="relative w-full sm:w-64">
+                      <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="搜索别名或模型名称..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-8"
+                      />
+                    </div>
+                    {hasPermission("ai_models.create") && (
+                      <Button onClick={handleAdd} className="w-full sm:w-auto">
+                        <PlusIcon data-icon="inline-start" />
+                        新增模型
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
+              </CardHeader>
+              <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -723,7 +723,6 @@ export function AiModelPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {tableLoading && <TableLoadingRow colSpan={7} />}
               {!tableLoading && models.length === 0 && <TableEmptyRow colSpan={7} />}
             </TableBody>
           </Table>
@@ -732,6 +731,7 @@ export function AiModelPage() {
           <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
         </CardContent>
       </Card>
+      )}
 
       {/* 新增/编辑对话框 */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

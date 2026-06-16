@@ -2,7 +2,7 @@ import * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/shared/loading-button"
-import { TableLoadingRow, TableEmptyRow } from "@/components/shared/table-states"
+import { TableEmptyRow, TableCardSkeleton } from "@/components/shared/table-states"
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { Pagination } from "@/components/shared/pagination"
 import {
@@ -48,7 +48,7 @@ import {
   Trash2Icon,
   KeyIcon,
 } from "lucide-react"
-import { toast } from "sonner"
+import { appToast } from "@/lib/toast"
 import { useAuth } from "@/lib/auth-context"
 import type { User, Role } from "@/types/api"
 import { getUsers, createUser, updateUser, deleteUser as apiDeleteUser, getRoles, resetPassword, batchUpdateRole } from "@/lib/api"
@@ -243,7 +243,7 @@ export function UsersPage() {
     setPendingSubmitting(true)
     const userIds = Array.from(selectedPending).map(Number)
     await batchUpdateRole(userIds, "user")
-    toast.success(`已通过 ${userIds.length} 位用户审核`)
+    appToast.success(`已通过 ${userIds.length} 位用户审核`)
     setPendingSubmitting(false)
     setPendingOpen(false)
     loadData()
@@ -256,7 +256,7 @@ export function UsersPage() {
     for (const id of selectedPending) {
       await apiDeleteUser(id)
     }
-    toast.success(`已拒绝 ${selectedPending.size} 位用户`)
+    appToast.success(`已拒绝 ${selectedPending.size} 位用户`)
     setPendingSubmitting(false)
     setPendingOpen(false)
     loadData()
@@ -289,29 +289,32 @@ export function UsersPage() {
         <p className="text-muted-foreground">管理团队成员及其角色权限。</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>用户列表</CardTitle>
-              <CardDescription>共 {filtered.length} 位用户</CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:w-64">
-                <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="搜索用户名、姓名或邮箱..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8"
-                />
+      {tableLoading ? (
+        <TableCardSkeleton colSpan={5} />
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>用户列表</CardTitle>
+                <CardDescription>共 {filtered.length} 位用户</CardDescription>
               </div>
-              {hasPermission("users.create") && (
-                <Button onClick={handleAdd} className="w-full sm:w-auto">
-                  <PlusIcon data-icon="inline-start" />
-                  新增用户
-                </Button>
-              )}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-64">
+                  <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="搜索用户名、姓名或邮箱..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                {hasPermission("users.create") && (
+                  <Button onClick={handleAdd} className="w-full sm:w-auto">
+                    <PlusIcon data-icon="inline-start" />
+                    新增用户
+                  </Button>
+                )}
               {hasPermission("users.edit") && (
                 <Button variant="outline" onClick={openPending} className="w-full sm:w-auto">
                   待审核
@@ -376,7 +379,6 @@ export function UsersPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {tableLoading && <TableLoadingRow colSpan={5} />}
               {!tableLoading && users.length === 0 && <TableEmptyRow colSpan={5} />}
             </TableBody>
           </Table>
@@ -385,6 +387,7 @@ export function UsersPage() {
           <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
         </CardContent>
       </Card>
+      )}
 
       {/* 新增/编辑对话框 */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -520,7 +523,7 @@ export function UsersPage() {
                 <Input value={newPassword} readOnly />
                 <Button variant="outline" onClick={() => {
                   navigator.clipboard.writeText(newPassword)
-                  toast.success("密码已复制到剪贴板")
+                  appToast.success("密码已复制到剪贴板")
                 }}>
                   复制
                 </Button>

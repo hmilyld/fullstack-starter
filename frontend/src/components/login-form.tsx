@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { login as apiLogin } from "@/lib/api"
-import { toast } from "sonner"
+import { appToast } from "@/lib/toast"
 import { useAuth } from "@/lib/auth-context"
 import { useSystemConfig } from "@/components/settings-loader"
 
@@ -43,10 +43,10 @@ export function LoginForm({
     const res = await apiLogin(account, password)
     if (res.code === 0) {
       login(res.data.token, res.data.user)
-      toast.success("登录成功")
+      appToast.success("登录成功")
       navigate("/dashboard")
     } else {
-      toast.error(res.message)
+      appToast.error(res.message)
       setSubmitting(false)
     }
   }

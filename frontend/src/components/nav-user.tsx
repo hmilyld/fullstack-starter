@@ -19,6 +19,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { Spinner } from "@/components/ui/spinner"
 import {
   ChevronsUpDownIcon,
   UserCogIcon,
@@ -57,8 +58,17 @@ export function NavUser({
   }
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
+    <>
+      {loggingOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="flex flex-col items-center gap-2 rounded-lg bg-background p-6 shadow-lg">
+            <Spinner className="size-6" />
+            <span className="text-sm text-muted-foreground">正在退出登录...</span>
+          </div>
+        </div>
+      )}
+      <SidebarMenu>
+        <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
@@ -126,5 +136,6 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+    </>
   )
 }

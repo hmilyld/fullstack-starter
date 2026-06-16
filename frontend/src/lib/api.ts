@@ -165,6 +165,10 @@ export async function updateSystemConfig(data: Partial<SystemConfig>) {
   return apiClient.put<SystemConfig>("/system/config", data)
 }
 
+export async function testEmail(email: string) {
+  return apiClient.post("/system/test-email", { email })
+}
+
 // ============================================================
 // AI Models API
 // ============================================================

@@ -1,6 +1,6 @@
 import * as React from "react"
 import { LoadingButton } from "@/components/shared/loading-button"
-import { Spinner } from "@/components/ui/spinner"
+import { PageFormSkeleton } from "@/components/shared/table-states"
 import {
   Card,
   CardContent,
@@ -22,8 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getSystemConfig, updateSystemConfig, getRoles } from "@/lib/api"
+import { getSystemConfig, updateSystemConfig, getRoles, testEmail } from "@/lib/api"
 import type { SystemConfig } from "@/types/api"
+import { appToast } from "@/lib/toast"
 
 // 常用邮箱 SMTP 预设配置
 const SMTP_PRESETS = [
@@ -88,31 +89,37 @@ const SMTP_PRESETS = [
 export function SystemPage() {
   const [config, setConfig] = React.useState<SystemConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
-  const [siteMsg, setSiteMsg] = React.useState("")
-  const [maintainMsg, setMaintainMsg] = React.useState("")
-  const [registerMsg, setRegisterMsg] = React.useState("")
-  const [defaultMsg, setDefaultMsg] = React.useState("")
   const [siteSaving, setSiteSaving] = React.useState(false)
   const [maintainSaving, setMaintainSaving] = React.useState(false)
   const [registerSaving, setRegisterSaving] = React.useState(false)
   const [defaultSaving, setDefaultSaving] = React.useState(false)
   const [roles, setRoles] = React.useState<{ id: string; name: string }[]>([])
   const [smtpSaving, setSmtpSaving] = React.useState(false)
-  const [smtpMsg, setSmtpMsg] = React.useState("")
-  const [testEmail, setTestEmail] = React.useState("")
+  const [testEmailAddr, setTestEmailAddr] = React.useState("")
+  const [testEmailSaving, setTestEmailSaving] = React.useState(false)
   const [smtpPreset, setSmtpPreset] = React.useState("")
 
   React.useEffect(() => {
+    let cancelled = false
     async function load() {
       const res = await getSystemConfig()
-      if (res.code === 0) setConfig(res.data)
+      if (cancelled) return
+      if (res.code === 0) {
+        setConfig(res.data)
+      } else if (res.message !== "请求已取消") {
+        appToast.error("数据加载失败")
+      }
       setLoading(false)
     }
     load()
     getRoles({ pageSize: 100 }).then((res) => {
-      if (res.code === 0) setRoles(res.data.list)
+      if (!cancelled && res.code === 0) setRoles(res.data.list)
     })
+    return () => { cancelled = true }
   }, [])
+
+  if (loading) return <PageFormSkeleton />
+  if (!config) return null
 
   function updateField<K extends keyof SystemConfig>(key: K, value: SystemConfig[K]) {
     setConfig((prev) => {
@@ -130,8 +137,11 @@ export function SystemPage() {
       keywords: config.keywords,
     })
     setSiteSaving(false)
-    setSiteMsg(res.code === 0 ? "保存成功" : res.message)
-    setTimeout(() => setSiteMsg(""), 3000)
+    if (res.code === 0) {
+      appToast.success("保存成功")
+    } else {
+      appToast.error(res.message)
+    }
   }
 
   async function handleSaveMaintenance() {
@@ -142,8 +152,11 @@ export function SystemPage() {
       maintenanceMessage: config.maintenanceMessage,
     })
     setMaintainSaving(false)
-    setMaintainMsg(res.code === 0 ? "保存成功" : res.message)
-    setTimeout(() => setMaintainMsg(""), 3000)
+    if (res.code === 0) {
+      appToast.success("保存成功")
+    } else {
+      appToast.error(res.message)
+    }
   }
 
   async function handleSaveRegistration() {
@@ -154,8 +167,11 @@ export function SystemPage() {
       manualReview: config.manualReview,
     })
     setRegisterSaving(false)
-    setRegisterMsg(res.code === 0 ? "保存成功" : res.message)
-    setTimeout(() => setRegisterMsg(""), 3000)
+    if (res.code === 0) {
+      appToast.success("保存成功")
+    } else {
+      appToast.error(res.message)
+    }
   }
 
   async function handleSaveDefault() {
@@ -166,8 +182,11 @@ export function SystemPage() {
       welcomeMessage: config.welcomeMessage,
     })
     setDefaultSaving(false)
-    setDefaultMsg(res.code === 0 ? "保存成功" : res.message)
-    setTimeout(() => setDefaultMsg(""), 3000)
+    if (res.code === 0) {
+      appToast.success("保存成功")
+    } else {
+      appToast.error(res.message)
+    }
   }
 
   async function handleSaveSmtp() {
@@ -184,23 +203,26 @@ export function SystemPage() {
       smtpUseSsl: config.smtpUseSsl,
     })
     setSmtpSaving(false)
-    setSmtpMsg(res.code === 0 ? "保存成功" : res.message)
-    setTimeout(() => setSmtpMsg(""), 3000)
+    if (res.code === 0) {
+      appToast.success("保存成功")
+    } else {
+      appToast.error(res.message)
+    }
   }
 
   async function handleTestEmail() {
-    if (!config || !testEmail) return
-    // TODO: 后端暂未实现发送测试邮件接口
-    setSmtpMsg("该功能暂未实现，请先配置邮件服务器后手动测试")
-    setTimeout(() => setSmtpMsg(""), 5000)
-    setTimeout(() => setSmtpMsg(""), 5000)
+    if (!config || !testEmailAddr) return
+    setTestEmailSaving(true)
+    const res = await testEmail(testEmailAddr)
+    setTestEmailSaving(false)
+    if (res.code === 0) {
+      appToast.success("测试邮件发送成功")
+    } else {
+      appToast.error(res.message)
+    }
   }
 
-  if (loading) return (
-    <div className="flex min-h-[40vh] items-center justify-center gap-2 text-muted-foreground">
-      <Spinner />加载中...
-    </div>
-  )
+  if (loading) return <PageFormSkeleton />
   if (!config) return (
     <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
       加载失败
@@ -244,12 +266,9 @@ export function SystemPage() {
               </FieldGroup>
             </CardContent>
             <CardFooter>
-              <div className="flex items-center gap-4">
-                <LoadingButton onClick={handleSaveSite} loading={siteSaving}>
-                  保存基本信息
-                </LoadingButton>
-                {siteMsg && <span className="text-sm text-muted-foreground">{siteMsg}</span>}
-              </div>
+              <LoadingButton onClick={handleSaveSite} loading={siteSaving}>
+                保存基本信息
+              </LoadingButton>
             </CardFooter>
           </Card>
 
@@ -273,12 +292,9 @@ export function SystemPage() {
               </Field>
             </CardContent>
             <CardFooter>
-              <div className="flex items-center gap-4">
-                <LoadingButton onClick={handleSaveMaintenance} loading={maintainSaving}>
-                  保存维护设置
-                </LoadingButton>
-                {maintainMsg && <span className="text-sm text-muted-foreground">{maintainMsg}</span>}
-              </div>
+              <LoadingButton onClick={handleSaveMaintenance} loading={maintainSaving}>
+                保存维护设置
+              </LoadingButton>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -308,12 +324,9 @@ export function SystemPage() {
               </Field>
             </CardContent>
             <CardFooter>
-              <div className="flex items-center gap-4">
-                <LoadingButton onClick={handleSaveRegistration} loading={registerSaving}>
-                  保存注册策略
-                </LoadingButton>
-                {registerMsg && <span className="text-sm text-muted-foreground">{registerMsg}</span>}
-              </div>
+              <LoadingButton onClick={handleSaveRegistration} loading={registerSaving}>
+                保存注册策略
+              </LoadingButton>
             </CardFooter>
           </Card>
 
@@ -347,12 +360,9 @@ export function SystemPage() {
               </FieldGroup>
             </CardContent>
             <CardFooter>
-              <div className="flex items-center gap-4">
-                <LoadingButton onClick={handleSaveDefault} loading={defaultSaving}>
-                  保存默认配置
-                </LoadingButton>
-                {defaultMsg && <span className="text-sm text-muted-foreground">{defaultMsg}</span>}
-              </div>
+              <LoadingButton onClick={handleSaveDefault} loading={defaultSaving}>
+                保存默认配置
+              </LoadingButton>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -481,12 +491,9 @@ export function SystemPage() {
               </FieldGroup>
             </CardContent>
             <CardFooter>
-              <div className="flex items-center gap-4">
-                <LoadingButton onClick={handleSaveSmtp} loading={smtpSaving}>
-                  保存邮件配置
-                </LoadingButton>
-                {smtpMsg && <span className="text-sm text-muted-foreground">{smtpMsg}</span>}
-              </div>
+              <LoadingButton onClick={handleSaveSmtp} loading={smtpSaving}>
+                保存邮件配置
+              </LoadingButton>
             </CardFooter>
           </Card>
 
@@ -503,21 +510,26 @@ export function SystemPage() {
                     id="test-email"
                     type="email"
                     placeholder="请输入测试收件人邮箱"
-                    value={testEmail}
-                    onChange={(e) => setTestEmail(e.target.value)}
+                    value={testEmailAddr}
+                    onChange={(e) => setTestEmailAddr(e.target.value)}
                   />
                 </Field>
               </FieldGroup>
             </CardContent>
             <CardFooter>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-2">
                 <LoadingButton
                   onClick={handleTestEmail}
-                  disabled={!testEmail || !config.smtpEnabled}
+                  loading={testEmailSaving}
+                  disabled={!testEmailAddr || !config.smtpEnabled}
                 >
                   发送测试邮件
                 </LoadingButton>
-                {smtpMsg && <span className="text-sm text-muted-foreground">{smtpMsg}</span>}
+                {!config.smtpEnabled && (
+                  <span className="text-xs text-muted-foreground">
+                    请先开启"启用邮件"开关并配置SMTP服务器
+                  </span>
+                )}
               </div>
             </CardFooter>
           </Card>

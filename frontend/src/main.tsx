@@ -16,7 +16,7 @@ createRoot(document.getElementById("root")!).render(
         <SystemConfigProvider>
           <SettingsLoader>
             <App />
-            <Toaster />
+            <Toaster position="top-center" />
           </SettingsLoader>
         </SystemConfigProvider>
       </AuthProvider>

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { LoadingButton } from "@/components/shared/loading-button"
-import { TableLoadingRow, TableEmptyRow } from "@/components/shared/table-states"
+import { TableEmptyRow, TableCardSkeleton } from "@/components/shared/table-states"
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { Pagination } from "@/components/shared/pagination"
 import {
@@ -188,25 +188,28 @@ export function RolesPage() {
         <p className="text-muted-foreground">管理系统角色及其权限分配。</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>角色列表</CardTitle>
-              <CardDescription>共 {filtered.length} 个角色</CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:w-64">
-                <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="搜索角色名称..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8"
-                />
+      {tableLoading ? (
+        <TableCardSkeleton colSpan={5} />
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>角色列表</CardTitle>
+                <CardDescription>共 {filtered.length} 个角色</CardDescription>
               </div>
-              {hasPermission("roles.create") && (
-                <Button onClick={handleAdd} className="w-full sm:w-auto">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-64">
+                  <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="搜索角色名称..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                {hasPermission("roles.create") && (
+                  <Button onClick={handleAdd} className="w-full sm:w-auto">
                   <PlusIcon data-icon="inline-start" />
                   新增角色
                 </Button>
@@ -261,7 +264,6 @@ export function RolesPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {tableLoading && <TableLoadingRow colSpan={5} />}
               {!tableLoading && roles.length === 0 && <TableEmptyRow colSpan={5} />}
             </TableBody>
           </Table>
@@ -270,6 +272,7 @@ export function RolesPage() {
           <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
         </CardContent>
       </Card>
+      )}
 
       {/* 新增/编辑对话框 */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

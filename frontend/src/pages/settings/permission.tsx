@@ -2,7 +2,7 @@ import * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/shared/loading-button"
-import { TableLoadingRow, TableEmptyRow } from "@/components/shared/table-states"
+import { TableEmptyRow, TableCardSkeleton } from "@/components/shared/table-states"
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import {
   Card,
@@ -225,46 +225,49 @@ export function PermissionPage() {
         <p className="text-muted-foreground">管理系统的菜单权限和操作权限。</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>权限列表</CardTitle>
-              <CardDescription>
-                共 {menuPermissions.length} 个菜单权限，{operationPermissions.length} 个操作权限
-              </CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:w-64">
-                <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="搜索编码或名称..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8"
-                />
+      {tableLoading ? (
+        <TableCardSkeleton colSpan={4} />
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>权限列表</CardTitle>
+                <CardDescription>
+                  共 {menuPermissions.length} 个菜单权限，{operationPermissions.length} 个操作权限
+                </CardDescription>
               </div>
-              {hasPermission("permissions.create") && (
-                <Button onClick={handleAddMenu} className="w-full sm:w-auto">
-                  <PlusIcon data-icon="inline-start" />
-                  新增菜单
-                </Button>
-              )}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-64">
+                  <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="搜索编码或名称..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                {hasPermission("permissions.create") && (
+                  <Button onClick={handleAddMenu} className="w-full sm:w-auto">
+                    <PlusIcon data-icon="inline-start" />
+                    新增菜单
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead style={{ width: "40%" }}>权限名称</TableHead>
-                <TableHead style={{ width: "25%" }}>权限编码</TableHead>
-                <TableHead style={{ width: "10%" }}>类型</TableHead>
-                <TableHead className="text-right" style={{ width: "25%" }}>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tree.map((node) => (
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead style={{ width: "40%" }}>权限名称</TableHead>
+                  <TableHead style={{ width: "25%" }}>权限编码</TableHead>
+                  <TableHead style={{ width: "10%" }}>类型</TableHead>
+                  <TableHead className="text-right" style={{ width: "25%" }}>操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tree.map((node) => (
                 <React.Fragment key={node.code}>
                   {/* 菜单权限（父节点） */}
                   <TableRow className="bg-muted/30">
@@ -353,12 +356,12 @@ export function PermissionPage() {
                   )}
                 </React.Fragment>
               ))}
-              {tableLoading && <TableLoadingRow colSpan={4} />}
               {!tableLoading && tree.length === 0 && <TableEmptyRow colSpan={4} />}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+      )}
 
       {/* 新增/编辑对话框 */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

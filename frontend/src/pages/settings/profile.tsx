@@ -13,6 +13,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { updateMe, changePassword } from "@/lib/api"
+import { appToast } from "@/lib/toast"
 
 export function ProfilePage() {
   const location = useLocation()
@@ -28,7 +29,6 @@ export function ProfilePage() {
   // 个人信息表单
   const [name, setName] = React.useState("")
   const [email, setEmail] = React.useState("")
-  const [profileMsg, setProfileMsg] = React.useState("")
   const [profileSaving, setProfileSaving] = React.useState(false)
 
   React.useEffect(() => {
@@ -46,7 +46,7 @@ export function ProfilePage() {
     const res = await updateMe({ name, email })
     setProfileSaving(false)
     if (res.code === 0) {
-      setProfileMsg("保存成功")
+      appToast.success("保存成功")
       const userStr = localStorage.getItem("user")
       if (userStr) {
         const user = JSON.parse(userStr)
@@ -55,37 +55,33 @@ export function ProfilePage() {
         localStorage.setItem("user", JSON.stringify(user))
       }
     } else {
-      setProfileMsg(typeof res.message === "string" ? res.message : "保存失败")
+      appToast.error(typeof res.message === "string" ? res.message : "保存失败")
     }
-    setTimeout(() => setProfileMsg(""), 3000)
   }
 
   // 密码修改表单
   const [currentPassword, setCurrentPassword] = React.useState("")
   const [newPassword, setNewPassword] = React.useState("")
   const [confirmPassword, setConfirmPassword] = React.useState("")
-  const [passwordMsg, setPasswordMsg] = React.useState("")
   const [passwordSaving, setPasswordSaving] = React.useState(false)
 
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (newPassword !== confirmPassword) {
-      setPasswordMsg("两次输入的密码不一致")
-      setTimeout(() => setPasswordMsg(""), 3000)
+      appToast.error("两次输入的密码不一致")
       return
     }
     setPasswordSaving(true)
     const res = await changePassword({ currentPassword, newPassword })
     setPasswordSaving(false)
     if (res.code === 0) {
-      setPasswordMsg("密码修改成功")
+      appToast.success("密码修改成功")
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
     } else {
-      setPasswordMsg(typeof res.message === "string" ? res.message : "修改失败")
+      appToast.error(typeof res.message === "string" ? res.message : "修改失败")
     }
-    setTimeout(() => setPasswordMsg(""), 3000)
   }
 
   return (
@@ -124,12 +120,9 @@ export function ProfilePage() {
                   </Field>
                 </FieldGroup>
                 <CardFooter className="px-0 pt-4">
-                  <div className="flex items-center gap-4">
-                    <LoadingButton type="submit" loading={profileSaving}>
-                      保存更改
-                    </LoadingButton>
-                    {profileMsg && <span className="text-sm text-muted-foreground">{profileMsg}</span>}
-                  </div>
+                  <LoadingButton type="submit" loading={profileSaving}>
+                    保存更改
+                  </LoadingButton>
                 </CardFooter>
               </form>
             </CardContent>
@@ -159,12 +152,9 @@ export function ProfilePage() {
                   </Field>
                 </FieldGroup>
                 <CardFooter className="px-0 pt-4">
-                  <div className="flex items-center gap-4">
-                    <LoadingButton type="submit" loading={passwordSaving}>
-                      更新密码
-                    </LoadingButton>
-                    {passwordMsg && <span className="text-sm text-muted-foreground">{passwordMsg}</span>}
-                  </div>
+                  <LoadingButton type="submit" loading={passwordSaving}>
+                    更新密码
+                  </LoadingButton>
                 </CardFooter>
               </form>
             </CardContent>
