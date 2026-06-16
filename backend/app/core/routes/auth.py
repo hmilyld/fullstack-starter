@@ -1,6 +1,7 @@
+import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import crud
@@ -17,6 +18,22 @@ from app.deps import get_current_user_with_permissions
 from app.modules.system.crud import get_config
 
 router = APIRouter(prefix="/auth", tags=["认证"])
+
+# 简易速率限制：{key: [(timestamp, count)]}
+_rate_limit_store: dict[str, list[float]] = {}
+RATE_LIMIT_MAX = 5
+RATE_LIMIT_WINDOW = 60  # 秒
+
+
+def _check_rate_limit(key: str) -> bool:
+    """检查是否超过速率限制，返回 True 表示被限制"""
+    now = time.time()
+    # 清理过期记录
+    _rate_limit_store[key] = [t for t in _rate_limit_store.get(key, []) if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_limit_store.get(key, [])) >= RATE_LIMIT_MAX:
+        return True
+    _rate_limit_store.setdefault(key, []).append(now)
+    return False
 
 
 def _build_login_response(user, permissions: list[str], token: str) -> dict:
@@ -36,8 +53,14 @@ def _build_login_response(user, permissions: list[str], token: str) -> dict:
 @router.post("/login")
 async def login(
     request: LoginRequest,
+    req: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ApiResponse:
+    # 速率限制：按 IP 地址
+    client_ip = req.client.host if req.client else "unknown"
+    if _check_rate_limit(f"login:{client_ip}"):
+        return ApiResponse(code=-1, message="登录尝试过于频繁，请稍后再试")
+
     user = await crud.authenticate_user(db, request.account, request.password)
     if user is None:
         return ApiResponse(code=-1, message="账号或密码错误")
@@ -57,8 +80,14 @@ async def login(
 @router.post("/register")
 async def register(
     request: RegisterRequest,
+    req: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ApiResponse:
+    # 速率限制：按 IP 地址
+    client_ip = req.client.host if req.client else "unknown"
+    if _check_rate_limit(f"register:{client_ip}"):
+        return ApiResponse(code=-1, message="注册尝试过于频繁，请稍后再试")
+
     config = await get_config(db)
     if not config.open_registration:
         return ApiResponse(code=-1, message="注册已关闭")

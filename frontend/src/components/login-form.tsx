@@ -42,7 +42,7 @@ export function LoginForm({
 
     const res = await apiLogin(account, password)
     if (res.code === 0) {
-      login(res.data.token, { ...res.data.user, permissions: [] })
+      login(res.data.token, res.data.user)
       toast.success("登录成功")
       navigate("/dashboard")
     } else {

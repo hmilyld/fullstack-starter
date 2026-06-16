@@ -22,6 +22,11 @@ from app.deps import get_current_user, require_permission
 router = APIRouter(prefix="/users", tags=["用户"])
 
 
+# ============================================================
+# 公开/自身操作路由 (固定路径，必须在 /{user_id} 之前)
+# ============================================================
+
+
 @router.get("")
 async def get_users(
     search: str = "",
@@ -36,18 +41,6 @@ async def get_users(
             list=[UserOut.from_orm_model(u).model_dump() for u in users], total=total, page=page, pageSize=pageSize
         ).model_dump()
     )
-
-
-@router.get("/{user_id}")
-async def get_user(
-    user_id: int,
-    current_user: User = Depends(require_permission("users")),
-    db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    user = await crud.get_user_by_id(db, user_id)
-    if user is None:
-        return ApiResponse(code=-1, message="用户不存在")
-    return ApiResponse(data=UserOut.from_orm_model(user).model_dump())
 
 
 @router.post("")
@@ -66,11 +59,72 @@ async def create_user(
     return ApiResponse(data=UserOut.from_orm_model(user).model_dump())
 
 
+@router.post("/batch-role")
+async def batch_update_role(
+    data: BatchRoleUpdateRequest,
+    current_user: User = Depends(require_permission("users.edit", "users.assign_role")),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    for user_id in data.userIds:
+        user = await crud.get_user_by_id(db, user_id)
+        if user:
+            # 管理员角色不可被降级（除非操作者也是管理员）
+            if user.role_id == "admin" and current_user.role_id != "admin":
+                continue
+            await crud.update_user(db, user, role_id=data.roleId)
+    return ApiResponse()
+
+
+@router.put("/me")
+async def update_me(
+    data: UpdateMeRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    if data.email != current_user.email:
+        existing = await crud.get_user_by_email(db, data.email)
+        if existing:
+            return ApiResponse(code=-1, message="邮箱已被注册")
+    updated = await crud.update_user(db, current_user, name=data.name, email=data.email)
+    return ApiResponse(data=UserOut.model_validate(updated).model_dump())
+
+
+@router.put("/me/password")
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    from app.core.security import verify_password
+
+    if not verify_password(data.currentPassword, current_user.password_hash):
+        return ApiResponse(code=-1, message="当前密码错误")
+    await crud.change_password(db, current_user, data.newPassword)
+    return ApiResponse()
+
+
+# ============================================================
+# 带 ID 参数的路由 (必须在固定路径之后)
+# ============================================================
+
+
+@router.get("/{user_id}")
+async def get_user(
+    user_id: int,
+    current_user: User = Depends(require_permission("users")),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    user = await crud.get_user_by_id(db, user_id)
+    if user is None:
+        return ApiResponse(code=-1, message="用户不存在")
+    return ApiResponse(data=UserOut.from_orm_model(user).model_dump())
+
+
 @router.put("/{user_id}")
 async def update_user(
     user_id: int,
     data: UserUpdate,
-    current_user: User = Depends(require_permission("users.edit")),
+    current_user: User = Depends(require_permission("users.edit", "users.assign_role")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     user = await crud.get_user_by_id(db, user_id)
@@ -107,45 +161,4 @@ async def reset_password(
     if user is None:
         return ApiResponse(code=-1, message="用户不存在")
     await crud.change_password(db, user, data.newPassword)
-    return ApiResponse()
-
-
-@router.post("/batch-role")
-async def batch_update_role(
-    data: BatchRoleUpdateRequest,
-    current_user: User = Depends(require_permission("users.edit")),
-    db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    for user_id in data.userIds:
-        user = await crud.get_user_by_id(db, user_id)
-        if user:
-            await crud.update_user(db, user, role_id=data.roleId)
-    return ApiResponse()
-
-
-@router.put("/me")
-async def update_me(
-    data: UpdateMeRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    if data.email != current_user.email:
-        existing = await crud.get_user_by_email(db, data.email)
-        if existing:
-            return ApiResponse(code=-1, message="邮箱已被注册")
-    updated = await crud.update_user(db, current_user, name=data.name, email=data.email)
-    return ApiResponse(data=UserOut.model_validate(updated).model_dump())
-
-
-@router.put("/me/password")
-async def change_password(
-    data: ChangePasswordRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    from app.core.security import verify_password
-
-    if not verify_password(data.currentPassword, current_user.password_hash):
-        return ApiResponse(code=-1, message="当前密码错误")
-    await crud.change_password(db, current_user, data.newPassword)
     return ApiResponse()

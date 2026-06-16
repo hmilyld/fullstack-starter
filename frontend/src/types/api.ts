@@ -55,6 +55,15 @@ export type SystemConfig = {
   manualReview: boolean
   defaultRoleId: string
   welcomeMessage: string
+  // 邮件配置
+  smtpEnabled: boolean
+  smtpHost: string
+  smtpPort: number
+  smtpUsername: string
+  smtpPassword: string
+  smtpFromName: string
+  smtpFromEmail: string
+  smtpUseSsl: boolean
 }
 
 export type DashboardStats = {
@@ -76,9 +85,31 @@ export type AuthUser = {
   email: string
   avatar: string
   role: string
+  permissions: string[]
 }
 
 export type LoginResponse = {
   token: string
   user: AuthUser
+}
+
+export type AiModel = {
+  id: string
+  alias: string
+  modelName: string
+  apiUrl: string
+  apiKey: string
+  description: string
+  isDefault: boolean
+}
+
+export type AiModelPreset = {
+  id: string
+  group: string
+  alias: string
+  modelName: string
+  apiUrl: string
+  description: string
+  isActive: boolean
+  sortOrder: number
 }

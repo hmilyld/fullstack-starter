@@ -2,6 +2,7 @@ import * as React from "react"
 import { useNavigate } from "react-router"
 import { logout as apiLogout } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import { useSystemConfig } from "@/lib/system-config-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -36,6 +37,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
+  const { refresh } = useSystemConfig()
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = React.useState(false)
 
@@ -44,6 +46,14 @@ export function NavUser({
       state: { tab, ts: Date.now() },
       replace: false,
     })
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    await apiLogout()
+    logout()
+    await refresh()
+    navigate("/login", { replace: true })
   }
 
   return (
@@ -98,15 +108,19 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               disabled={loggingOut}
-              onClick={async () => {
-                setLoggingOut(true)
-                await apiLogout()
-                logout()
-                window.location.href = "/login"
-              }}
+              onClick={handleLogout}
             >
-              <LogOutIcon />
-              {loggingOut ? "退出中..." : "退出登录"}
+              {loggingOut ? (
+                <>
+                  <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  退出中...
+                </>
+              ) : (
+                <>
+                  <LogOutIcon />
+                  退出登录
+                </>
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

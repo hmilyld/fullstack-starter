@@ -8,6 +8,7 @@ import { RolesPage } from "@/pages/settings/role"
 import { PermissionPage } from "@/pages/settings/permission"
 import { ProfilePage } from "@/pages/settings/profile"
 import { SystemPage } from "@/pages/settings/system"
+import { AiModelPage } from "@/pages/settings/ai-model"
 import { NotFoundPage } from "@/pages/not-found"
 import { ProtectedRoute } from "@/components/protected-route"
 
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       { path: "settings/permission", element: <PermissionPage /> },
       { path: "settings/profile", element: <ProfilePage /> },
       { path: "settings/system", element: <SystemPage /> },
+      { path: "settings/ai-model", element: <AiModelPage /> },
     ],
   },
   {

@@ -354,10 +354,12 @@ export function UsersPage() {
                           <span className="sr-only">编辑</span>
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleRole(user)}>
-                        <ShieldIcon data-icon="inline-start" />
-                        <span className="sr-only">维护角色</span>
-                      </Button>
+                      {hasPermission("users.assign_role") && (
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleRole(user)}>
+                          <ShieldIcon data-icon="inline-start" />
+                          <span className="sr-only">维护角色</span>
+                        </Button>
+                      )}
                       {hasPermission("users.delete") && (
                         <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user)}>
                           <Trash2Icon data-icon="inline-start" />

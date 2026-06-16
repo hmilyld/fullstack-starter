@@ -206,6 +206,15 @@ class SystemConfigUpdate(BaseModel):
     manualReview: bool | None = None
     defaultRoleId: str | None = None
     welcomeMessage: str | None = None
+    # 邮件配置
+    smtpEnabled: bool | None = None
+    smtpHost: str | None = None
+    smtpPort: int | None = None
+    smtpUsername: str | None = None
+    smtpPassword: str | None = None
+    smtpFromName: str | None = None
+    smtpFromEmail: str | None = None
+    smtpUseSsl: bool | None = None
 
 
 class SystemConfigOut(BaseModel):
@@ -218,11 +227,22 @@ class SystemConfigOut(BaseModel):
     manualReview: bool
     defaultRoleId: str
     welcomeMessage: str
+    # 邮件配置（密码脱敏）
+    smtpEnabled: bool
+    smtpHost: str
+    smtpPort: int
+    smtpUsername: str
+    smtpPassword: str
+    smtpFromName: str
+    smtpFromEmail: str
+    smtpUseSsl: bool
 
     model_config = {"from_attributes": True}
 
     @classmethod
     def from_orm_config(cls, config) -> "SystemConfigOut":
+        raw_password = config.smtp_password or ""
+        masked_password = raw_password[:2] + "****" + raw_password[-2:] if len(raw_password) > 4 else "****"
         return cls(
             siteName=config.site_name,
             siteDescription=config.site_description,
@@ -233,4 +253,12 @@ class SystemConfigOut(BaseModel):
             manualReview=config.manual_review,
             defaultRoleId=config.default_role_id,
             welcomeMessage=config.welcome_message,
+            smtpEnabled=config.smtp_enabled,
+            smtpHost=config.smtp_host,
+            smtpPort=config.smtp_port,
+            smtpUsername=config.smtp_username,
+            smtpPassword=masked_password,
+            smtpFromName=config.smtp_from_name,
+            smtpFromEmail=config.smtp_from_email,
+            smtpUseSsl=config.smtp_use_ssl,
         )

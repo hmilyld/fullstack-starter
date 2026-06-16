@@ -7,6 +7,8 @@ import type {
   DashboardStats,
   ActivityItem,
   LoginResponse,
+  AiModel,
+  AiModelPreset,
 } from "@/types/api"
 import { apiClient } from "@/lib/api-client"
 
@@ -152,7 +154,7 @@ export type PublicConfig = {
 }
 
 export async function getPublicConfig() {
-  return apiClient.get<PublicConfig>("/system/public-config")
+  return apiClient.get<PublicConfig>("/public/config")
 }
 
 export async function getSystemConfig() {
@@ -161,4 +163,89 @@ export async function getSystemConfig() {
 
 export async function updateSystemConfig(data: Partial<SystemConfig>) {
   return apiClient.put<SystemConfig>("/system/config", data)
+}
+
+// ============================================================
+// AI Models API
+// ============================================================
+
+export async function getAiModels(params?: {
+  search?: string
+  page?: number
+  pageSize?: number
+}) {
+  return apiClient.get<PaginatedData<AiModel>>("/ai-models", params)
+}
+
+export async function getAiModel(id: string) {
+  return apiClient.get<AiModel>(`/ai-models/${id}`)
+}
+
+export async function createAiModel(data: Omit<AiModel, "id">) {
+  return apiClient.post<AiModel>("/ai-models", data)
+}
+
+export async function updateAiModel(id: string, data: Partial<Omit<AiModel, "id">>) {
+  return apiClient.put<AiModel>(`/ai-models/${id}`, data)
+}
+
+export async function deleteAiModel(id: string) {
+  return apiClient.delete(`/ai-models/${id}`)
+}
+
+export async function getDefaultAiModel() {
+  return apiClient.get<AiModel>("/ai-models/default")
+}
+
+export async function getAiModelByAlias(alias: string) {
+  return apiClient.get<AiModel>(`/ai-models/by-alias/${alias}`)
+}
+
+export async function testAiModel(data: {
+  apiUrl: string
+  apiKey: string
+  modelName: string
+}) {
+  return apiClient.post<{
+    success: boolean
+    message: string
+    responseTime: number | null
+    model: string | null
+  }>("/ai-models/test", data)
+}
+
+// ============================================================
+// AI Model Presets API
+// ============================================================
+
+export async function getAiModelPresets(params?: {
+  search?: string
+  group?: string
+  isActive?: boolean
+}) {
+  return apiClient.get<AiModelPreset[]>("/ai-models/presets", params)
+}
+
+export async function getAiModelPresetGroups() {
+  return apiClient.get<string[]>("/ai-models/presets/groups")
+}
+
+export async function getActiveAiModelPresets() {
+  return apiClient.get<AiModelPreset[]>("/ai-models/presets/active")
+}
+
+export async function getAiModelPreset(id: string) {
+  return apiClient.get<AiModelPreset>(`/ai-models/presets/${id}`)
+}
+
+export async function createAiModelPreset(data: Omit<AiModelPreset, "id">) {
+  return apiClient.post<AiModelPreset>("/ai-models/presets", data)
+}
+
+export async function updateAiModelPreset(id: string, data: Partial<Omit<AiModelPreset, "id">>) {
+  return apiClient.put<AiModelPreset>(`/ai-models/presets/${id}`, data)
+}
+
+export async function deleteAiModelPreset(id: string) {
+  return apiClient.delete(`/ai-models/presets/${id}`)
 }

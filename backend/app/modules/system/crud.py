@@ -25,6 +25,14 @@ async def update_config(db: AsyncSession, **kwargs) -> SystemConfig:
         "manualReview": "manual_review",
         "defaultRoleId": "default_role_id",
         "welcomeMessage": "welcome_message",
+        "smtpEnabled": "smtp_enabled",
+        "smtpHost": "smtp_host",
+        "smtpPort": "smtp_port",
+        "smtpUsername": "smtp_username",
+        "smtpPassword": "smtp_password",
+        "smtpFromName": "smtp_from_name",
+        "smtpFromEmail": "smtp_from_email",
+        "smtpUseSsl": "smtp_use_ssl",
     }
     for key, value in kwargs.items():
         if value is not None:

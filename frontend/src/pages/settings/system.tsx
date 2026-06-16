@@ -25,6 +25,66 @@ import {
 import { getSystemConfig, updateSystemConfig, getRoles } from "@/lib/api"
 import type { SystemConfig } from "@/types/api"
 
+// 常用邮箱 SMTP 预设配置
+const SMTP_PRESETS = [
+  {
+    name: "QQ 邮箱",
+    host: "smtp.qq.com",
+    port: 465,
+    ssl: true,
+    fromName: "QQ邮箱",
+    tip: "需要开启 SMTP 服务并获取授权码",
+  },
+  {
+    name: "163 邮箱",
+    host: "smtp.163.com",
+    port: 465,
+    ssl: true,
+    fromName: "163邮箱",
+    tip: "需要开启 SMTP 服务并设置授权码",
+  },
+  {
+    name: "Gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    ssl: true,
+    fromName: "Gmail",
+    tip: "需要开启两步验证并生成应用专用密码",
+  },
+  {
+    name: "Outlook",
+    host: "smtp.office365.com",
+    port: 587,
+    ssl: true,
+    fromName: "Outlook",
+    tip: "使用 Outlook 或 Hotmail 账号",
+  },
+  {
+    name: "企业微信邮箱",
+    host: "smtp.exmail.qq.com",
+    port: 465,
+    ssl: true,
+    fromName: "企业微信邮箱",
+    tip: "使用企业微信邮箱账号",
+  },
+  {
+    name: "阿里企业邮箱",
+    host: "smtp.mxhichina.com",
+    port: 465,
+    ssl: true,
+    fromName: "阿里企业邮箱",
+    tip: "使用阿里企业邮箱账号",
+  },
+  {
+    name: "Foxmail",
+    host: "smtp.qq.com",
+    port: 465,
+    ssl: true,
+    fromName: "Foxmail",
+    tip: "Foxmail 使用 QQ 邮箱 SMTP 服务器",
+  },
+]
+
 export function SystemPage() {
   const [config, setConfig] = React.useState<SystemConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
@@ -37,6 +97,10 @@ export function SystemPage() {
   const [registerSaving, setRegisterSaving] = React.useState(false)
   const [defaultSaving, setDefaultSaving] = React.useState(false)
   const [roles, setRoles] = React.useState<{ id: string; name: string }[]>([])
+  const [smtpSaving, setSmtpSaving] = React.useState(false)
+  const [smtpMsg, setSmtpMsg] = React.useState("")
+  const [testEmail, setTestEmail] = React.useState("")
+  const [smtpPreset, setSmtpPreset] = React.useState("")
 
   React.useEffect(() => {
     async function load() {
@@ -51,8 +115,10 @@ export function SystemPage() {
   }, [])
 
   function updateField<K extends keyof SystemConfig>(key: K, value: SystemConfig[K]) {
-    if (!config) return
-    setConfig({ ...config, [key]: value })
+    setConfig((prev) => {
+      if (!prev) return prev
+      return { ...prev, [key]: value }
+    })
   }
 
   async function handleSaveSite() {
@@ -104,6 +170,32 @@ export function SystemPage() {
     setTimeout(() => setDefaultMsg(""), 3000)
   }
 
+  async function handleSaveSmtp() {
+    if (!config) return
+    setSmtpSaving(true)
+    const res = await updateSystemConfig({
+      smtpEnabled: config.smtpEnabled,
+      smtpHost: config.smtpHost,
+      smtpPort: config.smtpPort,
+      smtpUsername: config.smtpUsername,
+      smtpPassword: config.smtpPassword,
+      smtpFromName: config.smtpFromName,
+      smtpFromEmail: config.smtpFromEmail,
+      smtpUseSsl: config.smtpUseSsl,
+    })
+    setSmtpSaving(false)
+    setSmtpMsg(res.code === 0 ? "保存成功" : res.message)
+    setTimeout(() => setSmtpMsg(""), 3000)
+  }
+
+  async function handleTestEmail() {
+    if (!config || !testEmail) return
+    // TODO: 后端暂未实现发送测试邮件接口
+    setSmtpMsg("该功能暂未实现，请先配置邮件服务器后手动测试")
+    setTimeout(() => setSmtpMsg(""), 5000)
+    setTimeout(() => setSmtpMsg(""), 5000)
+  }
+
   if (loading) return (
     <div className="flex min-h-[40vh] items-center justify-center gap-2 text-muted-foreground">
       <Spinner />加载中...
@@ -126,6 +218,7 @@ export function SystemPage() {
         <TabsList>
           <TabsTrigger value="site">站点设置</TabsTrigger>
           <TabsTrigger value="register">注册设置</TabsTrigger>
+          <TabsTrigger value="smtp">邮件配置</TabsTrigger>
         </TabsList>
 
         <TabsContent value="site" className="flex flex-col gap-6">
@@ -259,6 +352,172 @@ export function SystemPage() {
                   保存默认配置
                 </LoadingButton>
                 {defaultMsg && <span className="text-sm text-muted-foreground">{defaultMsg}</span>}
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="smtp" className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>SMTP 邮件配置</CardTitle>
+              <CardDescription>配置邮件服务器，用于发送系统通知邮件。</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <Field orientation="horizontal">
+                <div className="flex flex-1 flex-col gap-1">
+                  <FieldLabel>启用邮件</FieldLabel>
+                  <FieldDescription>开启后系统将通过 SMTP 发送邮件。</FieldDescription>
+                </div>
+                <Switch checked={config.smtpEnabled} onCheckedChange={(v) => updateField("smtpEnabled", v)} />
+              </Field>
+              <Separator />
+
+              {/* 快捷配置 */}
+              <Field>
+                <FieldLabel>快捷配置</FieldLabel>
+                <Select
+                  value={smtpPreset}
+                  onValueChange={(value) => {
+                    setSmtpPreset(value)
+                    const preset = SMTP_PRESETS.find((p) => p.name === value)
+                    if (preset) {
+                      updateField("smtpHost", preset.host)
+                      updateField("smtpPort", preset.port)
+                      updateField("smtpUseSsl", preset.ssl)
+                      updateField("smtpFromName", preset.fromName)
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择常用邮箱快速配置..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {SMTP_PRESETS.map((preset) => (
+                        <SelectItem key={preset.name} value={preset.name}>
+                          {preset.name} - {preset.host}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>选择后将自动填充服务器、端口和 SSL 配置。</FieldDescription>
+              </Field>
+
+              <Separator />
+
+              <FieldGroup>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel htmlFor="smtp-host">SMTP 服务器 *</FieldLabel>
+                    <Input
+                      id="smtp-host"
+                      placeholder="例如: smtp.qq.com"
+                      value={config.smtpHost}
+                      onChange={(e) => updateField("smtpHost", e.target.value)}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="smtp-port">端口 *</FieldLabel>
+                    <Input
+                      id="smtp-port"
+                      type="number"
+                      placeholder="例如: 587"
+                      value={config.smtpPort}
+                      onChange={(e) => updateField("smtpPort", parseInt(e.target.value) || 587)}
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel htmlFor="smtp-username">用户名 *</FieldLabel>
+                    <Input
+                      id="smtp-username"
+                      placeholder="例如: your@email.com"
+                      value={config.smtpUsername}
+                      onChange={(e) => updateField("smtpUsername", e.target.value)}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="smtp-password">密码 *</FieldLabel>
+                    <Input
+                      id="smtp-password"
+                      type="password"
+                      placeholder="请输入 SMTP 密码或授权码"
+                      value={config.smtpPassword}
+                      onChange={(e) => updateField("smtpPassword", e.target.value)}
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel htmlFor="smtp-from-name">发件人名称</FieldLabel>
+                    <Input
+                      id="smtp-from-name"
+                      placeholder="例如: 管理系统"
+                      value={config.smtpFromName}
+                      onChange={(e) => updateField("smtpFromName", e.target.value)}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="smtp-from-email">发件人邮箱 *</FieldLabel>
+                    <Input
+                      id="smtp-from-email"
+                      type="email"
+                      placeholder="例如: noreply@example.com"
+                      value={config.smtpFromEmail}
+                      onChange={(e) => updateField("smtpFromEmail", e.target.value)}
+                    />
+                  </Field>
+                </div>
+                <Field orientation="horizontal">
+                  <div className="flex flex-1 flex-col gap-1">
+                    <FieldLabel>使用 SSL</FieldLabel>
+                    <FieldDescription>大多数邮件服务器需要开启 SSL。</FieldDescription>
+                  </div>
+                  <Switch checked={config.smtpUseSsl} onCheckedChange={(v) => updateField("smtpUseSsl", v)} />
+                </Field>
+              </FieldGroup>
+            </CardContent>
+            <CardFooter>
+              <div className="flex items-center gap-4">
+                <LoadingButton onClick={handleSaveSmtp} loading={smtpSaving}>
+                  保存邮件配置
+                </LoadingButton>
+                {smtpMsg && <span className="text-sm text-muted-foreground">{smtpMsg}</span>}
+              </div>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>测试邮件</CardTitle>
+              <CardDescription>发送测试邮件以验证邮件配置是否正确。</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="test-email">收件人邮箱</FieldLabel>
+                  <Input
+                    id="test-email"
+                    type="email"
+                    placeholder="请输入测试收件人邮箱"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                  />
+                </Field>
+              </FieldGroup>
+            </CardContent>
+            <CardFooter>
+              <div className="flex items-center gap-4">
+                <LoadingButton
+                  onClick={handleTestEmail}
+                  disabled={!testEmail || !config.smtpEnabled}
+                >
+                  发送测试邮件
+                </LoadingButton>
+                {smtpMsg && <span className="text-sm text-muted-foreground">{smtpMsg}</span>}
               </div>
             </CardFooter>
           </Card>

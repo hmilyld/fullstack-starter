@@ -55,7 +55,7 @@ export function ProfilePage() {
         localStorage.setItem("user", JSON.stringify(user))
       }
     } else {
-      setProfileMsg(res.message)
+      setProfileMsg(typeof res.message === "string" ? res.message : "保存失败")
     }
     setTimeout(() => setProfileMsg(""), 3000)
   }
@@ -83,7 +83,7 @@ export function ProfilePage() {
       setNewPassword("")
       setConfirmPassword("")
     } else {
-      setPasswordMsg(res.message)
+      setPasswordMsg(typeof res.message === "string" ? res.message : "修改失败")
     }
     setTimeout(() => setPasswordMsg(""), 3000)
   }

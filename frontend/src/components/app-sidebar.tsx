@@ -15,9 +15,10 @@ import {
   ShieldCheckIcon,
   KeyIcon,
   Settings2Icon,
-  UserCogIcon,
+  BotIcon,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { useSystemConfig } from "@/lib/system-config-context"
 
 const data = {
   navGroups: [
@@ -33,8 +34,8 @@ const data = {
         { title: "用户管理", url: "/settings/user", icon: <UsersIcon />, permission: "users" },
         { title: "角色管理", url: "/settings/role", icon: <ShieldCheckIcon />, permission: "roles" },
         { title: "权限管理", url: "/settings/permission", icon: <KeyIcon />, permission: "permissions" },
-        { title: "个人设置", url: "/settings/profile", icon: <UserCogIcon /> },
         { title: "系统设置", url: "/settings/system", icon: <Settings2Icon />, permission: "settings" },
+        { title: "AI模型配置", url: "/settings/ai-model", icon: <BotIcon />, permission: "ai_models" },
       ],
     },
   ],
@@ -42,6 +43,9 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { hasPermission, user } = useAuth()
+  const { config } = useSystemConfig()
+
+  const siteName = config?.siteName || "管理系统"
 
   const filteredData = {
     ...data,
@@ -98,7 +102,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             />
           </svg>
           <span className="truncate text-base font-semibold group-data-[collapsible=icon]:hidden">
-            前端框架统一模板
+            {siteName}
           </span>
         </div>
       </SidebarHeader>

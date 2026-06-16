@@ -63,3 +63,12 @@ class SystemConfig(Base):
     manual_review = Column(Boolean, default=False)
     default_role_id = Column(String(50), default="user")
     welcome_message = Column(Text, default="")
+    # 邮件配置
+    smtp_enabled = Column(Boolean, default=False)
+    smtp_host = Column(String(255), default="")
+    smtp_port = Column(Integer, default=587)
+    smtp_username = Column(String(255), default="")
+    smtp_password = Column(String(255), default="")
+    smtp_from_name = Column(String(100), default="管理系统")
+    smtp_from_email = Column(String(100), default="")
+    smtp_use_ssl = Column(Boolean, default=True)

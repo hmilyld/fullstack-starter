@@ -73,6 +73,14 @@ function initSeedData() {
       manualReview: false,
       defaultRoleId: "user",
       welcomeMessage: "欢迎加入！请先完善个人信息。",
+      smtpEnabled: false,
+      smtpHost: "",
+      smtpPort: 587,
+      smtpUsername: "",
+      smtpPassword: "",
+      smtpFromName: "管理系统",
+      smtpFromEmail: "",
+      smtpUseSsl: true,
     }
     save(KEYS.systemConfig, seedConfig)
   }
@@ -333,6 +341,12 @@ export const authDb = {
       (u) => u.username === account || u.email === account
     )
     if (!user) throw new Error("用户不存在")
+
+    // 根据角色获取权限
+    const roles = load<Role[]>(KEYS.roles, [])
+    const role = roles.find((r) => r.id === user.roleId)
+    const permissions = role ? role.permissions : []
+
     return {
       token: "mock_token_" + Date.now(),
       user: {
@@ -341,6 +355,7 @@ export const authDb = {
         email: user.email,
         avatar: user.avatar,
         role: user.roleId,
+        permissions,
       },
     }
   },
