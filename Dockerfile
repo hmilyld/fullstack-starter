@@ -1,7 +1,7 @@
 # ============================================================
 # Stage 1: Build frontend
 # ============================================================
-FROM node:22-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 
 RUN corepack enable && corepack prepare pnpm@latest --activate \
     && npm config set registry https://registry.npmmirror.com
