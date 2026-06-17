@@ -232,13 +232,6 @@ export function SystemPage() {
     }
   }
 
-  if (loading) return <PageFormSkeleton />
-  if (!config) return (
-    <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
-      加载失败
-    </div>
-  )
-
   return (
     <div className="flex flex-col gap-6">
       <div>

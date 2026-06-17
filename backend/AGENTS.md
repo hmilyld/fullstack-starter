@@ -47,7 +47,7 @@ app/
 Database is seeded automatically on first startup (`app/core/seed.py`):
 - Default users: `admin`/`123456`, `zhangsan`/`123456`, `lisi`/`123456`, etc.
 - Preset roles: `admin`, `user`, `pending_review` (cannot delete)
-- Permissions: 5 menu + 10 operation codes
+- Permissions: 6 menu + 17 operation codes
 
 ## Key conventions
 

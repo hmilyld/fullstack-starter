@@ -68,7 +68,7 @@ JWT_SECRET_KEY=secret docker compose up -d   # requires JWT_SECRET_KEY
 
 ## Database
 
-SQLite (`app.db`). Auto-created and seeded on backend startup. Seed: 5 users (password `123456`), 3 preset roles (`admin`, `user`, `pending_review`), menu + operation permissions. Preset roles cannot be deleted.
+SQLite (`app.db`). Auto-created and seeded on backend startup. Seed: 5 users (password `123456`), 3 preset roles (`admin`, `user`, `pending_review`), 6 menu + 17 operation permissions. Preset roles cannot be deleted.
 
 ## Adding features
 

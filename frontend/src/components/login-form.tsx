@@ -20,7 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { login as apiLogin } from "@/lib/api"
 import { appToast } from "@/lib/toast"
 import { useAuth } from "@/lib/auth-context"
-import { useSystemConfig } from "@/components/settings-loader"
+import { useSiteConfig } from "@/lib/site-config"
 
 export function LoginForm({
   className,
@@ -29,7 +29,7 @@ export function LoginForm({
   const { login } = useAuth()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = React.useState(false)
-  const config = useSystemConfig()
+  const { config } = useSiteConfig()
 
   const maintenanceEnabled = config !== null && config.maintenanceEnabled
 

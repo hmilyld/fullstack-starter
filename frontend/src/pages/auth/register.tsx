@@ -18,12 +18,12 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { register } from "@/lib/api"
 import { appToast } from "@/lib/toast"
-import { useSystemConfig } from "@/components/settings-loader"
+import { useSiteConfig } from "@/lib/site-config"
 
 export function RegisterPage() {
   const navigate = useNavigate()
   const [submitting, setSubmitting] = React.useState(false)
-  const config = useSystemConfig()
+  const { config } = useSiteConfig()
 
   const registrationDisabled = config !== null && !config.openRegistration
 

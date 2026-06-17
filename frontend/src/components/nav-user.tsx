@@ -2,7 +2,7 @@ import * as React from "react"
 import { useNavigate } from "react-router"
 import { logout as apiLogout } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
-import { useSystemConfig } from "@/lib/system-config-context"
+import { useSiteConfig } from "@/lib/site-config"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -38,7 +38,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
-  const { refresh } = useSystemConfig()
+  const { refresh } = useSiteConfig()
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = React.useState(false)
 

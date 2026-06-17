@@ -1,5 +1,3 @@
-"use client"
-
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -18,7 +16,7 @@ import {
   BotIcon,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { useSystemConfig } from "@/lib/system-config-context"
+import { useSiteConfig } from "@/lib/site-config"
 
 const data = {
   navGroups: [
@@ -43,7 +41,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { hasPermission, user } = useAuth()
-  const { config } = useSystemConfig()
+  const { config } = useSiteConfig()
 
   const siteName = config?.siteName || "管理系统"
 

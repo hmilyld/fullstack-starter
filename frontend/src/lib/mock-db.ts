@@ -333,7 +333,7 @@ export const systemDb = {
 // ============================================================
 
 export const authDb = {
-  async login(account: string, _password: string) {
+  async login(account: string) {
     await delay(400)
     if (!account) throw new Error("请输入账号")
     const list = load<User[]>(KEYS.users, [])

@@ -23,6 +23,7 @@ const routeMap: Record<string, { label: string; hasRoute?: boolean }> = {
   permission: { label: "权限管理" },
   profile: { label: "个人设置" },
   system: { label: "系统设置" },
+  "ai-model": { label: "AI模型配置" },
 }
 
 /** 从路径生成面包屑层级 */

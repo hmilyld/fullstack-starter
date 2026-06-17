@@ -54,7 +54,6 @@ uv run uvicorn app.main:app --reload  # http://localhost:8000
 ├── frontend/          # React 前端
 ├── backend/           # FastAPI 后端
 ├── dev.sh             # 开发环境管理脚本
-├── stop.sh            # 停止脚本（已合并到 dev.sh）
 ├── Dockerfile         # 多阶段构建
 ├── nginx.conf         # Nginx 配置
 ├── docker-compose.yml # 部署配置

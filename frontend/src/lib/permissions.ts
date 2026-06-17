@@ -52,6 +52,7 @@ export const SEED_OPERATION_PERMISSIONS: Permission[] = [
   { code: "permissions.create", name: "新增权限", type: "operation", parent: "permissions" },
   { code: "permissions.edit", name: "编辑权限", type: "operation", parent: "permissions" },
   { code: "permissions.delete", name: "删除权限", type: "operation", parent: "permissions" },
+  { code: "settings.edit", name: "编辑系统设置", type: "operation", parent: "settings" },
   { code: "ai_models.create", name: "新增AI模型", type: "operation", parent: "ai_models" },
   { code: "ai_models.edit", name: "编辑AI模型", type: "operation", parent: "ai_models" },
   { code: "ai_models.delete", name: "删除AI模型", type: "operation", parent: "ai_models" },

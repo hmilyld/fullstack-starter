@@ -61,4 +61,4 @@ Browser → Vite dev server (:5173)
 
 ## Seed Data
 
-First startup creates: 5 users (password `123456`), 3 preset roles (`admin`, `user`, `pending_review`), 5 menu + 9 operation permissions. Preset roles cannot be deleted.
+First startup creates: 5 users (password `123456`), 3 preset roles (`admin`, `user`, `pending_review`), 6 menu + 17 operation permissions. Preset roles cannot be deleted.

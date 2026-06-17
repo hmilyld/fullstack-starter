@@ -19,6 +19,7 @@ async def update_config(db: AsyncSession, **kwargs) -> SystemConfig:
     field_mapping = {
         "siteName": "site_name",
         "siteDescription": "site_description",
+        "keywords": "keywords",
         "maintenanceEnabled": "maintenance_enabled",
         "maintenanceMessage": "maintenance_message",
         "openRegistration": "open_registration",

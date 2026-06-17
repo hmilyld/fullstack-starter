@@ -85,7 +85,7 @@ export function UsersPage() {
 
   const loadData = React.useCallback(async () => {
     setTableLoading(true)
-    const res = await getUsers({ search, page, pageSize: 8 })
+    const res = await getUsers({ search, page, pageSize: PAGE_SIZE })
     if (res.code === 0) {
       setUsers(res.data.list)
       setTotal(res.data.total)

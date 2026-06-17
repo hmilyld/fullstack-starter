@@ -905,7 +905,7 @@ export function AiModelPage() {
               {testResult?.success ? "模型配置测试成功" : "模型配置测试失败"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="flex flex-col gap-4 py-2">
             <div className="rounded-lg bg-muted p-4">
               <p className="text-sm">{testResult?.message}</p>
             </div>
