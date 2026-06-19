@@ -20,20 +20,22 @@ private static final List<String> EXCLUDE_PATHS =
 public void addInterceptors(InterceptorRegistry registry) {
 	registry
 		.addInterceptor(
-			new SaInterceptor(
-				handler -> {
-				ServletRequestAttributes attrs =
-					(ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-				if (attrs != null) {
-					HttpServletRequest request = attrs.getRequest();
-					String path = request.getRequestURI();
-					boolean excluded =
-						EXCLUDE_PATHS.stream().anyMatch(pattern -> matchPath(path, pattern));
-					if (!excluded) {
-					StpUtil.checkLogin();
+			new SaInterceptor()
+				.isAnnotation(true)
+				.setAuth(
+					handler -> {
+					ServletRequestAttributes attrs =
+						(ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+					if (attrs != null) {
+						HttpServletRequest request = attrs.getRequest();
+						String path = request.getRequestURI();
+						boolean excluded =
+							EXCLUDE_PATHS.stream().anyMatch(pattern -> matchPath(path, pattern));
+						if (!excluded) {
+						StpUtil.checkLogin();
+						}
 					}
-				}
-				}))
+					}))
 		.addPathPatterns("/api/**");
 }
 
