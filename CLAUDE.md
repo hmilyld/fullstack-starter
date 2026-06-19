@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Chinese-language admin management system ("管理系统") with a React frontend and Python FastAPI backend. Two independent projects sit side-by-side (no monorepo tooling) — each has its own CLAUDE.md with detailed commands and conventions.
+A Chinese-language admin management system ("管理系统") with a React frontend, Python FastAPI backend, and Java Spring Boot backend. Three independent projects sit side-by-side (no monorepo tooling) — each has its own CLAUDE.md with detailed commands and conventions.
 
 - **`frontend/`** — React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4 + shadcn/ui v4 + React Router 7. See `frontend/CLAUDE.md`.
 - **`backend/`** — Python 3.12+ + FastAPI + SQLAlchemy 2.0 async + SQLite (aiosqlite). See `backend/CLAUDE.md`.
+- **`backend-java/`** — Java 21 + Spring Boot 3.2 + Sa-Token + JPA + SQLite. See `backend-java/CLAUDE.md`.
 
 ## Quick Reference
 
@@ -23,6 +24,12 @@ uv sync                                    # Install dependencies
 uv run uvicorn app.main:app --reload       # Dev server on port 8000
 uv run ruff check .                        # Lint
 uv run ruff format .                       # Format
+
+# Backend-Java (run from backend-java/)
+mvn clean package -DskipTests              # Build
+mvn spring-boot:run                        # Dev server on port 8000
+mvn spotless:check                         # Check code format
+mvn spotless:apply                         # Auto-format code
 ```
 
 No test framework is configured on either side. `pnpm build` and `ruff check` are the verification steps.

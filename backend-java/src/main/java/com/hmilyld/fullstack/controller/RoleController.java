@@ -13,33 +13,32 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/roles")
 public class RoleController {
 
-    @Autowired
-    private RoleService roleService;
+@Autowired private RoleService roleService;
 
-    @GetMapping("")
-    @SaCheckPermission("roles")
-    public ApiResponse<?> getRoles(
-            @RequestParam(defaultValue = "") String search,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        return roleService.getRoles(search, page, pageSize);
-    }
+@GetMapping("")
+@SaCheckPermission("roles")
+public ApiResponse<?> getRoles(
+	@RequestParam(defaultValue = "") String search,
+	@RequestParam(defaultValue = "1") int page,
+	@RequestParam(defaultValue = "10") int pageSize) {
+	return roleService.getRoles(search, page, pageSize);
+}
 
-    @PostMapping("")
-    @SaCheckPermission("roles.create")
-    public ApiResponse<?> createRole(@RequestBody @Valid RoleCreateRequest req) {
-        return roleService.createRole(req);
-    }
+@PostMapping("")
+@SaCheckPermission("roles.create")
+public ApiResponse<?> createRole(@RequestBody @Valid RoleCreateRequest req) {
+	return roleService.createRole(req);
+}
 
-    @PutMapping("/{id}")
-    @SaCheckPermission("roles.edit")
-    public ApiResponse<?> updateRole(@PathVariable String id, @RequestBody RoleUpdateRequest req) {
-        return roleService.updateRole(id, req);
-    }
+@PutMapping("/{id}")
+@SaCheckPermission("roles.edit")
+public ApiResponse<?> updateRole(@PathVariable String id, @RequestBody RoleUpdateRequest req) {
+	return roleService.updateRole(id, req);
+}
 
-    @DeleteMapping("/{id}")
-    @SaCheckPermission("roles.delete")
-    public ApiResponse<?> deleteRole(@PathVariable String id) {
-        return roleService.deleteRole(id);
-    }
+@DeleteMapping("/{id}")
+@SaCheckPermission("roles.delete")
+public ApiResponse<?> deleteRole(@PathVariable String id) {
+	return roleService.deleteRole(id);
+}
 }

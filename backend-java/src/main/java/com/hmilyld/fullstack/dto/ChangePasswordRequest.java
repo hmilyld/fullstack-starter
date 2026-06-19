@@ -1,12 +1,15 @@
 package com.hmilyld.fullstack.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class ChangePasswordRequest {
-    private String currentPassword;
+@NotBlank(message = "当前密码不能为空")
+private String currentPassword;
 
-    @Size(min = 6, message = "密码长度不能少于6位")
-    private String newPassword;
+@NotBlank(message = "新密码不能为空")
+@Size(min = 6, message = "密码长度不能少于6位")
+private String newPassword;
 }

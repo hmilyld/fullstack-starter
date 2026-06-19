@@ -11,8 +11,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, String> {
 
-    @Query("SELECT r FROM Role r WHERE " +
-           "(:search = '' OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "OR LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Role> search(@Param("search") String search, Pageable pageable);
+@Query(
+	"SELECT r FROM Role r WHERE "
+		+ "(:search = '' OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) "
+		+ "OR LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%')))")
+Page<Role> search(@Param("search") String search, Pageable pageable);
 }

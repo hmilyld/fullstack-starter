@@ -9,21 +9,21 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class RolePermission {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String roleId;
+@Column(nullable = false, length = 50)
+private String roleId;
 
-    @Column(nullable = false, length = 100)
-    private String permissionCode;
+@Column(nullable = false, length = 100)
+private String permissionCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "roleId", insertable = false, updatable = false)
-    private Role role;
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "roleId", insertable = false, updatable = false)
+private Role role;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "permissionCode", insertable = false, updatable = false)
-    private Permission permission;
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "permissionCode", insertable = false, updatable = false)
+private Permission permission;
 }

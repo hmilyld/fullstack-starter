@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class PermissionUpdateRequest {
-    private String name;
-    private String parent;
+private String name;
+private String parent;
 }
