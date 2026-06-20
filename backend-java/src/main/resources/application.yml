@@ -36,4 +36,4 @@ sa-token:
   is-read-cookie: false
 
 app:
-  cors-origins: http://localhost:5173,http://100.89.143.7:5173
+  cors-origins: http://localhost:5173,http://localhost:5174,http://100.89.143.7:5173,http://100.89.143.7:5174

@@ -1,0 +1,58 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@plugin "daisyui" {
+  themes: light --default, dark;
+  base: false;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: 'Inter Variable', sans-serif;
+}
+
+:root {
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-content: oklch(0.985 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-content: oklch(0.205 0 0);
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-content: oklch(0.205 0 0);
+  --color-neutral: oklch(0.205 0 0);
+  --color-neutral-content: oklch(0.985 0 0);
+  --color-base-100: oklch(1 0 0);
+  --color-base-200: oklch(0.97 0 0);
+  --color-base-300: oklch(0.922 0 0);
+  --color-base-content: oklch(0.145 0 0);
+  --color-info: oklch(0.556 0 0);
+  --color-success: oklch(0.556 0 0);
+  --color-warning: oklch(0.556 0 0);
+  --color-error: oklch(0.577 0.245 27.325);
+}
+
+.dark {
+  --color-primary: oklch(0.922 0 0);
+  --color-primary-content: oklch(0.205 0 0);
+  --color-secondary: oklch(0.269 0 0);
+  --color-secondary-content: oklch(0.985 0 0);
+  --color-accent: oklch(0.269 0 0);
+  --color-accent-content: oklch(0.985 0 0);
+  --color-neutral: oklch(0.269 0 0);
+  --color-neutral-content: oklch(0.985 0 0);
+  --color-base-100: oklch(0.145 0 0);
+  --color-base-200: oklch(0.205 0 0);
+  --color-base-300: oklch(0.269 0 0);
+  --color-base-content: oklch(0.985 0 0);
+  --color-info: oklch(0.708 0 0);
+  --color-success: oklch(0.708 0 0);
+  --color-warning: oklch(0.708 0 0);
+  --color-error: oklch(0.704 0.191 22.216);
+}
+
+html {
+  @apply font-sans;
+}
+
+body {
+  @apply bg-base-100 text-base-content;
+}

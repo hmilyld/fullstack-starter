@@ -1,32 +1,42 @@
 # AGENTS.md
 
-## Two independent projects, side-by-side
+## Four independent projects, side-by-side
 
-No monorepo tooling, no shared `node_modules`, no workspace config. `frontend/` and `backend/` each have their own package manager, lockfile, and CLAUDE.md/AGENTS.md. Always run commands from the correct subdirectory.
+No monorepo tooling, no shared `node_modules`, no workspace config. `frontend/`, `frontend-vue/`, `backend/`, and `backend-java/` each have their own package manager, lockfile, and CLAUDE.md/AGENTS.md. Always run commands from the correct subdirectory.
 
 ## Verification commands
 
 After making changes, run verification in the directory you changed:
 
 ```bash
-# Frontend
+# React Frontend
 cd frontend && pnpm build          # type-check + production build (the gate)
 cd frontend && pnpm lint           # eslint
 
-# Backend
+# Vue Frontend
+cd frontend-vue && pnpm build     # type-check + production build (the gate)
+cd frontend-vue && pnpm lint      # eslint
+
+# Python Backend
 cd backend && uv run ruff check .  # lint
+
+# Java Backend
+cd backend-java && mvn spotless:check  # check code format
 ```
 
-No test framework exists on either side. `pnpm build` and `ruff check` are the only gates.
+No test framework exists on any side. `pnpm build` and `ruff check` are the only gates.
 
 ## Dev lifecycle
 
 ```bash
-./dev.sh start    # starts backend (:8000) + frontend (:5173), auto-creates .env with JWT key
-./dev.sh stop     # stops both, cleans up PIDs and stray processes
+./dev.sh start              # starts backend (:8000) + React frontend (:5173)
+./dev.sh start --vue        # starts backend (:8000) + Vue frontend (:5174)
+./dev.sh start --java       # starts Java backend (:8000) + React frontend (:5173)
+./dev.sh start --java --vue # starts Java backend (:8000) + Vue frontend (:5174)
+./dev.sh stop               # stops all, cleans up PIDs and stray processes
 ./dev.sh restart
 ./dev.sh status
-./dev.sh logs     # tail backend.log / frontend.log
+./dev.sh logs               # tail backend.log / frontend.log / frontend-vue.log
 ```
 
 `dev.sh` auto-generates `JWT_SECRET_KEY` and writes `backend/.env` if missing. If you need a fresh DB, delete `backend/app.db` and restart.
@@ -54,7 +64,7 @@ DATABASE_URL=sqlite+aiosqlite:///./app.db
 JWT_SECRET_KEY=<any-random-string>
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
-CORS_ORIGINS=["http://localhost:5173"]
+CORS_ORIGINS=["http://localhost:5173","http://localhost:5174"]
 ```
 
 ## Docker deployment
@@ -72,12 +82,16 @@ SQLite (`app.db`). Auto-created and seeded on backend startup. Seed: 5 users (pa
 
 ## Adding features
 
-**Frontend page:** `frontend/src/pages/<section>/` → route in `router.tsx` → sidebar in `app-sidebar.tsx` → breadcrumb in `header.tsx` → API in `api.ts`.
+**React Frontend page:** `frontend/src/pages/<section>/` → route in `router.tsx` → sidebar in `app-sidebar.tsx` → breadcrumb in `header.tsx` → API in `api.ts`.
+
+**Vue Frontend page:** `frontend-vue/src/pages/<section>/` → route in `router/index.ts` → sidebar in `AppSidebar.vue` → breadcrumb in `AppHeader.vue` → API in `api.ts`.
 
 **Backend module:** `backend/app/modules/<name>/` (router, crud, schemas, models) → mount in `app/main.py` with `app.include_router(router, prefix="/api")`.
 
 ## See also
 
-- `frontend/AGENTS.md` — frontend-specific conventions (shadcn, TypeScript strictness, CRUD patterns)
-- `backend/AGENTS.md` — backend-specific conventions (uv, Ruff, module structure)
-- `frontend/CLAUDE.md` and `backend/CLAUDE.md` — detailed reference for each side
+- `frontend/AGENTS.md` — React frontend-specific conventions (shadcn, TypeScript strictness, CRUD patterns)
+- `frontend-vue/AGENTS.md` — Vue frontend-specific conventions (DaisyUI, Vue best practices, CRUD patterns)
+- `backend/AGENTS.md` — Python backend-specific conventions (uv, Ruff, module structure)
+- `backend-java/CLAUDE.md` — Java backend-specific conventions (Maven, Spotless, module structure)
+- `frontend/CLAUDE.md`, `frontend-vue/CLAUDE.md`, `backend/CLAUDE.md`, `backend-java/CLAUDE.md` — detailed reference for each side

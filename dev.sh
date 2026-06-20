@@ -2,9 +2,10 @@
 
 # 开发环境管理脚本
 # 用法:
-#   ./dev.sh start              - 启动服务 (默认 Python 后端)
+#   ./dev.sh start              - 启动服务 (默认 Python 后端 + React 前端)
 #   ./dev.sh start --java       - 启动 Java 后端
 #   ./dev.sh start --python     - 启动 Python 后端
+#   ./dev.sh start --vue        - 启动 Vue 前端 (替代 React 前端)
 #   ./dev.sh stop               - 停止服务
 #   ./dev.sh restart            - 重启服务
 #   ./dev.sh restart --java     - 重启并切换到 Java 后端
@@ -25,9 +26,11 @@ ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PYTHON_BACKEND_DIR="$ROOT_DIR/backend"
 JAVA_BACKEND_DIR="$ROOT_DIR/backend-java"
 FRONTEND_DIR="$ROOT_DIR/frontend"
+VUE_FRONTEND_DIR="$ROOT_DIR/frontend-vue"
 LOG_DIR="$ROOT_DIR/logs"
 BACKEND_PID_FILE="$ROOT_DIR/.backend.pid"
 FRONTEND_PID_FILE="$ROOT_DIR/.frontend.pid"
+FRONTEND_TYPE_FILE="$ROOT_DIR/.frontend-type"
 BACKEND_TYPE_FILE="$ROOT_DIR/.backend-type"
 
 # 创建日志目录
@@ -72,6 +75,20 @@ set_backend_type() {
     echo "$1" > "$BACKEND_TYPE_FILE"
 }
 
+# 获取当前前端类型
+get_frontend_type() {
+    if [ -f "$FRONTEND_TYPE_FILE" ]; then
+        cat "$FRONTEND_TYPE_FILE"
+    else
+        echo "react"
+    fi
+}
+
+# 设置前端类型
+set_frontend_type() {
+    echo "$1" > "$FRONTEND_TYPE_FILE"
+}
+
 # 启动 Python 后端
 start_python_backend() {
     echo -e "${YELLOW}启动 Python 后端...${NC}"
@@ -95,7 +112,7 @@ DATABASE_URL=sqlite+aiosqlite:///./app.db
 JWT_SECRET_KEY=$JWT_SECRET
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
-CORS_ORIGINS=["http://localhost:5173"]
+CORS_ORIGINS=["http://localhost:5173","http://localhost:5174"]
 EOF
         echo -e "${GREEN}.env 文件已创建${NC}"
     else
@@ -104,6 +121,10 @@ EOF
             sed -i "s/JWT_SECRET_KEY=.*/JWT_SECRET_KEY=$JWT_SECRET/" "$ENV_FILE"
         else
             echo "JWT_SECRET_KEY=$JWT_SECRET" >> "$ENV_FILE"
+        fi
+        # 确保 CORS 包含 Vue 前端端口
+        if ! grep -q "5174" "$ENV_FILE"; then
+            sed -i 's/CORS_ORIGINS=\["http:\/\/localhost:5173"\]/CORS_ORIGINS=["http:\/\/localhost:5173","http:\/\/localhost:5174"]/' "$ENV_FILE"
         fi
         echo -e "${GREEN}JWT 密钥已更新${NC}"
     fi
@@ -153,15 +174,15 @@ start_java_backend() {
     echo -e "${GREEN}Java 后端服务已启动 (PID: $(cat $BACKEND_PID_FILE))${NC}"
 }
 
-# 启动前端
-start_frontend() {
+# 启动 React 前端
+start_react_frontend() {
     if is_running "$FRONTEND_PID_FILE"; then
         echo -e "${YELLOW}前端服务已在运行 (PID: $(get_pid $FRONTEND_PID_FILE))${NC}"
         return
     fi
 
     if [ ! -d "$FRONTEND_DIR" ]; then
-        echo -e "${RED}错误: 前端目录不存在${NC}"
+        echo -e "${RED}错误: React 前端目录不存在${NC}"
         exit 1
     fi
 
@@ -178,12 +199,43 @@ start_frontend() {
     cd "$FRONTEND_DIR"
     nohup pnpm dev --host 0.0.0.0 > "$LOG_DIR/frontend.log" 2>&1 &
     echo $! > "$FRONTEND_PID_FILE"
+    set_frontend_type "react"
     echo -e "${GREEN}前端服务已启动 (PID: $(cat $FRONTEND_PID_FILE))${NC}"
+}
+
+# 启动 Vue 前端
+start_vue_frontend() {
+    if is_running "$FRONTEND_PID_FILE"; then
+        echo -e "${YELLOW}前端服务已在运行 (PID: $(get_pid $FRONTEND_PID_FILE))${NC}"
+        return
+    fi
+
+    if [ ! -d "$VUE_FRONTEND_DIR" ]; then
+        echo -e "${RED}错误: Vue 前端目录不存在${NC}"
+        exit 1
+    fi
+
+    # 安装前端依赖
+    echo -e "\n${YELLOW}检查 Vue 前端依赖...${NC}"
+    cd "$VUE_FRONTEND_DIR"
+    if [ ! -d "node_modules" ]; then
+        echo -e "${YELLOW}安装 Vue 前端依赖...${NC}"
+        pnpm install
+    fi
+
+    # 启动前端服务
+    echo -e "\n${YELLOW}启动 Vue 前端服务...${NC}"
+    cd "$VUE_FRONTEND_DIR"
+    nohup pnpm dev --host 0.0.0.0 > "$LOG_DIR/frontend-vue.log" 2>&1 &
+    echo $! > "$FRONTEND_PID_FILE"
+    set_frontend_type "vue"
+    echo -e "${GREEN}Vue 前端服务已启动 (PID: $(cat $FRONTEND_PID_FILE))${NC}"
 }
 
 # 启动服务
 start() {
     local backend_type="${1:-python}"
+    local frontend_type="${2:-react}"
 
     echo -e "${BLUE}========================================${NC}"
     echo -e "${BLUE}       启动开发环境${NC}"
@@ -202,16 +254,28 @@ start() {
         sleep 2
     fi
 
-    start_frontend
+    # 启动前端
+    if [ "$frontend_type" = "vue" ]; then
+        start_vue_frontend
+    else
+        start_react_frontend
+    fi
 
     # 显示信息
     local backend_type_display=$(get_backend_type)
+    local frontend_type_display=$(get_frontend_type)
+    local frontend_port=5173
+    if [ "$frontend_type_display" = "vue" ]; then
+        frontend_port=5174
+    fi
+
     echo -e "\n${BLUE}========================================${NC}"
     echo -e "${BLUE}       服务已启动${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo -e "${GREEN}后端类型: ${backend_type_display}${NC}"
+    echo -e "${GREEN}前端类型: ${frontend_type_display}${NC}"
     echo -e "${GREEN}后端地址: http://localhost:8000${NC}"
-    echo -e "${GREEN}前端地址: http://localhost:5173${NC}"
+    echo -e "${GREEN}前端地址: http://localhost:${frontend_port}${NC}"
     echo -e "${GREEN}日志目录: $LOG_DIR${NC}"
     echo -e "${YELLOW}查看状态: ./dev.sh status${NC}"
     echo -e "${YELLOW}查看日志: ./dev.sh logs${NC}"
@@ -292,8 +356,13 @@ status() {
     fi
 
     # 前端状态
+    local frontend_type=$(get_frontend_type)
+    local frontend_port=5173
+    if [ "$frontend_type" = "vue" ]; then
+        frontend_port=5174
+    fi
     if is_running "$FRONTEND_PID_FILE"; then
-        echo -e "${GREEN}前端服务: 运行中 (PID: $(get_pid $FRONTEND_PID_FILE))${NC}"
+        echo -e "${GREEN}前端服务: 运行中 (PID: $(get_pid $FRONTEND_PID_FILE), 类型: $frontend_type, 端口: $frontend_port)${NC}"
     else
         echo -e "${RED}前端服务: 未运行${NC}"
     fi
@@ -314,9 +383,15 @@ logs() {
         echo -e "${YELLOW}后端日志文件不存在${NC}"
     fi
 
-    if [ -f "$LOG_DIR/frontend.log" ]; then
-        echo -e "\n${GREEN}=== 前端日志 (最后 20 行) ===${NC}"
-        tail -20 "$LOG_DIR/frontend.log"
+    local frontend_type=$(get_frontend_type)
+    local frontend_log="$LOG_DIR/frontend.log"
+    if [ "$frontend_type" = "vue" ]; then
+        frontend_log="$LOG_DIR/frontend-vue.log"
+    fi
+
+    if [ -f "$frontend_log" ]; then
+        echo -e "\n${GREEN}=== 前端日志 ($frontend_type, 最后 20 行) ===${NC}"
+        tail -20 "$frontend_log"
     else
         echo -e "${YELLOW}前端日志文件不存在${NC}"
     fi
@@ -327,6 +402,7 @@ logs() {
 # 重启服务
 restart() {
     local backend_type="${1:-}"
+    local frontend_type="${2:-}"
 
     echo -e "${BLUE}========================================${NC}"
     echo -e "${BLUE}       重启开发环境${NC}"
@@ -334,34 +410,40 @@ restart() {
 
     stop
     echo ""
-    start "$backend_type"
+    start "$backend_type" "$frontend_type"
 }
 
 # 显示帮助
 usage() {
-    echo -e "${BLUE}用法: ./dev.sh [command] [--python|--java]${NC}"
+    echo -e "${BLUE}用法: ./dev.sh [command] [--python|--java] [--vue]${NC}"
     echo ""
     echo -e "${GREEN}命令:${NC}"
-    echo -e "  ${GREEN}start${NC}              启动服务 (默认 Python 后端)"
+    echo -e "  ${GREEN}start${NC}              启动服务 (默认 Python 后端 + React 前端)"
     echo -e "  ${GREEN}start --java${NC}       启动 Java 后端"
     echo -e "  ${GREEN}start --python${NC}     启动 Python 后端"
+    echo -e "  ${GREEN}start --vue${NC}        启动 Vue 前端 (替代 React 前端)"
     echo -e "  ${GREEN}stop${NC}               停止服务"
     echo -e "  ${GREEN}restart${NC}            重启服务"
     echo -e "  ${GREEN}restart --java${NC}     重启并切换到 Java 后端"
     echo -e "  ${GREEN}restart --python${NC}   重启并切换到 Python 后端"
+    echo -e "  ${GREEN}restart --vue${NC}      重启并切换到 Vue 前端"
     echo -e "  ${GREEN}status${NC}             查看状态"
     echo -e "  ${GREEN}logs${NC}               查看日志"
     echo ""
     echo -e "${YELLOW}示例:${NC}"
-    echo -e "  ./dev.sh start              # 启动 Python 后端 + 前端"
-    echo -e "  ./dev.sh start --java       # 启动 Java 后端 + 前端"
+    echo -e "  ./dev.sh start              # 启动 Python 后端 + React 前端"
+    echo -e "  ./dev.sh start --java       # 启动 Java 后端 + React 前端"
+    echo -e "  ./dev.sh start --vue        # 启动 Python 后端 + Vue 前端"
+    echo -e "  ./dev.sh start --java --vue # 启动 Java 后端 + Vue 前端"
     echo -e "  ./dev.sh stop               # 停止所有服务"
     echo -e "  ./dev.sh restart --java     # 停止后重启 Java 后端"
+    echo -e "  ./dev.sh restart --vue      # 停止后重启 Vue 前端"
 }
 
 # 解析参数
 parse_args() {
     BACKEND_TYPE="python"
+    FRONTEND_TYPE="react"
     COMMAND=""
 
     for arg in "$@"; do
@@ -371,6 +453,9 @@ parse_args() {
                 ;;
             --python)
                 BACKEND_TYPE="python"
+                ;;
+            --vue)
+                FRONTEND_TYPE="vue"
                 ;;
             start|stop|restart|status|logs)
                 COMMAND="$arg"
@@ -394,13 +479,13 @@ parse_args "$@"
 
 case "$COMMAND" in
     start)
-        start "$BACKEND_TYPE"
+        start "$BACKEND_TYPE" "$FRONTEND_TYPE"
         ;;
     stop)
         stop
         ;;
     restart)
-        restart "$BACKEND_TYPE"
+        restart "$BACKEND_TYPE" "$FRONTEND_TYPE"
         ;;
     status)
         status

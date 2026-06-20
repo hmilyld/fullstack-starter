@@ -40,7 +40,7 @@ backend-java/
 ## Architecture
 
 ```
-Browser → Vite dev server (:5173)
+Browser → Vite dev server (:5173 React / :5174 Vue)
            └─ /api/* proxied to Spring Boot (:8000)
                 └─ BearerTokenFilter → Sa-Token Auth Check
                      └─ Controller → Service → Repository
