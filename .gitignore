@@ -1,15 +1,25 @@
 # === 前端 ===
-frontend/node_modules/
-frontend/dist/
-frontend/dist-ssr/
+*/node_modules/
+*/dist/
+*/dist-ssr/
 *.local
 
-# === 后端 ===
+# === 后端 (Python) ===
 backend/.venv/
 backend/__pycache__/
 backend/.ruff_cache/
 *.py[cod]
 *.so
+
+# === 后端 (Java) ===
+backend-java/target/
+backend-java/*.class
+backend-java/bin/
+backend-java/.settings/
+backend-java/.classpath
+backend-java/.project
+backend-java/data/app.db
+backend-java/*.log
 
 # === 数据库 ===
 *.db
@@ -20,12 +30,16 @@ backend/.ruff_cache/
 .env.local
 .env.*.local
 backend/.env
+.backend-type
+.frontend-type
 
 # === Docker ===
 docker-compose.override.yml
 
 # === IDE ===
 .vscode/
+.claude/
+.mimocode/
 !.vscode/extensions.json
 .idea/
 *.suo

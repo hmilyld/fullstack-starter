@@ -1,19 +1,21 @@
 import { Skeleton } from "@/components/ui/skeleton"
-import { TableRow, TableCell } from "@/components/ui/table"
+import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table"
 
 export function TableSkeletonRow({ colSpan = 5 }: { colSpan?: number }) {
   return (
-    <>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <TableRow key={i}>
-          {Array.from({ length: colSpan }).map((_, j) => (
-            <TableCell key={j}>
-              <Skeleton className="h-4 w-full" />
-            </TableCell>
-          ))}
-        </TableRow>
-      ))}
-    </>
+    <Table>
+      <TableBody>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <TableRow key={i}>
+            {Array.from({ length: colSpan }).map((_, j) => (
+              <TableCell key={j}>
+                <Skeleton className="h-4 w-full" />
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   )
 }
 

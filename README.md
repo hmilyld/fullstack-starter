@@ -1,36 +1,42 @@
 # 管理系统
 
-基于 React + FastAPI 的全栈后台管理系统，提供用户、角色、权限、系统配置及 AI 模型管理的完整功能。
+基于 React/Vue + FastAPI/Spring Boot 的全栈后台管理系统，提供用户、角色、权限、系统配置及 AI 模型管理的完整功能。
 
 ## 技术栈
 
-| 层级 | 技术                                                             |
-| ---- | ---------------------------------------------------------------- |
-| 前端 | React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4 + shadcn/ui v4 |
-| 后端 | Python 3.12+ + FastAPI + SQLAlchemy 2.0 (async) + SQLite          |
-| 认证 | JWT (PyJWT) + bcrypt                                             |
-| 部署 | Docker + Nginx + Uvicorn                                         |
+| 层级 | 技术 |
+|------|------|
+| 前端 (React) | React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4 + shadcn/ui v4 |
+| 前端 (Vue) | Vue 3 + TypeScript + Vite 6 + Tailwind CSS 4 + DaisyUI 5 |
+| 后端 (Python) | Python 3.12+ + FastAPI + SQLAlchemy 2.0 (async) + SQLite |
+| 后端 (Java) | Java 21 + Spring Boot 3.2 + Sa-Token + JPA + SQLite |
+| 认证 | JWT (PyJWT) + bcrypt / Sa-Token |
+| 部署 | Docker + Nginx + Uvicorn |
 
 ## 快速开始
 
 ### 一键启动（推荐）
 
 ```bash
-./dev.sh start    # 启动前后端服务
-./dev.sh stop     # 停止服务
-./dev.sh restart  # 重启服务
-./dev.sh status   # 查看状态
-./dev.sh logs     # 查看日志
+./dev.sh start              # 启动 Python 后端 + React 前端
+./dev.sh start --vue        # 启动 Python 后端 + Vue 前端
+./dev.sh start --java       # 启动 Java 后端 + React 前端
+./dev.sh start --java --vue # 启动 Java 后端 + Vue 前端
+./dev.sh stop               # 停止服务
+./dev.sh restart            # 重启服务
+./dev.sh status             # 查看状态
+./dev.sh logs               # 查看日志
 ```
 
 启动后访问：
-- 前端：http://localhost:5173
+- React 前端：http://localhost:5173
+- Vue 前端：http://localhost:5174
 - 后端 API：http://localhost:8000
 - API 文档：http://localhost:8000/docs
 
 ### 手动启动
 
-**前端**
+**React 前端**
 
 ```bash
 cd frontend
@@ -38,7 +44,15 @@ pnpm install
 pnpm dev          # http://localhost:5173
 ```
 
-**后端**
+**Vue 前端**
+
+```bash
+cd frontend-vue
+pnpm install
+pnpm dev          # http://localhost:5174
+```
+
+**后端 (Python)**
 
 ```bash
 cd backend
@@ -46,13 +60,23 @@ uv sync
 uv run uvicorn app.main:app --reload  # http://localhost:8000
 ```
 
+**后端 (Java)**
+
+```bash
+cd backend-java
+mvn clean package -DskipTests
+java -jar target/fullstack-backend-1.0.0.jar  # http://localhost:8000
+```
+
 首次启动会自动创建数据库、填充种子数据和预设 AI 模型。
 
 ## 项目结构
 
 ```
-├── frontend/          # React 前端
-├── backend/           # FastAPI 后端
+├── frontend/          # React 前端 (端口 5173)
+├── frontend-vue/      # Vue 前端 (端口 5174)
+├── backend/           # Python FastAPI 后端
+├── backend-java/      # Java Spring Boot 后端
 ├── dev.sh             # 开发环境管理脚本
 ├── Dockerfile         # 多阶段构建
 ├── nginx.conf         # Nginx 配置
@@ -63,15 +87,15 @@ uv run uvicorn app.main:app --reload  # http://localhost:8000
 
 ## 功能模块
 
-| 模块     | 路由                   | 说明                                       |
-| -------- | ---------------------- | ------------------------------------------ |
-| 仪表盘   | `/dashboard`           | 统计概览、最近活动                         |
-| 用户管理 | `/settings/user`       | 用户增删改查、角色维护、批量修改角色、重置密码 |
-| 角色管理 | `/settings/role`       | 角色增删改查、权限分配                     |
-| 权限管理 | `/settings/permission` | 菜单权限 + 操作权限两级控制                |
-| 系统设置 | `/settings/system`     | 站点信息、注册策略、邮件 SMTP 配置         |
-| AI模型配置 | `/settings/ai-model` | AI 模型管理、预设模型管理、模型测试        |
-| 个人设置 | `/settings/profile`    | 个人信息、修改密码（通过用户菜单访问）     |
+| 模块 | 路由 | 说明 |
+|------|------|------|
+| 仪表盘 | `/dashboard` | 统计概览、最近活动 |
+| 用户管理 | `/settings/user` | 用户增删改查、角色维护、批量修改角色、重置密码 |
+| 角色管理 | `/settings/role` | 角色增删改查、权限分配 |
+| 权限管理 | `/settings/permission` | 菜单权限 + 操作权限两级控制 |
+| 系统设置 | `/settings/system` | 站点信息、注册策略、邮件 SMTP 配置 |
+| AI模型配置 | `/settings/ai-model` | AI 模型管理、预设模型管理、模型测试 |
+| 个人设置 | `/settings/profile` | 个人信息、修改密码（通过用户菜单访问） |
 
 ## 权限系统
 
@@ -116,13 +140,13 @@ uv run uvicorn app.main:app --reload  # http://localhost:8000
 
 **默认用户**（密码均为 `123456`）：
 
-| 用户名   | 角色   | 邮箱                 |
-| -------- | ------ | -------------------- |
-| admin    | 管理员 | admin@example.com    |
+| 用户名 | 角色 | 邮箱 |
+|--------|------|------|
+| admin | 管理员 | admin@example.com |
 | zhangsan | 管理员 | zhangsan@example.com |
-| lisi     | 普通用户 | lisi@example.com   |
-| wangwu   | 普通用户 | wangwu@example.com |
-| zhaoliu  | 普通用户 | zhaoliu@example.com |
+| lisi | 普通用户 | lisi@example.com |
+| wangwu | 普通用户 | wangwu@example.com |
+| zhaoliu | 普通用户 | zhaoliu@example.com |
 
 **预设角色**：admin（管理员）、user（普通用户）、pending_review（待审核），均不可删除。
 
@@ -237,7 +261,7 @@ JWT_SECRET_KEY=your-secret-key docker compose up -d
 
 ## 开发命令速查
 
-### 前端（`frontend/` 目录）
+### React 前端（`frontend/` 目录）
 
 ```bash
 pnpm dev          # 启动开发服务器
@@ -246,11 +270,28 @@ pnpm lint         # ESLint
 pnpm format       # Prettier 格式化
 ```
 
-### 后端（`backend/` 目录）
+### Vue 前端（`frontend-vue/` 目录）
+
+```bash
+pnpm dev          # 启动开发服务器
+pnpm build        # 类型检查 + 生产构建
+pnpm lint         # ESLint
+```
+
+### Python 后端（`backend/` 目录）
 
 ```bash
 uv sync                                        # 安装依赖
 uv run uvicorn app.main:app --reload           # 启动开发服务器
 uv run ruff check .                            # 代码检查
 uv run ruff format .                           # 格式化
+```
+
+### Java 后端（`backend-java/` 目录）
+
+```bash
+mvn clean package -DskipTests              # 构建
+mvn spring-boot:run                        # 启动开发服务器
+mvn spotless:check                         # 检查代码格式
+mvn spotless:apply                         # 自动格式化
 ```

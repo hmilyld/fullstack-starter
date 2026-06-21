@@ -52,7 +52,7 @@ app/
 ## Key Conventions
 
 - **API prefix:** All routes mounted under `/api` in `app/main.py`
-- **CORS:** Configured for `http://localhost:5173` (frontend dev server)
+- **CORS:** Configured for `http://localhost:5173` (React) and `http://localhost:5174` (Vue) frontend dev servers
 - **UI language:** All API messages, seed data, and comments are in Chinese
 - **Pydantic field naming:** Request/response schemas use camelCase (`roleId`, `pageSize`); SQLAlchemy models use snake_case (`role_id`). Mapping happens in the CRUD/route layer.
 - **Ruff config:** `target-version = "py312"`, `line-length = 120`, select `E,F,I,N,W,UP`
