@@ -4,6 +4,24 @@ on:
   push:
     branches: [main, master]
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      frontend:
+        description: "前端类型"
+        required: true
+        default: "react"
+        type: choice
+        options:
+          - react
+          - vue
+      backend:
+        description: "后端类型"
+        required: true
+        default: "python"
+        type: choice
+        options:
+          - python
+          - java
 
 env:
   REGISTRY: ghcr.io
@@ -25,24 +43,39 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
+          cache-dependency-path: ${{ (inputs.frontend == 'vue' || github.event_name == 'workflow_dispatch' && inputs.frontend == 'vue') && 'frontend-vue/pnpm-lock.yaml' || 'frontend/pnpm-lock.yaml' }}
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: frontend
+        working-directory: ${{ (inputs.frontend == 'vue' || github.event_name == 'workflow_dispatch' && inputs.frontend == 'vue') && 'frontend-vue' || 'frontend' }}
 
       - name: Frontend build
         run: pnpm build
-        working-directory: frontend
+        working-directory: ${{ (inputs.frontend == 'vue' || github.event_name == 'workflow_dispatch' && inputs.frontend == 'vue') && 'frontend-vue' || 'frontend' }}
 
-      # ── 后端 ruff check ──
-      - uses: astral-sh/setup-uv@v5
+      # ── 后端检查 ──
+      - name: Backend lint (Python)
+        if: inputs.backend != 'java' && (github.event_name != 'workflow_dispatch' || inputs.backend != 'java')
+        uses: astral-sh/setup-uv@v5
         with:
           version: latest
 
-      - name: Backend lint
+      - name: Backend ruff check
+        if: inputs.backend != 'java' && (github.event_name != 'workflow_dispatch' || inputs.backend != 'java')
         run: uvx ruff check .
         working-directory: backend
+
+      - name: Backend lint (Java)
+        if: inputs.backend == 'java'
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Maven spotless check
+        if: inputs.backend == 'java'
+        run: mvn spotless:check
+        working-directory: backend-java
 
   # ── Job 2: 构建并推送镜像 ──
   docker:
@@ -65,6 +98,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine build params
+        id: params
+        run: |
+          FRONTEND="${{ inputs.frontend || 'react' }}"
+          BACKEND="${{ inputs.backend || 'python' }}"
+          echo "frontend=$FRONTEND" >> $GITHUB_OUTPUT
+          echo "backend=$BACKEND" >> $GITHUB_OUTPUT
+          if [ "$BACKEND" = "java" ]; then
+            echo "dockerfile=backend-java/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile=Dockerfile" >> $GITHUB_OUTPUT
+          fi
+          echo "tag_suffix=-${FRONTEND}-${BACKEND}" >> $GITHUB_OUTPUT
+
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -72,12 +119,16 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.params.outputs.frontend }}-${{ steps.params.outputs.backend }},enable={{is_default_branch}}
             type=ref,event=tag
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ steps.params.outputs.dockerfile }}
+          build-args: |
+            FRONTEND=${{ steps.params.outputs.frontend }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

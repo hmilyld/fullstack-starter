@@ -69,10 +69,14 @@ CORS_ORIGINS=["http://localhost:5173","http://localhost:5174"]
 
 ## Docker deployment
 
-Multi-stage Dockerfile: frontend builds in Node, backend runs in Python. Nginx on port 80 serves static files and reverse-proxies `/api/*` to uvicorn on port 8000.
+Multi-stage Dockerfile: frontend builds in Node, backend runs in Python or Java. Nginx on port 80 serves static files and reverse-proxies `/api/*` to backend on port 8000.
 
 ```bash
-./build.sh                          # builds Docker image (default: fullstack-admin:latest)
+./build.sh                          # builds Python backend + React frontend (default)
+./build.sh --java                   # builds Java backend + React frontend
+./build.sh --vue                    # builds Python backend + Vue frontend
+./build.sh --java --vue             # builds Java backend + Vue frontend
+./build.sh myapp v1.0               # custom image name and tag
 JWT_SECRET_KEY=secret docker compose up -d   # requires JWT_SECRET_KEY
 ```
 

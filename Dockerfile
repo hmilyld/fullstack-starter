@@ -3,18 +3,22 @@
 # ============================================================
 FROM node:24-alpine AS frontend-builder
 
+ARG FRONTEND=react
+
 RUN corepack enable && corepack prepare pnpm@latest --activate \
     && npm config set registry https://registry.npmmirror.com
 
 WORKDIR /build
 
-# Install frontend dependencies (cached layer)
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# Copy both frontend directories
+COPY frontend/ ./react/
+COPY frontend-vue/ ./vue/
 
-# Copy frontend source and build
-COPY frontend/ ./
-RUN pnpm build
+# Select and build the chosen frontend
+ENV CI=true
+RUN cp -r ${FRONTEND}/* . && rm -rf react vue \
+    && pnpm install --frozen-lockfile \
+    && pnpm build
 
 
 # ============================================================

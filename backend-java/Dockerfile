@@ -2,13 +2,23 @@
 # Stage 1: Build frontend
 # ============================================================
 FROM node:24-alpine AS frontend-builder
+
+ARG FRONTEND=react
+
 RUN corepack enable && corepack prepare pnpm@latest --activate \
     && npm config set registry https://registry.npmmirror.com
+
 WORKDIR /build
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-COPY frontend/ ./
-RUN pnpm build
+
+# Copy both frontend directories
+COPY frontend/ ./react/
+COPY frontend-vue/ ./vue/
+
+# Select and build the chosen frontend
+ENV CI=true
+RUN cp -r ${FRONTEND}/* . && rm -rf react vue \
+    && pnpm install --frozen-lockfile \
+    && pnpm build
 
 # ============================================================
 # Stage 2: Build backend
