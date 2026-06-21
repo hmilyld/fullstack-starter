@@ -1,7 +1,7 @@
 # === 前端 ===
-frontend/node_modules/
-frontend/dist/
-frontend/dist-ssr/
+*/node_modules/
+*/dist/
+*/dist-ssr/
 *.local
 
 # === 后端 (Python) ===
@@ -30,12 +30,16 @@ backend-java/*.log
 .env.local
 .env.*.local
 backend/.env
+.backend-type
+.frontend-type
 
 # === Docker ===
 docker-compose.override.yml
 
 # === IDE ===
 .vscode/
+.claude/
+.mimocode/
 !.vscode/extensions.json
 .idea/
 *.suo
