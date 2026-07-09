@@ -12,14 +12,14 @@ backend/.ruff_cache/
 *.so
 
 # === 后端 (Java) ===
-backend-java/target/
-backend-java/*.class
-backend-java/bin/
-backend-java/.settings/
-backend-java/.classpath
-backend-java/.project
-backend-java/data/app.db
-backend-java/*.log
+backend/target/
+backend/*.class
+backend/bin/
+backend/.settings/
+backend/.classpath
+backend/.project
+backend/data/app.db
+backend/*.log
 
 # === 数据库 ===
 *.db

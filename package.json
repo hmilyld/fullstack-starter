@@ -1,0 +1,45 @@
+{
+  "name": "create-fullstack-app",
+  "version": "1.0.0",
+  "description": "脚手架工具 - 快速创建全栈应用（React/Vue + Python/Java）",
+  "main": "dist/index.js",
+  "bin": {
+    "create-fullstack-app": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "scaffolding",
+    "fullstack",
+    "react",
+    "vue",
+    "java",
+    "python",
+    "fastapi",
+    "spring-boot",
+    "docker"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.2.1",
+    "chalk": "^4.1.2",
+    "ejs": "^3.1.10",
+    "fs-extra": "^11.2.0",
+    "ora": "^8.1.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,30 @@
+# 构建产物
+target/
+build/
+bin/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+.vscode/
+
+# 日志
+*.log
+
+# 操作系统
+.DS_Store
+Thumbs.db
