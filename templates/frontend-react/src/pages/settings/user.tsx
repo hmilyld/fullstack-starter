@@ -76,6 +76,7 @@ export function UsersPage() {
     })
   }, [])
   const [search, setSearch] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
   const [page, setPage] = React.useState(1)
   const [total, setTotal] = React.useState(0)
   const [tableLoading, setTableLoading] = React.useState(true)
@@ -83,15 +84,23 @@ export function UsersPage() {
   const [roleSubmitting, setRoleSubmitting] = React.useState(false)
   const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
 
+  // 搜索防抖：输入停止 300ms 后再触发查询
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
   const loadData = React.useCallback(async () => {
     setTableLoading(true)
-    const res = await getUsers({ search, page, pageSize: PAGE_SIZE })
+    const res = await getUsers({ search: debouncedSearch, page, pageSize: PAGE_SIZE })
     if (res.code === 0) {
       setUsers(res.data.list)
       setTotal(res.data.total)
+    } else {
+      appToast.error(res.message || "加载数据失败")
     }
     setTableLoading(false)
-  }, [search, page])
+  }, [debouncedSearch, page])
 
   React.useEffect(() => { loadData() }, [loadData])
 
@@ -151,22 +160,25 @@ export function UsersPage() {
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault()
     setEditSubmitting(true)
-    if (editingUser) {
-      await updateUser(editingUser.id, {
-        username: editForm.username,
-        name: editForm.name,
-        email: editForm.email,
-        roleId: editForm.roleId,
-      })
-    } else {
-      await createUser({
-        username: editForm.username,
-        name: editForm.name,
-        email: editForm.email,
-        roleId: editForm.roleId,
-      })
-    }
+    const res = editingUser
+      ? await updateUser(editingUser.id, {
+          username: editForm.username,
+          name: editForm.name,
+          email: editForm.email,
+          roleId: editForm.roleId,
+        })
+      : await createUser({
+          username: editForm.username,
+          name: editForm.name,
+          email: editForm.email,
+          roleId: editForm.roleId,
+        })
     setEditSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "操作失败")
+      return
+    }
+    appToast.success(editingUser ? "保存成功" : "创建成功")
     setEditOpen(false)
     loadData()
   }
@@ -180,11 +192,15 @@ export function UsersPage() {
 
   // 提交角色修改
   async function handleRoleSubmit() {
+    if (!roleTarget) return
     setRoleSubmitting(true)
-    if (roleTarget) {
-      await updateUser(roleTarget.id, { roleId: roleValue })
-    }
+    const res = await updateUser(roleTarget.id, { roleId: roleValue })
     setRoleSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "操作失败")
+      return
+    }
+    appToast.success("角色已更新")
     setRoleOpen(false)
     loadData()
   }
@@ -197,11 +213,15 @@ export function UsersPage() {
 
   // 确认删除
   async function handleDeleteConfirm() {
+    if (!deleteTarget) return
     setDeleteSubmitting(true)
-    if (deleteTarget) {
-      await apiDeleteUser(deleteTarget.id)
-    }
+    const res = await apiDeleteUser(deleteTarget.id)
     setDeleteSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "删除失败")
+      return
+    }
+    appToast.success("删除成功")
     setDeleteOpen(false)
     loadData()
   }
@@ -276,8 +296,13 @@ export function UsersPage() {
   async function handleResetSubmit() {
     if (!resetTarget) return
     setResetSubmitting(true)
-    await resetPassword(resetTarget.id, newPassword)
+    const res = await resetPassword(resetTarget.id, newPassword)
     setResetSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "重置失败")
+      return
+    }
+    appToast.success("密码已重置")
     setResetOpen(false)
     loadData()
   }

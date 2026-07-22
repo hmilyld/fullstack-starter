@@ -1,25 +1,38 @@
-# === 前端 ===
-*/node_modules/
-*/dist/
-*/dist-ssr/
-*.local
+# === 依赖 ===
+node_modules/
+.pnp
+.pnp.js
+package-lock.json
+
+# === 构建产物 ===
+dist/
+build/
+target/
+dist-ssr/
+
+# === TypeScript 缓存 ===
+*.tsbuildinfo
 
 # === 后端 (Python) ===
-backend/.venv/
-backend/__pycache__/
-backend/.ruff_cache/
+__pycache__/
 *.py[cod]
+*$py.class
 *.so
+.venv/
+venv/
+.ruff_cache/
+.mypy_cache/
 
 # === 后端 (Java) ===
-backend/target/
-backend/*.class
-backend/bin/
-backend/.settings/
-backend/.classpath
-backend/.project
-backend/data/app.db
-backend/*.log
+*.class
+*.jar
+*.war
+*.ear
+.gradle/
+.settings/
+.classpath
+.project
+bin/
 
 # === 数据库 ===
 *.db
@@ -29,34 +42,35 @@ backend/*.log
 .env
 .env.local
 .env.*.local
-backend/.env
 .backend-type
 .frontend-type
 
-# === Docker ===
-docker-compose.override.yml
+# === 日志 ===
+*.log
+logs/
+npm-debug.log*
 
 # === IDE ===
 .vscode/
-.claude/
-.mimocode/
-!.vscode/extensions.json
 .idea/
+.opencode/
+.claude/
+.mimo/
+*.sw?
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
 
 # === OS ===
 .DS_Store
 Thumbs.db
 
-# === 日志 ===
-logs/
-*.log
-npm-debug.log*
-pnpm-debug.log*
+# === Docker ===
+docker-compose.override.yml
 
 # === 进程文件 ===
 *.pid
+
+# === 其他 ===
+REVIEW.md

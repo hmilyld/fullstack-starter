@@ -46,6 +46,7 @@ import {
   SEED_OPERATION_PERMISSIONS,
 } from "@/lib/permissions"
 import { getRoles, createRole, updateRole, deleteRole as apiDeleteRole } from "@/lib/api"
+import { appToast } from "@/lib/toast"
 
 const PAGE_SIZE = 8
 
@@ -65,6 +66,8 @@ export function RolesPage() {
     if (res.code === 0) {
       setRoles(res.data.list)
       setTotal(res.data.total)
+    } else {
+      appToast.error(res.message || "加载数据失败")
     }
     setTableLoading(false)
   }, [search, page])
@@ -111,20 +114,23 @@ export function RolesPage() {
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault()
     setEditSubmitting(true)
-    if (editingRole) {
-      await updateRole(editingRole.id, {
-        name: editForm.name,
-        description: editForm.description,
-        permissions: editPermissions,
-      })
-    } else {
-      await createRole({
-        name: editForm.name,
-        description: editForm.description,
-        permissions: editPermissions,
-      })
-    }
+    const res = editingRole
+      ? await updateRole(editingRole.id, {
+          name: editForm.name,
+          description: editForm.description,
+          permissions: editPermissions,
+        })
+      : await createRole({
+          name: editForm.name,
+          description: editForm.description,
+          permissions: editPermissions,
+        })
     setEditSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "操作失败")
+      return
+    }
+    appToast.success(editingRole ? "保存成功" : "创建成功")
     setEditOpen(false)
     loadData()
   }
@@ -172,11 +178,15 @@ export function RolesPage() {
   }
 
   async function handleDeleteConfirm() {
+    if (!deleteTarget) return
     setDeleteSubmitting(true)
-    if (deleteTarget) {
-      await apiDeleteRole(deleteTarget.id)
-    }
+    const res = await apiDeleteRole(deleteTarget.id)
     setDeleteSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "删除失败")
+      return
+    }
+    appToast.success("删除成功")
     setDeleteOpen(false)
     loadData()
   }

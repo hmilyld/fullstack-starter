@@ -1,6 +1,7 @@
 package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaMode;
 import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.dto.*;
@@ -56,7 +57,7 @@ public ApiResponse<?> resetPassword(
 }
 
 @PostMapping("/batch-role")
-@SaCheckPermission("users.edit")
+@SaCheckPermission(value = {"users.edit", "users.assign_role"}, mode = SaMode.AND)
 public ApiResponse<?> batchUpdateRole(@RequestBody @Valid BatchRoleUpdateRequest req) {
 	Long currentUserId = StpUtil.getLoginIdAsLong();
 	return userService.batchUpdateRole(req, currentUserId);

@@ -35,6 +35,12 @@ export function RegisterPage() {
     const email = (form.elements.namedItem("email") as HTMLInputElement).value
     const password = (form.elements.namedItem("password") as HTMLInputElement).value
 
+    if (password.length < 6) {
+      appToast.error("密码长度不能少于6位")
+      setSubmitting(false)
+      return
+    }
+
     const res = await register({ username, email, password })
     if (res.code === 0) {
       appToast.success("注册成功")

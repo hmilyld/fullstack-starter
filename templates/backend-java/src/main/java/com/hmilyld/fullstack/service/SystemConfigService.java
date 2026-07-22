@@ -82,8 +82,6 @@ private Map<String, Object> toOutMap(SystemConfig config) {
 }
 
 private String maskPassword(String password) {
-	if (password == null) return "****";
-	if (password.length() <= 4) return "****";
-	return password.substring(0, 2) + "****" + password.substring(password.length() - 2);
+	return "****";
 }
 }

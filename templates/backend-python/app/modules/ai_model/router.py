@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models import User
 from app.core.schemas import ApiResponse, PaginatedData
 from app.database import get_db
-from app.deps import require_permission
+from app.deps import get_current_user, require_permission
 from app.modules.ai_model import crud
 from app.modules.ai_model.schemas import (
     AiModelCreate,
@@ -53,6 +53,7 @@ async def get_ai_model_preset_groups(
 
 @router.get("/presets/active")
 async def get_active_ai_model_presets(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取所有启用的预设模型（无需认证，供新增模型时选择）"""
@@ -168,6 +169,7 @@ async def get_ai_models(
 
 @router.get("/default")
 async def get_default_model(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取默认模型（无需认证，供其他模块调用，不返回 API Key）"""
@@ -180,6 +182,7 @@ async def get_default_model(
 @router.get("/by-alias/{alias}")
 async def get_model_by_alias(
     alias: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """通过别名获取模型（无需认证，供其他模块调用，不返回 API Key）"""

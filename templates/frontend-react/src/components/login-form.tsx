@@ -40,6 +40,12 @@ export function LoginForm({
     const account = (form.elements.namedItem("account") as HTMLInputElement).value
     const password = (form.elements.namedItem("password") as HTMLInputElement).value
 
+    if (password.length < 6) {
+      appToast.error("密码长度不能少于6位")
+      setSubmitting(false)
+      return
+    }
+
     const res = await apiLogin(account, password)
     if (res.code === 0) {
       login(res.data.token, res.data.user)

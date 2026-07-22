@@ -54,6 +54,7 @@ import {
   updatePermission,
   deletePermission as apiDeletePermission,
 } from "@/lib/api"
+import { appToast } from "@/lib/toast"
 
 type PermissionTreeNode = Permission & {
   children: Permission[]
@@ -83,7 +84,9 @@ export function PermissionPage() {
       getPermissions({ type: "operation" }),
     ])
     if (menuRes.code === 0) setMenuPermissions(menuRes.data)
+    else appToast.error(menuRes.message || "加载菜单权限失败")
     if (opRes.code === 0) setOperationPermissions(opRes.data)
+    else appToast.error(opRes.message || "加载操作权限失败")
     setTableLoading(false)
   }, [])
 
@@ -174,21 +177,23 @@ export function PermissionPage() {
     setEditSubmitting(true)
     const isMenu = !editParentCode
 
-    if (editingItem) {
-      await updatePermission(editingItem.code, {
-        name: editForm.name,
-        parent: isMenu ? undefined : editForm.parent || undefined,
-      })
-    } else {
-      const newItem: Permission = {
-        code: editForm.code,
-        name: editForm.name,
-        type: isMenu ? "menu" : "operation",
-        parent: isMenu ? undefined : editForm.parent || undefined,
-      }
-      await createPermission(newItem)
-    }
+    const res = editingItem
+      ? await updatePermission(editingItem.code, {
+          name: editForm.name,
+          parent: isMenu ? undefined : editForm.parent || undefined,
+        })
+      : await createPermission({
+          code: editForm.code,
+          name: editForm.name,
+          type: isMenu ? "menu" : "operation",
+          parent: isMenu ? undefined : editForm.parent || undefined,
+        })
     setEditSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "操作失败")
+      return
+    }
+    appToast.success(editingItem ? "保存成功" : "创建成功")
     setEditOpen(false)
     loadData()
   }
@@ -202,18 +207,23 @@ export function PermissionPage() {
   }
 
   async function handleDeleteConfirm() {
+    if (!deleteTarget) return
     setDeleteSubmitting(true)
-    if (deleteTarget) {
-      await apiDeletePermission(deleteTarget.code)
-      if (deleteIsMenu) {
-        setExpanded((prev) => {
-          const next = new Set(prev)
-          next.delete(deleteTarget.code)
-          return next
-        })
-      }
-    }
+    const res = await apiDeletePermission(deleteTarget.code)
     setDeleteSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "删除失败")
+      setDeleteOpen(false)
+      return
+    }
+    appToast.success("删除成功")
+    if (deleteIsMenu) {
+      setExpanded((prev) => {
+        const next = new Set(prev)
+        next.delete(deleteTarget.code)
+        return next
+      })
+    }
     setDeleteOpen(false)
     loadData()
   }

@@ -3,40 +3,14 @@ import type { ApiResponse } from '@/types/api'
 const BASE_URL = '/api'
 
 class ApiClient {
-  private abortControllers = new Map<string, AbortController>()
-
   private getToken(): string | null {
     return localStorage.getItem('token')
-  }
-
-  private getRequestKey(path: string, method: string): string {
-    return `${method}:${path}`
-  }
-
-  private abortPrevious(key: string): void {
-    const existing = this.abortControllers.get(key)
-    if (existing) {
-      existing.abort()
-    }
   }
 
   private async request<T>(
     path: string,
     options: RequestInit = {},
-    dedupe = true,
   ): Promise<ApiResponse<T>> {
-    const method = options.method || 'GET'
-    const key = this.getRequestKey(path, method)
-
-    if (dedupe) {
-      this.abortPrevious(key)
-    }
-
-    const controller = new AbortController()
-    if (dedupe) {
-      this.abortControllers.set(key, controller)
-    }
-
     const token = this.getToken()
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -51,7 +25,6 @@ class ApiClient {
       const response = await fetch(`${BASE_URL}${path}`, {
         ...options,
         headers,
-        signal: controller.signal,
       })
 
       if (response.status === 401) {
@@ -80,10 +53,6 @@ class ApiClient {
         message: (error as Error).message || '网络请求失败',
         data: undefined as T,
       }
-    } finally {
-      if (dedupe) {
-        this.abortControllers.delete(key)
-      }
     }
   }
 
@@ -102,29 +71,21 @@ class ApiClient {
   }
 
   async post<T>(path: string, data?: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>(
-      path,
-      {
-        method: 'POST',
-        body: data ? JSON.stringify(data) : undefined,
-      },
-      false,
-    )
+    return this.request<T>(path, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    })
   }
 
   async put<T>(path: string, data?: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>(
-      path,
-      {
-        method: 'PUT',
-        body: data ? JSON.stringify(data) : undefined,
-      },
-      false,
-    )
+    return this.request<T>(path, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    })
   }
 
   async delete<T>(path: string): Promise<ApiResponse<T>> {
-    return this.request<T>(path, { method: 'DELETE' }, false)
+    return this.request<T>(path, { method: 'DELETE' })
   }
 }
 

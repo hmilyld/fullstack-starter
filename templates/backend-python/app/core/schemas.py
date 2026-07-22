@@ -242,7 +242,7 @@ class SystemConfigOut(BaseModel):
     @classmethod
     def from_orm_config(cls, config) -> "SystemConfigOut":
         raw_password = config.smtp_password or ""
-        masked_password = raw_password[:2] + "****" + raw_password[-2:] if len(raw_password) > 4 else "****"
+        masked_password = "****"
         return cls(
             siteName=config.site_name,
             siteDescription=config.site_description,

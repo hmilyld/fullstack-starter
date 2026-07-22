@@ -49,6 +49,11 @@ public ApiResponse<?> getAiModel(Long id) {
 
 @Transactional
 public ApiResponse<?> createAiModel(AiModelCreateRequest req) {
+	try {
+		assertSafeUrl(req.getApiUrl());
+	} catch (IllegalArgumentException e) {
+		return ApiResponse.error(e.getMessage());
+	}
 	if (aiModelRepository.findByAlias(req.getAlias()).isPresent()) {
 	return ApiResponse.error("别名已存在");
 	}
@@ -83,7 +88,14 @@ public ApiResponse<?> updateAiModel(Long id, AiModelUpdateRequest req) {
 				model.setAlias(req.getAlias());
 			}
 			if (req.getModelName() != null) model.setModelName(req.getModelName());
-			if (req.getApiUrl() != null) model.setApiUrl(req.getApiUrl());
+			if (req.getApiUrl() != null) {
+				try {
+					assertSafeUrl(req.getApiUrl());
+				} catch (IllegalArgumentException e) {
+					return ApiResponse.<Object>error(e.getMessage());
+				}
+				model.setApiUrl(req.getApiUrl());
+			}
 			// 防止脱敏值被回写覆盖真实密钥
 			if (req.getApiKey() != null && !req.getApiKey().contains("****")) {
 				model.setApiKey(req.getApiKey());
@@ -126,6 +138,11 @@ public ApiResponse<?> getModelByAlias(String alias) {
 }
 
 public ApiResponse<?> testAiModel(AiModelTestRequest req) {
+	try {
+		assertSafeUrl(req.getApiUrl());
+	} catch (IllegalArgumentException e) {
+		return ApiResponse.error(e.getMessage());
+	}
 	long startTime = System.currentTimeMillis();
 
 	Map<String, Object> payload = new HashMap<>();
@@ -200,6 +217,41 @@ private String maskApiKey(String apiKey) {
 	return "****";
 	}
 	return apiKey.substring(0, 2) + "****" + apiKey.substring(apiKey.length() - 2);
+}
+
+/** SSRF 防护：拒绝非 http/https、私有/回环/链路本地地址及云元数据端点。 */
+private void assertSafeUrl(String url) {
+	if (url == null || url.isBlank()) {
+		throw new IllegalArgumentException("API 地址不能为空");
+	}
+	java.net.URI uri;
+	try {
+		uri = java.net.URI.create(url);
+	} catch (Exception e) {
+		throw new IllegalArgumentException("API 地址格式无效");
+	}
+	String scheme = uri.getScheme();
+	if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+		throw new IllegalArgumentException("API 地址必须使用 http 或 https 协议");
+	}
+	String host = uri.getHost();
+	if (host == null || host.isBlank()) {
+		throw new IllegalArgumentException("API 地址格式无效");
+	}
+	String lower = host.toLowerCase();
+	if (lower.equals("localhost") || lower.equals("127.0.0.1") || lower.equals("::1")
+		|| lower.equals("169.254.169.254") || lower.equals("metadata.google.internal")
+		|| lower.contains("metadata")) {
+		throw new IllegalArgumentException("禁止访问该地址");
+	}
+	try {
+		java.net.InetAddress addr = java.net.InetAddress.getByName(host);
+		if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
+			throw new IllegalArgumentException("禁止访问内网地址");
+		}
+	} catch (java.net.UnknownHostException ignored) {
+		// 无法解析时交由下游处理，元数据地址已在上面拦截
+	}
 }
 
 private Map<String, Object> toPublicOutMap(AiModel model) {

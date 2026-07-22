@@ -1,6 +1,7 @@
 package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaMode;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.dto.AiModelPresetCreateRequest;
 import com.hmilyld.fullstack.dto.AiModelPresetUpdateRequest;
@@ -41,20 +42,20 @@ public ApiResponse<?> getPreset(@PathVariable Long id) {
 }
 
 @PostMapping("")
-@SaCheckPermission("ai_models.create")
+@SaCheckPermission(value = {"ai_models.create", "ai_models.presets.create"}, mode = SaMode.AND)
 public ApiResponse<?> createPreset(@RequestBody @Valid AiModelPresetCreateRequest req) {
 	return presetService.createPreset(req);
 }
 
 @PutMapping("/{id}")
-@SaCheckPermission("ai_models.edit")
+@SaCheckPermission(value = {"ai_models.edit", "ai_models.presets.edit"}, mode = SaMode.AND)
 public ApiResponse<?> updatePreset(
 	@PathVariable Long id, @RequestBody AiModelPresetUpdateRequest req) {
 	return presetService.updatePreset(id, req);
 }
 
 @DeleteMapping("/{id}")
-@SaCheckPermission("ai_models.delete")
+@SaCheckPermission(value = {"ai_models.delete", "ai_models.presets.delete"}, mode = SaMode.AND)
 public ApiResponse<?> deletePreset(@PathVariable Long id) {
 	return presetService.deletePreset(id);
 }

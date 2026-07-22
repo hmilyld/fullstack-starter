@@ -1,7 +1,41 @@
+import ipaddress
 import re
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, field_validator
+
+
+def mask_api_key(api_key: str) -> str:
+    """脱敏 API Key：短于 12 位完全隐藏，否则只显示前 2 位和后 2 位。"""
+    if not api_key or len(api_key) < 12:
+        return "****"
+    return api_key[:2] + "****" + api_key[-2:]
+
+
+def assert_not_private_host(url: str) -> None:
+    """拒绝访问内网地址与云元数据端点（SSRF 防护）。"""
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("API 地址格式无效")
+    blocked = [
+        "169.254.169.254",  # AWS/GCP/Azure 元数据
+        "metadata.google.internal",  # GCP 元数据
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    ]
+    if hostname in blocked:
+        raise ValueError("禁止访问该地址")
+    try:
+        ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        # 不是 IP 字面量（可能是域名），无法在此静态判断，放行（交由下层防护）
+        if "metadata" in hostname:
+            raise ValueError("禁止访问元数据端点")
+        return
+    if ip.is_private or ip.is_loopback or ip.is_link_local:
+        raise ValueError("禁止访问内网地址")
 
 
 class AiModelCreate(BaseModel):
@@ -27,6 +61,7 @@ class AiModelCreate(BaseModel):
             raise ValueError("API 地址必须使用 https 或 http 协议")
         if not parsed.hostname:
             raise ValueError("API 地址格式无效")
+        assert_not_private_host(v)
         return v
 
 
@@ -57,6 +92,7 @@ class AiModelUpdate(BaseModel):
             raise ValueError("API 地址必须使用 https 或 http 协议")
         if not parsed.hostname:
             raise ValueError("API 地址格式无效")
+        assert_not_private_host(v)
         return v
 
 
@@ -78,7 +114,7 @@ class AiModelOut(BaseModel):
             alias=model.alias,
             modelName=model.model_name,
             apiUrl=model.api_url,
-            apiKey=model.api_key,
+            apiKey=mask_api_key(model.api_key),
             description=model.description or "",
             isDefault=model.is_default,
         )
@@ -130,14 +166,14 @@ class AiModelTestRequest(BaseModel):
         if hostname in blocked:
             raise ValueError("禁止访问该地址")
         # 阻止 RFC 1918 私有地址
-        import ipaddress
         try:
             ip = ipaddress.ip_address(hostname)
-            if ip.is_private or ip.is_loopback or ip.is_link_local:
-                raise ValueError("禁止访问内网地址")
         except ValueError:
             if "metadata" in hostname:
                 raise ValueError("禁止访问元数据端点")
+            return v
+        if ip.is_private or ip.is_loopback or ip.is_link_local:
+            raise ValueError("禁止访问内网地址")
         return v
 
 

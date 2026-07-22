@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * 在 Sa-Token 拦截之前，将 "Authorization: Bearer xxx" 格式的请求 转换为 Sa-Token 能识别的格式（设置 satoken header）。
- * 这样前端可以统一使用 "Authorization: Bearer <token>" 格式，兼容 Python (JWT) 和 Java (Sa-Token) 后端。
+ * 这样前端可以统一使用 "Authorization: Bearer <token>" 格式。
+ * 注意：Java 后端使用 Sa-Token（uuid 会话令牌），与 Python 后端的 JWT 并不互通，两种后端的 token 不能互相验证。
  */
 @Component
 @Order(-100) // 确保在 Sa-Token Filter 之前执行
