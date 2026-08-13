@@ -3,6 +3,7 @@ from app.core.crud.permissions import (
     delete_permission,
     get_permission_by_code,
     get_permissions,
+    sync_permissions,
     update_permission,
 )
 from app.core.crud.roles import (
@@ -41,6 +42,7 @@ __all__ = [
     "get_user_by_id",
     "get_user_by_username",
     "get_users",
+    "sync_permissions",
     "update_permission",
     "update_role",
     "update_user",

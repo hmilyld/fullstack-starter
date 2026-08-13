@@ -28,6 +28,12 @@ public ApiResponse<?> createPermission(@RequestBody @Valid PermissionCreateReque
 	return permissionService.createPermission(req);
 }
 
+@PostMapping("/sync")
+@SaCheckPermission("permissions.create")
+public ApiResponse<?> syncPermissions() {
+	return permissionService.syncPermissions();
+}
+
 @PutMapping("/{code}")
 @SaCheckPermission("permissions.edit")
 public ApiResponse<?> updatePermission(

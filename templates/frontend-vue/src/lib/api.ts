@@ -120,6 +120,10 @@ export async function deletePermission(code: string) {
   return apiClient.delete(`/permissions/${code}`)
 }
 
+export async function syncPermissions() {
+  return apiClient.post<{ added: string[]; updated: string[]; granted: string[] }>('/permissions/sync')
+}
+
 export type PublicConfig = {
   siteName: string
   siteDescription: string

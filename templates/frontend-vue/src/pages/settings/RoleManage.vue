@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getRoles, createRole, updateRole, deleteRole } from '@/lib/api'
-import type { Role } from '@/types/api'
-import { SEED_MENU_PERMISSIONS, SEED_OPERATION_PERMISSIONS } from '@/lib/permissions'
+import { getRoles, createRole, updateRole, deleteRole, getPermissions } from '@/lib/api'
+import type { Role, Permission } from '@/types/api'
 import { useToast } from '@/composables/use-toast'
 import Pagination from '@/components/shared/Pagination.vue'
 import ConfirmDeleteDialog from '@/components/shared/ConfirmDeleteDialog.vue'
@@ -20,6 +19,21 @@ const page = ref(1)
 const total = ref(0)
 const tableLoading = ref(true)
 const totalPages = ref(1)
+
+const menuPermissions = ref<Permission[]>([])
+const operationPermissions = ref<Permission[]>([])
+
+async function loadPermissions() {
+  const [menuRes, opRes] = await Promise.all([
+    getPermissions({ type: 'menu' }),
+    getPermissions({ type: 'operation' }),
+  ])
+  if (menuRes.code === 0) menuPermissions.value = menuRes.data
+  if (opRes.code === 0) operationPermissions.value = opRes.data
+  if (menuRes.code !== 0 || opRes.code !== 0) {
+    toast.error('加载权限数据失败')
+  }
+}
 
 async function loadData() {
   tableLoading.value = true
@@ -43,7 +57,10 @@ watch(search, () => {
 
 watch(page, () => loadData())
 
-onMounted(() => loadData())
+onMounted(() => {
+  loadData()
+  loadPermissions()
+})
 
 onUnmounted(() => {
   if (searchTimer) clearTimeout(searchTimer)
@@ -110,10 +127,10 @@ function toggleMenuPermission(code: string) {
   const has = editPermissions.value.includes(code)
   if (has) {
     editPermissions.value = editPermissions.value.filter(
-      (c) => c !== code && !SEED_OPERATION_PERMISSIONS.some((op) => op.code === c && op.parent === code),
+      (c) => c !== code && !operationPermissions.value.some((op) => op.code === c && op.parent === code),
     )
   } else {
-    const childOps = SEED_OPERATION_PERMISSIONS.filter((op) => op.parent === code).map((op) => op.code)
+    const childOps = operationPermissions.value.filter((op) => op.parent === code).map((op) => op.code)
     editPermissions.value = [...editPermissions.value, code, ...childOps.filter((c) => !editPermissions.value.includes(c))]
   }
 }
@@ -123,7 +140,7 @@ function isMenuChecked(code: string): boolean {
 }
 
 function isMenuIndeterminate(code: string): boolean {
-  const children = SEED_OPERATION_PERMISSIONS.filter((op) => op.parent === code)
+  const children = operationPermissions.value.filter((op) => op.parent === code)
   if (children.length === 0) return false
   const checkedCount = children.filter((c) => editPermissions.value.includes(c.code)).length
   return checkedCount > 0 && checkedCount < children.length
@@ -255,7 +272,7 @@ async function handleDeleteConfirm() {
             <span class="text-sm font-medium">权限分配</span>
             <div class="flex max-h-[50vh] flex-col gap-2 overflow-auto">
               <span class="text-xs font-medium text-base-content/50">菜单权限</span>
-              <div v-for="perm in SEED_MENU_PERMISSIONS" :key="perm.code" class="flex flex-col gap-1">
+              <div v-for="perm in menuPermissions" :key="perm.code" class="flex flex-col gap-1">
                 <label class="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
@@ -267,7 +284,7 @@ async function handleDeleteConfirm() {
                 </label>
                 <div v-if="isMenuChecked(perm.code)" class="ml-6 flex flex-wrap gap-x-4 gap-y-1">
                   <label
-                    v-for="child in SEED_OPERATION_PERMISSIONS.filter((op) => op.parent === perm.code)"
+                    v-for="child in operationPermissions.filter((op) => op.parent === perm.code)"
                     :key="child.code"
                     class="flex items-center gap-2 text-sm text-base-content/50"
                   >

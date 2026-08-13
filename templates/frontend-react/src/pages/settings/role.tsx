@@ -42,10 +42,9 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import {
   type Role,
-  SEED_MENU_PERMISSIONS,
-  SEED_OPERATION_PERMISSIONS,
+  type Permission,
 } from "@/lib/permissions"
-import { getRoles, createRole, updateRole, deleteRole as apiDeleteRole } from "@/lib/api"
+import { getRoles, createRole, updateRole, deleteRole as apiDeleteRole, getPermissions } from "@/lib/api"
 import { appToast } from "@/lib/toast"
 
 const PAGE_SIZE = 8
@@ -59,6 +58,21 @@ export function RolesPage() {
   const [tableLoading, setTableLoading] = React.useState(true)
   const [editSubmitting, setEditSubmitting] = React.useState(false)
   const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
+  const [menuPermissions, setMenuPermissions] = React.useState<Permission[]>([])
+  const [operationPermissions, setOperationPermissions] = React.useState<Permission[]>([])
+
+  const loadPermissions = React.useCallback(async () => {
+    const [menuRes, opRes] = await Promise.all([
+      getPermissions({ type: "menu" }),
+      getPermissions({ type: "operation" }),
+    ])
+    if (menuRes.code === 0) setMenuPermissions(menuRes.data)
+    else appToast.error(menuRes.message || "加载菜单权限失败")
+    if (opRes.code === 0) setOperationPermissions(opRes.data)
+    else appToast.error(opRes.message || "加载操作权限失败")
+  }, [])
+
+  React.useEffect(() => { loadPermissions() }, [loadPermissions])
 
   const loadData = React.useCallback(async () => {
     setTableLoading(true)
@@ -149,11 +163,11 @@ export function RolesPage() {
       if (has) {
         // 取消菜单权限时，同时移除其下所有操作权限
         return prev.filter(
-          (c) => c !== code && !SEED_OPERATION_PERMISSIONS.some((op) => op.code === c && op.parent === code)
+          (c) => c !== code && !operationPermissions.some((op) => op.code === c && op.parent === code)
         )
       } else {
         // 勾选菜单权限时，同时勾选其下所有操作权限
-        const childOps = SEED_OPERATION_PERMISSIONS.filter((op) => op.parent === code).map((op) => op.code)
+        const childOps = operationPermissions.filter((op) => op.parent === code).map((op) => op.code)
         return [...prev, code, ...childOps.filter((c) => !prev.includes(c))]
       }
     })
@@ -164,7 +178,7 @@ export function RolesPage() {
   }
 
   function isMenuIndeterminate(code: string): boolean {
-    const children = SEED_OPERATION_PERMISSIONS.filter((op) => op.parent === code)
+    const children = operationPermissions.filter((op) => op.parent === code)
     if (children.length === 0) return false
     const checkedCount = children.filter((c) => editPermissions.includes(c.code)).length
     return checkedCount > 0 && checkedCount < children.length
@@ -326,8 +340,8 @@ export function RolesPage() {
                 {/* 菜单权限 */}
                 <div className="flex max-h-[50vh] flex-col gap-2 overflow-auto">
                   <span className="text-xs font-medium text-muted-foreground">菜单权限</span>
-                  {SEED_MENU_PERMISSIONS.map((perm) => {
-                    const children = SEED_OPERATION_PERMISSIONS.filter((op) => op.parent === perm.code)
+                  {menuPermissions.map((perm) => {
+                    const children = operationPermissions.filter((op) => op.parent === perm.code)
                     const hasChildren = children.length > 0
                     return (
                       <div key={perm.code} className="flex flex-col gap-1">

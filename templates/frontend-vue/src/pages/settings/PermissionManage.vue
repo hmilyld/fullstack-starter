@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getPermissions, createPermission, updatePermission, deletePermission } from '@/lib/api'
+import { getPermissions, createPermission, updatePermission, deletePermission, syncPermissions } from '@/lib/api'
 import type { Permission } from '@/types/api'
 import { useToast } from '@/composables/use-toast'
 import ConfirmDeleteDialog from '@/components/shared/ConfirmDeleteDialog.vue'
-import { Pencil, Trash2, Plus, Search, ChevronRight } from 'lucide-vue-next'
+import { Pencil, Trash2, Plus, Search, ChevronRight, RefreshCw } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -17,6 +17,7 @@ const search = ref('')
 const tableLoading = ref(true)
 const editSubmitting = ref(false)
 const deleteSubmitting = ref(false)
+const syncing = ref(false)
 
 type PermissionTreeNode = Permission & {
   children: Permission[]
@@ -37,6 +38,22 @@ async function loadData() {
 }
 
 onMounted(() => loadData())
+
+async function handleSync() {
+  syncing.value = true
+  try {
+    const res = await syncPermissions()
+    if (res.code === 0) {
+      toast.success(`同步成功：新增${res.data.added.length}个，更新${res.data.updated.length}个，管理员授予${res.data.granted.length}个`)
+      loadData()
+    } else {
+      toast.error(res.message || '同步失败')
+    }
+  } catch {
+    toast.error('网络请求失败')
+  }
+  syncing.value = false
+}
 
 const tree = computed<PermissionTreeNode[]>(() => {
   const fullTree = menuPermissions.value.map((menu) => ({
@@ -189,6 +206,11 @@ async function handleDeleteConfirm() {
               <Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-base-content/50" />
               <input v-model="search" placeholder="搜索编码或名称..." class="input input-bordered input-sm w-full pl-8" />
             </div>
+            <button v-if="auth.hasPermission('permissions.create')" class="btn btn-outline btn-sm" :disabled="syncing" @click="handleSync">
+              <span v-if="syncing" class="loading loading-spinner loading-sm"></span>
+              <RefreshCw v-else class="size-4" />
+              同步权限
+            </button>
             <button v-if="auth.hasPermission('permissions.create')" class="btn btn-primary btn-sm" @click="handleAddMenu">
               <Plus class="size-4" />
               新增菜单

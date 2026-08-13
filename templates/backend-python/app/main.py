@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.config import get_settings
+from app.core import crud
 from app.core.schemas import ApiResponse
 from app.core.seed import seed_data
 from app.database import async_session, init_db
@@ -31,6 +32,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with async_session() as session:
         try:
             await seed_data(session)
+            await crud.sync_permissions(session)
             await init_default_presets(session)
             await session.commit()
         except IntegrityError:

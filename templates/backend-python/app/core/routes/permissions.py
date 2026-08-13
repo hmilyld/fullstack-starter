@@ -35,6 +35,15 @@ async def create_permission(
     return ApiResponse(data=result)
 
 
+@router.post("/sync")
+async def sync_permissions_route(
+    current_user: User = Depends(require_permission("permissions.create")),
+    db: Annotated[AsyncSession, Depends(get_db)] = None,
+) -> ApiResponse:
+    result = await crud.sync_permissions(db)
+    return ApiResponse(data=result, message="权限同步完成")
+
+
 @router.put("/{code}")
 async def update_permission(
     code: str,

@@ -43,6 +43,7 @@ import {
   PencilIcon,
   Trash2Icon,
   ChevronRightIcon,
+  RefreshCwIcon,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import {
@@ -53,6 +54,7 @@ import {
   createPermission,
   updatePermission,
   deletePermission as apiDeletePermission,
+  syncPermissions,
 } from "@/lib/api"
 import { appToast } from "@/lib/toast"
 
@@ -76,6 +78,7 @@ export function PermissionPage() {
   const [tableLoading, setTableLoading] = React.useState(true)
   const [editSubmitting, setEditSubmitting] = React.useState(false)
   const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
+  const [syncing, setSyncing] = React.useState(false)
 
   const loadData = React.useCallback(async () => {
     setTableLoading(true)
@@ -159,6 +162,20 @@ export function PermissionPage() {
     setEditParentCode(parentCode)
     setEditForm({ code: "", name: "", parent: parentCode })
     setEditOpen(true)
+  }
+
+  // ---- 同步 ----
+
+  async function handleSync() {
+    setSyncing(true)
+    const res = await syncPermissions()
+    setSyncing(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "同步失败")
+      return
+    }
+    appToast.success(`同步成功：新增${res.data.added.length}个，更新${res.data.updated.length}个，管理员授予${res.data.granted.length}个`)
+    loadData()
   }
 
   // ---- 编辑 ----
@@ -258,10 +275,16 @@ export function PermissionPage() {
                   />
                 </div>
                 {hasPermission("permissions.create") && (
-                  <Button onClick={handleAddMenu} className="w-full sm:w-auto">
-                    <PlusIcon data-icon="inline-start" />
-                    新增菜单
-                  </Button>
+                  <>
+                    <LoadingButton variant="outline" onClick={handleSync} loading={syncing} className="w-full sm:w-auto">
+                      {!syncing && <RefreshCwIcon data-icon="inline-start" />}
+                      同步权限
+                    </LoadingButton>
+                    <Button onClick={handleAddMenu} className="w-full sm:w-auto">
+                      <PlusIcon data-icon="inline-start" />
+                      新增菜单
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
