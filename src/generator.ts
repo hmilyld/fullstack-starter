@@ -34,9 +34,9 @@ export async function generateProject(
     generateDevSh(projectPath, frontend, backend),
     generateBuildSh(projectPath, frontend, backend),
     generateDockerfile(projectPath, frontend, backend),
-    generateDockerCompose(projectPath, projectName, frontend, backend),
+    generateDockerCompose(projectPath),
     generateDockerignore(projectPath),
-    generateNginxConf(projectPath, frontend),
+    generateNginxConf(projectPath),
     generateReadme(projectPath, projectName, frontend, backend),
   ]);
 
@@ -45,7 +45,7 @@ export async function generateProject(
 
 async function copyTemplate(templateName: string, destination: string): Promise<void> {
   const templatePath = path.join(TEMPLATES_DIR, templateName);
-  if (!await fs.pathExists(templatePath)) {
+  if (!(await fs.pathExists(templatePath))) {
     throw new Error(`模板 ${templateName} 不存在`);
   }
   await fs.copy(templatePath, destination);
@@ -53,10 +53,15 @@ async function copyTemplate(templateName: string, destination: string): Promise<
 
 // ── dev.sh ────────────────────────────────────────────────
 
-function generateDevSh(projectPath: string, frontend: FrontendType, backend: BackendType): Promise<void> {
-  const backendStart = backend === 'python'
-    ? 'cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8088'
-    : 'cd backend && mvn spring-boot:run';
+function generateDevSh(
+  projectPath: string,
+  frontend: FrontendType,
+  backend: BackendType
+): Promise<void> {
+  const backendStart =
+    backend === 'python'
+      ? 'cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8088'
+      : 'cd backend && mvn spring-boot:run';
 
   const content = `#!/bin/bash
 # 开发环境启动脚本
@@ -67,9 +72,9 @@ GREEN='\\033[0;32m'
 YELLOW='\\033[1;33m'
 NC='\\033[0m'
 
-print_info()  { echo -e "\${GREEN}[INFO]\${NC} \$1"; }
-print_warn()  { echo -e "\${YELLOW}[WARN]\${NC} \$1"; }
-print_error() { echo -e "\${RED}[ERROR]\${NC} \$1"; }
+print_info()  { echo -e "\${GREEN}[INFO]\${NC} $1"; }
+print_warn()  { echo -e "\${YELLOW}[WARN]\${NC} $1"; }
+print_error() { echo -e "\${RED}[ERROR]\${NC} $1"; }
 
 BACKEND_PID=""
 FRONTEND_PID=""
@@ -105,8 +110,12 @@ start_frontend() {
 install_deps() {
   print_info "安装前端依赖..."
   cd frontend && npm install && cd ..
-${backend === 'python' ? `  print_info "安装后端依赖..."
-  cd backend && uv sync && cd ..` : `  print_info "后端依赖通过 Maven 自动管理"`}
+${
+  backend === 'python'
+    ? `  print_info "安装后端依赖..."
+  cd backend && uv sync && cd ..`
+    : `  print_info "后端依赖通过 Maven 自动管理"`
+}
 }
 
 main() {
@@ -136,10 +145,13 @@ esac
 
 // ── build.sh ──────────────────────────────────────────────
 
-function generateBuildSh(projectPath: string, frontend: FrontendType, backend: BackendType): Promise<void> {
-  const backendCheck = backend === 'python'
-    ? 'cd backend && uv run ruff check .'
-    : 'cd backend && mvn spotless:check';
+function generateBuildSh(
+  projectPath: string,
+  frontend: FrontendType,
+  backend: BackendType
+): Promise<void> {
+  const backendCheck =
+    backend === 'python' ? 'cd backend && uv run ruff check .' : 'cd backend && mvn spotless:check';
 
   const content = `#!/bin/bash
 # 构建脚本
@@ -149,7 +161,7 @@ RED='\\033[0;31m'
 GREEN='\\033[0;32m'
 NC='\\033[0m'
 
-print_info()  { echo -e "\${GREEN}[INFO]\${NC} \$1"; }
+print_info()  { echo -e "\${GREEN}[INFO]\${NC} $1"; }
 
 main() {
   print_info "开始构建项目..."
@@ -172,8 +184,11 @@ main
 
 // ── Dockerfile（单镜像：Nginx + 后端）────────────────────
 
-function generateDockerfile(projectPath: string, frontend: FrontendType, backend: BackendType): Promise<void> {
-  
+function generateDockerfile(
+  projectPath: string,
+  frontend: FrontendType,
+  backend: BackendType
+): Promise<void> {
   let dockerfile: string;
 
   if (backend === 'python') {
@@ -306,8 +321,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \\
 
 // ── docker-compose.yml ────────────────────────────────────
 
-function generateDockerCompose(projectPath: string, projectName: string, frontend: FrontendType, backend: BackendType): Promise<void> {
-  
+function generateDockerCompose(projectPath: string): Promise<void> {
   const content = `services:
   app:
     build: .
@@ -349,7 +363,7 @@ __pycache__
 
 // ── nginx.conf ────────────────────────────────────────────
 
-function generateNginxConf(projectPath: string, frontend: FrontendType): Promise<void> {
+function generateNginxConf(projectPath: string): Promise<void> {
   const content = `server {
     listen 5173;
     server_name localhost;
@@ -395,9 +409,6 @@ function generateReadme(
 ): Promise<void> {
   const frontendName = frontend === 'react' ? 'React' : 'Vue';
   const backendName = backend === 'python' ? 'Python (FastAPI)' : 'Java (Spring Boot)';
-  const backendStart = backend === 'python'
-    ? 'cd backend && uv run uvicorn app.main:app --reload'
-    : 'cd backend && mvn spring-boot:run';
 
   const content = `# ${projectName}
 
@@ -448,10 +459,10 @@ cd frontend && npm install && cd ..
 docker build -t ${projectName} .
 
 # 运行（必须设置强随机 JWT_SECRET_KEY，例如: openssl rand -base64 48）
-docker run -d -p 5173:5173 -e JWT_SECRET_KEY=\$(openssl rand -base64 48) ${projectName}
+docker run -d -p 5173:5173 -e JWT_SECRET_KEY=$(openssl rand -base64 48) ${projectName}
 
 # 或使用 docker compose（未设置 JWT_SECRET_KEY 时会直接报错提示）
-JWT_SECRET_KEY=\$(openssl rand -base64 48) docker compose up -d
+JWT_SECRET_KEY=$(openssl rand -base64 48) docker compose up -d
 \`\`\`
 
 访问 http://localhost:5173
