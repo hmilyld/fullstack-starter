@@ -85,6 +85,11 @@ trap cleanup EXIT INT TERM
 
 start_backend() {
   print_info "启动后端服务..."
+  # 本地开发自动生成随机密钥，避免默认弱密钥被安全校验拒绝；若已在环境变量或 backend/.env 配置则沿用
+  if [ -z "$JWT_SECRET_KEY" ] && ! grep -q "^JWT_SECRET_KEY=." backend/.env 2>/dev/null; then
+    export JWT_SECRET_KEY="$(openssl rand -base64 48)"
+    print_warn "未设置 JWT_SECRET_KEY，已为本地开发自动生成随机密钥（重启后登录会失效）"
+  fi
   ${backendStart} &
   BACKEND_PID=$!
   print_info "后端服务已启动 (PID: $BACKEND_PID)"
@@ -189,7 +194,7 @@ FROM python:3.12-slim
 
 # 安装 Nginx
 RUN apt-get update && \\
-    apt-get install -y --no-install-recommends nginx && \\
+    apt-get install -y --no-install-recommends nginx tzdata && \\
     rm -rf /var/lib/apt/lists/*
 
 # 复制前端构建产物到 Nginx
@@ -207,6 +212,7 @@ RUN cd /app && uv pip install --system -e .
 # 环境变量
 ENV DATABASE_URL=sqlite+aiosqlite:////app/data/app.db
 ENV PYTHONUNBUFFERED=1
+ENV TZ=Asia/Shanghai
 
 VOLUME ["/app/data"]
 
@@ -258,8 +264,9 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# 安装 Nginx
-RUN apk add --no-cache nginx
+# 安装 Nginx 与时区数据（设置东八区北京时间）
+RUN apk add --no-cache nginx tzdata
+ENV TZ=Asia/Shanghai
 
 # 复制前端构建产物到 Nginx
 COPY --from=frontend-builder /app/dist /usr/share/nginx/html
@@ -307,6 +314,7 @@ function generateDockerCompose(projectPath: string, projectName: string, fronten
     ports:
       - "5173:5173"
     environment:
+      - TZ=Asia/Shanghai
       - JWT_SECRET_KEY=\${JWT_SECRET_KEY:?请通过环境变量 JWT_SECRET_KEY 设置一个强随机密钥}
     volumes:
       - app-data:/app/data
@@ -407,10 +415,16 @@ function generateReadme(
 
 ## 功能模块
 
-- ✅ 用户登录 / JWT 认证
+- ✅ 用户登录 / JWT 认证（登录、注册、登出）
 - ✅ 仪表盘统计
-- ✅ 用户管理（增删改查 + 分页 + 搜索）
+- ✅ 用户管理（增删改查 + 分页 + 搜索 + 重置密码 + 批量改角色）
 - ✅ 角色管理（增删改查 + 分页 + 搜索）
+- ✅ 权限管理（菜单权限 + 操作权限）
+- ✅ 系统设置（站点配置、维护模式、开放注册、人工审核、邮件测试）
+- ✅ AI 模型与预设管理（连接测试、分组激活）
+- ✅ 审计日志（写操作与权限拦截记录，支持筛选与分页）
+- ✅ 个人中心（修改资料、修改密码）
+- ✅ 访问适配：面向电脑与平板设计，手机访问会提示更换设备
 
 ## 快速开始
 
@@ -423,6 +437,9 @@ cd frontend && npm install && cd ..
 
 - 前端: http://localhost:5173
 - 后端: http://localhost:8088
+
+> 本地开发无需手动配置密钥：\`dev.sh\` 会在未设置 \`JWT_SECRET_KEY\`（环境变量或 \`backend/.env\`）时自动生成随机密钥。
+> 若通过其它方式启动后端，请先设置强随机 \`JWT_SECRET_KEY\`（例如 \`openssl rand -base64 48\`），否则后端会因安全校验拒绝启动。
 
 ### Docker 部署（单镜像）
 
@@ -478,16 +495,32 @@ ${projectName}/
 | 方法 | 路径 | 说明 | 认证 |
 |------|------|------|------|
 | POST | /api/auth/login | 登录 | 否 |
+| POST | /api/auth/register | 注册 | 否 |
+| POST | /api/auth/logout | 登出 | 是 |
 | GET | /api/auth/me | 获取当前用户 | 是 |
-| GET | /api/users | 用户列表 | 是 |
+| GET | /api/users | 用户列表 | 是(admin) |
 | POST | /api/users | 创建用户 | 是(admin) |
 | PUT | /api/users/:id | 更新用户 | 是(admin) |
 | DELETE | /api/users/:id | 删除用户 | 是(admin) |
-| GET | /api/roles | 角色列表 | 是 |
+| PUT | /api/users/:id/reset-password | 重置密码 | 是(admin) |
+| POST | /api/users/batch-role | 批量设置角色 | 是(admin) |
+| PUT | /api/users/me | 修改个人资料 | 是 |
+| PUT | /api/users/me/password | 修改密码 | 是 |
+| GET | /api/roles | 角色列表 | 是(admin) |
 | POST | /api/roles | 创建角色 | 是(admin) |
 | PUT | /api/roles/:id | 更新角色 | 是(admin) |
 | DELETE | /api/roles/:id | 删除角色 | 是(admin) |
+| GET | /api/permissions | 权限列表 | 是(admin) |
+| POST | /api/permissions | 创建权限 | 是(admin) |
+| PUT | /api/permissions/:code | 更新权限 | 是(admin) |
+| DELETE | /api/permissions/:code | 删除权限 | 是(admin) |
 | GET | /api/dashboard/stats | 仪表盘统计 | 是 |
+| GET | /api/system/config | 系统配置读取 | 是(admin) |
+| PUT | /api/system/config | 系统配置更新 | 是(admin) |
+| GET | /api/public/config | 公开配置 | 否 |
+| GET | /api/ai-models | AI 模型列表 | 是 |
+| GET | /api/ai-models/presets | AI 预设列表 | 是 |
+| GET | /api/audit-logs | 审计日志列表 | 是(audit_logs) |
 
 ## 开发命令
 

@@ -2,6 +2,7 @@
 import { onMounted, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { useSiteConfigStore } from '@/stores/site-config'
+import UnsupportedViewport from '@/components/UnsupportedViewport.vue'
 
 const siteConfig = useSiteConfigStore()
 
@@ -24,5 +25,8 @@ watch(() => siteConfig.config, (config) => {
 </script>
 
 <template>
-  <RouterView />
+  <UnsupportedViewport />
+  <div class="hidden md:block">
+    <RouterView />
+  </div>
 </template>

@@ -2,10 +2,9 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ThemeToggle from '@/components/ThemeToggle.vue'
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
+import { Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
 
 defineProps<{
-  isMobile: boolean
   sidebarCollapsed?: boolean
 }>()
 
@@ -52,11 +51,8 @@ const breadcrumbs = computed(() => {
   <header class="bg-base-100 flex h-12 shrink-0 items-center gap-2 border-b border-base-content/10 px-4">
     <div class="flex items-center gap-2">
       <button class="btn btn-ghost btn-xs btn-square" @click="emit('toggle-sidebar')">
-        <Menu v-if="isMobile" class="size-4" />
-        <template v-else>
-          <PanelLeftClose v-if="!sidebarCollapsed" class="size-4" />
-          <PanelLeftOpen v-else class="size-4" />
-        </template>
+        <PanelLeftClose v-if="!sidebarCollapsed" class="size-4" />
+        <PanelLeftOpen v-else class="size-4" />
       </button>
       <div class="breadcrumbs text-sm">
         <ul>
