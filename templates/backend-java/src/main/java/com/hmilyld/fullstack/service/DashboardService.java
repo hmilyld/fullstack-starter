@@ -16,6 +16,7 @@ public ApiResponse<?> getStats() {
 
 	Map<String, Object> stats = new HashMap<>();
 	stats.put("totalUsers", totalUsers);
+	// 以下三项为演示用模拟数据（脚手架占位），接入真实业务统计后请替换为实际查询
 	stats.put("activeNow", new Random().nextInt(91) + 10);
 	stats.put("revenue", String.format("¥%,d", new Random().nextInt(90001) + 10000));
 	stats.put("growth", String.format("+%d%%", new Random().nextInt(26) + 5));
@@ -23,6 +24,7 @@ public ApiResponse<?> getStats() {
 }
 
 public ApiResponse<?> getActivity() {
+	// 演示用模拟活动数据（脚手架占位），接入真实业务后请替换为实际日志/事件查询
 	List<Map<String, String>> activity =
 		List.of(
 			Map.of("user", "张三", "action", "创建了新项目", "time", "2 分钟前"),

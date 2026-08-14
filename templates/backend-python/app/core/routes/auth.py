@@ -36,6 +36,23 @@ def _check_rate_limit(key: str) -> bool:
     return False
 
 
+def _get_client_ip(req: Request) -> str:
+    """获取客户端真实 IP。
+
+    优先读取 nginx 写入的 X-Real-IP(由 $remote_addr 覆盖写入，不可伪造)，
+    其次取 X-Forwarded-For 的第一跳，最后回退到连接方地址。
+    """
+    real_ip = req.headers.get("X-Real-IP")
+    if real_ip and real_ip.lower() != "unknown":
+        return real_ip
+    forwarded = req.headers.get("X-Forwarded-For")
+    if forwarded:
+        first = forwarded.split(",")[0].strip()
+        if first and first.lower() != "unknown":
+            return first
+    return req.client.host if req.client else "unknown"
+
+
 def _build_login_response(user, permissions: list[str], token: str) -> dict:
     return LoginResponse(
         token=token,
@@ -57,7 +74,7 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ApiResponse:
     # 速率限制：按 IP 地址
-    client_ip = req.client.host if req.client else "unknown"
+    client_ip = _get_client_ip(req)
     if _check_rate_limit(f"login:{client_ip}"):
         return ApiResponse(code=-1, message="登录尝试过于频繁，请稍后再试")
 
@@ -84,7 +101,7 @@ async def register(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ApiResponse:
     # 速率限制：按 IP 地址
-    client_ip = req.client.host if req.client else "unknown"
+    client_ip = _get_client_ip(req)
     if _check_rate_limit(f"register:{client_ip}"):
         return ApiResponse(code=-1, message="注册尝试过于频繁，请稍后再试")
 

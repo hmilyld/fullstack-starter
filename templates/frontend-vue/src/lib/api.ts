@@ -17,7 +17,7 @@ export async function login(account: string, password: string) {
 }
 
 export async function register(data: { username: string; email: string; password: string }) {
-  return apiClient.post<LoginResponse>('/auth/register', data)
+  return apiClient.post<LoginResponse | null>('/auth/register', data)
 }
 
 export async function logout() {
@@ -182,9 +182,10 @@ export async function getAiModelByAlias(alias: string) {
 }
 
 export async function testAiModel(data: {
-  apiUrl: string
-  apiKey: string
-  modelName: string
+  modelId?: string
+  apiUrl?: string
+  apiKey?: string
+  modelName?: string
 }) {
   return apiClient.post<{
     success: boolean

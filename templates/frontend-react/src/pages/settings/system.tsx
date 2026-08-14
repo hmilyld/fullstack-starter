@@ -98,6 +98,7 @@ export function SystemPage() {
   const [testEmailAddr, setTestEmailAddr] = React.useState("")
   const [testEmailSaving, setTestEmailSaving] = React.useState(false)
   const [smtpPreset, setSmtpPreset] = React.useState("")
+  const [smtpPassword, setSmtpPassword] = React.useState("")
 
   React.useEffect(() => {
     let cancelled = false
@@ -200,16 +201,19 @@ export function SystemPage() {
   async function handleSaveSmtp() {
     if (!config) return
     setSmtpSaving(true)
-    const res = await updateSystemConfig({
+    const payload: Partial<SystemConfig> = {
       smtpEnabled: config.smtpEnabled,
       smtpHost: config.smtpHost,
       smtpPort: config.smtpPort,
       smtpUsername: config.smtpUsername,
-      smtpPassword: config.smtpPassword,
       smtpFromName: config.smtpFromName,
       smtpFromEmail: config.smtpFromEmail,
       smtpUseSsl: config.smtpUseSsl,
-    })
+    }
+    if (smtpPassword.trim()) {
+      payload.smtpPassword = smtpPassword
+    }
+    const res = await updateSystemConfig(payload)
     setSmtpSaving(false)
     if (res.code === 0) {
       appToast.success("保存成功")
@@ -453,13 +457,13 @@ export function SystemPage() {
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="smtp-password">密码 *</FieldLabel>
+                    <FieldLabel htmlFor="smtp-password">密码</FieldLabel>
                     <Input
                       id="smtp-password"
                       type="password"
-                      placeholder="请输入 SMTP 密码或授权码"
-                      value={config.smtpPassword}
-                      onChange={(e) => updateField("smtpPassword", e.target.value)}
+                      placeholder="留空保持不变"
+                      value={smtpPassword}
+                      onChange={(e) => setSmtpPassword(e.target.value)}
                     />
                   </Field>
                 </div>

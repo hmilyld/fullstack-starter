@@ -53,6 +53,7 @@ export function RolesPage() {
   const { hasPermission } = useAuth()
   const [roles, setRoles] = React.useState<Role[]>([])
   const [search, setSearch] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
   const [page, setPage] = React.useState(1)
   const [total, setTotal] = React.useState(0)
   const [tableLoading, setTableLoading] = React.useState(true)
@@ -74,9 +75,15 @@ export function RolesPage() {
 
   React.useEffect(() => { loadPermissions() }, [loadPermissions])
 
+  // 搜索防抖：输入停止 300ms 后再触发查询
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
   const loadData = React.useCallback(async () => {
     setTableLoading(true)
-    const res = await getRoles({ search, page, pageSize: PAGE_SIZE })
+    const res = await getRoles({ search: debouncedSearch, page, pageSize: PAGE_SIZE })
     if (res.code === 0) {
       setRoles(res.data.list)
       setTotal(res.data.total)
@@ -84,7 +91,7 @@ export function RolesPage() {
       appToast.error(res.message || "加载数据失败")
     }
     setTableLoading(false)
-  }, [search, page])
+  }, [debouncedSearch, page])
 
   React.useEffect(() => { loadData() }, [loadData])
 

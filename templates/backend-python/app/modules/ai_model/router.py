@@ -19,6 +19,7 @@ from app.modules.ai_model.schemas import (
     AiModelTestRequest,
     AiModelTestResult,
     AiModelUpdate,
+    assert_not_private_host,
 )
 
 router = APIRouter(prefix="/ai-models", tags=["AI模型配置"])
@@ -217,12 +218,29 @@ async def create_ai_model(
 async def test_ai_model(
     data: AiModelTestRequest,
     current_user: User = Depends(require_permission("ai_models")),
+    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """测试AI模型配置是否可以联通"""
     start_time = time.time()
 
+    if data.modelId is not None:
+        # 按 modelId 测试已保存的模型，使用数据库中的真实 api_url / api_key / model_name
+        model = await crud.get_ai_model_by_id(db, data.modelId)
+        if not model:
+            return ApiResponse(code=-1, message="模型不存在")
+        api_url = model.api_url
+        api_key = model.api_key
+        model_name = model.model_name
+    else:
+        # 无 modelId 时测试未保存的配置（保留原有流程）
+        if not data.apiUrl or not data.apiKey or not data.modelName:
+            return ApiResponse(code=-1, message="API地址、API Key 和模型名称不能为空")
+        api_url = data.apiUrl
+        api_key = data.apiKey
+        model_name = data.modelName
+
     test_payload = {
-        "model": data.modelName,
+        "model": model_name,
         "messages": [
             {"role": "user", "content": "Hi, please reply with one word: OK"}
         ],
@@ -231,14 +249,15 @@ async def test_ai_model(
     }
 
     headers = {
-        "Authorization": f"Bearer {data.apiKey}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
     try:
+        assert_not_private_host(api_url)
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                data.apiUrl,
+                api_url,
                 json=test_payload,
                 headers=headers,
             )
@@ -246,7 +265,7 @@ async def test_ai_model(
 
             if response.status_code == 200:
                 result = response.json()
-                model_name = result.get("model", data.modelName)
+                model_name = result.get("model", model_name)
                 return ApiResponse(
                     data=AiModelTestResult(
                         success=True,
@@ -343,7 +362,8 @@ async def update_ai_model(
         update_kwargs["model_name"] = data.modelName
     if data.apiUrl is not None:
         update_kwargs["api_url"] = data.apiUrl
-    if data.apiKey is not None:
+    # 脱敏掩码（如 "****"）不允许写回，避免覆盖真实 API Key
+    if data.apiKey is not None and data.apiKey.strip() != "" and "*" not in data.apiKey:
         update_kwargs["api_key"] = data.apiKey
     if data.description is not None:
         update_kwargs["description"] = data.description

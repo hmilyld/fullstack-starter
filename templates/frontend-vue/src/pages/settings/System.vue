@@ -17,6 +17,7 @@ const smtpSaving = ref(false)
 const testEmailAddr = ref('')
 const testEmailSaving = ref(false)
 const smtpPreset = ref('')
+const smtpPassword = ref('')
 const roles = ref<{ id: string; name: string }[]>([])
 
 const SMTP_PRESETS = [
@@ -122,19 +123,23 @@ async function handleSaveDefault() {
 async function handleSaveSmtp() {
   if (!config.value) return
   smtpSaving.value = true
-  const res = await updateSystemConfig({
+  const payload: Partial<SystemConfig> = {
     smtpEnabled: config.value.smtpEnabled,
     smtpHost: config.value.smtpHost,
     smtpPort: config.value.smtpPort,
     smtpUsername: config.value.smtpUsername,
-    smtpPassword: config.value.smtpPassword,
     smtpFromName: config.value.smtpFromName,
     smtpFromEmail: config.value.smtpFromEmail,
     smtpUseSsl: config.value.smtpUseSsl,
-  })
+  }
+  if (smtpPassword.value) {
+    payload.smtpPassword = smtpPassword.value
+  }
+  const res = await updateSystemConfig(payload)
   smtpSaving.value = false
   if (res.code === 0) {
     toast.success('保存成功')
+    smtpPassword.value = ''
     const fresh = await getSystemConfig()
     if (fresh.code === 0) config.value = fresh.data
   } else {
@@ -323,8 +328,8 @@ async function handleTestEmail() {
                 <input :value="config.smtpUsername" @input="updateField('smtpUsername', ($event.target as HTMLInputElement).value)" placeholder="例如: your@email.com" class="input input-bordered w-full" />
               </fieldset>
               <fieldset class="fieldset">
-                <legend class="fieldset-legend">密码 *</legend>
-                <input type="password" :value="config.smtpPassword" @input="updateField('smtpPassword', ($event.target as HTMLInputElement).value)" placeholder="请输入 SMTP 密码或授权码" class="input input-bordered w-full" />
+                <legend class="fieldset-legend">密码</legend>
+                <input type="password" v-model="smtpPassword" placeholder="留空保持不变" class="input input-bordered w-full" />
               </fieldset>
             </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

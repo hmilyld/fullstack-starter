@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,8 +14,8 @@ router = APIRouter(prefix="/permissions", tags=["权限"])
 async def get_permissions(
     type: str | None = None,
     parent: str | None = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
     current_user: User = Depends(require_permission("permissions")),
+    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     permissions = await crud.get_permissions(db, type, parent)
     return ApiResponse(data=permissions)
@@ -27,7 +25,7 @@ async def get_permissions(
 async def create_permission(
     data: PermissionCreate,
     current_user: User = Depends(require_permission("permissions.create")),
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     if await crud.get_permission_by_code(db, data.code):
         return ApiResponse(code=-1, message="权限编码已存在")
@@ -38,7 +36,7 @@ async def create_permission(
 @router.post("/sync")
 async def sync_permissions_route(
     current_user: User = Depends(require_permission("permissions.create")),
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     result = await crud.sync_permissions(db)
     return ApiResponse(data=result, message="权限同步完成")
@@ -49,7 +47,7 @@ async def update_permission(
     code: str,
     data: PermissionUpdate,
     current_user: User = Depends(require_permission("permissions.edit")),
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     permission = await crud.get_permission_by_code(db, code)
     if permission is None:
@@ -62,7 +60,7 @@ async def update_permission(
 async def delete_permission(
     code: str,
     current_user: User = Depends(require_permission("permissions.delete")),
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     permission = await crud.get_permission_by_code(db, code)
     if permission is None:

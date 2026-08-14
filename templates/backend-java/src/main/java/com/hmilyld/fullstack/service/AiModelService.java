@@ -97,7 +97,9 @@ public ApiResponse<?> updateAiModel(Long id, AiModelUpdateRequest req) {
 				model.setApiUrl(req.getApiUrl());
 			}
 			// 防止脱敏值被回写覆盖真实密钥
-			if (req.getApiKey() != null && !req.getApiKey().contains("****")) {
+			if (req.getApiKey() != null
+				&& !req.getApiKey().isBlank()
+				&& !req.getApiKey().contains("****")) {
 				model.setApiKey(req.getApiKey());
 			}
 			if (req.getDescription() != null) model.setDescription(req.getDescription());
@@ -138,15 +140,31 @@ public ApiResponse<?> getModelByAlias(String alias) {
 }
 
 public ApiResponse<?> testAiModel(AiModelTestRequest req) {
+	String apiUrl = req.getApiUrl();
+	String apiKey = req.getApiKey();
+	String modelName = req.getModelName();
+
+	if (req.getModelId() != null) {
+		AiModel model = aiModelRepository.findById(req.getModelId()).orElse(null);
+		if (model == null) {
+			return ApiResponse.error("模型不存在");
+		}
+		apiUrl = model.getApiUrl();
+		apiKey = model.getApiKey();
+		modelName = model.getModelName();
+	} else if (apiUrl == null || apiUrl.isBlank() || apiKey == null || apiKey.isBlank() || modelName == null || modelName.isBlank()) {
+		return ApiResponse.error("API地址、API Key 和模型名称不能为空");
+	}
+
 	try {
-		assertSafeUrl(req.getApiUrl());
+		assertSafeUrl(apiUrl);
 	} catch (IllegalArgumentException e) {
 		return ApiResponse.error(e.getMessage());
 	}
 	long startTime = System.currentTimeMillis();
 
 	Map<String, Object> payload = new HashMap<>();
-	payload.put("model", req.getModelName());
+	payload.put("model", modelName);
 	payload.put(
 		"messages",
 		java.util.List.of(Map.of("role", "user", "content", "Hi, please reply with one word: OK")));
@@ -157,8 +175,8 @@ public ApiResponse<?> testAiModel(AiModelTestRequest req) {
 	Map<String, Object> response =
 		webClient
 			.post()
-			.uri(req.getApiUrl())
-			.header("Authorization", "Bearer " + req.getApiKey())
+			.uri(apiUrl)
+			.header("Authorization", "Bearer " + apiKey)
 			.bodyValue(payload)
 			.retrieve()
 			.bodyToMono(Map.class)
@@ -170,10 +188,10 @@ public ApiResponse<?> testAiModel(AiModelTestRequest req) {
 		return ApiResponse.success(
 			new AiModelTestResult(false, "服务器返回空响应", (double) responseTime, null));
 	}
-	String modelName = (String) response.getOrDefault("model", req.getModelName());
+	String actualModel = (String) response.getOrDefault("model", modelName);
 	return ApiResponse.success(
 		new AiModelTestResult(
-			true, "连接成功，响应时间: " + responseTime + "ms", (double) responseTime, modelName));
+			true, "连接成功，响应时间: " + responseTime + "ms", (double) responseTime, actualModel));
 	} catch (Exception e) {
 	long responseTime = System.currentTimeMillis() - startTime;
 	String message = e.getMessage();

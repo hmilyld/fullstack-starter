@@ -34,7 +34,8 @@ export async function generateProject(
     generateDevSh(projectPath, frontend, backend),
     generateBuildSh(projectPath, frontend, backend),
     generateDockerfile(projectPath, frontend, backend),
-    generateDockerCompose(projectPath, projectName, frontend),
+    generateDockerCompose(projectPath, projectName, frontend, backend),
+    generateDockerignore(projectPath),
     generateNginxConf(projectPath, frontend),
     generateReadme(projectPath, projectName, frontend, backend),
   ]);
@@ -176,7 +177,7 @@ function generateDockerfile(projectPath: string, frontend: FrontendType, backend
 # ============================================
 
 # ── 阶段 1: 构建前端 ──
-FROM node:18-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
@@ -184,11 +185,11 @@ COPY frontend/ .
 RUN npm run build
 
 # ── 阶段 2: 运行环境 ──
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # 安装 Nginx
 RUN apt-get update && \\
-    apt-get install -y --no-install-recommends nginx gcc && \\
+    apt-get install -y --no-install-recommends nginx && \\
     rm -rf /var/lib/apt/lists/*
 
 # 复制前端构建产物到 Nginx
@@ -201,12 +202,13 @@ COPY backend/pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \\
     pip install --no-cache-dir uv
 COPY backend/ .
-RUN uv sync --frozen 2>/dev/null || uv pip install -e . 2>/dev/null || pip install --no-cache-dir fastapi uvicorn[standard] sqlalchemy[asyncio] aiosqlite pyjwt bcrypt python-multipart
+RUN cd /app && uv pip install --system -e .
 
 # 环境变量
-ENV DATABASE_URL=sqlite+aiosqlite:///./app.db
-ENV JWT_SECRET_KEY=secret
+ENV DATABASE_URL=sqlite+aiosqlite:////app/data/app.db
 ENV PYTHONUNBUFFERED=1
+
+VOLUME ["/app/data"]
 
 EXPOSE 5173
 
@@ -215,13 +217,20 @@ COPY --chmod=755 <<'STARTUP' /app/startup.sh
 #!/bin/bash
 set -e
 
+# 确保数据目录存在
+mkdir -p /app/data
+
 # 启动后端（后台）
-cd /app && uv run uvicorn app.main:app --host 0.0.0.0 --port 8088 &
+cd /app && python -m uvicorn app.main:app --host 0.0.0.0 --port 8088 &
 # 启动 Nginx（前台）
 nginx -g "daemon off;"
 STARTUP
 
 CMD ["/app/startup.sh"]
+
+# 健康检查（python:3.12-slim 无 wget，使用 urllib）
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \\
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5173/api/public/config', timeout=5)" || exit 1
 `;
   } else {
     dockerfile = `# ============================================
@@ -229,7 +238,7 @@ CMD ["/app/startup.sh"]
 # ============================================
 
 # ── 阶段 1: 构建前端 ──
-FROM node:18-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
@@ -237,7 +246,7 @@ COPY frontend/ .
 RUN npm run build
 
 # ── 阶段 2: 构建后端 ──
-FROM maven:3.9-eclipse-temurin-17 AS backend-builder
+FROM maven:3.9-eclipse-temurin-21 AS backend-builder
 WORKDIR /app
 COPY backend/pom.xml ./
 RUN mvn dependency:go-offline -B
@@ -245,7 +254,9 @@ COPY backend/src ./src
 RUN mvn package -DskipTests -B
 
 # ── 阶段 3: 运行环境 ──
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
 
 # 安装 Nginx
 RUN apk add --no-cache nginx
@@ -257,12 +268,17 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # 复制后端 JAR
 COPY --from=backend-builder /app/target/*.jar /app/app.jar
 
+VOLUME ["/app/data"]
+
 EXPOSE 5173
 
 # 启动脚本：同时运行 Nginx 和后端
 COPY --chmod=755 <<'STARTUP' /app/startup.sh
 #!/bin/sh
 set -e
+
+# 确保数据目录存在
+mkdir -p /app/data
 
 # 启动后端（后台）
 java -jar /app/app.jar &
@@ -271,6 +287,10 @@ nginx -g "daemon off;"
 STARTUP
 
 CMD ["/app/startup.sh"]
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \\
+  CMD wget -qO- http://127.0.0.1:5173/api/public/config || exit 1
 `;
   }
 
@@ -279,20 +299,44 @@ CMD ["/app/startup.sh"]
 
 // ── docker-compose.yml ────────────────────────────────────
 
-function generateDockerCompose(projectPath: string, projectName: string, frontend: FrontendType): Promise<void> {
+function generateDockerCompose(projectPath: string, projectName: string, frontend: FrontendType, backend: BackendType): Promise<void> {
   
-  const content = `version: '3.8'
-
-services:
+  const content = `services:
   app:
     build: .
     ports:
       - "5173:5173"
     environment:
-      - JWT_SECRET_KEY=\${JWT_SECRET_KEY:-your-secret-key}
+      - JWT_SECRET_KEY=\${JWT_SECRET_KEY:?请通过环境变量 JWT_SECRET_KEY 设置一个强随机密钥}
+    volumes:
+      - app-data:/app/data
     restart: unless-stopped
+
+volumes:
+  app-data:
 `;
   return fs.writeFile(path.join(projectPath, 'docker-compose.yml'), content);
+}
+
+// ── .dockerignore ─────────────────────────────────────────
+
+function generateDockerignore(projectPath: string): Promise<void> {
+  const content = `node_modules
+.venv
+venv
+dist
+target
+.git
+.gitignore
+*.db
+*.db-journal
+.env
+.env.*
+data
+__pycache__
+*.pyc
+`;
+  return fs.writeFile(path.join(projectPath, '.dockerignore'), content);
 }
 
 // ── nginx.conf ────────────────────────────────────────────
@@ -357,7 +401,7 @@ function generateReadme(
 |------|------|
 | 前端 | ${frontendName} + Vite + TypeScript + Tailwind CSS${frontend === 'vue' ? ' + DaisyUI' : ''} |
 | 后端 | ${backendName} |
-| 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite)' : 'H2 (内存)'} |
+| 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite)' : 'SQLite (文件)'} |
 | 认证 | JWT |
 | 部署 | Docker（单镜像：Nginx + 后端） |
 
@@ -386,21 +430,32 @@ cd frontend && npm install && cd ..
 # 构建镜像
 docker build -t ${projectName} .
 
-# 运行
-docker run -d -p 5173:5173 -e JWT_SECRET_KEY=your-secret ${projectName}
+# 运行（必须设置强随机 JWT_SECRET_KEY，例如: openssl rand -base64 48）
+docker run -d -p 5173:5173 -e JWT_SECRET_KEY=\$(openssl rand -base64 48) ${projectName}
 
-# 或使用 docker compose
-JWT_SECRET_KEY=your-secret docker compose up -d
+# 或使用 docker compose（未设置 JWT_SECRET_KEY 时会直接报错提示）
+JWT_SECRET_KEY=\$(openssl rand -base64 48) docker compose up -d
 \`\`\`
 
 访问 http://localhost:5173
 
 ### 默认账号
 
+> 注意: 默认密码 \`123456\` 仅用于开发调试，生产部署后请立即修改密码。
+
 | 用户名 | 密码 | 角色 |
 |--------|------|------|
 | admin | 123456 | 管理员 |
-| user1 | 123456 | 普通用户 |
+| zhangsan | 123456 | 普通用户 |
+| lisi | 123456 | 普通用户 |
+| wangwu | 123456 | 普通用户 |
+| zhaoliu | 123456 | 普通用户 |
+
+### 数据持久化
+
+Docker 部署时 SQLite 数据存放在命名卷 \`app-data\` 中，挂载到容器的 \`/app/data\` 目录。
+\`docker compose down\` 后数据仍会保留，重新 \`docker compose up -d\` 后数据不丢失。
+如需清理数据，可执行 \`docker compose down -v\` 删除数据卷。
 
 ## 项目结构
 

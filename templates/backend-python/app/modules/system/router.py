@@ -30,6 +30,10 @@ async def update_system_config(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     update_data = data.model_dump(exclude_unset=True)
+    # 脱敏掩码（"****"）不允许写回，避免覆盖真实 SMTP 密码
+    smtp_password = update_data.get("smtpPassword")
+    if isinstance(smtp_password, str) and "*" in smtp_password:
+        update_data.pop("smtpPassword", None)
     config = await crud.update_config(db, **update_data)
     return ApiResponse(data=SystemConfigOut.from_orm_config(config).model_dump())
 

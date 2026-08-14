@@ -62,6 +62,7 @@ onMounted(() => loadModels())
 
 onUnmounted(() => {
   if (searchTimer) clearTimeout(searchTimer)
+  if (presetTimer) clearTimeout(presetTimer)
 })
 
 function toggleKeyVisibility(id: string) {
@@ -108,7 +109,7 @@ function handleEdit(model: AiModel) {
     alias: model.alias,
     modelName: model.modelName,
     apiUrl: model.apiUrl,
-    apiKey: model.apiKey,
+    apiKey: '',
     description: model.description,
     isDefault: model.isDefault,
   }
@@ -118,9 +119,13 @@ function handleEdit(model: AiModel) {
 async function handleEditSubmit() {
   editSubmitting.value = true
   try {
+    const payload: Partial<Omit<AiModel, 'id'>> = { ...editForm.value }
+    if (editingModel.value && !payload.apiKey) {
+      delete payload.apiKey
+    }
     const res = editingModel.value
-      ? await updateAiModel(editingModel.value.id, editForm.value)
-      : await createAiModel(editForm.value)
+      ? await updateAiModel(editingModel.value.id, payload)
+      : await createAiModel(payload as Omit<AiModel, 'id'>)
     if (res.code === 0) {
       toast.success(editingModel.value ? '更新成功' : '创建成功')
       editOpen.value = false
@@ -169,9 +174,7 @@ async function handleTest(model: AiModel) {
   testResult.value = null
   try {
     const res = await testAiModel({
-      apiUrl: model.apiUrl,
-      apiKey: model.apiKey,
-      modelName: model.modelName,
+      modelId: model.id,
     })
     if (res.code === 0) {
       testResult.value = res.data
@@ -217,7 +220,11 @@ async function loadPresetData() {
   presetLoading.value = false
 }
 
-watch([presetSearch, selectedGroup], () => loadPresetData())
+let presetTimer: ReturnType<typeof setTimeout> | null = null
+watch([presetSearch, selectedGroup], () => {
+  if (presetTimer) clearTimeout(presetTimer)
+  presetTimer = setTimeout(() => loadPresetData(), 300)
+})
 
 function handlePresetAdd() {
   editingPreset.value = null
@@ -429,8 +436,8 @@ async function handlePresetDeleteConfirm() {
               <input v-model="editForm.apiUrl" placeholder="例如: https://api.deepseek.com/v1/chat/completions" class="input input-bordered w-full" required />
             </fieldset>
             <fieldset class="fieldset mt-2">
-              <legend class="fieldset-legend">API Key *</legend>
-              <input v-model="editForm.apiKey" type="password" placeholder="请输入 API Key" class="input input-bordered w-full" required />
+              <legend class="fieldset-legend">API Key{{ editingModel ? '' : ' *' }}</legend>
+              <input v-model="editForm.apiKey" type="password" :placeholder="editingModel ? '留空保持不变' : '请输入 API Key'" class="input input-bordered w-full" :required="!editingModel" />
             </fieldset>
             <fieldset class="fieldset mt-2">
               <legend class="fieldset-legend">描述</legend>

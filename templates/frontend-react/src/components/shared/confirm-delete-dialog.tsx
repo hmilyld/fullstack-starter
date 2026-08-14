@@ -40,7 +40,14 @@ export function ConfirmDeleteDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onConfirm} disabled={loading}>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={(e) => {
+              e.preventDefault()
+              onConfirm()
+            }}
+            disabled={loading}
+          >
             {loading && <Spinner data-icon="inline-start" />}
             删除
           </AlertDialogAction>

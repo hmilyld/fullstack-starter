@@ -55,7 +55,7 @@ import {
   getAiModelPresetGroups,
   createAiModelPreset,
   updateAiModelPreset,
-  deleteAiModel as apiDeleteAiModelPreset,
+  deleteAiModelPreset as apiDeleteAiModelPreset,
 } from "@/lib/api"
 import { appToast } from "@/lib/toast"
 
@@ -75,6 +75,7 @@ function AiModelPresetManager() {
   const [groups, setGroups] = React.useState<string[]>([])
   const [selectedGroup, setSelectedGroup] = React.useState("")
   const [search, setSearch] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
   const [loading, setLoading] = React.useState(true)
   const [editOpen, setEditOpen] = React.useState(false)
   const [editingPreset, setEditingPreset] = React.useState<AiModelPreset | null>(null)
@@ -92,16 +93,22 @@ function AiModelPresetManager() {
   const [deleteTarget, setDeleteTarget] = React.useState<AiModelPreset | null>(null)
   const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
 
+  // 搜索防抖：输入停止 300ms 后再触发查询
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
   const loadData = React.useCallback(async () => {
     setLoading(true)
     const [presetsRes, groupsRes] = await Promise.all([
-      getAiModelPresets({ search, group: selectedGroup }),
+      getAiModelPresets({ search: debouncedSearch, group: selectedGroup }),
       getAiModelPresetGroups(),
     ])
     if (presetsRes.code === 0) setPresets(presetsRes.data)
     if (groupsRes.code === 0) setGroups(groupsRes.data)
     setLoading(false)
-  }, [search, selectedGroup])
+  }, [debouncedSearch, selectedGroup])
 
   React.useEffect(() => {
     loadData()
@@ -164,11 +171,15 @@ function AiModelPresetManager() {
   }
 
   async function handleDeleteConfirm() {
+    if (!deleteTarget) return
     setDeleteSubmitting(true)
-    if (deleteTarget) {
-      await apiDeleteAiModelPreset(deleteTarget.id)
-    }
+    const res = await apiDeleteAiModelPreset(deleteTarget.id)
     setDeleteSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "删除失败")
+      return
+    }
+    appToast.success("删除成功")
     setDeleteOpen(false)
     loadData()
   }
@@ -405,6 +416,7 @@ export function AiModelPage() {
   const [models, setModels] = React.useState<AiModel[]>([])
   const [presets, setPresets] = React.useState<PresetForSelect[]>([])
   const [search, setSearch] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
   const [page, setPage] = React.useState(1)
   const [total, setTotal] = React.useState(0)
   const [tableLoading, setTableLoading] = React.useState(true)
@@ -423,10 +435,16 @@ export function AiModelPage() {
     })
   }
 
+  // 搜索防抖：输入停止 300ms 后再触发查询
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
   const loadData = React.useCallback(async () => {
     setTableLoading(true)
     const [modelsRes, presetsRes] = await Promise.all([
-      getAiModels({ search, page, pageSize: PAGE_SIZE }),
+      getAiModels({ search: debouncedSearch, page, pageSize: PAGE_SIZE }),
       getActiveAiModelPresets(),
     ])
     if (modelsRes.code === 0) {
@@ -437,7 +455,7 @@ export function AiModelPage() {
       setPresets(presetsRes.data)
     }
     setTableLoading(false)
-  }, [search, page])
+  }, [debouncedSearch, page])
 
   React.useEffect(() => {
     loadData()
@@ -497,7 +515,7 @@ export function AiModelPage() {
       alias: model.alias,
       modelName: model.modelName,
       apiUrl: model.apiUrl,
-      apiKey: model.apiKey,
+      apiKey: "",
       description: model.description,
       isDefault: model.isDefault,
     })
@@ -509,14 +527,17 @@ export function AiModelPage() {
     e.preventDefault()
     setEditSubmitting(true)
     if (editingModel) {
-      const res = await updateAiModel(editingModel.id, {
+      const payload: Partial<Omit<AiModel, "id">> = {
         alias: editForm.alias,
         modelName: editForm.modelName,
         apiUrl: editForm.apiUrl,
-        apiKey: editForm.apiKey,
         description: editForm.description,
         isDefault: editForm.isDefault,
-      })
+      }
+      if (editForm.apiKey.trim()) {
+        payload.apiKey = editForm.apiKey
+      }
+      const res = await updateAiModel(editingModel.id, payload)
       if (res.code !== 0) {
         appToast.error(res.message)
         setEditSubmitting(false)
@@ -564,11 +585,7 @@ export function AiModelPage() {
     setTestingId(model.id)
     setTestResult(null)
     try {
-      const res = await testAiModel({
-        apiUrl: model.apiUrl,
-        apiKey: model.apiKey,
-        modelName: model.modelName,
-      })
+      const res = await testAiModel({ modelId: model.id })
       if (res.code === 0) {
         setTestResult(res.data)
       } else {
@@ -835,14 +852,14 @@ export function AiModelPage() {
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="apiKey">API Key *</FieldLabel>
+                <FieldLabel htmlFor="apiKey">API Key{editingModel ? "" : " *"}</FieldLabel>
                 <Input
                   id="apiKey"
                   type="password"
-                  placeholder="请输入 API Key"
+                  placeholder={editingModel ? "留空保持不变" : "请输入 API Key"}
                   value={editForm.apiKey}
                   onChange={(e) => setEditForm((f) => ({ ...f, apiKey: e.target.value }))}
-                  required
+                  required={!editingModel}
                 />
               </Field>
               <Field>

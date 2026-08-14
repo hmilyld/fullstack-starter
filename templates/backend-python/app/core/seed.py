@@ -55,7 +55,7 @@ async def seed_data(db: AsyncSession) -> None:
 
     users = [
         {"username": "admin", "name": "管理员", "email": "admin@example.com", "role_id": "admin"},
-        {"username": "zhangsan", "name": "张三", "email": "zhangsan@example.com", "role_id": "admin"},
+        {"username": "zhangsan", "name": "张三", "email": "zhangsan@example.com", "role_id": "user"},
         {"username": "lisi", "name": "李四", "email": "lisi@example.com", "role_id": "user"},
         {"username": "wangwu", "name": "王五", "email": "wangwu@example.com", "role_id": "user"},
         {"username": "zhaoliu", "name": "赵六", "email": "zhaoliu@example.com", "role_id": "user"},

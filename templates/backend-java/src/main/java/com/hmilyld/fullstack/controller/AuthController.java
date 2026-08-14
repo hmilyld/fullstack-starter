@@ -43,9 +43,10 @@ public ApiResponse<?> logout() {
 }
 
 private String getClientIp(HttpServletRequest request) {
-	String ip = request.getHeader("X-Forwarded-For");
+	// 优先读取 nginx 写入的 X-Real-IP(由 $remote_addr 覆盖写入，不可伪造)
+	String ip = request.getHeader("X-Real-IP");
 	if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-	ip = request.getHeader("X-Real-IP");
+	ip = request.getHeader("X-Forwarded-For");
 	}
 	if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
 	ip = request.getRemoteAddr();

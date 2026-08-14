@@ -29,13 +29,6 @@ watch(() => props.open, async (val) => {
 function close() {
   emit('update:open', false)
 }
-
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !props.loading) {
-    e.preventDefault()
-    emit('confirm')
-  }
-}
 </script>
 
 <template>
@@ -43,7 +36,6 @@ function handleKeydown(e: KeyboardEvent) {
     ref="dialog"
     class="modal"
     @close="close"
-    @keydown="handleKeydown"
   >
     <div class="modal-box">
       <h3 class="text-lg font-bold">确认删除</h3>

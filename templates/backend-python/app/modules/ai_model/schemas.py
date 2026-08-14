@@ -144,13 +144,16 @@ class AiModelPublicOut(BaseModel):
 
 
 class AiModelTestRequest(BaseModel):
-    apiUrl: str
-    apiKey: str
-    modelName: str
+    modelId: int | None = None
+    apiUrl: str | None = None
+    apiKey: str | None = None
+    modelName: str | None = None
 
     @field_validator("apiUrl")
     @classmethod
-    def validate_api_url(cls, v: str) -> str:
+    def validate_api_url(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
         parsed = urlparse(v)
         if parsed.scheme not in ("https", "http"):
             raise ValueError("API 地址必须使用 https 或 http 协议")

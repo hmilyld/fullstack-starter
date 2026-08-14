@@ -30,6 +30,8 @@ const roleMap = computed(() => {
   return map
 })
 
+const isAdmin = computed(() => auth.user?.role === 'admin')
+
 onMounted(async () => {
   const res = await getRoles({ pageSize: 100 })
   if (res.code === 0) roles.value = res.data.list
@@ -339,16 +341,16 @@ function copyPassword() {
                 </td>
                 <td class="text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <button v-if="auth.hasPermission('users.edit')" class="btn btn-ghost btn-xs" @click="handleEdit(user)">
+                    <button v-if="auth.hasPermission('users.edit') && (isAdmin || user.roleId !== 'admin')" class="btn btn-ghost btn-xs" @click="handleEdit(user)">
                       <Pencil class="size-3" />
                     </button>
-                    <button v-if="auth.hasPermission('users.assign_role')" class="btn btn-ghost btn-xs" @click="handleRole(user)">
+                    <button v-if="auth.hasPermission('users.assign_role') && (isAdmin || user.roleId !== 'admin')" class="btn btn-ghost btn-xs" @click="handleRole(user)">
                       <Shield class="size-3" />
                     </button>
-                    <button v-if="auth.hasPermission('users.delete')" class="btn btn-ghost btn-xs" @click="handleDelete(user)">
+                    <button v-if="user.id !== auth.user?.id && (isAdmin || user.roleId !== 'admin') && auth.hasPermission('users.delete')" class="btn btn-ghost btn-xs" @click="handleDelete(user)">
                       <Trash2 class="size-3" />
                     </button>
-                    <button v-if="auth.hasPermission('users.edit')" class="btn btn-ghost btn-xs" @click="openReset(user)">
+                    <button v-if="auth.hasPermission('users.edit') && (isAdmin || user.roleId !== 'admin')" class="btn btn-ghost btn-xs" @click="openReset(user)">
                       <KeyRound class="size-3" />
                     </button>
                   </div>
@@ -383,7 +385,7 @@ function copyPassword() {
             <legend class="fieldset-legend">邮箱</legend>
             <input v-model="editForm.email" type="email" placeholder="请输入邮箱" class="input input-bordered w-full" required />
           </fieldset>
-          <fieldset class="fieldset">
+          <fieldset v-if="auth.hasPermission('users.assign_role')" class="fieldset">
             <legend class="fieldset-legend">角色</legend>
             <select v-model="editForm.roleId" class="select select-bordered w-full">
               <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>

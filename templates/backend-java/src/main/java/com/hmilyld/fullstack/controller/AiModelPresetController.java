@@ -42,20 +42,20 @@ public ApiResponse<?> getPreset(@PathVariable Long id) {
 }
 
 @PostMapping("")
-@SaCheckPermission(value = {"ai_models.create", "ai_models.presets.create"}, mode = SaMode.AND)
+@SaCheckPermission(value = {"ai_models.create", "ai_models.presets.create"}, mode = SaMode.OR)
 public ApiResponse<?> createPreset(@RequestBody @Valid AiModelPresetCreateRequest req) {
 	return presetService.createPreset(req);
 }
 
 @PutMapping("/{id}")
-@SaCheckPermission(value = {"ai_models.edit", "ai_models.presets.edit"}, mode = SaMode.AND)
+@SaCheckPermission(value = {"ai_models.edit", "ai_models.presets.edit"}, mode = SaMode.OR)
 public ApiResponse<?> updatePreset(
 	@PathVariable Long id, @RequestBody AiModelPresetUpdateRequest req) {
 	return presetService.updatePreset(id, req);
 }
 
 @DeleteMapping("/{id}")
-@SaCheckPermission(value = {"ai_models.delete", "ai_models.presets.delete"}, mode = SaMode.AND)
+@SaCheckPermission(value = {"ai_models.delete", "ai_models.presets.delete"}, mode = SaMode.OR)
 public ApiResponse<?> deletePreset(@PathVariable Long id) {
 	return presetService.deletePreset(id);
 }

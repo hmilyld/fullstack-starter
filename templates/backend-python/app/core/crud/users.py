@@ -45,6 +45,11 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     return result.scalar_one_or_none()
 
 
+async def count_users_by_role(db: AsyncSession, role_id: str) -> int:
+    result = await db.execute(select(func.count()).select_from(User).where(User.role_id == role_id))
+    return result.scalar() or 0
+
+
 async def create_user(
     db: AsyncSession,
     username: str,
@@ -65,8 +70,14 @@ async def create_user(
     return user
 
 
+# 允许通过 update_user 更新的字段白名单，防止未来扩展时误写入敏感字段
+_UPDATABLE_USER_FIELDS = {"username", "name", "email", "role_id", "avatar"}
+
+
 async def update_user(db: AsyncSession, user: User, **kwargs) -> User:
     for key, value in kwargs.items():
+        if key not in _UPDATABLE_USER_FIELDS:
+            raise ValueError(f"不允许更新用户字段: {key}")
         if value is not None:
             setattr(user, key, value)
     await db.flush()

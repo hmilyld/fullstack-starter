@@ -19,6 +19,7 @@ async def get_dashboard_stats(
 ) -> ApiResponse:
     result = await db.execute(select(func.count(User.id)))
     total_users = result.scalar() or 0
+    # 以下三项为演示用模拟数据（脚手架占位），接入真实业务统计后请替换为实际查询
     return ApiResponse(
         data={
             "totalUsers": total_users,
@@ -33,6 +34,7 @@ async def get_dashboard_stats(
 async def get_dashboard_activity(
     current_user: User = Depends(require_permission("dashboard")),
 ) -> ApiResponse:
+    # 演示用模拟活动数据（脚手架占位），接入真实业务后请替换为实际日志/事件查询
     return ApiResponse(
         data=[
             {"user": "张三", "action": "创建了新项目", "time": "2 分钟前"},

@@ -66,7 +66,9 @@ function findRoleName(roleId: string, roles: Role[]): string {
 }
 
 export function UsersPage() {
-  const { hasPermission } = useAuth()
+  const { hasPermission, user: currentUser } = useAuth()
+  const isAdmin = currentUser?.role === "admin"
+  const canManageUser = (user: User) => isAdmin || user.roleId !== "admin"
   const [users, setUsers] = React.useState<User[]>([])
   const [roles, setRoles] = React.useState<Role[]>([])
 
@@ -376,25 +378,25 @@ export function UsersPage() {
                   <TableCell>{getRoleBadge(findRoleName(user.roleId, roles))}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {hasPermission("users.edit") && (
+                      {hasPermission("users.edit") && canManageUser(user) && (
                         <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)}>
                           <PencilIcon data-icon="inline-start" />
                           <span className="sr-only">编辑</span>
                         </Button>
                       )}
-                      {hasPermission("users.assign_role") && (
+                      {hasPermission("users.assign_role") && canManageUser(user) && (
                         <Button variant="ghost" size="icon-sm" onClick={() => handleRole(user)}>
                           <ShieldIcon data-icon="inline-start" />
                           <span className="sr-only">维护角色</span>
                         </Button>
                       )}
-                      {hasPermission("users.delete") && (
+                      {hasPermission("users.delete") && canManageUser(user) && user.id !== currentUser?.id && (
                         <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user)}>
                           <Trash2Icon data-icon="inline-start" />
                           <span className="sr-only">删除</span>
                         </Button>
                       )}
-                      {hasPermission("users.edit") && (
+                      {hasPermission("users.edit") && canManageUser(user) && (
                         <Button variant="ghost" size="icon-sm" onClick={() => openReset(user)}>
                           <KeyIcon data-icon="inline-start" />
                           <span className="sr-only">重置密码</span>
@@ -456,23 +458,25 @@ export function UsersPage() {
                   required
                 />
               </Field>
-              <Field>
-                <FieldLabel>角色</FieldLabel>
-                <Select value={editForm.roleId} onValueChange={(v) => setEditForm((f) => ({ ...f, roleId: v }))}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="请选择角色" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
+              {hasPermission("users.assign_role") && (
+                <Field>
+                  <FieldLabel>角色</FieldLabel>
+                  <Select value={editForm.roleId} onValueChange={(v) => setEditForm((f) => ({ ...f, roleId: v }))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="请选择角色" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
             </FieldGroup>
             <DialogFooter className="mt-4">
               <LoadingButton type="submit" loading={editSubmitting}>

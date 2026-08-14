@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { useSiteConfigStore } from '@/stores/site-config'
 import { register } from '@/lib/api'
 import { useToast } from '@/composables/use-toast'
 
 const router = useRouter()
+const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
 const toast = useToast()
 
@@ -84,8 +86,12 @@ async function handleSubmit() {
     email: email.value,
     password: password.value,
   })
-  if (res.code === 0) {
+  if (res.code === 0 && res.data?.token) {
+    auth.login(res.data.token, res.data.user)
     toast.success('注册成功')
+    router.push('/dashboard')
+  } else if (res.code === 0) {
+    toast.success(res.message || '注册成功，请等待管理员审核')
     router.push('/login')
   } else {
     errorMessage.value = res.message || '注册失败'

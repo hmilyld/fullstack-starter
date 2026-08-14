@@ -124,7 +124,7 @@ INSERT OR IGNORE INTO role_permissions (role_id, permission_code) VALUES
 -- 用户 (密码: 123456, BCrypt 哈希)
 INSERT OR IGNORE INTO users (username, name, email, password_hash, role_id, avatar) VALUES
 ('admin', '管理员', 'admin@example.com', '$2b$12$f/LHqUrsUGxsnz2.PbPRAefklWVXr55q6NsP5RBYbs5f8JoVZ4W6S', 'admin', ''),
-('zhangsan', '张三', 'zhangsan@example.com', '$2b$12$f/LHqUrsUGxsnz2.PbPRAefklWVXr55q6NsP5RBYbs5f8JoVZ4W6S', 'admin', ''),
+('zhangsan', '张三', 'zhangsan@example.com', '$2b$12$f/LHqUrsUGxsnz2.PbPRAefklWVXr55q6NsP5RBYbs5f8JoVZ4W6S', 'user', ''),
 ('lisi', '李四', 'lisi@example.com', '$2b$12$f/LHqUrsUGxsnz2.PbPRAefklWVXr55q6NsP5RBYbs5f8JoVZ4W6S', 'user', ''),
 ('wangwu', '王五', 'wangwu@example.com', '$2b$12$f/LHqUrsUGxsnz2.PbPRAefklWVXr55q6NsP5RBYbs5f8JoVZ4W6S', 'user', ''),
 ('zhaoliu', '赵六', 'zhaoliu@example.com', '$2b$12$f/LHqUrsUGxsnz2.PbPRAefklWVXr55q6NsP5RBYbs5f8JoVZ4W6S', 'user', '');

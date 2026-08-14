@@ -36,8 +36,12 @@ async def update_config(db: AsyncSession, **kwargs) -> SystemConfig:
         "smtpUseSsl": "smtp_use_ssl",
     }
     for key, value in kwargs.items():
-        if value is not None:
-            attr_name = field_mapping.get(key, key)
-            setattr(config, attr_name, value)
+        if value is None:
+            continue
+        # 脱敏掩码（"****"）不允许写回，避免覆盖真实 SMTP 密码；空字符串 "" 表示清除密码
+        if key == "smtpPassword" and isinstance(value, str) and "*" in value:
+            continue
+        attr_name = field_mapping.get(key, key)
+        setattr(config, attr_name, value)
     await db.flush()
     return config

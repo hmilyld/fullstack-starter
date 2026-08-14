@@ -19,9 +19,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { register } from "@/lib/api"
 import { appToast } from "@/lib/toast"
 import { useSiteConfig } from "@/lib/site-config"
+import { useAuth } from "@/lib/auth-context"
 
 export function RegisterPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [submitting, setSubmitting] = React.useState(false)
   const { config } = useSiteConfig()
 
@@ -43,8 +45,14 @@ export function RegisterPage() {
 
     const res = await register({ username, email, password })
     if (res.code === 0) {
-      appToast.success("注册成功")
-      navigate("/login")
+      if (res.data?.token) {
+        login(res.data.token, res.data.user)
+        appToast.success("注册成功")
+        navigate("/dashboard")
+      } else {
+        appToast.success(res.message || "注册成功，请等待管理员审核")
+        navigate("/login")
+      }
     } else {
       appToast.error(res.message)
       setSubmitting(false)

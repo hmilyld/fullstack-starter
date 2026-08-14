@@ -1,5 +1,6 @@
 package com.hmilyld.fullstack.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.common.PageResult;
 import com.hmilyld.fullstack.dto.*;
@@ -60,6 +61,12 @@ public ApiResponse<?> createUser(UserCreateRequest req) {
 	user.setUsername(req.getUsername());
 	user.setName(req.getName());
 	user.setEmail(req.getEmail());
+	// 指定角色需要角色维护权限，避免 users.create 单独提权
+	if (req.getRoleId() != null
+		&& !req.getRoleId().equals("user")
+		&& !StpUtil.hasPermission("users.assign_role")) {
+		return ApiResponse.error("权限不足，需要角色维护权限");
+	}
 	user.setRoleId(req.getRoleId());
 	user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
 	user.setAvatar("");
@@ -70,50 +77,83 @@ public ApiResponse<?> createUser(UserCreateRequest req) {
 
 @Transactional
 public ApiResponse<?> updateUser(Long id, UserUpdateRequest req) {
-	return userRepository
-		.findById(id)
-		.map(
-			user -> {
-			if (req.getUsername() != null) user.setUsername(req.getUsername());
-			if (req.getName() != null) user.setName(req.getName());
-			if (req.getEmail() != null) user.setEmail(req.getEmail());
-			if (req.getRoleId() != null) user.setRoleId(req.getRoleId());
-			if (req.getAvatar() != null) user.setAvatar(req.getAvatar());
-			userRepository.save(user);
-			return ApiResponse.success(toOutMap(user));
-			})
-		.orElse(ApiResponse.error("用户不存在"));
+	User user = userRepository.findById(id).orElse(null);
+	if (user == null) {
+		return ApiResponse.error("用户不存在");
+	}
+
+	Long operatorId = StpUtil.getLoginIdAsLong();
+	boolean isSelf = user.getId().equals(operatorId);
+	boolean isAdmin = "admin".equals(user.getRoleId());
+
+	// 非管理员不能修改管理员用户
+	if (isAdmin && !isSelf && !isOperatorAdmin()) {
+		return ApiResponse.error("权限不足");
+	}
+
+	if (req.getRoleId() != null && !req.getRoleId().equals(user.getRoleId())) {
+		// 不能修改自己的角色
+		if (isSelf) {
+			if (isAdmin) {
+				return ApiResponse.error("不能降级自己的管理员角色");
+			}
+			return ApiResponse.error("不能修改自己的角色");
+		}
+		// 修改角色需要角色维护权限
+		if (!StpUtil.hasPermission("users.assign_role")) {
+			return ApiResponse.error("权限不足，需要角色维护权限");
+		}
+		user.setRoleId(req.getRoleId());
+	}
+
+	if (req.getUsername() != null) user.setUsername(req.getUsername());
+	if (req.getName() != null) user.setName(req.getName());
+	if (req.getEmail() != null) user.setEmail(req.getEmail());
+	if (req.getAvatar() != null) user.setAvatar(req.getAvatar());
+	userRepository.save(user);
+	return ApiResponse.success(toOutMap(user));
 }
 
 @Transactional
 public ApiResponse<?> deleteUser(Long id) {
-	return userRepository
-		.findById(id)
-		.map(
-			user -> {
-			// 检查是否为最后一个管理员
-			if ("admin".equals(user.getRoleId())) {
-				long adminCount = userRepository.countByRoleId("admin");
-				if (adminCount <= 1) {
-				return ApiResponse.<Object>error("不能删除最后一个管理员");
-				}
-			}
-			userRepository.delete(user);
-			return ApiResponse.success();
-			})
-		.orElse(ApiResponse.error("用户不存在"));
+	User user = userRepository.findById(id).orElse(null);
+	if (user == null) {
+		return ApiResponse.error("用户不存在");
+	}
+
+	Long operatorId = StpUtil.getLoginIdAsLong();
+	if (user.getId().equals(operatorId)) {
+		return ApiResponse.error("不能删除自己");
+	}
+
+	if ("admin".equals(user.getRoleId())) {
+		// 不能删除最后一个管理员
+		long adminCount = userRepository.countByRoleId("admin");
+		if (adminCount <= 1) {
+			return ApiResponse.error("不能删除最后一个管理员");
+		}
+		// 非管理员不能删除管理员用户
+		if (!isOperatorAdmin()) {
+			return ApiResponse.error("权限不足");
+		}
+	}
+
+	userRepository.delete(user);
+	return ApiResponse.success();
 }
 
 public ApiResponse<?> resetPassword(Long id, String newPassword) {
-	return userRepository
-		.findById(id)
-		.map(
-			user -> {
-			user.setPasswordHash(passwordEncoder.encode(newPassword));
-			userRepository.save(user);
-			return ApiResponse.success();
-			})
-		.orElse(ApiResponse.error("用户不存在"));
+	User user = userRepository.findById(id).orElse(null);
+	if (user == null) {
+		return ApiResponse.error("用户不存在");
+	}
+	// 非管理员不能重置管理员用户的密码
+	if ("admin".equals(user.getRoleId()) && !isOperatorAdmin()) {
+		return ApiResponse.error("权限不足");
+	}
+	user.setPasswordHash(passwordEncoder.encode(newPassword));
+	userRepository.save(user);
+	return ApiResponse.success();
 }
 
 @Transactional
@@ -165,6 +205,11 @@ public ApiResponse<?> changePassword(Long userId, ChangePasswordRequest req) {
 			return ApiResponse.success();
 			})
 		.orElse(ApiResponse.error("用户不存在"));
+}
+
+private boolean isOperatorAdmin() {
+	User operator = userRepository.findById(StpUtil.getLoginIdAsLong()).orElse(null);
+	return operator != null && "admin".equals(operator.getRoleId());
 }
 
 private Map<String, Object> toOutMap(User user) {

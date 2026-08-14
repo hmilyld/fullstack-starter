@@ -50,7 +50,9 @@ public ApiResponse<?> updateConfig(SystemConfigUpdateRequest req) {
 	if (req.getSmtpHost() != null) config.setSmtpHost(req.getSmtpHost());
 	if (req.getSmtpPort() != null) config.setSmtpPort(req.getSmtpPort());
 	if (req.getSmtpUsername() != null) config.setSmtpUsername(req.getSmtpUsername());
-	if (req.getSmtpPassword() != null) config.setSmtpPassword(req.getSmtpPassword());
+	if (req.getSmtpPassword() != null && !req.getSmtpPassword().contains("*")) {
+		config.setSmtpPassword(req.getSmtpPassword());
+	}
 	if (req.getSmtpFromName() != null) config.setSmtpFromName(req.getSmtpFromName());
 	if (req.getSmtpFromEmail() != null) config.setSmtpFromEmail(req.getSmtpFromEmail());
 	if (req.getSmtpUseSsl() != null) config.setSmtpUseSsl(req.getSmtpUseSsl());

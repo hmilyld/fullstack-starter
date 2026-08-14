@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import crud
@@ -15,8 +15,8 @@ router = APIRouter(prefix="/roles", tags=["角色"])
 @router.get("")
 async def get_roles(
     search: str = "",
-    page: int = 1,
-    pageSize: int = 10,
+    page: int = Query(1, ge=1),
+    pageSize: int = Query(10, ge=1, le=100),
     current_user: User = Depends(require_permission("roles")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
