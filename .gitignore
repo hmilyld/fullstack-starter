@@ -74,3 +74,6 @@ docker-compose.override.yml
 
 # === 其他 ===
 REVIEW.md
+
+# === 本地验证生成的测试项目 ===
+test-*/

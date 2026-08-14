@@ -14,6 +14,7 @@ import {
   KeyIcon,
   Settings2Icon,
   BotIcon,
+  FileTextIcon,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useSiteConfig } from "@/lib/site-config"
@@ -34,6 +35,7 @@ const data = {
         { title: "权限管理", url: "/settings/permission", icon: <KeyIcon />, permission: "permissions" },
         { title: "系统设置", url: "/settings/system", icon: <Settings2Icon />, permission: "settings" },
         { title: "AI模型配置", url: "/settings/ai-model", icon: <BotIcon />, permission: "ai_models" },
+        { title: "审计日志", url: "/settings/audit-log", icon: <FileTextIcon />, permission: "audit_logs" },
       ],
     },
   ],

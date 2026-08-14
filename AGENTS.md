@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**create-fullstack-app** is a scaffolding tool that generates fullstack admin panel projects. Users select a frontend framework (React/Vue) and a backend framework (Python/Java), and the tool generates a complete project with JWT authentication (login/register/logout), user/role/permission management, system settings, AI model management, a dashboard, and Docker deployment.
+**create-fullstack-app** is a scaffolding tool that generates fullstack admin panel projects. Users select a frontend framework (React/Vue) and a backend framework (Python/Java), and the tool generates a complete project with JWT authentication (login/register/logout), user/role/permission management, system settings, AI model management, audit logging, a dashboard, and Docker deployment.
 
 ## Project Structure
 
@@ -48,7 +48,10 @@ Generated projects use a **single Docker image** containing Nginx + backend:
    - `FrontendType` / `BackendType` union types
    - `select()` choices in `src/index.ts`
    - `generateDockerfile()` for the new Dockerfile
-3. Test: `npm run dev` → select option → verify generated project builds
+3. When adding/changing a feature, keep documentation in sync:
+   - Feature list, module table and API tables in root `README.md`
+   - `generateReadme()` in `src/generator.ts` (the generated project's README)
+4. Test: `npm run dev` → select option → verify generated project builds
 
 ## Testing
 

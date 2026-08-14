@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from app.database import Base
 
@@ -72,3 +73,16 @@ class SystemConfig(Base):
     smtp_from_name = Column(String(100), default="管理系统")
     smtp_from_email = Column(String(100), default="")
     smtp_use_ssl = Column(Boolean, default=True)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=True, index=True)
+    username = Column(String(50), nullable=True)
+    action = Column(String(100), nullable=False, index=True)
+    ip = Column(String(50), nullable=False, default="")
+    status = Column(String(20), nullable=False, default="success", index=True)
+    detail = Column(Text, default="")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

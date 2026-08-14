@@ -37,3 +37,6 @@ sa-token:
 
 app:
   cors-origins: http://localhost:5173
+  audit:
+    exclude-paths:
+      - /api/auth

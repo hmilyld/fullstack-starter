@@ -55,6 +55,11 @@ const router = createRouter({
           name: 'AiModel',
           component: () => import('@/pages/settings/AiModel.vue'),
         },
+        {
+          path: 'settings/audit-log',
+          name: 'AuditLog',
+          component: () => import('@/pages/settings/AuditLog.vue'),
+        },
       ],
     },
     {

@@ -102,3 +102,14 @@ export type AiModelPreset = {
   isActive: boolean
   sortOrder: number
 }
+
+export type AuditLog = {
+  id: string
+  userId: string
+  username: string
+  action: string
+  ip: string
+  status: 'success' | 'fail' | 'permission_denied'
+  detail: string
+  createdAt: string
+}

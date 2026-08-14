@@ -77,6 +77,21 @@ CREATE TABLE IF NOT EXISTS ai_model_presets (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    username VARCHAR(50),
+    action VARCHAR(100) NOT NULL,
+    ip VARCHAR(50) NOT NULL DEFAULT '',
+    status VARCHAR(20) NOT NULL DEFAULT 'success',
+    detail TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs (user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_status ON audit_logs (status);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs (created_at);
+
 -- ============================================================
 -- 种子数据
 -- ============================================================
@@ -89,6 +104,7 @@ INSERT OR IGNORE INTO permissions (code, name, type, parent) VALUES
 ('permissions', '权限管理', 'menu', NULL),
 ('settings', '系统设置', 'menu', NULL),
 ('ai_models', 'AI模型配置', 'menu', NULL),
+('audit_logs', '审计日志', 'menu', NULL),
 ('users.create', '新增用户', 'operation', 'users'),
 ('users.edit', '编辑用户', 'operation', 'users'),
 ('users.delete', '删除用户', 'operation', 'users'),
@@ -134,23 +150,6 @@ INSERT OR IGNORE INTO system_config (id, site_name) VALUES (1, '管理系统');
 
 -- AI 模型预设
 INSERT OR IGNORE INTO ai_model_presets (id, "group", alias, model_name, api_url, description, is_active, sort_order) VALUES
-(1, 'DeepSeek', 'deepseek-chat', 'deepseek-chat', 'https://api.deepseek.com/v1/chat/completions', 'DeepSeek 通用对话模型，性价比高', 1, 1),
-(2, 'DeepSeek', 'deepseek-coder', 'deepseek-coder', 'https://api.deepseek.com/v1/chat/completions', 'DeepSeek 代码专用模型', 1, 2),
-(3, 'DeepSeek', 'deepseek-reasoner', 'deepseek-reasoner', 'https://api.deepseek.com/v1/chat/completions', 'DeepSeek 推理模型 (R1)', 1, 3),
-(4, '小米 MiMo', 'mimo', 'MiMo-7B-RL', 'https://api.xiaomi.com/v1/chat/completions', '小米 MiMo 7B 推理模型', 1, 1),
-(5, 'OpenAI', 'gpt-4o', 'gpt-4o', 'https://api.openai.com/v1/chat/completions', 'OpenAI GPT-4o 多模态模型', 1, 1),
-(6, 'OpenAI', 'gpt-4o-mini', 'gpt-4o-mini', 'https://api.openai.com/v1/chat/completions', 'OpenAI GPT-4o 轻量版，更快更便宜', 1, 2),
-(7, 'OpenAI', 'gpt-4-turbo', 'gpt-4-turbo', 'https://api.openai.com/v1/chat/completions', 'OpenAI GPT-4 Turbo', 1, 3),
-(8, 'OpenAI', 'gpt-3.5-turbo', 'gpt-3.5-turbo', 'https://api.openai.com/v1/chat/completions', 'OpenAI GPT-3.5 Turbo，经济实惠', 1, 4),
-(9, 'Claude', 'claude-3-5-sonnet', 'claude-3-5-sonnet-20241022', 'https://api.anthropic.com/v1/messages', 'Claude 3.5 Sonnet，性能与成本的最佳平衡', 1, 1),
-(10, 'Claude', 'claude-3-opus', 'claude-3-opus-20240229', 'https://api.anthropic.com/v1/messages', 'Claude 3 Opus，最强推理能力', 1, 2),
-(11, 'Claude', 'claude-3-haiku', 'claude-3-haiku-20240307', 'https://api.anthropic.com/v1/messages', 'Claude 3 Haiku，最快响应速度', 1, 3),
-(12, '通义千问', 'qwen-turbo', 'qwen-turbo', 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', '通义千问 Turbo，快速响应', 1, 1),
-(13, '通义千问', 'qwen-plus', 'qwen-plus', 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', '通义千问 Plus，均衡性能', 1, 2),
-(14, '通义千问', 'qwen-max', 'qwen-max', 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', '通义千问 Max，最强能力', 1, 3),
-(15, '智谱 GLM', 'glm-4', 'glm-4', 'https://open.bigmodel.cn/api/paas/v4/chat/completions', '智谱 GLM-4，综合能力强', 1, 1),
-(16, '智谱 GLM', 'glm-4-flash', 'glm-4-flash', 'https://open.bigmodel.cn/api/paas/v4/chat/completions', '智谱 GLM-4 Flash，免费快速', 1, 2),
-(17, 'Moonshot', 'moonshot-v1-8k', 'moonshot-v1-8k', 'https://api.moonshot.cn/v1/chat/completions', 'Moonshot V1 8K，支持长上下文', 1, 1),
-(18, 'Moonshot', 'moonshot-v1-32k', 'moonshot-v1-32k', 'https://api.moonshot.cn/v1/chat/completions', 'Moonshot V1 32K，超长上下文', 1, 2),
-(19, '文心一言', 'ernie-4.0', 'ernie-4.0-8k', 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions', '百度文心一言 4.0', 1, 1),
-(20, '文心一言', 'ernie-speed', 'ernie-speed-128k', 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions', '百度文心一言 Speed，快速经济', 1, 2);
+(1, 'DeepSeek', 'deepseek-v4-flash', 'deepseek-v4-flash', 'https://api.deepseek.com/v1/chat/completions', 'DeepSeek-V4-Flash 通用对话模型，性价比高', 1, 1),
+(2, 'DeepSeek', 'deepseek-v4-pro', 'deepseek-v4-pro', 'https://api.deepseek.com/v1/chat/completions', 'DeepSeek-V4-Pro 最强推理模型', 1, 2),
+(3, '小米 MiMo', 'mimo-v2.5', 'mimo-v2.5', 'https://api.xiaomi.com/v1/chat/completions', '小米 MiMo-V2.5 全模态模型，支持 1M 超长上下文', 1, 1);

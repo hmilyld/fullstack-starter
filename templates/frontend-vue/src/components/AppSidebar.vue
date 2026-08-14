@@ -11,16 +11,12 @@ import {
   KeyRound,
   Settings2,
   Bot,
+  FileText,
   ChevronsUpDown,
 } from 'lucide-vue-next'
 
 const props = defineProps<{
-  isMobile: boolean
   collapsed?: boolean
-}>()
-
-const emit = defineEmits<{
-  (e: 'navigate'): void
 }>()
 
 const route = useRoute()
@@ -48,6 +44,7 @@ const navGroups = computed(() => {
         { title: '权限管理', url: '/settings/permission', icon: KeyRound, permission: 'permissions' },
         { title: '系统设置', url: '/settings/system', icon: Settings2, permission: 'settings' },
         { title: 'AI模型配置', url: '/settings/ai-model', icon: Bot, permission: 'ai_models' },
+        { title: '审计日志', url: '/settings/audit-log', icon: FileText, permission: 'audit_logs' },
       ],
     },
   ]
@@ -65,7 +62,6 @@ const navGroups = computed(() => {
 function navigate(url: string) {
   router.push(url)
   userMenuOpen.value = false
-  emit('navigate')
 }
 
 function toggleUserMenu() {

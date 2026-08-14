@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # 审计日志排除路径（前缀匹配），如认证接口由业务显式记录
+    audit_exclude_paths: list[str] = ["/api/auth"]
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     def model_post_init(self, __context: object) -> None:

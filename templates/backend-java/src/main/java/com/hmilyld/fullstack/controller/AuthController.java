@@ -1,5 +1,6 @@
 package com.hmilyld.fullstack.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.dto.LoginRequest;
 import com.hmilyld.fullstack.dto.RegisterRequest;
@@ -23,7 +24,7 @@ public ApiResponse<?> login(@RequestBody @Valid LoginRequest req, HttpServletReq
 	if (rateLimiter.isRateLimited("login:" + clientIp)) {
 	return ApiResponse.error("登录尝试过于频繁，请稍后再试");
 	}
-	return authService.login(req.getAccount(), req.getPassword());
+	return authService.login(req.getAccount(), req.getPassword(), clientIp);
 }
 
 @PostMapping("/register")
@@ -33,12 +34,21 @@ public ApiResponse<?> register(
 	if (rateLimiter.isRateLimited("register:" + clientIp)) {
 	return ApiResponse.error("注册尝试过于频繁，请稍后再试");
 	}
-	return authService.register(req.getUsername(), req.getEmail(), req.getPassword());
+	return authService.register(req.getUsername(), req.getEmail(), req.getPassword(), clientIp);
 }
 
 @PostMapping("/logout")
-public ApiResponse<?> logout() {
-	authService.logout();
+public ApiResponse<?> logout(HttpServletRequest request) {
+	Long userId = null;
+	try {
+	Object loginId = StpUtil.getLoginIdDefaultNull();
+	if (loginId != null) {
+		userId = Long.parseLong(loginId.toString());
+	}
+	} catch (Exception ignored) {
+	// 未登录时直接登出
+	}
+	authService.logout(userId, getClientIp(request));
 	return ApiResponse.success();
 }
 

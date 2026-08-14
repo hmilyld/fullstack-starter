@@ -7,7 +7,7 @@
 - 🎨 **前端可选**：React (Vite + TypeScript + Tailwind CSS + shadcn 风格组件) 或 Vue 3 (Vite + TypeScript + Tailwind CSS + DaisyUI)
 - ⚙️ **后端可选**：Python (FastAPI) 或 Java (Spring Boot)
 - 🔐 **内置认证**：JWT 登录、注册、登出、维护模式与人工审核
-- 🧩 **完整模块**：用户、角色、权限、系统设置、AI 模型与预设、仪表盘
+- 🧩 **完整模块**：用户、角色、权限、系统设置、AI 模型与预设、审计日志、仪表盘
 - 🐳 **Docker 就绪**：单镜像部署，Nginx 反代
 - 📊 **开箱即用**：仪表盘统计、用户/角色/权限 CRUD、分页搜索、个人设置
 
@@ -23,6 +23,7 @@
 | 系统设置 | 站点配置读写、邮件测试、维护模式、开放注册、人工审核 |
 | AI 模型 | 列表/默认/按别名查询/新增/编辑/删除/连接测试 |
 | AI 模型预设 | 分组、激活预设、列表/新增/编辑/删除 |
+| 审计日志 | 写操作与权限拦截记录，按用户/状态/动作/时间筛选，分页查看 |
 | 个人中心 | 修改资料、修改密码 |
 
 默认账号：`admin / 123456`、`zhangsan / 123456`（管理员）、`lisi / wangwu / zhaoliu / 123456`（普通用户）。注册新账号时根据系统设置进入「待审核」或「普通用户」角色。
@@ -87,7 +88,7 @@ my-project/
 ├── frontend/                # 前端项目
 │   ├── src/
 │   │   ├── api/             # API 调用层（axios + 请求拦截器）
-│   ├── pages/             # 页面（Login、Register、Dashboard、User、Role、Permission、System、AiModel、Profile）
+│   ├── pages/             # 页面（Login、Register、Dashboard、User、Role、Permission、System、AiModel、AuditLog、Profile）
 │   │   ├── router/           # 路由（受保护路由）
 │   │   └── stores/或contexts/ # 认证状态
 │   ├── vite.config.ts        # 开发代理 /api → localhost:8088
@@ -238,6 +239,12 @@ cd <生成的项目>/backend && 启动后端
 | POST | /api/ai-models/presets | 创建预设 | 是(admin) |
 | PUT | /api/ai-models/presets/:id | 更新预设 | 是(admin) |
 | DELETE | /api/ai-models/presets/:id | 删除预设 | 是(admin) |
+
+### 审计日志
+
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | /api/audit-logs | 审计日志列表（按用户/状态/动作/时间筛选+分页） | 是(audit_logs) |
 
 ## 许可证
 

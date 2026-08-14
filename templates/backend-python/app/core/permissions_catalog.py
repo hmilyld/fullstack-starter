@@ -14,6 +14,7 @@ MENU_PERMISSIONS = [
     {"code": "permissions", "name": "权限管理", "type": "menu"},
     {"code": "settings", "name": "系统设置", "type": "menu"},
     {"code": "ai_models", "name": "AI模型配置", "type": "menu"},
+    {"code": "audit_logs", "name": "审计日志", "type": "menu"},
 ]
 
 OPERATION_PERMISSIONS = [

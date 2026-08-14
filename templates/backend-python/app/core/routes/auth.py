@@ -4,7 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core import crud
+from app.core import audit, crud
+from app.core.models import User
 from app.core.schemas import (
     ApiResponse,
     AuthUser,
@@ -14,7 +15,7 @@ from app.core.schemas import (
 )
 from app.core.security import create_access_token
 from app.database import get_db
-from app.deps import get_current_user_with_permissions
+from app.deps import get_current_user, get_current_user_with_permissions
 from app.modules.system.crud import get_config
 
 router = APIRouter(prefix="/auth", tags=["认证"])
@@ -34,23 +35,6 @@ def _check_rate_limit(key: str) -> bool:
         return True
     _rate_limit_store.setdefault(key, []).append(now)
     return False
-
-
-def _get_client_ip(req: Request) -> str:
-    """获取客户端真实 IP。
-
-    优先读取 nginx 写入的 X-Real-IP(由 $remote_addr 覆盖写入，不可伪造)，
-    其次取 X-Forwarded-For 的第一跳，最后回退到连接方地址。
-    """
-    real_ip = req.headers.get("X-Real-IP")
-    if real_ip and real_ip.lower() != "unknown":
-        return real_ip
-    forwarded = req.headers.get("X-Forwarded-For")
-    if forwarded:
-        first = forwarded.split(",")[0].strip()
-        if first and first.lower() != "unknown":
-            return first
-    return req.client.host if req.client else "unknown"
 
 
 def _build_login_response(user, permissions: list[str], token: str) -> dict:
@@ -74,23 +58,53 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ApiResponse:
     # 速率限制：按 IP 地址
-    client_ip = _get_client_ip(req)
+    client_ip = audit.get_client_ip(req)
     if _check_rate_limit(f"login:{client_ip}"):
         return ApiResponse(code=-1, message="登录尝试过于频繁，请稍后再试")
 
     user = await crud.authenticate_user(db, request.account, request.password)
     if user is None:
+        await audit.record_audit(
+            action="login",
+            ip=client_ip,
+            status="fail",
+            username=request.account,
+            detail="账号或密码错误",
+        )
         return ApiResponse(code=-1, message="账号或密码错误")
 
     if user.role_id == "pending_review":
+        await audit.record_audit(
+            action="login",
+            ip=client_ip,
+            status="fail",
+            user_id=user.id,
+            username=user.username,
+            detail="账号正在审核中",
+        )
         return ApiResponse(code=-1, message="账号正在审核中，请等待管理员批准")
 
     config = await get_config(db)
     if config.maintenance_enabled and user.role_id != "admin":
+        await audit.record_audit(
+            action="login",
+            ip=client_ip,
+            status="fail",
+            user_id=user.id,
+            username=user.username,
+            detail=config.maintenance_message or "系统维护中",
+        )
         return ApiResponse(code=-1, message=config.maintenance_message or "系统维护中")
 
     token = create_access_token(data={"sub": str(user.id)})
     _, permissions = await get_current_user_with_permissions(user, db)
+    await audit.record_audit(
+        action="login",
+        ip=client_ip,
+        status="success",
+        user_id=user.id,
+        username=user.username,
+    )
     return ApiResponse(data=_build_login_response(user, permissions, token))
 
 
@@ -101,17 +115,38 @@ async def register(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ApiResponse:
     # 速率限制：按 IP 地址
-    client_ip = _get_client_ip(req)
+    client_ip = audit.get_client_ip(req)
     if _check_rate_limit(f"register:{client_ip}"):
         return ApiResponse(code=-1, message="注册尝试过于频繁，请稍后再试")
 
     config = await get_config(db)
     if not config.open_registration:
+        await audit.record_audit(
+            action="register",
+            ip=client_ip,
+            status="fail",
+            username=request.username,
+            detail="注册已关闭",
+        )
         return ApiResponse(code=-1, message="注册已关闭")
 
     if await crud.get_user_by_username(db, request.username):
+        await audit.record_audit(
+            action="register",
+            ip=client_ip,
+            status="fail",
+            username=request.username,
+            detail="用户名已存在",
+        )
         return ApiResponse(code=-1, message="用户名已存在")
     if await crud.get_user_by_email(db, request.email):
+        await audit.record_audit(
+            action="register",
+            ip=client_ip,
+            status="fail",
+            username=request.username,
+            detail="邮箱已被注册",
+        )
         return ApiResponse(code=-1, message="邮箱已被注册")
 
     role_id = "pending_review" if config.manual_review else "user"
@@ -123,6 +158,13 @@ async def register(
         role_id=role_id,
         password=request.password,
     )
+    await audit.record_audit(
+        action="register",
+        ip=client_ip,
+        status="success",
+        user_id=user.id,
+        username=user.username,
+    )
 
     if role_id == "pending_review":
         return ApiResponse(message="注册成功，请等待管理员审核")
@@ -133,5 +175,15 @@ async def register(
 
 
 @router.post("/logout")
-async def logout() -> ApiResponse:
+async def logout(
+    req: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> ApiResponse:
+    await audit.record_audit(
+        action="logout",
+        ip=audit.get_client_ip(req),
+        status="success",
+        user_id=current_user.id,
+        username=current_user.username,
+    )
     return ApiResponse()

@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.config import get_settings
 from app.core import crud
+from app.core.audit import AuditMiddleware
 from app.core.schemas import ApiResponse
 from app.core.seed import seed_data
 from app.database import async_session, init_db
@@ -17,6 +18,7 @@ from app.modules.ai_model.router import router as ai_model_router
 from app.modules.public.router import router as public_router
 from app.modules.system.router import router as system_router
 
+from .core.routes.audit import router as audit_router
 from .core.routes.auth import router as auth_router
 from .core.routes.dashboard import router as dashboard_router
 from .core.routes.permissions import router as permissions_router
@@ -54,6 +56,8 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+app.add_middleware(AuditMiddleware)
+
 app.include_router(auth_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(roles_router, prefix="/api")
@@ -61,6 +65,7 @@ app.include_router(permissions_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(ai_model_router, prefix="/api")
+app.include_router(audit_router, prefix="/api")
 app.include_router(public_router, prefix="/api")
 
 

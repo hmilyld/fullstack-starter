@@ -1,6 +1,8 @@
 package com.hmilyld.fullstack.repository;
 
 import com.hmilyld.fullstack.entity.User;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,4 +25,6 @@ long countByRoleId(String roleId);
 		+ "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) "
 		+ "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
 Page<User> search(@Param("search") String search, Pageable pageable);
+
+List<User> findByIdIn(Collection<Long> ids);
 }

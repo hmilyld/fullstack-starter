@@ -9,6 +9,7 @@ import type {
   LoginResponse,
   AiModel,
   AiModelPreset,
+  AuditLog,
 } from '@/types/api'
 import { apiClient } from '@/lib/api-client'
 
@@ -225,4 +226,20 @@ export async function updateAiModelPreset(id: string, data: Partial<Omit<AiModel
 
 export async function deleteAiModelPreset(id: string) {
   return apiClient.delete(`/ai-models/presets/${id}`)
+}
+
+// ============================================================
+// Audit Logs API
+// ============================================================
+
+export async function getAuditLogs(params?: {
+  userId?: string
+  status?: string
+  action?: string
+  startTime?: string
+  endTime?: string
+  page?: number
+  pageSize?: number
+}) {
+  return apiClient.get<PaginatedData<AuditLog>>('/audit-logs', params)
 }
