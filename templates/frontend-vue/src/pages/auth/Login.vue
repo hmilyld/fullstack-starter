@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSiteConfigStore } from '@/stores/site-config'
-import { login as apiLogin } from '@/lib/api'
+import { login as apiLogin } from '@/api/auth'
 import { useToast } from '@/composables/use-toast'
 
 const router = useRouter()

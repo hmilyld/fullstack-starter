@@ -3,7 +3,7 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSiteConfigStore } from '@/stores/site-config'
-import { logout as apiLogout } from '@/lib/api'
+import { logout as apiLogout } from '@/api/auth'
 import {
   LayoutDashboard,
   Users,

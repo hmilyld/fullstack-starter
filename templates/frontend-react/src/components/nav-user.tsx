@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useNavigate } from "react-router"
-import { logout as apiLogout } from "@/lib/api"
+import { logout as apiLogout } from "@/api/auth"
 import { useAuth } from "@/lib/auth-context"
 import { useSiteConfig } from "@/lib/site-config"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

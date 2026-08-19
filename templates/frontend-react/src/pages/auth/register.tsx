@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { register } from "@/lib/api"
+import { register } from "@/api/auth"
 import { appToast } from "@/lib/toast"
 import { useSiteConfig } from "@/lib/site-config"
 import { useAuth } from "@/lib/auth-context"

@@ -1,13 +1,7 @@
 import * as React from "react"
+import type { AuthUser } from "@/types/auth"
 
-type User = {
-  id: string
-  name: string
-  email: string
-  avatar: string
-  role: string
-  permissions: string[]
-}
+type User = AuthUser
 
 type AuthContextType = {
   user: User | null

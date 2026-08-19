@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { login as apiLogin } from "@/lib/api"
+import { login as apiLogin } from "@/api/auth"
 import { appToast } from "@/lib/toast"
 import { useAuth } from "@/lib/auth-context"
 import { useSiteConfig } from "@/lib/site-config"

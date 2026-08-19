@@ -34,6 +34,14 @@ node dist/index.js    # Run compiled CLI
 - **Templates**: All UI text in **Chinese**. API responses use `{ code: 0, message: "success", data }`
 - **Naming**: TS/JS uses `camelCase` variables, `PascalCase` components. Python schemas use `camelCase` (roleId), ORM uses `snake_case` (role_id)
 
+## Template Directory Conventions
+
+Each stack follows its own idiomatic organization (do NOT unify them):
+
+- **backend-python/** — domain modules: `app/core/` (infrastructure: config, database, security, deps, audit middleware, seed, permission catalog) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `system/`, `ai_model/`, `audit/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`.
+- **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`.
+- **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx`, API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
+
 ## Docker Architecture
 
 Generated projects use a **single Docker image** containing Nginx + backend:

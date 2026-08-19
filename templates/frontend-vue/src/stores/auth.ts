@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { AuthUser } from '@/types/api'
+import type { AuthUser } from '@/types/auth'
 
 function loadUser(): AuthUser | null {
   try {

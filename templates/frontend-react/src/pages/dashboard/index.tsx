@@ -9,8 +9,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UsersIcon, ActivityIcon, DollarSignIcon, TrendingUpIcon } from "lucide-react"
-import { getDashboardStats, getDashboardActivity } from "@/lib/api"
-import type { DashboardStats, ActivityItem } from "@/types/api"
+import { getDashboardStats, getDashboardActivity } from "@/api/dashboard"
+import type { DashboardStats, ActivityItem } from "@/types/dashboard"
 
 export function DashboardPage() {
   const [stats, setStats] = React.useState<DashboardStats | null>(null)

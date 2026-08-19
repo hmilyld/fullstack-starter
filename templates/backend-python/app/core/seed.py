@@ -1,9 +1,11 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models import Permission, Role, RolePermission, User
 from app.core.permissions_catalog import MENU_PERMISSIONS, OPERATION_PERMISSIONS
 from app.core.security import hash_password
+from app.permission.models import Permission
+from app.role.models import Role, RolePermission
+from app.user.models import User
 
 
 async def seed_data(db: AsyncSession) -> None:

@@ -1,6 +1,6 @@
 import * as React from "react"
-import { getPublicConfig } from "@/lib/api"
-import type { PublicConfig } from "@/lib/api"
+import { getPublicConfig } from "@/api/system"
+import type { PublicConfig } from "@/types/system"
 import { Skeleton } from "@/components/ui/skeleton"
 
 type SiteConfigContextType = {

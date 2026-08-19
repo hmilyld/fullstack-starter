@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getPublicConfig } from '@/lib/api'
-import type { PublicConfig } from '@/lib/api'
+import { getPublicConfig } from '@/api/system'
+import type { PublicConfig } from '@/types/system'
 
 export const useSiteConfigStore = defineStore('site-config', () => {
   const config = ref<PublicConfig | null>(null)

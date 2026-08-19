@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getDashboardStats, getDashboardActivity } from '@/lib/api'
-import type { DashboardStats, ActivityItem } from '@/types/api'
+import { getDashboardStats, getDashboardActivity } from '@/api/dashboard'
+import type { DashboardStats, ActivityItem } from '@/types/dashboard'
 import {
   Users,
   Activity,

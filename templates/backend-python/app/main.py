@@ -7,23 +7,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
-from app.config import get_settings
-from app.core import crud
+from app.ai_model.crud import init_default_presets
+from app.ai_model.router import router as ai_model_router
+from app.audit.router import router as audit_router
+from app.auth.router import router as auth_router
 from app.core.audit import AuditMiddleware
+from app.core.config import get_settings
+from app.core.database import async_session, init_db
 from app.core.schemas import ApiResponse
 from app.core.seed import seed_data
-from app.database import async_session, init_db
-from app.modules.ai_model.crud import init_default_presets
-from app.modules.ai_model.router import router as ai_model_router
-from app.modules.public.router import router as public_router
-from app.modules.system.router import router as system_router
-
-from .core.routes.audit import router as audit_router
-from .core.routes.auth import router as auth_router
-from .core.routes.dashboard import router as dashboard_router
-from .core.routes.permissions import router as permissions_router
-from .core.routes.roles import router as roles_router
-from .core.routes.users import router as users_router
+from app.dashboard.router import router as dashboard_router
+from app.permission.crud import sync_permissions
+from app.permission.router import router as permissions_router
+from app.public.router import router as public_router
+from app.role.router import router as roles_router
+from app.system.router import router as system_router
+from app.user.router import router as users_router
 
 settings = get_settings()
 
@@ -34,7 +33,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with async_session() as session:
         try:
             await seed_data(session)
-            await crud.sync_permissions(session)
+            await sync_permissions(session)
             await init_default_presets(session)
             await session.commit()
         except IntegrityError:
