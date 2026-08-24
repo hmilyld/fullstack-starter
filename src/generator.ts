@@ -420,8 +420,8 @@ function generateReadme(
 |------|------|
 | 前端 | ${frontendName} + Vite + TypeScript + Tailwind CSS${frontend === 'vue' ? ' + DaisyUI' : ''} |
 | 后端 | ${backendName} |
-| 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite)' : 'SQLite (文件)'} |
-| 认证 | JWT |
+| 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite)' : 'SQLite 文件 (Flyway 迁移)'} |
+| 认证 | ${backend === 'python' ? 'JWT (PyJWT + bcrypt)' : 'Sa-Token + BCrypt'} |
 | 部署 | Docker（单镜像：Nginx + 后端） |
 
 ## 功能模块
@@ -503,34 +503,36 @@ ${projectName}/
 
 所有接口返回格式：\`{ code: 0, message: "success", data: ... }\`
 
+> 「认证」列中 \`是(权限码)\` 表示需携带 token 且拥有对应权限点；仅标 \`是\` 表示登录即可。
+
 | 方法 | 路径 | 说明 | 认证 |
 |------|------|------|------|
 | POST | /api/auth/login | 登录 | 否 |
 | POST | /api/auth/register | 注册 | 否 |
-| POST | /api/auth/logout | 登出 | 是 |
-| GET | /api/auth/me | 获取当前用户 | 是 |
-| GET | /api/users | 用户列表 | 是(admin) |
-| POST | /api/users | 创建用户 | 是(admin) |
-| PUT | /api/users/:id | 更新用户 | 是(admin) |
-| DELETE | /api/users/:id | 删除用户 | 是(admin) |
-| PUT | /api/users/:id/reset-password | 重置密码 | 是(admin) |
-| POST | /api/users/batch-role | 批量设置角色 | 是(admin) |
+${backend === 'python' ? '| POST | /api/auth/logout | 登出 | 是 |' : '| POST | /api/auth/logout | 登出 | 否（未登录调用也返回成功） |'}
+| GET | /api/users | 用户列表 | 是(users) |
+| GET | /api/users/:id | 用户详情 | 是(users) |
+| POST | /api/users | 创建用户 | 是(users.create) |
+| PUT | /api/users/:id | 更新用户 | 是(users.edit) |
+| DELETE | /api/users/:id | 删除用户 | 是(users.delete) |
+| PUT | /api/users/:id/reset-password | 重置密码 | 是(users.edit) |
+| POST | /api/users/batch-role | 批量设置角色 | 是(users.edit 或 users.assign_role) |
 | PUT | /api/users/me | 修改个人资料 | 是 |
 | PUT | /api/users/me/password | 修改密码 | 是 |
-| GET | /api/roles | 角色列表 | 是(admin) |
-| POST | /api/roles | 创建角色 | 是(admin) |
-| PUT | /api/roles/:id | 更新角色 | 是(admin) |
-| DELETE | /api/roles/:id | 删除角色 | 是(admin) |
-| GET | /api/permissions | 权限列表 | 是(admin) |
-| POST | /api/permissions | 创建权限 | 是(admin) |
-| PUT | /api/permissions/:code | 更新权限 | 是(admin) |
-| DELETE | /api/permissions/:code | 删除权限 | 是(admin) |
-| GET | /api/dashboard/stats | 仪表盘统计 | 是 |
-| GET | /api/system/config | 系统配置读取 | 是(admin) |
-| PUT | /api/system/config | 系统配置更新 | 是(admin) |
+| GET | /api/roles | 角色列表 | 是(roles) |
+| POST | /api/roles | 创建角色 | 是(roles.create) |
+| PUT | /api/roles/:id | 更新角色 | 是(roles.edit) |
+| DELETE | /api/roles/:id | 删除角色 | 是(roles.delete) |
+| GET | /api/permissions | 权限列表 | 是(permissions) |
+| POST | /api/permissions | 创建权限 | 是(permissions.create) |
+| PUT | /api/permissions/:code | 更新权限 | 是(permissions.edit) |
+| DELETE | /api/permissions/:code | 删除权限 | 是(permissions.delete) |
+| GET | /api/dashboard/stats | 仪表盘统计 | 是(dashboard) |
+| GET | /api/system/config | 系统配置读取 | 是(settings) |
+| PUT | /api/system/config | 系统配置更新 | 是(settings.edit) |
 | GET | /api/public/config | 公开配置 | 否 |
-| GET | /api/ai-models | AI 模型列表 | 是 |
-| GET | /api/ai-models/presets | AI 预设列表 | 是 |
+| GET | /api/ai-models | AI 模型列表 | 是(ai_models) |
+| GET | /api/ai-models/presets | AI 预设列表 | 是(ai_models) |
 | GET | /api/audit-logs | 审计日志列表 | 是(audit_logs) |
 
 ## 开发命令

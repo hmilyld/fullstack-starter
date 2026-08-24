@@ -13,10 +13,10 @@ fullstack-starter/
 │   └── generator.ts          # Core generator — copies templates + generates config files
 └── templates/
     ├── base/                 # Shared files (.gitignore)
-    ├── frontend-react/       # React (Vite + TS + Tailwind CSS)
-    ├── frontend-vue/         # Vue (Vite + TS + Tailwind CSS + DaisyUI)
-    ├── backend-python/       # Python (FastAPI + SQLAlchemy + SQLite)
-    └── backend-java/         # Java (Spring Boot + JPA + H2)
+    ├── frontend-react/       # React 19 (Vite + TS + Tailwind CSS v4 + shadcn/ui + PWA)
+    ├── frontend-vue/         # Vue 3 (Vite + TS + Tailwind CSS v4 + DaisyUI + Pinia)
+    ├── backend-python/       # Python (FastAPI + SQLAlchemy async + SQLite, JWT via PyJWT)
+    └── backend-java/         # Java (Spring Boot + JPA + SQLite/Flyway, auth via Sa-Token)
 ```
 
 ## Build & Development Commands
@@ -33,6 +33,14 @@ node dist/index.js    # Run compiled CLI
 - **Language**: TypeScript (ESM, `"type": "module"`)
 - **Templates**: All UI text in **Chinese**. API responses use `{ code: 0, message: "success", data }`
 - **Naming**: TS/JS uses `camelCase` variables, `PascalCase` components. Python schemas use `camelCase` (roleId), ORM uses `snake_case` (role_id)
+
+## Business Logic Conventions
+
+- **AuthZ is permission-based (RBAC), not role-name checks** — endpoints gate on permission codes (`users`, `users.create`, `roles.edit`, ...): Python uses `require_permission(...)` deps, Java uses `@SaCheckPermission`. Never hardcode `if role == admin` for API access control.
+- Default roles from seed: `admin` (all permissions), `user` (menu view perms only: `dashboard`, `users`, `settings`), `pending_review` (none). Registration assigns `pending_review` or `user` based on the manual-review system setting.
+- Both backends implement login/register rate limiting per IP and maintenance-mode blocking of non-admin logins.
+- Frontend HTTP layer is a thin `fetch` wrapper (`api/client.ts`) with automatic logout on 401 — do NOT introduce axios.
+- Python backend rejects startup on weak/default `JWT_SECRET_KEY`; Java stack needs no secret key.
 
 ## Template Directory Conventions
 
@@ -56,8 +64,9 @@ Generated projects use a **single Docker image** containing Nginx + backend:
    - `FrontendType` / `BackendType` union types
    - `select()` choices in `src/index.ts`
    - `generateDockerfile()` for the new Dockerfile
-3. When adding/changing a feature, keep documentation in sync:
+3. When adding/changing a feature, keep documentation in sync — check **all** of the following before committing:
    - Feature list, module table and API tables in root `README.md`
+   - This `AGENTS.md` (conventions and business-logic rules must match the code)
    - `generateReadme()` in `src/generator.ts` (the generated project's README)
 4. Test: `npm run dev` → select option → verify generated project builds
 
