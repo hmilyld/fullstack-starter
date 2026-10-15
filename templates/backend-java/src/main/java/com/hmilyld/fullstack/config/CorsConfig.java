@@ -22,7 +22,8 @@ public CorsFilter corsFilter() {
 	List<String> origins = Arrays.stream(corsOrigins.split(",")).map(String::trim).toList();
 	config.setAllowedOriginPatterns(origins);
 	config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-	config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+	config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Import-Job-Token"));
+	config.setExposedHeaders(List.of("X-Export-Password", "Content-Disposition"));
 	config.setAllowCredentials(true);
 	config.setMaxAge(3600L);
 

@@ -54,6 +54,9 @@ public ApiResponse<?> getPermissions(String type, String parent) {
 
 @Transactional
 public ApiResponse<?> createPermission(PermissionCreateRequest req) {
+	if ("menu".equals(req.getType())) {
+	return ApiResponse.error("请通过菜单管理创建菜单");
+	}
 	if (permissionRepository.findById(req.getCode()).isPresent()) {
 	return ApiResponse.error("权限编码已存在");
 	}
@@ -79,6 +82,9 @@ public ApiResponse<?> updatePermission(String code, PermissionUpdateRequest req)
 		.findById(code)
 		.map(
 			perm -> {
+			if ("menu".equals(perm.getType())) {
+				return ApiResponse.error("请通过菜单管理编辑菜单");
+			}
 			if (req.getName() != null) perm.setName(req.getName());
 			if (req.getParent() != null) perm.setParent(req.getParent());
 			permissionRepository.save(perm);
@@ -99,14 +105,10 @@ public ApiResponse<?> deletePermission(String code) {
 		.findById(code)
 		.map(
 			perm -> {
-			rolePermissionRepository.deleteByPermissionCode(code);
 			if ("menu".equals(perm.getType())) {
-				List<Permission> children = permissionRepository.findByParent(code);
-				for (Permission child : children) {
-				rolePermissionRepository.deleteByPermissionCode(child.getCode());
-				}
-				permissionRepository.deleteAll(children);
+				return ApiResponse.error("请通过菜单管理删除菜单");
 			}
+			rolePermissionRepository.deleteByPermissionCode(code);
 			permissionRepository.delete(perm);
 			return ApiResponse.success();
 			})
@@ -120,33 +122,33 @@ public ApiResponse<?> syncPermissions() {
 	List<String> granted = new ArrayList<>();
 
 	for (PermissionCatalog.PermissionItem item : PermissionCatalog.ALL_PERMISSIONS) {
-		Permission perm = permissionRepository.findById(item.code()).orElse(null);
-		if (perm == null) {
-			Permission p = new Permission();
-			p.setCode(item.code());
-			p.setName(item.name());
-			p.setType(item.type());
-			p.setParent(item.parent());
-			permissionRepository.save(p);
-			added.add(item.code());
-		} else if (!item.name().equals(perm.getName())) {
-			perm.setName(item.name());
-			permissionRepository.save(perm);
-			updated.add(item.code());
-		}
+	Permission perm = permissionRepository.findById(item.code()).orElse(null);
+	if (perm == null) {
+		Permission p = new Permission();
+		p.setCode(item.code());
+		p.setName(item.name());
+		p.setType(item.type());
+		p.setParent(item.parent());
+		permissionRepository.save(p);
+		added.add(item.code());
+	} else if (!item.name().equals(perm.getName())) {
+		perm.setName(item.name());
+		permissionRepository.save(perm);
+		updated.add(item.code());
+	}
 	}
 
 	if (roleRepository.findById("admin").isPresent()) {
-		List<String> existing = rolePermissionRepository.findPermissionCodesByRoleId("admin");
-		for (PermissionCatalog.PermissionItem item : PermissionCatalog.ALL_PERMISSIONS) {
-			if (!existing.contains(item.code())) {
-				RolePermission rp = new RolePermission();
-				rp.setRoleId("admin");
-				rp.setPermissionCode(item.code());
-				rolePermissionRepository.save(rp);
-				granted.add(item.code());
-			}
+	List<String> existing = rolePermissionRepository.findPermissionCodesByRoleId("admin");
+	for (PermissionCatalog.PermissionItem item : PermissionCatalog.ALL_PERMISSIONS) {
+		if (!existing.contains(item.code())) {
+		RolePermission rp = new RolePermission();
+		rp.setRoleId("admin");
+		rp.setPermissionCode(item.code());
+		rolePermissionRepository.save(rp);
+		granted.add(item.code());
 		}
+	}
 	}
 
 	Map<String, Object> out = new HashMap<>();

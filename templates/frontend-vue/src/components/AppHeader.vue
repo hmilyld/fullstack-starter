@@ -21,9 +21,12 @@ const routeMap: Record<string, { label: string; hasRoute?: boolean }> = {
   user: { label: '用户管理' },
   role: { label: '角色管理' },
   permission: { label: '权限管理' },
+  menu: { label: '菜单管理' },
   profile: { label: '个人设置' },
   system: { label: '系统设置' },
   'ai-model': { label: 'AI模型配置' },
+  'audit-log': { label: '审计日志' },
+  data: { label: '数据管理' },
 }
 
 const breadcrumbs = computed(() => {

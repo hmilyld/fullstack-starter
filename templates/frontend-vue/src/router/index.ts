@@ -60,6 +60,16 @@ const router = createRouter({
           name: 'AuditLog',
           component: () => import('@/pages/settings/AuditLog/index.vue'),
         },
+        {
+          path: 'settings/menu',
+          name: 'MenuManage',
+          component: () => import('@/pages/settings/MenuManage/index.vue'),
+        },
+        {
+          path: 'settings/data',
+          name: 'DataManagement',
+          component: () => import('@/pages/settings/DataManagement/index.vue'),
+        },
       ],
     },
     {

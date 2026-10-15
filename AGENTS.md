@@ -41,7 +41,7 @@ node dist/index.js    # Run compiled CLI
 - Both backends implement login/register rate limiting per IP and maintenance-mode blocking of non-admin logins.
 - Frontend HTTP layer is a thin `fetch` wrapper (`api/client.ts`) with automatic logout on 401 — do NOT introduce axios.
 - Python backend rejects startup on weak/default `JWT_SECRET_KEY`; Java stack needs no secret key.
-- Menu presentation is stored separately from permissions. `permissions` remains the authorization source; `menu_groups` and `menu_items` own grouping, route, icon, and order. Built-in menu items cannot be deleted, and menus must be created/deleted through the menu-management API/page.
+- Menu presentation is stored separately from permissions. `permissions` remains the authorization source; `menu_groups` and `menu_items` own grouping, route, icon, and order. Built-in menu items cannot be deleted, and menus must be created, edited and deleted through the menu-management API/page (the permission API rejects `menu`-type mutations).
 - Menu sorting is global, fixed at two levels, and saved atomically. Groups and items support cross-group dragging; layout saves use `menu_layout_version` for optimistic locking.
 - Data management exports a password-protected ZIP containing `manifest.json`, `schema.sql`, `checksums.sha256`, and JSONL files for all business tables. Exports are same-backend/same-version only and omit runtime `app_state`.
 - Imports validate the archive before restoring in one database transaction. During import all ordinary requests return `503`; the import status endpoint uses a one-time job token. Successful imports rotate `session_epoch` and invalidate all existing logins.

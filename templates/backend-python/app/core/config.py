@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # Data import/export
+    data_tmp_dir: str = "./data/tmp"
+    max_import_size_bytes: int = 1024 * 1024 * 1024
+
     # 审计日志排除路径（前缀匹配），如认证接口由业务显式记录
     audit_exclude_paths: list[str] = ["/api/auth"]
 

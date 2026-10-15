@@ -6,10 +6,12 @@ import { DashboardPage } from "@/pages/dashboard"
 import { UsersPage } from "@/pages/settings/user"
 import { RolesPage } from "@/pages/settings/role"
 import { PermissionPage } from "@/pages/settings/permission"
+import { MenuPage } from "@/pages/settings/menu"
 import { ProfilePage } from "@/pages/settings/profile"
 import { SystemPage } from "@/pages/settings/system"
 import { AiModelPage } from "@/pages/settings/ai-model"
 import { AuditLogPage } from "@/pages/settings/audit-log"
+import { DataManagementPage } from "@/pages/settings/data-management"
 import { NotFoundPage } from "@/pages/not-found"
 import { ProtectedRoute } from "@/components/protected-route"
 
@@ -35,10 +37,12 @@ export const router = createBrowserRouter([
       { path: "settings/user", element: <UsersPage /> },
       { path: "settings/role", element: <RolesPage /> },
       { path: "settings/permission", element: <PermissionPage /> },
+      { path: "settings/menu", element: <MenuPage /> },
       { path: "settings/profile", element: <ProfilePage /> },
       { path: "settings/system", element: <SystemPage /> },
       { path: "settings/ai-model", element: <AiModelPage /> },
       { path: "settings/audit-log", element: <AuditLogPage /> },
+      { path: "settings/data", element: <DataManagementPage /> },
     ],
   },
   {

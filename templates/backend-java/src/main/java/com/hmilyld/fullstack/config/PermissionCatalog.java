@@ -14,9 +14,11 @@ public static final List<PermissionItem> MENU_PERMISSIONS =
 		new PermissionItem("users", "用户管理", "menu", null),
 		new PermissionItem("roles", "角色管理", "menu", null),
 		new PermissionItem("permissions", "权限管理", "menu", null),
+		new PermissionItem("menus", "菜单管理", "menu", null),
 		new PermissionItem("settings", "系统设置", "menu", null),
 		new PermissionItem("ai_models", "AI模型配置", "menu", null),
-		new PermissionItem("audit_logs", "审计日志", "menu", null));
+		new PermissionItem("audit_logs", "审计日志", "menu", null),
+		new PermissionItem("data_management", "数据管理", "menu", null));
 
 public static final List<PermissionItem> OPERATION_PERMISSIONS =
 	List.of(
@@ -30,13 +32,19 @@ public static final List<PermissionItem> OPERATION_PERMISSIONS =
 		new PermissionItem("permissions.create", "新增权限", "operation", "permissions"),
 		new PermissionItem("permissions.edit", "编辑权限", "operation", "permissions"),
 		new PermissionItem("permissions.delete", "删除权限", "operation", "permissions"),
+		new PermissionItem("menus.create", "新增菜单", "operation", "menus"),
+		new PermissionItem("menus.edit", "编辑菜单", "operation", "menus"),
+		new PermissionItem("menus.delete", "删除菜单", "operation", "menus"),
+		new PermissionItem("menus.reorder", "菜单排序", "operation", "menus"),
 		new PermissionItem("settings.edit", "编辑系统设置", "operation", "settings"),
 		new PermissionItem("ai_models.create", "新增AI模型", "operation", "ai_models"),
 		new PermissionItem("ai_models.edit", "编辑AI模型", "operation", "ai_models"),
 		new PermissionItem("ai_models.delete", "删除AI模型", "operation", "ai_models"),
 		new PermissionItem("ai_models.presets.create", "新增预设模型", "operation", "ai_models"),
 		new PermissionItem("ai_models.presets.edit", "编辑预设模型", "operation", "ai_models"),
-		new PermissionItem("ai_models.presets.delete", "删除预设模型", "operation", "ai_models"));
+		new PermissionItem("ai_models.presets.delete", "删除预设模型", "operation", "ai_models"),
+		new PermissionItem("data_management.export", "导出数据", "operation", "data_management"),
+		new PermissionItem("data_management.import", "导入数据", "operation", "data_management"));
 
 public static final List<PermissionItem> ALL_PERMISSIONS =
 	new java.util.ArrayList<>(MENU_PERMISSIONS);

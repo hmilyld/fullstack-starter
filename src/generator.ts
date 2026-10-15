@@ -48,7 +48,13 @@ async function copyTemplate(templateName: string, destination: string): Promise<
   if (!(await fs.pathExists(templatePath))) {
     throw new Error(`模板 ${templateName} 不存在`);
   }
-  await fs.copy(templatePath, destination);
+  await fs.copy(templatePath, destination, {
+    // Skip local build/runtime artifacts so they never leak into generated projects.
+    filter: (src) =>
+      !/(^|[/\\])(__pycache__|node_modules|\.git|target|dist|dist-ssr|\.ruff_cache|\.mypy_cache|\.pytest_cache|\.venv|venv)([/\\]|$)/.test(
+        src
+      ) && !src.endsWith('.pyc'),
+  });
 }
 
 // ── dev.sh ────────────────────────────────────────────────
@@ -367,6 +373,7 @@ function generateNginxConf(projectPath: string): Promise<void> {
   const content = `server {
     listen 5173;
     server_name localhost;
+    client_max_body_size 1g;
 
     # 前端静态文件
     location / {
@@ -378,6 +385,11 @@ function generateNginxConf(projectPath: string): Promise<void> {
     # 后端 API 代理（同一容器内）
     location /api/ {
         proxy_pass http://127.0.0.1:8088;
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_connect_timeout 30s;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -431,9 +443,11 @@ function generateReadme(
 - ✅ 用户管理（增删改查 + 分页 + 搜索 + 重置密码 + 批量改角色）
 - ✅ 角色管理（增删改查 + 分页 + 搜索）
 - ✅ 权限管理（菜单权限 + 操作权限）
+- ✅ 菜单管理（分组维护、拖拽排序、跨组移动）
 - ✅ 系统设置（站点配置、维护模式、开放注册、人工审核、邮件测试）
 - ✅ AI 模型与预设管理（连接测试、分组激活）
 - ✅ 审计日志（写操作与权限拦截记录，支持筛选与分页）
+- ✅ 数据管理（AES 加密完整导出、同版本完整导入、全局会话失效）
 - ✅ 个人中心（修改资料、修改密码）
 - ✅ 访问适配：面向电脑与平板设计，手机访问会提示更换设备
 
@@ -501,7 +515,7 @@ ${projectName}/
 
 ## API 接口
 
-所有接口返回格式：\`{ code: 0, message: "success", data: ... }\`
+除文件下载接口外，所有接口返回格式：\`{ code: 0, message: "success", data: ... }\`；数据导出成功时直接返回 ZIP 文件。
 
 > 「认证」列中 \`是(权限码)\` 表示需携带 token 且拥有对应权限点；仅标 \`是\` 表示登录即可。
 
@@ -524,9 +538,18 @@ ${backend === 'python' ? '| POST | /api/auth/logout | 登出 | 是 |' : '| POST 
 | PUT | /api/roles/:id | 更新角色 | 是(roles.edit) |
 | DELETE | /api/roles/:id | 删除角色 | 是(roles.delete) |
 | GET | /api/permissions | 权限列表 | 是(permissions) |
-| POST | /api/permissions | 创建权限 | 是(permissions.create) |
-| PUT | /api/permissions/:code | 更新权限 | 是(permissions.edit) |
-| DELETE | /api/permissions/:code | 删除权限 | 是(permissions.delete) |
+| POST | /api/permissions | 创建操作权限 | 是(permissions.create) |
+| PUT | /api/permissions/:code | 更新操作权限 | 是(permissions.edit) |
+| DELETE | /api/permissions/:code | 删除操作权限 | 是(permissions.delete) |
+| GET | /api/menus/navigation | 当前用户动态菜单 | 是 |
+| GET | /api/menus | 菜单配置 | 是(menus) |
+| POST | /api/menus/groups | 创建菜单分组 | 是(menus.create) |
+| PUT | /api/menus/groups/:id | 更新菜单分组 | 是(menus.edit) |
+| DELETE | /api/menus/groups/:id | 删除菜单分组 | 是(menus.delete) |
+| POST | /api/menus/items | 创建菜单项 | 是(menus.create) |
+| PUT | /api/menus/items/:code | 更新菜单项 | 是(menus.edit) |
+| DELETE | /api/menus/items/:code | 删除菜单项 | 是(menus.delete) |
+| PUT | /api/menus/layout | 保存菜单布局 | 是(menus.reorder) |
 | GET | /api/dashboard/stats | 仪表盘统计 | 是(dashboard) |
 | GET | /api/system/config | 系统配置读取 | 是(settings) |
 | PUT | /api/system/config | 系统配置更新 | 是(settings.edit) |
@@ -534,6 +557,11 @@ ${backend === 'python' ? '| POST | /api/auth/logout | 登出 | 是 |' : '| POST 
 | GET | /api/ai-models | AI 模型列表 | 是(ai_models) |
 | GET | /api/ai-models/presets | AI 预设列表 | 是(ai_models) |
 | GET | /api/audit-logs | 审计日志列表 | 是(audit_logs) |
+| POST | /api/data/export | 导出完整数据 | 是(data_management.export) |
+| POST | /api/data/import | 创建完整导入任务 | 是(data_management.import) |
+| GET | /api/data/import/:id | 查询导入状态 | 一次性任务令牌 |
+
+> 注：创建/更新/删除 \`menu\` 类型权限会被拒绝，菜单权限请通过「菜单管理」接口维护。
 
 ## 开发命令
 

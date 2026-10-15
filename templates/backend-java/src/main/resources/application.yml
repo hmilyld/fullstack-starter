@@ -23,6 +23,10 @@ spring:
     baseline-version: 0
   jackson:
     default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 1GB
+      max-request-size: 1GB
 
 sa-token:
   timeout: 86400
@@ -40,3 +44,6 @@ app:
   audit:
     exclude-paths:
       - /api/auth
+  data:
+    tmp-dir: ./data/tmp
+    max-import-size-bytes: 1073741824

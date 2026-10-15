@@ -4,14 +4,19 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSiteConfigStore } from '@/stores/site-config'
 import { logout as apiLogout } from '@/api/auth'
+import { getNavigation } from '@/api/menu'
+import type { NavigationGroup } from '@/types/menu'
 import {
   LayoutDashboard,
   Users,
   ShieldCheck,
   KeyRound,
+  PanelLeft,
   Settings2,
   Bot,
   FileText,
+  Database,
+  Circle,
   ChevronsUpDown,
 } from 'lucide-vue-next'
 
@@ -25,39 +30,42 @@ const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
 const userMenuOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+const navGroups = ref<NavigationGroup[]>([])
+
+const iconMap = {
+  'layout-dashboard': LayoutDashboard,
+  users: Users,
+  'shield-check': ShieldCheck,
+  'key-round': KeyRound,
+  'panel-left': PanelLeft,
+  settings: Settings2,
+  bot: Bot,
+  'file-text': FileText,
+  database: Database,
+  circle: Circle,
+}
 
 const siteName = computed(() => siteConfig.config?.siteName || '管理系统')
 
-const navGroups = computed(() => {
-  const groups = [
-    {
-      label: '导航',
-      items: [
-        { title: '仪表盘', url: '/dashboard', icon: LayoutDashboard, permission: 'dashboard' },
-      ],
-    },
-    {
-      label: '管理',
-      items: [
-        { title: '用户管理', url: '/settings/user', icon: Users, permission: 'users' },
-        { title: '角色管理', url: '/settings/role', icon: ShieldCheck, permission: 'roles' },
-        { title: '权限管理', url: '/settings/permission', icon: KeyRound, permission: 'permissions' },
-        { title: '系统设置', url: '/settings/system', icon: Settings2, permission: 'settings' },
-        { title: 'AI模型配置', url: '/settings/ai-model', icon: Bot, permission: 'ai_models' },
-        { title: '审计日志', url: '/settings/audit-log', icon: FileText, permission: 'audit_logs' },
-      ],
-    },
-  ]
+const menuGroups = computed(() =>
+  navGroups.value.map((group) => ({
+    label: group.name,
+    items: group.items.map((item) => ({
+      title: item.name,
+      url: item.route,
+      icon: iconMap[item.icon as keyof typeof iconMap] || Circle,
+    })),
+  })),
+)
 
-  return groups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter(
-        (item) => !item.permission || auth.hasPermission(item.permission),
-      ),
-    }))
-    .filter((group) => group.items.length > 0)
-})
+async function loadNavigation() {
+  try {
+    const response = await getNavigation()
+    if (response.code === 0) navGroups.value = response.data
+  } catch {
+    // Navigation is not critical; keep the previous menu on failure.
+  }
+}
 
 function navigate(url: string) {
   router.push(url)
@@ -76,10 +84,13 @@ function handleClickOutside(e: MouseEvent) {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('navigation-refresh', loadNavigation)
+  loadNavigation()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('navigation-refresh', loadNavigation)
 })
 
 async function handleLogout() {
@@ -143,7 +154,7 @@ function focusPrevMenuItem() {
 
     <!-- Navigation -->
     <div class="flex-1 overflow-y-auto overflow-x-hidden">
-      <template v-for="group in navGroups" :key="group.label">
+      <template v-for="group in menuGroups" :key="group.label">
         <div v-if="!collapsed" class="px-4 pt-3 pb-1 text-xs text-base-content/50">{{ group.label }}</div>
         <div class="flex flex-col gap-1" :class="collapsed ? 'px-2 py-1' : 'px-2'">
           <button

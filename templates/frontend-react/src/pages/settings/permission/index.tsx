@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useNavigate } from "react-router"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/shared/loading-button"
@@ -68,6 +69,7 @@ function buildTree(menuPermissions: Permission[], operationPermissions: Permissi
 }
 
 export function PermissionPage() {
+  const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const [menuPermissions, setMenuPermissions] = React.useState<Permission[]>([])
   const [operationPermissions, setOperationPermissions] = React.useState<Permission[]>([])
@@ -102,7 +104,6 @@ export function PermissionPage() {
   // 删除确认对话框
   const [deleteOpen, setDeleteOpen] = React.useState(false)
   const [deleteTarget, setDeleteTarget] = React.useState<Permission | null>(null)
-  const [deleteIsMenu, setDeleteIsMenu] = React.useState(false)
 
   // 构建树并搜索过滤
   const tree = React.useMemo(() => {
@@ -148,13 +149,6 @@ export function PermissionPage() {
 
   // ---- 新增 ----
 
-  function handleAddMenu() {
-    setEditingItem(null)
-    setEditParentCode(null)
-    setEditForm({ code: "", name: "", parent: "" })
-    setEditOpen(true)
-  }
-
   function handleAddOperation(parentCode: string) {
     setEditingItem(null)
     setEditParentCode(parentCode)
@@ -190,18 +184,17 @@ export function PermissionPage() {
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault()
     setEditSubmitting(true)
-    const isMenu = !editParentCode
 
     const res = editingItem
       ? await updatePermission(editingItem.code, {
           name: editForm.name,
-          parent: isMenu ? undefined : editForm.parent || undefined,
+          parent: editForm.parent || undefined,
         })
       : await createPermission({
           code: editForm.code,
           name: editForm.name,
-          type: isMenu ? "menu" : "operation",
-          parent: isMenu ? undefined : editForm.parent || undefined,
+          type: "operation",
+          parent: editForm.parent || undefined,
         })
     setEditSubmitting(false)
     if (res.code !== 0) {
@@ -215,9 +208,8 @@ export function PermissionPage() {
 
   // ---- 删除 ----
 
-  function handleDelete(item: Permission, isMenu: boolean) {
+  function handleDelete(item: Permission) {
     setDeleteTarget(item)
-    setDeleteIsMenu(isMenu)
     setDeleteOpen(true)
   }
 
@@ -232,13 +224,6 @@ export function PermissionPage() {
       return
     }
     appToast.success("删除成功")
-    if (deleteIsMenu) {
-      setExpanded((prev) => {
-        const next = new Set(prev)
-        next.delete(deleteTarget.code)
-        return next
-      })
-    }
     setDeleteOpen(false)
     loadData()
   }
@@ -278,9 +263,9 @@ export function PermissionPage() {
                       {!syncing && <RefreshCwIcon data-icon="inline-start" />}
                       同步权限
                     </LoadingButton>
-                    <Button onClick={handleAddMenu} className="w-full sm:w-auto">
+                    <Button onClick={() => navigate("/settings/menu")} className="w-full sm:w-auto">
                       <PlusIcon data-icon="inline-start" />
-                      新增菜单
+                      菜单管理
                     </Button>
                   </>
                 )}
@@ -329,18 +314,6 @@ export function PermissionPage() {
                             <span className="sr-only">新增子权限</span>
                           </Button>
                         )}
-                        {hasPermission("permissions.edit") && (
-                          <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(node)}>
-                            <PencilIcon data-icon="inline-start" />
-                            <span className="sr-only">编辑</span>
-                          </Button>
-                        )}
-                        {hasPermission("permissions.delete") && (
-                          <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(node, true)}>
-                            <Trash2Icon data-icon="inline-start" />
-                            <span className="sr-only">删除</span>
-                          </Button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -367,7 +340,7 @@ export function PermissionPage() {
                               </Button>
                             )}
                             {hasPermission("permissions.delete") && (
-                              <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(child, false)}>
+                              <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(child)}>
                                 <Trash2Icon data-icon="inline-start" />
                                 <span className="sr-only">删除</span>
                               </Button>
@@ -398,7 +371,7 @@ export function PermissionPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingItem ? "编辑权限" : editParentCode ? "新增操作权限" : "新增菜单权限"}</DialogTitle>
+            <DialogTitle>{editingItem ? "编辑权限" : "新增操作权限"}</DialogTitle>
             <DialogDescription>
               {editingItem ? "修改权限的基本信息。" : "填写以下信息创建新权限。"}
             </DialogDescription>
@@ -409,7 +382,7 @@ export function PermissionPage() {
                 <FieldLabel htmlFor="perm-code">权限编码</FieldLabel>
                 <Input
                   id="perm-code"
-                  placeholder={editParentCode ? "如：users.create" : "如：dashboard"}
+                  placeholder="如：users.create"
                   value={editForm.code}
                   onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))}
                   required
@@ -460,7 +433,6 @@ export function PermissionPage() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         targetName={deleteTarget?.name ?? ""}
-        description={deleteIsMenu ? "该菜单下的所有操作权限也将被删除。" : undefined}
         onConfirm={handleDeleteConfirm}
         loading={deleteSubmitting}
       />

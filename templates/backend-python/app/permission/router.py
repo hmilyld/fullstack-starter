@@ -28,6 +28,8 @@ async def create_permission(
     current_user: User = Depends(require_permission("permissions.create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
+    if data.type == "menu":
+        return ApiResponse(code=-1, message="请通过菜单管理创建菜单")
     if await crud.get_permission_by_code(db, data.code):
         return ApiResponse(code=-1, message="权限编码已存在")
     result = await crud.create_permission(db, code=data.code, name=data.name, type=data.type, parent=data.parent)
@@ -53,6 +55,8 @@ async def update_permission(
     permission = await crud.get_permission_by_code(db, code)
     if permission is None:
         return ApiResponse(code=-1, message="权限不存在")
+    if permission.type == "menu":
+        return ApiResponse(code=-1, message="请通过菜单管理编辑菜单")
     result = await crud.update_permission(db, permission, name=data.name, parent=data.parent)
     return ApiResponse(data=result)
 
@@ -66,5 +70,7 @@ async def delete_permission(
     permission = await crud.get_permission_by_code(db, code)
     if permission is None:
         return ApiResponse(code=-1, message="权限不存在")
+    if permission.type == "menu":
+        return ApiResponse(code=-1, message="请通过菜单管理删除菜单")
     await crud.delete_permission(db, permission)
     return ApiResponse()

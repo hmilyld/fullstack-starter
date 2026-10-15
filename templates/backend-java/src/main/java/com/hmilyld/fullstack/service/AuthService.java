@@ -21,6 +21,7 @@ public class AuthService {
 @Autowired private RolePermissionRepository rolePermissionRepository;
 @Autowired private SystemConfigRepository systemConfigRepository;
 @Autowired private AuditLogService auditLogService;
+@Autowired private AppStateService appStateService;
 
 private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -51,6 +52,7 @@ public ApiResponse<?> login(String account, String password, String clientIp) {
 	}
 
 	StpUtil.login(user.getId());
+	StpUtil.getSession().set("authEpoch", appStateService.getSessionEpoch());
 	String token = StpUtil.getTokenValue();
 
 	List<String> permissions;
@@ -109,6 +111,7 @@ public ApiResponse<?> register(String username, String email, String password, S
 	}
 
 	StpUtil.login(user.getId());
+	StpUtil.getSession().set("authEpoch", appStateService.getSessionEpoch());
 	String token = StpUtil.getTokenValue();
 
 	List<String> permissions =

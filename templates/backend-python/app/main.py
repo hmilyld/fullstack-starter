@@ -11,12 +11,18 @@ from app.ai_model.crud import init_default_presets
 from app.ai_model.router import router as ai_model_router
 from app.audit.router import router as audit_router
 from app.auth.router import router as auth_router
+from app.core.app_state import get_app_state
 from app.core.audit import AuditMiddleware
 from app.core.config import get_settings
 from app.core.database import async_session, init_db
 from app.core.schemas import ApiResponse
 from app.core.seed import seed_data
 from app.dashboard.router import router as dashboard_router
+from app.data_management.middleware import DataOperationMiddleware
+from app.data_management.router import router as data_management_router
+from app.data_management.service import clear_stale_temp_files
+from app.menu.crud import sync_menu_catalog
+from app.menu.router import router as menu_router
 from app.permission.crud import sync_permissions
 from app.permission.router import router as permissions_router
 from app.public.router import router as public_router
@@ -29,11 +35,14 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    clear_stale_temp_files()
     await init_db()
     async with async_session() as session:
         try:
             await seed_data(session)
             await sync_permissions(session)
+            await sync_menu_catalog(session)
+            await get_app_state(session)
             await init_default_presets(session)
             await session.commit()
         except IntegrityError:
@@ -52,19 +61,23 @@ app.add_middleware(
     allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-Import-Job-Token"],
+    expose_headers=["X-Export-Password", "Content-Disposition"],
 )
 
 app.add_middleware(AuditMiddleware)
+app.add_middleware(DataOperationMiddleware)
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(roles_router, prefix="/api")
 app.include_router(permissions_router, prefix="/api")
+app.include_router(menu_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(ai_model_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")
+app.include_router(data_management_router, prefix="/api")
 app.include_router(public_router, prefix="/api")
 
 

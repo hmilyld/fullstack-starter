@@ -12,9 +12,11 @@ MENU_PERMISSIONS = [
     {"code": "users", "name": "用户管理", "type": "menu"},
     {"code": "roles", "name": "角色管理", "type": "menu"},
     {"code": "permissions", "name": "权限管理", "type": "menu"},
+    {"code": "menus", "name": "菜单管理", "type": "menu"},
     {"code": "settings", "name": "系统设置", "type": "menu"},
     {"code": "ai_models", "name": "AI模型配置", "type": "menu"},
     {"code": "audit_logs", "name": "审计日志", "type": "menu"},
+    {"code": "data_management", "name": "数据管理", "type": "menu"},
 ]
 
 OPERATION_PERMISSIONS = [
@@ -28,6 +30,10 @@ OPERATION_PERMISSIONS = [
     {"code": "permissions.create", "name": "新增权限", "type": "operation", "parent": "permissions"},
     {"code": "permissions.edit", "name": "编辑权限", "type": "operation", "parent": "permissions"},
     {"code": "permissions.delete", "name": "删除权限", "type": "operation", "parent": "permissions"},
+    {"code": "menus.create", "name": "新增菜单", "type": "operation", "parent": "menus"},
+    {"code": "menus.edit", "name": "编辑菜单", "type": "operation", "parent": "menus"},
+    {"code": "menus.delete", "name": "删除菜单", "type": "operation", "parent": "menus"},
+    {"code": "menus.reorder", "name": "菜单排序", "type": "operation", "parent": "menus"},
     {"code": "settings.edit", "name": "编辑系统设置", "type": "operation", "parent": "settings"},
     {"code": "ai_models.create", "name": "新增AI模型", "type": "operation", "parent": "ai_models"},
     {"code": "ai_models.edit", "name": "编辑AI模型", "type": "operation", "parent": "ai_models"},
@@ -35,6 +41,18 @@ OPERATION_PERMISSIONS = [
     {"code": "ai_models.presets.create", "name": "新增预设模型", "type": "operation", "parent": "ai_models"},
     {"code": "ai_models.presets.edit", "name": "编辑预设模型", "type": "operation", "parent": "ai_models"},
     {"code": "ai_models.presets.delete", "name": "删除预设模型", "type": "operation", "parent": "ai_models"},
+    {
+        "code": "data_management.export",
+        "name": "导出数据",
+        "type": "operation",
+        "parent": "data_management",
+    },
+    {
+        "code": "data_management.import",
+        "name": "导入数据",
+        "type": "operation",
+        "parent": "data_management",
+    },
 ]
 
 ALL_PERMISSIONS = MENU_PERMISSIONS + OPERATION_PERMISSIONS

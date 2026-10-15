@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getPermissions, createPermission, updatePermission, deletePermission, syncPermissions } from '@/api/permission'
 import type { Permission } from '@/types/permission'
@@ -9,6 +10,7 @@ import { Pencil, Trash2, Plus, Search, ChevronRight, RefreshCw } from 'lucide-vu
 
 const auth = useAuthStore()
 const toast = useToast()
+const router = useRouter()
 
 const menuPermissions = ref<Permission[]>([])
 const operationPermissions = ref<Permission[]>([])
@@ -100,13 +102,6 @@ const editingItem = ref<Permission | null>(null)
 const editParentCode = ref<string | null>(null)
 const editForm = ref({ code: '', name: '', parent: '' })
 
-function handleAddMenu() {
-  editingItem.value = null
-  editParentCode.value = null
-  editForm.value = { code: '', name: '', parent: '' }
-  editOpen.value = true
-}
-
 function handleAddOperation(parentCode: string) {
   editingItem.value = null
   editParentCode.value = parentCode
@@ -123,18 +118,17 @@ function handleEdit(item: Permission, parentCode?: string) {
 
 async function handleEditSubmit() {
   editSubmitting.value = true
-  const isMenu = !editParentCode.value
   try {
     const res = editingItem.value
       ? await updatePermission(editingItem.value.code, {
           name: editForm.value.name,
-          parent: isMenu ? undefined : editForm.value.parent || undefined,
+          parent: editForm.value.parent || undefined,
         })
       : await createPermission({
           code: editForm.value.code,
           name: editForm.value.name,
-          type: isMenu ? 'menu' : 'operation',
-          parent: isMenu ? undefined : editForm.value.parent || undefined,
+          type: 'operation',
+          parent: editForm.value.parent || undefined,
         })
     if (res.code === 0) {
       toast.success(editingItem.value ? '更新成功' : '创建成功')
@@ -152,11 +146,9 @@ async function handleEditSubmit() {
 // Delete dialog
 const deleteOpen = ref(false)
 const deleteTarget = ref<Permission | null>(null)
-const deleteIsMenu = ref(false)
 
-function handleDelete(item: Permission, isMenu: boolean) {
+function handleDelete(item: Permission) {
   deleteTarget.value = item
-  deleteIsMenu.value = isMenu
   deleteOpen.value = true
 }
 
@@ -167,11 +159,6 @@ async function handleDeleteConfirm() {
       const res = await deletePermission(deleteTarget.value.code)
       if (res.code === 0) {
         toast.success('删除成功')
-        if (deleteIsMenu.value) {
-          const next = new Set(expanded.value)
-          next.delete(deleteTarget.value.code)
-          expanded.value = next
-        }
         deleteOpen.value = false
         loadData()
       } else {
@@ -211,9 +198,9 @@ async function handleDeleteConfirm() {
               <RefreshCw v-else class="size-4" />
               同步权限
             </button>
-            <button v-if="auth.hasPermission('permissions.create')" class="btn btn-primary btn-sm" @click="handleAddMenu">
+            <button v-if="auth.hasPermission('permissions.create')" class="btn btn-primary btn-sm" @click="router.push('/settings/menu')">
               <Plus class="size-4" />
-              新增菜单
+              菜单管理
             </button>
           </div>
         </div>
@@ -249,12 +236,6 @@ async function handleDeleteConfirm() {
                       <button v-if="auth.hasPermission('permissions.create')" class="btn btn-ghost btn-xs" @click="handleAddOperation(node.code)">
                         <Plus class="size-3" />
                       </button>
-                      <button v-if="auth.hasPermission('permissions.edit')" class="btn btn-ghost btn-xs" @click="handleEdit(node)">
-                        <Pencil class="size-3" />
-                      </button>
-                      <button v-if="auth.hasPermission('permissions.delete')" class="btn btn-ghost btn-xs" @click="handleDelete(node, true)">
-                        <Trash2 class="size-3" />
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -273,7 +254,7 @@ async function handleDeleteConfirm() {
                         <button v-if="auth.hasPermission('permissions.edit')" class="btn btn-ghost btn-xs" @click="handleEdit(child, node.code)">
                           <Pencil class="size-3" />
                         </button>
-                        <button v-if="auth.hasPermission('permissions.delete')" class="btn btn-ghost btn-xs" @click="handleDelete(child, false)">
+                        <button v-if="auth.hasPermission('permissions.delete')" class="btn btn-ghost btn-xs" @click="handleDelete(child)">
                           <Trash2 class="size-3" />
                         </button>
                       </div>
@@ -298,12 +279,12 @@ async function handleDeleteConfirm() {
     <!-- Edit dialog -->
     <dialog :class="{ modal: true, 'modal-open': editOpen }" @close="editOpen = false">
       <div class="modal-box">
-        <h3 class="text-lg font-bold">{{ editingItem ? '编辑权限' : editParentCode ? '新增操作权限' : '新增菜单权限' }}</h3>
+        <h3 class="text-lg font-bold">{{ editingItem ? '编辑权限' : '新增操作权限' }}</h3>
         <p class="text-sm text-base-content/50">{{ editingItem ? '修改权限的基本信息。' : '填写以下信息创建新权限。' }}</p>
         <form @submit.prevent="handleEditSubmit">
           <fieldset class="fieldset">
             <legend class="fieldset-legend">权限编码</legend>
-            <input v-model="editForm.code" :placeholder="editParentCode ? '如：users.create' : '如：dashboard'" class="input input-bordered w-full" required :disabled="!!editingItem" />
+            <input v-model="editForm.code" placeholder="如：users.create" class="input input-bordered w-full" required :disabled="!!editingItem" />
           </fieldset>
           <fieldset class="fieldset mt-2">
             <legend class="fieldset-legend">权限名称</legend>
@@ -330,7 +311,6 @@ async function handleDeleteConfirm() {
     <ConfirmDeleteDialog
       :open="deleteOpen"
       :target-name="deleteTarget?.name || ''"
-      :description="deleteIsMenu ? '该菜单下的所有操作权限也将被删除。' : undefined"
       :loading="deleteSubmitting"
       @update:open="deleteOpen = $event"
       @confirm="handleDeleteConfirm"

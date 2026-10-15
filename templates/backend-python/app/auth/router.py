@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.schemas import AuthUser, LoginRequest, LoginResponse, RegisterRequest
 from app.core import audit
+from app.core.app_state import get_app_state
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_current_user_with_permissions
 from app.core.schemas import ApiResponse
@@ -92,7 +93,8 @@ async def login(
         )
         return ApiResponse(code=-1, message=config.maintenance_message or "系统维护中")
 
-    token = create_access_token(data={"sub": str(user.id)})
+    state = await get_app_state(db)
+    token = create_access_token(data={"sub": str(user.id), "epoch": state.session_epoch})
     _, permissions = await get_current_user_with_permissions(user, db)
     await audit.record_audit(
         action="login",
@@ -165,7 +167,8 @@ async def register(
     if role_id == "pending_review":
         return ApiResponse(message="注册成功，请等待管理员审核")
 
-    token = create_access_token(data={"sub": str(user.id)})
+    state = await get_app_state(db)
+    token = create_access_token(data={"sub": str(user.id), "epoch": state.session_epoch})
     _, permissions = await get_current_user_with_permissions(user, db)
     return ApiResponse(data=_build_login_response(user, permissions, token))
 

@@ -21,7 +21,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | Dashboard | Stat cards + recent activity |
 | User management | List + pagination + search + detail + create/edit + delete + reset password + batch role assignment |
 | Role management | List + pagination + search + create/edit + delete (preset roles cannot be deleted) |
-| Permission management | Menu permissions + operation permissions; list/create/edit/delete; auto-synced with the permission catalog at startup |
+| Permission management | Menu permissions + operation permissions; operation permissions can be created/edited/deleted, menu permissions are maintained in Menu Management; auto-synced with the permission catalog at startup |
 | Menu management | Group and menu maintenance, cross-group dragging, global ordering, permission-filtered dynamic sidebar |
 | System settings | Read/write site configuration, email test, maintenance mode (blocks non-admin logins), open registration, manual review |
 | AI models | List / default / lookup by alias / detail / create / edit / delete / connection test |
@@ -98,15 +98,15 @@ my-project/
 │   ├── src/
 │   │   ├── api/             # API layer (fetch wrapper + split by domain)
 │   │   ├── types/           # Type definitions (split by domain)
-│   │   ├── pages/           # auth, dashboard, settings/{user,role,permission,menu,system,ai-model,audit-log,data,profile}
+│   │   ├── pages/           # auth, dashboard, settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
 │   │   ├── components/      # Shared components (shared/; React also has ui/)
 │   │   ├── router(.tsx or /index.ts)  # Routes (protected routes)
 │   │   └── stores/(Vue) or lib/(React) # Global state such as auth
 │   ├── vite.config.ts       # Dev proxy /api → localhost:8088
 │   └── package.json
 ├── backend/                 # Backend project
-│   ├── app/                 # Python FastAPI (auth/user/role/permission/menu/system/dashboard/ai_model/audit/data_management/public)
-│   └── src/main/java/...    # Java Spring Boot (controller/service/repository/entity/security/dto)
+│   ├── app/                 # Python FastAPI (core + auth/user/role/permission/menu/system/dashboard/ai_model/audit/data_management/public)
+│   └── src/main/java/...    # Java Spring Boot (controller/service/repository/entity/config/common/security/dto)
 ├── dev.sh                   # Dev script (start/stop/restart/install)
 ├── build.sh                 # Build script
 ├── Dockerfile               # Single image: frontend build + backend + Nginx
@@ -216,10 +216,10 @@ Except for the file download endpoint, every endpoint returns: `{ code: 0, messa
 | PUT | /api/roles/:id | Update role | Yes(roles.edit) |
 | DELETE | /api/roles/:id | Delete role (preset roles cannot be deleted) | Yes(roles.delete) |
 | GET | /api/permissions | Permission list | Yes(permissions) |
-| POST | /api/permissions | Create permission | Yes(permissions.create) |
+| POST | /api/permissions | Create operation permission | Yes(permissions.create)³ |
 | POST | /api/permissions/sync | Sync with the permission catalog | Yes(permissions.create) |
-| PUT | /api/permissions/:code | Update permission | Yes(permissions.edit) |
-| DELETE | /api/permissions/:code | Delete permission | Yes(permissions.delete) |
+| PUT | /api/permissions/:code | Update operation permission | Yes(permissions.edit)³ |
+| DELETE | /api/permissions/:code | Delete operation permission | Yes(permissions.delete)³ |
 
 ### Menu Management
 
@@ -289,6 +289,7 @@ Export packages can only be restored on the same backend, same application versi
 
 > Note 1: In the Python build, logout requires a login; the Java build also accepts unauthenticated calls.
 > Note 2: Creating a user with a non-default role also requires the `users.assign_role` permission.
+> Note 3: Creating/updating/deleting a `menu`-type permission through the permission API is rejected (returns `code: -1`); maintain menu permissions through the Menu Management endpoints above.
 
 ## License
 

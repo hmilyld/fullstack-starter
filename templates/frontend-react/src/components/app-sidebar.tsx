@@ -1,3 +1,4 @@
+import * as React from "react"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -15,49 +16,66 @@ import {
   Settings2Icon,
   BotIcon,
   FileTextIcon,
+  PanelLeftIcon,
+  DatabaseIcon,
+  CircleIcon,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useSiteConfig } from "@/lib/site-config"
+import { getNavigation } from "@/api/menu"
+import type { NavigationGroup } from "@/types/menu"
 
-const data = {
-  navGroups: [
-    {
-      label: "导航",
-      items: [
-        { title: "仪表盘", url: "/dashboard", icon: <LayoutDashboardIcon />, permission: "dashboard" },
-      ],
-    },
-    {
-      label: "管理",
-      items: [
-        { title: "用户管理", url: "/settings/user", icon: <UsersIcon />, permission: "users" },
-        { title: "角色管理", url: "/settings/role", icon: <ShieldCheckIcon />, permission: "roles" },
-        { title: "权限管理", url: "/settings/permission", icon: <KeyIcon />, permission: "permissions" },
-        { title: "系统设置", url: "/settings/system", icon: <Settings2Icon />, permission: "settings" },
-        { title: "AI模型配置", url: "/settings/ai-model", icon: <BotIcon />, permission: "ai_models" },
-        { title: "审计日志", url: "/settings/audit-log", icon: <FileTextIcon />, permission: "audit_logs" },
-      ],
-    },
-  ],
+const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
+
+const iconMap = {
+  "layout-dashboard": LayoutDashboardIcon,
+  users: UsersIcon,
+  "shield-check": ShieldCheckIcon,
+  "key-round": KeyIcon,
+  "panel-left": PanelLeftIcon,
+  settings: Settings2Icon,
+  bot: BotIcon,
+  "file-text": FileTextIcon,
+  database: DatabaseIcon,
+  circle: CircleIcon,
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { hasPermission, user } = useAuth()
+  const { user } = useAuth()
   const { config } = useSiteConfig()
+  const [navGroups, setNavGroups] = React.useState<NavigationGroup[]>([])
 
   const siteName = config?.siteName || "管理系统"
 
-  const filteredData = {
-    ...data,
-    navGroups: data.navGroups
-      .map((group) => ({
-        ...group,
-        items: group.items.filter(
-          (item) => !item.permission || hasPermission(item.permission)
-        ),
-      }))
-      .filter((group) => group.items.length > 0),
-  }
+  React.useEffect(() => {
+    let cancelled = false
+    async function loadNavigation() {
+      try {
+        const response = await getNavigation()
+        if (!cancelled && response.code === 0) setNavGroups(response.data)
+      } catch {
+        // Navigation is not critical; keep the previous menu on failure.
+      }
+    }
+    loadNavigation()
+    window.addEventListener(NAVIGATION_REFRESH_EVENT, loadNavigation)
+    return () => {
+      cancelled = true
+      window.removeEventListener(NAVIGATION_REFRESH_EVENT, loadNavigation)
+    }
+  }, [])
+
+  const groups = navGroups.map((group) => ({
+    label: group.name,
+    items: group.items.map((item) => {
+      const Icon = iconMap[item.icon as keyof typeof iconMap] || CircleIcon
+      return {
+        title: item.name,
+        url: item.route,
+        icon: <Icon />,
+      }
+    }),
+  }))
 
   const navUser = user ? {
     name: user.name,
@@ -107,7 +125,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain groups={filteredData.navGroups} />
+        <NavMain groups={groups} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={navUser} />

@@ -21,7 +21,7 @@
 | 仪表盘 | 统计卡片 + 近期活动 |
 | 用户管理 | 列表 + 分页 + 搜索 + 详情 + 新增/编辑 + 删除 + 重置密码 + 批量改角色 |
 | 角色管理 | 列表 + 分页 + 搜索 + 新增/编辑 + 删除（预设角色不可删除） |
-| 权限管理 | 菜单权限 + 操作权限，列表/新增/编辑/删除，启动时自动与权限目录同步 |
+| 权限管理 | 菜单权限 + 操作权限；操作权限可新增/编辑/删除，菜单权限在「菜单管理」中维护，启动时自动与权限目录同步 |
 | 菜单管理 | 分组与菜单维护、跨组拖拽、全局排序、权限过滤动态侧边栏 |
 | 系统设置 | 站点配置读写、邮件测试、维护模式（拦截非管理员登录）、开放注册、人工审核 |
 | AI 模型 | 列表/默认/按别名查询/详情/新增/编辑/删除/连接测试 |
@@ -96,15 +96,15 @@ my-project/
 │   ├── src/
 │   │   ├── api/             # API 调用层（fetch 封装 + 按业务域拆分）
 │   │   ├── types/           # 类型定义（按业务域拆分）
-│   │   ├── pages/           # auth、dashboard、settings/{user,role,permission,menu,system,ai-model,audit-log,data,profile}
+│   │   ├── pages/           # auth、dashboard、settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
 │   │   ├── components/      # 共享组件（shared/，React 另含 ui/ 组件库）
 │   │   ├── router(.tsx 或 /index.ts)  # 路由（受保护路由）
 │   │   └── stores/(Vue) 或 lib/(React) # 认证等全局状态
 │   ├── vite.config.ts       # 开发代理 /api → localhost:8088
 │   └── package.json
 ├── backend/                 # 后端项目
-│   ├── app/                 # Python FastAPI（auth/user/role/permission/menu/system/dashboard/ai_model/audit/data_management/public）
-│   └── src/main/java/...    # Java Spring Boot（controller/service/repository/entity/security/dto）
+│   ├── app/                 # Python FastAPI（core + auth/user/role/permission/menu/system/dashboard/ai_model/audit/data_management/public）
+│   └── src/main/java/...    # Java Spring Boot（controller/service/repository/entity/config/common/security/dto）
 ├── dev.sh                   # 开发脚本（start/stop/restart/install）
 ├── build.sh                 # 构建脚本
 ├── Dockerfile               # 单镜像：前端构建 + 后端 + Nginx
@@ -214,10 +214,10 @@ cd <生成的项目>/backend && 启动后端
 | PUT | /api/roles/:id | 更新角色 | 是(roles.edit) |
 | DELETE | /api/roles/:id | 删除角色（预设角色不可删） | 是(roles.delete) |
 | GET | /api/permissions | 权限列表 | 是(permissions) |
-| POST | /api/permissions | 创建权限 | 是(permissions.create) |
+| POST | /api/permissions | 创建操作权限 | 是(permissions.create)³ |
 | POST | /api/permissions/sync | 与权限目录同步 | 是(permissions.create) |
-| PUT | /api/permissions/:code | 更新权限 | 是(permissions.edit) |
-| DELETE | /api/permissions/:code | 删除权限 | 是(permissions.delete) |
+| PUT | /api/permissions/:code | 更新操作权限 | 是(permissions.edit)³ |
+| DELETE | /api/permissions/:code | 删除操作权限 | 是(permissions.delete)³ |
 
 ### 菜单管理
 
@@ -287,6 +287,7 @@ cd <生成的项目>/backend && 启动后端
 
 > 注 1：Python 版 logout 需登录；Java 版兼容未登录调用。
 > 注 2：创建非默认角色的用户还需 `users.assign_role` 权限。
+> 注 3：以权限 API 对 `menu` 类型权限执行创建/更新/删除会被拒绝（返回 `code: -1`），菜单权限请通过上文的「菜单管理」接口维护。
 
 ## 许可证
 
