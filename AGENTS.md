@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**create-fullstack-app** is a scaffolding tool that generates fullstack admin panel projects. Users select a frontend framework (React/Vue) and a backend framework (Python/Java), and the tool generates a complete project with JWT authentication (login/register/logout), user/role/permission management, system settings, AI model management, audit logging, a dashboard, and Docker deployment.
+**create-fullstack-app** is a scaffolding tool that generates fullstack admin panel projects. Users select a frontend framework (React/Vue) and a backend framework (Python/Java), and the tool generates a complete project with authentication, user/role/permission/menu management, system settings, AI model management, audit logging, full-data import/export, a dashboard, and Docker deployment.
 
 ## Project Structure
 
@@ -41,12 +41,16 @@ node dist/index.js    # Run compiled CLI
 - Both backends implement login/register rate limiting per IP and maintenance-mode blocking of non-admin logins.
 - Frontend HTTP layer is a thin `fetch` wrapper (`api/client.ts`) with automatic logout on 401 — do NOT introduce axios.
 - Python backend rejects startup on weak/default `JWT_SECRET_KEY`; Java stack needs no secret key.
+- Menu presentation is stored separately from permissions. `permissions` remains the authorization source; `menu_groups` and `menu_items` own grouping, route, icon, and order. Built-in menu items cannot be deleted, and menus must be created/deleted through the menu-management API/page.
+- Menu sorting is global, fixed at two levels, and saved atomically. Groups and items support cross-group dragging; layout saves use `menu_layout_version` for optimistic locking.
+- Data management exports a password-protected ZIP containing `manifest.json`, `schema.sql`, `checksums.sha256`, and JSONL files for all business tables. Exports are same-backend/same-version only and omit runtime `app_state`.
+- Imports validate the archive before restoring in one database transaction. During import all ordinary requests return `503`; the import status endpoint uses a one-time job token. Successful imports rotate `session_epoch` and invalidate all existing logins.
 
 ## Template Directory Conventions
 
 Each stack follows its own idiomatic organization (do NOT unify them):
 
-- **backend-python/** — domain modules: `app/core/` (infrastructure: config, database, security, deps, audit middleware, seed, permission catalog) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `system/`, `ai_model/`, `audit/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`.
+- **backend-python/** — domain modules: `app/core/` (infrastructure: config, runtime state, database, security, deps, audit middleware, seed, permission/menu catalogs) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `menu/`, `system/`, `ai_model/`, `audit/`, `data_management/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`.
 - **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`.
 - **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx`, API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
 
@@ -65,7 +69,7 @@ Generated projects use a **single Docker image** containing Nginx + backend:
    - `select()` choices in `src/index.ts`
    - `generateDockerfile()` for the new Dockerfile
 3. When adding/changing a feature, keep documentation in sync — check **all** of the following before committing:
-   - Feature list, module table and API tables in root `README.md`
+   - Feature list, module table and API tables in `docs/zh/README.md` and its English counterpart `docs/en/README.md`
    - This `AGENTS.md` (conventions and business-logic rules must match the code)
    - `generateReadme()` in `src/generator.ts` (the generated project's README)
 4. Test: `npm run dev` → select option → verify generated project builds
