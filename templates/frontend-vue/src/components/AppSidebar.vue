@@ -20,7 +20,7 @@ import {
   ChevronsUpDown,
 } from 'lucide-vue-next'
 
-const props = defineProps<{
+defineProps<{
   collapsed?: boolean
 }>()
 

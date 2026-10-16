@@ -17,5 +17,9 @@ export default defineConfig([
         parser: tseslint.parser,
       },
     },
+    rules: {
+      // Page components live at `pages/**/index.vue` (file-based routing), so their names are not multi-word.
+      'vue/multi-word-component-names': 'off',
+    },
   },
 ])

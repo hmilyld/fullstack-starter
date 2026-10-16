@@ -96,7 +96,6 @@ export function DataManagementPage() {
   React.useEffect(() => {
     if (!jobId || !jobToken) return
     let cancelled = false
-    let timer: number | undefined
     const poll = async () => {
       try {
         const response = await getImportStatus(jobId, jobToken)
@@ -107,7 +106,6 @@ export function DataManagementPage() {
           logout()
           window.location.href = "/login"
         } else if (response.data.status === "failed") {
-          window.clearInterval(timer)
           appToast.error(response.data.message || "导入失败")
           setImportJob(null)
           setImportOpen(false)
@@ -116,11 +114,11 @@ export function DataManagementPage() {
         // The status endpoint may briefly race with the freeze transition.
       }
     }
-    poll()
-    timer = window.setInterval(poll, 1000)
+    void poll()
+    const timer = window.setInterval(poll, 1000)
     return () => {
       cancelled = true
-      if (timer) window.clearInterval(timer)
+      window.clearInterval(timer)
     }
   }, [jobId, jobToken, logout])
 
