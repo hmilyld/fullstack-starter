@@ -52,7 +52,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 
 - **backend-python/** — domain modules: `app/core/` (infrastructure: config, runtime state, database, security, deps, audit middleware, seed, permission/menu catalogs) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `menu/`, `system/`, `ai_model/`, `audit/`, `data_management/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`.
 - **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`.
-- **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx`, API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
+- **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx` (React) or `index.vue` (Vue), API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
 
 ## Frontend Responsive Rules (frontend-react / frontend-vue)
 

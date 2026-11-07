@@ -7,7 +7,7 @@
 | 模式 | 断点 | 导航 | 列表 | 筛选 | 弹窗 |
 |---|---|---|---|---|---|
 | Compact | `< 768px` | 左侧 Sheet 抽屉 | 卡片 + “更多”菜单 | 底部筛选 Sheet | 居中、内部滚动 |
-| Medium | `768–1023px` | 56px 图标栏 | 表格 + 优先列 | 2–3 列内联 | 居中 |
+| Medium | `768–1023px` | 48px 图标栏 | 表格 + 优先列 | 2–3 列内联 | 居中 |
 | Expanded | `≥ 1024px` | 256px 完整侧边栏 | 表格 + 全部列 | 多列内联 | 居中 |
 
 补充规则：
@@ -113,4 +113,4 @@
 - 表单：字段使用可见 Label + `id/htmlFor`；控件补 `name`；非登录字段 `autoComplete="off"`；邮箱/编码/URL 等 `spellCheck={false}`；错误贴近字段展示。
 - 导航：页面跳转使用链接语义（`Link` / `<a>`），不要用按钮 `onClick` 模拟跳转。
 - PWA：manifest 名称/描述/主题色/图标清单保持一致；运行时 manifest + 静态回退。
-- 测试：React 使用 Vitest + React Testing Library；Vue 使用 Vitest + Vue Test Utils。共享层/纯函数保持同等覆盖，关键页面至少一个渲染或交互 smoke test。
+- 测试：React 使用 Vitest + React Testing Library；Vue 使用 Vitest + `@testing-library/vue`（必要时配合 `@vue/test-utils`）。共享层/纯函数保持同等覆盖，关键页面至少一个渲染或交互 smoke test。

@@ -7,7 +7,7 @@
 | 模式 | 断点 | 导航 | 列表 | 筛选 | 弹窗 |
 |---|---|---|---|---|---|
 | Compact | `< 768px` | 左侧 Sheet 抽屉 | 卡片 + “更多”菜单 | 底部筛选 Sheet | 居中、内部滚动 |
-| Medium | `768–1023px` | 56px 图标栏 | 表格 + 优先列 | 2–3 列内联 | 居中 |
+| Medium | `768–1023px` | 48px 图标栏 | 表格 + 优先列 | 2–3 列内联 | 居中 |
 | Expanded | `≥ 1024px` | 256px 完整侧边栏 | 表格 + 全部列 | 多列内联 | 居中 |
 
 补充规则：
@@ -93,6 +93,7 @@
 ## 7. PWA 与测试
 
 - PWA manifest 由 `src/lib/pwa.ts` 在运行时根据「站点名称 / 描述 + 当前主题」生成，`usePwaManifest()` 在 `App.vue` 中挂载。
+- `App.vue` 统一负责站点配置加载态、全局 Toaster 和页面异常兜底；Toast 主题跟随 `useThemeStore().resolvedTheme`，移动端位置在顶栏下方。
 - 站点信息保存后调用 `siteConfig.refresh()`，侧边栏、页面标题、`theme-color`、`application-name` 与 manifest 同步更新。
 - 静态 `manifest.webmanifest` 只作为首屏回退；运行时使用 Blob URL 覆盖。
 - 图标位于 `public/icons/`：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步更新 `index.html`、`vite.config.ts`、`src/lib/pwa.ts` 与本节。
@@ -114,4 +115,4 @@ Vue 与 React 使用不同的组件库，但布局、交互和状态约定必须
 - 导航：页面跳转使用链接语义（`RouterLink` / `<a>`），不要用按钮 `@click` 模拟跳转。
 - 状态：Pinia store 保存会话、站点配置和主题；列表请求使用 `usePagedList`，URL 状态使用 `useUrlListState` / `useUrlPage`，不要在各页面重复实现。
 - PWA：manifest 名称/描述/主题色/图标清单与 React 保持一致；运行时 manifest + 静态回退。
-- 测试：Vue 使用 Vitest + `@testing-library/vue`；共享层/纯函数保持与 React 同等的覆盖，关键页面至少一个渲染或交互 smoke test。
+- 测试：Vue 使用 Vitest + `@testing-library/vue`；共享层/纯函数保持与 React 同等的测试范围（含 PWA、图标和菜单拖拽逻辑），关键页面至少一个渲染或交互 smoke test。

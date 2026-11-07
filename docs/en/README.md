@@ -6,7 +6,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 
 ## Features
 
-- 🎨 **Choose a frontend**: React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui, with PWA; name, description and theme color adapt to site settings) or Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI, with PWA)
+- 🎨 **Choose a frontend**: React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui, with PWA; name, description and theme color adapt to site settings) or Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI, with PWA; name, description and theme color adapt to site settings)
 - ⚙️ **Choose a backend**: Python (FastAPI) or Java (Spring Boot)
 - 🔐 **Authentication built in**: login, registration, logout (Python uses JWT, Java uses Sa-Token), maintenance mode, and manual review
 - 🧩 **Complete modules**: users, roles, permissions, menus, system settings, AI models and presets, audit logs, data management, dashboard
@@ -155,6 +155,7 @@ mkdir -p templates/frontend-svelte
 npm run dev
 # Choose frontend/backend/project name, then verify the generated project:
 cd <generated project>/frontend && npm install && npm run build
+cd <generated project>/frontend && npm test && npx playwright install chromium && npm run test:e2e
 cd <generated project>/backend && start the backend
 ```
 
