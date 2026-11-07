@@ -94,5 +94,21 @@
 - 站点信息保存后调用 `useSiteConfig().refresh()`，侧边栏、页面标题、`theme-color`、`application-name` 与 manifest 同步更新。
 - 静态 `manifest.webmanifest` 只作为首屏回退；运行时使用 Blob URL 覆盖。
 - 图标位于 `public/icons/`：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步更新 `index.html`、`vite.config.ts`、`src/lib/pwa.ts` 与本节。
-- 测试使用 Vitest + React Testing Library：`npm test`（单次）、`npm run test:watch`、`npm run test:coverage`。
+- 单元/组件测试使用 Vitest + React Testing Library：`npm test`（单次）、`npm run test:watch`、`npm run test:coverage`。
+- E2E 使用 Playwright：首次执行 `npx playwright install chromium`，随后 `npm run test:e2e`；覆盖登录、手机卡片/抽屉、URL 筛选恢复。
 - 新增共享组件或纯函数必须补单元测试；列表页/表单页至少补一个渲染或交互 smoke test。
+
+## 8. React / Vue 对齐契约
+
+后续 Vue 重构以本节作为对照，不要求组件库相同，但布局、交互和状态约定必须一致：
+
+- 三端断点、Token、页面壳、列优先级、卡片/表格切换、弹窗与筛选模式保持一致。
+- **URL 状态键**：
+  - 列表：`q`、`page`（第 1 页省略 `page`）。
+  - 审计日志：`userId`、`status`、`action`、`startTime`、`endTime`、`page`。
+  - AI 模型：`tab=models|presets`、`page`、`presetQ`、`presetGroup`。
+  - 搜索输入以 URL 为唯一来源；输入使用 `replace`，请求侧做 300ms 防抖；搜索变化时删除 `page`。
+- 表单：字段使用可见 Label + `id/htmlFor`；控件补 `name`；非登录字段 `autoComplete="off"`；邮箱/编码/URL 等 `spellCheck={false}`；错误贴近字段展示。
+- 导航：页面跳转使用链接语义（`Link` / `<a>`），不要用按钮 `onClick` 模拟跳转。
+- PWA：manifest 名称/描述/主题色/图标清单保持一致；运行时 manifest + 静态回退。
+- 测试：React 使用 Vitest + React Testing Library；Vue 使用 Vitest + Vue Test Utils。共享层/纯函数保持同等覆盖，关键页面至少一个渲染或交互 smoke test。
