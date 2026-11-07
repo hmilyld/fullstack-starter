@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router"
+import { setAppError } from "@/lib/app-error"
 import { useAuthStore } from "@/stores/auth"
 
 const router = createRouter({
@@ -86,6 +87,10 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: "Login" }
   }
+})
+
+router.onError((error) => {
+  setAppError(error)
 })
 
 export default router

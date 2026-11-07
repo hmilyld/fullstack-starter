@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onErrorCaptured, onMounted, ref, watch } from "vue"
+import { onErrorCaptured, onMounted, watch } from "vue"
 import { RouterLink, RouterView, useRoute } from "vue-router"
 import { TriangleAlert } from "@lucide/vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "@/components/ui/sonner"
 import { useMediaQuery } from "@/composables/use-media-query"
 import { usePwaManifest } from "@/composables/use-pwa-manifest"
+import { appError, clearAppError, setAppError } from "@/lib/app-error"
 import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useThemeStore } from "@/stores/theme"
@@ -16,7 +17,6 @@ const route = useRoute()
 const siteConfig = useSiteConfigStore()
 const themeStore = useThemeStore()
 const isDesktop = useMediaQuery("(min-width: 768px)")
-const appError = ref<string | null>(null)
 
 usePwaManifest()
 
@@ -25,15 +25,14 @@ onMounted(async () => {
 })
 
 onErrorCaptured((error) => {
-  const message = error instanceof Error ? error.message : ""
-  appError.value = message || "页面加载失败，请刷新后重试。"
+  setAppError(error)
   return false
 })
 
 watch(
   () => route.fullPath,
   () => {
-    if (appError.value) appError.value = null
+    clearAppError()
   }
 )
 
@@ -68,7 +67,7 @@ watch(
     >
       <template #action>
         <Button as-child>
-          <RouterLink to="/dashboard" @click="appError = null"
+          <RouterLink to="/dashboard" @click="clearAppError()"
             >返回仪表盘</RouterLink
           >
         </Button>
