@@ -5,7 +5,13 @@ import type { AuthUser } from "@/types/auth"
 function loadUser(): AuthUser | null {
   try {
     const stored = localStorage.getItem("user")
-    return stored ? JSON.parse(stored) : null
+    if (!stored) return null
+    const parsed = JSON.parse(stored) as AuthUser
+    if (!parsed || typeof parsed !== "object") return null
+    return {
+      ...parsed,
+      permissions: Array.isArray(parsed.permissions) ? parsed.permissions : [],
+    }
   } catch {
     localStorage.removeItem("user")
     return null
@@ -24,7 +30,6 @@ export const useAuthStore = defineStore("auth", () => {
 
   function hasPermission(code: string): boolean {
     if (!user.value) return false
-    if (user.value.role === "admin") return true
     return user.value.permissions.includes(code)
   }
 
@@ -42,5 +47,20 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null
   }
 
-  return { user, token, isAuthenticated, hasPermission, login, logout }
+  function updateUser(patch: Partial<AuthUser>) {
+    if (!user.value) return
+    const next = { ...user.value, ...patch }
+    localStorage.setItem("user", JSON.stringify(next))
+    user.value = next
+  }
+
+  return {
+    user,
+    token,
+    isAuthenticated,
+    hasPermission,
+    login,
+    logout,
+    updateUser,
+  }
 })

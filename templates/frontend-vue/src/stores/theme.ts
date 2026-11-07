@@ -1,24 +1,39 @@
+import { computed, ref, watch } from "vue"
 import { defineStore } from "pinia"
-import { ref, watch } from "vue"
 
 type Theme = "dark" | "light" | "system"
+type ResolvedTheme = "dark" | "light"
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
+const THEME_STORAGE_KEY = "theme"
 
-function getSystemTheme(): "dark" | "light" {
-  return window.matchMedia(COLOR_SCHEME_QUERY).matches ? "dark" : "light"
+function getSystemTheme(): ResolvedTheme {
+  return typeof window !== "undefined" &&
+    window.matchMedia(COLOR_SCHEME_QUERY).matches
+    ? "dark"
+    : "light"
 }
 
-function applyTheme(theme: Theme) {
+/** 系统主题是模块级状态，避免每次进入页面都重复绑定监听器 */
+const systemTheme = ref<ResolvedTheme>(getSystemTheme())
+
+if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+  const mediaQuery = window.matchMedia(COLOR_SCHEME_QUERY)
+  mediaQuery.addEventListener("change", (event) => {
+    systemTheme.value = event.matches ? "dark" : "light"
+  })
+}
+
+function applyTheme(theme: ResolvedTheme) {
   const root = document.documentElement
-  const resolved = theme === "system" ? getSystemTheme() : theme
   root.classList.remove("light", "dark")
-  root.classList.add(resolved)
-  root.setAttribute("data-theme", resolved)
+  root.classList.add(theme)
+  root.style.colorScheme = theme
+  root.setAttribute("data-theme", theme)
 }
 
 function loadTheme(): Theme {
-  const stored = localStorage.getItem("theme")
+  const stored = localStorage.getItem(THEME_STORAGE_KEY)
   if (stored === "dark" || stored === "light" || stored === "system") {
     return stored
   }
@@ -27,24 +42,20 @@ function loadTheme(): Theme {
 
 export const useThemeStore = defineStore("theme", () => {
   const theme = ref<Theme>(loadTheme())
+  const resolvedTheme = computed<ResolvedTheme>(() =>
+    theme.value === "system" ? systemTheme.value : theme.value
+  )
+
+  watch(resolvedTheme, (value) => applyTheme(value), { immediate: true })
 
   function setTheme(nextTheme: Theme) {
-    localStorage.setItem("theme", nextTheme)
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
     theme.value = nextTheme
-    applyTheme(nextTheme)
-  }
-
-  watch(theme, (val) => applyTheme(val), { immediate: true })
-
-  if (theme.value === "system") {
-    const mql = window.matchMedia(COLOR_SCHEME_QUERY)
-    mql.addEventListener("change", () => applyTheme("system"))
   }
 
   function toggleTheme() {
-    const current = theme.value === "dark" ? "light" : "dark"
-    setTheme(current)
+    setTheme(resolvedTheme.value === "dark" ? "light" : "dark")
   }
 
-  return { theme, setTheme, toggleTheme }
+  return { theme, resolvedTheme, setTheme, toggleTheme }
 })

@@ -26,12 +26,21 @@ const props = withDefaults(
     class?: HTMLAttributes["class"]
   }>(),
   {
-    defaultOpen: !defaultDocument?.cookie.includes(
-      `${SIDEBAR_COOKIE_NAME}=false`
-    ),
+    defaultOpen: true,
     open: undefined,
   }
 )
+
+function getStoredOpen(): boolean | undefined {
+  const cookie = defaultDocument?.cookie ?? ""
+  const match = cookie.match(
+    new RegExp(`(?:^|;\\s*)${SIDEBAR_COOKIE_NAME}=([^;]+)`)
+  )
+  if (!match) return undefined
+  return match[1] === "true"
+}
+
+const storedOpen = getStoredOpen()
 
 const emits = defineEmits<{
   "update:open": [open: boolean]
@@ -43,7 +52,7 @@ const isMobile = useMediaQuery(
 const openMobile = ref(false)
 
 const open = useVModel(props, "open", emits, {
-  defaultValue: props.defaultOpen ?? false,
+  defaultValue: storedOpen ?? props.defaultOpen,
   passive: (props.open === undefined) as false,
 }) as Ref<boolean>
 
