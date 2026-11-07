@@ -12,6 +12,10 @@ type UsePagedListOptions<T, P extends ListParams> = {
   /** 搜索条件等；对象引用变化但值不变时不会触发请求 */
   params: P
   pageSize?: number
+  /** 受控页码；传入时通常配合 onPageChange 使用（例如 URL 状态） */
+  page?: number
+  /** 受控页码变更回调；未传时使用内部状态 */
+  onPageChange?: (page: number) => void
 }
 
 /**
@@ -22,10 +26,14 @@ export function usePagedList<T, P extends ListParams = ListParams>({
   fetcher,
   params,
   pageSize = 10,
+  page: pageProp,
+  onPageChange,
 }: UsePagedListOptions<T, P>) {
   const [items, setItems] = React.useState<T[]>([])
   const [total, setTotal] = React.useState(0)
-  const [page, setPage] = React.useState(1)
+  const [internalPage, setInternalPage] = React.useState(1)
+  const page = pageProp ?? internalPage
+  const setPage = onPageChange ?? setInternalPage
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -72,13 +80,13 @@ export function usePagedList<T, P extends ListParams = ListParams>({
       }
     }
     void load()
-  }, [paramsKey, page, load])
+  }, [paramsKey, page, load, setPage])
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   React.useEffect(() => {
     if (page > totalPages) setPage(totalPages)
-  }, [page, totalPages])
+  }, [page, totalPages, setPage])
 
   const loadRef = React.useRef(load)
   React.useEffect(() => {

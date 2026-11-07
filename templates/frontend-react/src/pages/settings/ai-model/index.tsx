@@ -83,6 +83,7 @@ import {
 } from "@/api/ai-model"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { usePagedList } from "@/hooks/use-paged-list"
+import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
 import { appToast } from "@/lib/toast"
 import type {
@@ -113,9 +114,26 @@ function AiModelPresetManager() {
   const { hasPermission } = useAuth()
   const [presets, setPresets] = React.useState<AiModelPreset[]>([])
   const [groups, setGroups] = React.useState<string[]>([])
-  const [selectedGroup, setSelectedGroup] = React.useState("")
-  const [search, setSearch] = React.useState("")
+  const [presetParams, setPresetParams] = useSearchParams()
+  const selectedGroup = presetParams.get("presetGroup") ?? ""
+  const search = presetParams.get("presetQ") ?? ""
   const debouncedSearch = useDebouncedValue(search)
+
+  function updatePresetParam(key: "presetQ" | "presetGroup", value: string) {
+    setPresetParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (value) next.set(key, value)
+        else next.delete(key)
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  const setSearch = (value: string) => updatePresetParam("presetQ", value)
+  const setSelectedGroup = (value: string) =>
+    updatePresetParam("presetGroup", value)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -279,6 +297,9 @@ function AiModelPresetManager() {
             </Select>
             <InputGroup className="w-full md:w-60">
               <InputGroupInput
+                name="q"
+                autoComplete="off"
+                spellCheck={false}
                 placeholder="搜索别名或模型名称…"
                 aria-label="搜索预设模型"
                 value={search}
@@ -462,6 +483,8 @@ function AiModelPresetManager() {
           <Field>
             <FieldLabel htmlFor="preset-group">分组</FieldLabel>
             <Input
+              name="preset-group"
+              autoComplete="off"
               id="preset-group"
               placeholder="例如：DeepSeek、OpenAI"
               value={editForm.group}
@@ -480,6 +503,9 @@ function AiModelPresetManager() {
           <Field>
             <FieldLabel htmlFor="preset-alias">别名</FieldLabel>
             <Input
+              name="preset-alias"
+              autoComplete="off"
+              spellCheck={false}
               id="preset-alias"
               placeholder="例如：deepseek-chat"
               value={editForm.alias}
@@ -497,6 +523,9 @@ function AiModelPresetManager() {
           <Field>
             <FieldLabel htmlFor="preset-model-name">模型名称</FieldLabel>
             <Input
+              name="preset-model-name"
+              autoComplete="off"
+              spellCheck={false}
               id="preset-model-name"
               placeholder="例如：deepseek-chat"
               value={editForm.modelName}
@@ -512,6 +541,9 @@ function AiModelPresetManager() {
           <Field>
             <FieldLabel htmlFor="preset-api-url">API 地址</FieldLabel>
             <Input
+              name="preset-api-url"
+              autoComplete="off"
+              spellCheck={false}
               id="preset-api-url"
               type="url"
               placeholder="例如：https://api.deepseek.com/v1/chat/completions"
@@ -528,6 +560,8 @@ function AiModelPresetManager() {
           <Field>
             <FieldLabel htmlFor="preset-description">描述</FieldLabel>
             <Textarea
+              name="preset-description"
+              autoComplete="off"
               id="preset-description"
               placeholder="请输入模型描述（可选）"
               value={editForm.description}
@@ -544,6 +578,8 @@ function AiModelPresetManager() {
             <Field>
               <FieldLabel htmlFor="preset-sort-order">排序</FieldLabel>
               <Input
+                name="preset-sort-order"
+                autoComplete="off"
                 id="preset-sort-order"
                 type="number"
                 min={0}
@@ -595,17 +631,25 @@ export function AiModelPage() {
   const activeTab = searchParams.get("tab") === "presets" ? "presets" : "models"
 
   function setActiveTab(value: string) {
-    setSearchParams(value === "models" ? {} : { tab: value }, {
-      replace: true,
-    })
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (value === "models") next.delete("tab")
+        else next.set("tab", value)
+        return next
+      },
+      { replace: true }
+    )
   }
 
-  const [search, setSearch] = React.useState("")
+  const { search, page, setSearch, setPage } = useUrlListState()
   const debouncedSearch = useDebouncedValue(search)
   const list = usePagedList<AiModel, { search: string }>({
     fetcher: getAiModels,
     params: { search: debouncedSearch },
     pageSize: PAGE_SIZE,
+    page,
+    onPageChange: setPage,
   })
 
   const [presets, setPresets] = React.useState<AiModelPreset[]>([])
@@ -809,6 +853,9 @@ export function AiModelPage() {
               <>
                 <InputGroup className="w-full md:w-64">
                   <InputGroupInput
+                    name="q"
+                    autoComplete="off"
+                    spellCheck={false}
                     placeholder="搜索别名或模型名称…"
                     aria-label="搜索模型"
                     value={search}
@@ -1085,6 +1132,9 @@ export function AiModelPage() {
           <Field>
             <FieldLabel htmlFor="model-alias">别名</FieldLabel>
             <Input
+              name="model-alias"
+              autoComplete="off"
+              spellCheck={false}
               id="model-alias"
               placeholder="例如：deepseek-chat"
               value={editForm.alias}
@@ -1105,6 +1155,9 @@ export function AiModelPage() {
           <Field>
             <FieldLabel htmlFor="model-name">模型名称</FieldLabel>
             <Input
+              name="model-name"
+              autoComplete="off"
+              spellCheck={false}
               id="model-name"
               placeholder="例如：deepseek-chat"
               value={editForm.modelName}
@@ -1120,6 +1173,9 @@ export function AiModelPage() {
           <Field>
             <FieldLabel htmlFor="model-api-url">API 地址</FieldLabel>
             <Input
+              name="model-api-url"
+              autoComplete="off"
+              spellCheck={false}
               id="model-api-url"
               type="url"
               placeholder="例如：https://api.deepseek.com/v1/chat/completions"
@@ -1152,6 +1208,8 @@ export function AiModelPage() {
           <Field>
             <FieldLabel htmlFor="model-description">描述</FieldLabel>
             <Textarea
+              name="model-description"
+              autoComplete="off"
               id="model-description"
               placeholder="请输入模型描述（可选）"
               value={editForm.description}

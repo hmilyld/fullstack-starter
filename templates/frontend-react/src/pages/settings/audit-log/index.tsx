@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useSearchParams } from "react-router"
 import {
   RotateCcwIcon,
   SearchIcon,
@@ -46,6 +47,7 @@ import {
 } from "@/components/ui/table"
 import { getAuditLogs } from "@/api/audit-log"
 import { usePagedList } from "@/hooks/use-paged-list"
+import { useUrlPage } from "@/hooks/use-url-list-state"
 import { formatDateTime } from "@/lib/format"
 import type { AuditLog } from "@/types/audit-log"
 
@@ -88,22 +90,61 @@ function formatFilterValue(key: FilterKey, value: string) {
   return value
 }
 
+const FILTER_KEYS: FilterKey[] = [
+  "userId",
+  "status",
+  "action",
+  "startTime",
+  "endTime",
+]
+
 export function AuditLogPage() {
-  const [draft, setDraft] = React.useState<AuditFilters>(EMPTY_FILTERS)
-  const [query, setQuery] = React.useState<AuditFilters>(EMPTY_FILTERS)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const query: AuditFilters = {
+    userId: searchParams.get("userId") ?? "",
+    status: searchParams.get("status") ?? "",
+    action: searchParams.get("action") ?? "",
+    startTime: searchParams.get("startTime") ?? "",
+    endTime: searchParams.get("endTime") ?? "",
+  }
+  const queryKey = JSON.stringify(query)
+  const { page, setPage } = useUrlPage()
+  const [draft, setDraft] = React.useState<AuditFilters>(query)
   const [filterOpen, setFilterOpen] = React.useState(false)
   const list = usePagedList<AuditLog, AuditFilters>({
     fetcher: getAuditLogs,
     params: query,
     pageSize: PAGE_SIZE,
+    page,
+    onPageChange: setPage,
   })
+
+  // 浏览器前进/后退或外部链接改变筛选条件时，同步表单草稿
+  React.useEffect(() => {
+    setDraft(JSON.parse(queryKey) as AuditFilters)
+  }, [queryKey])
+
+  function writeFilters(filters: AuditFilters) {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        for (const key of FILTER_KEYS) {
+          if (filters[key]) next.set(key, filters[key])
+          else next.delete(key)
+        }
+        next.delete("page")
+        return next
+      },
+      { replace: true }
+    )
+  }
 
   function updateDraft(key: FilterKey, value: string) {
     setDraft((previous) => ({ ...previous, [key]: value }))
   }
 
   function handleSearch() {
-    setQuery({
+    writeFilters({
       userId: draft.userId.trim(),
       status: draft.status,
       action: draft.action.trim(),
@@ -114,12 +155,25 @@ export function AuditLogPage() {
 
   function handleReset() {
     setDraft(EMPTY_FILTERS)
-    setQuery(EMPTY_FILTERS)
+    writeFilters(EMPTY_FILTERS)
+  }
+
+  function writeSingleFilter(key: FilterKey, value: string) {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (value) next.set(key, value)
+        else next.delete(key)
+        next.delete("page")
+        return next
+      },
+      { replace: true }
+    )
   }
 
   function removeFilter(key: FilterKey) {
     setDraft((previous) => ({ ...previous, [key]: "" }))
-    setQuery((previous) => ({ ...previous, [key]: "" }))
+    writeSingleFilter(key, "")
   }
 
   const activeFilters = (Object.keys(query) as FilterKey[])
@@ -130,67 +184,79 @@ export function AuditLogPage() {
       value: formatFilterValue(key, query[key]),
     }))
 
-  const filterFields = (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-      <Field>
-        <FieldLabel htmlFor="audit-user">用户 ID</FieldLabel>
-        <Input
-          id="audit-user"
-          value={draft.userId}
-          placeholder="例如：1"
-          onChange={(event) => updateDraft("userId", event.target.value)}
-        />
-      </Field>
-      <Field>
-        <FieldLabel>状态</FieldLabel>
-        <Select
-          value={draft.status || "all"}
-          onValueChange={(value) =>
-            updateDraft("status", value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger className="w-full" aria-label="状态">
-            <SelectValue placeholder="全部状态" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="all">全部状态</SelectItem>
-              <SelectItem value="success">成功</SelectItem>
-              <SelectItem value="fail">失败</SelectItem>
-              <SelectItem value="permission_denied">权限不足</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="audit-action">动作</FieldLabel>
-        <Input
-          id="audit-action"
-          value={draft.action}
-          placeholder="例如：users.create"
-          onChange={(event) => updateDraft("action", event.target.value)}
-        />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="audit-start">开始时间</FieldLabel>
-        <Input
-          id="audit-start"
-          type="datetime-local"
-          value={draft.startTime}
-          onChange={(event) => updateDraft("startTime", event.target.value)}
-        />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="audit-end">结束时间</FieldLabel>
-        <Input
-          id="audit-end"
-          type="datetime-local"
-          value={draft.endTime}
-          onChange={(event) => updateDraft("endTime", event.target.value)}
-        />
-      </Field>
-    </div>
-  )
+  function renderFilterFields(prefix: string) {
+    return (
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-user`}>用户 ID</FieldLabel>
+          <Input
+            name="audit-user"
+            autoComplete="off"
+            spellCheck={false}
+            id={`${prefix}-user`}
+            value={draft.userId}
+            placeholder="例如：1"
+            onChange={(event) => updateDraft("userId", event.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel>状态</FieldLabel>
+          <Select
+            value={draft.status || "all"}
+            onValueChange={(value) =>
+              updateDraft("status", value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-full" aria-label="状态">
+              <SelectValue placeholder="全部状态" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="all">全部状态</SelectItem>
+                <SelectItem value="success">成功</SelectItem>
+                <SelectItem value="fail">失败</SelectItem>
+                <SelectItem value="permission_denied">权限不足</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-action`}>动作</FieldLabel>
+          <Input
+            name="audit-action"
+            autoComplete="off"
+            spellCheck={false}
+            id={`${prefix}-action`}
+            value={draft.action}
+            placeholder="例如：users.create"
+            onChange={(event) => updateDraft("action", event.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-start`}>开始时间</FieldLabel>
+          <Input
+            name="audit-start"
+            autoComplete="off"
+            id={`${prefix}-start`}
+            type="datetime-local"
+            value={draft.startTime}
+            onChange={(event) => updateDraft("startTime", event.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-end`}>结束时间</FieldLabel>
+          <Input
+            name="audit-end"
+            autoComplete="off"
+            id={`${prefix}-end`}
+            type="datetime-local"
+            value={draft.endTime}
+            onChange={(event) => updateDraft("endTime", event.target.value)}
+          />
+        </Field>
+      </div>
+    )
+  }
 
   const hasLogs = list.items.length > 0
   const showEmpty = !list.loading && !hasLogs
@@ -219,7 +285,7 @@ export function AuditLogPage() {
       >
         <div className="flex flex-col gap-3 pb-4">
           <div className="hidden flex-col gap-3 md:flex">
-            {filterFields}
+            {renderFilterFields("audit")}
             <div className="flex items-center gap-2">
               <Button onClick={handleSearch}>
                 <SearchIcon data-icon="inline-start" />
@@ -280,7 +346,7 @@ export function AuditLogPage() {
               </SheetDescription>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-              {filterFields}
+              {renderFilterFields("audit-mobile")}
             </div>
             <SheetFooter className="flex-row gap-2 border-t p-4">
               <Button

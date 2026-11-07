@@ -54,6 +54,7 @@ import {
 } from "@/api/role"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { usePagedList } from "@/hooks/use-paged-list"
+import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
 import { appToast } from "@/lib/toast"
 import type { Permission } from "@/types/permission"
@@ -63,12 +64,14 @@ const PAGE_SIZE = 8
 
 export function RolesPage() {
   const { hasPermission } = useAuth()
-  const [search, setSearch] = React.useState("")
+  const { search, page, setSearch, setPage } = useUrlListState()
   const debouncedSearch = useDebouncedValue(search)
   const list = usePagedList<Role, { search: string }>({
     fetcher: getRoles,
     params: { search: debouncedSearch },
     pageSize: PAGE_SIZE,
+    page,
+    onPageChange: setPage,
   })
 
   const [menuPermissions, setMenuPermissions] = React.useState<Permission[]>([])
@@ -259,6 +262,9 @@ export function RolesPage() {
           <>
             <InputGroup className="w-full md:w-64">
               <InputGroupInput
+                name="q"
+                autoComplete="off"
+                spellCheck={false}
                 placeholder="搜索角色名称…"
                 aria-label="搜索角色"
                 value={search}
@@ -427,6 +433,8 @@ export function RolesPage() {
           <Field>
             <FieldLabel htmlFor="role-name">角色名称</FieldLabel>
             <Input
+              name="role-name"
+              autoComplete="off"
               id="role-name"
               placeholder="请输入角色名称"
               value={editForm.name}
@@ -439,6 +447,8 @@ export function RolesPage() {
           <Field>
             <FieldLabel htmlFor="role-desc">描述</FieldLabel>
             <Input
+              name="role-desc"
+              autoComplete="off"
               id="role-desc"
               placeholder="请输入角色描述"
               value={editForm.description}

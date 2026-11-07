@@ -841,6 +841,8 @@ export function MenuPage() {
           <Field>
             <FieldLabel htmlFor="group-name">分组名称</FieldLabel>
             <Input
+              name="group-name"
+              autoComplete="off"
               id="group-name"
               value={groupName}
               onChange={(event) => setGroupName(event.target.value)}
@@ -862,6 +864,9 @@ export function MenuPage() {
           <Field>
             <FieldLabel htmlFor="item-code">权限编码</FieldLabel>
             <Input
+              name="item-code"
+              autoComplete="off"
+              spellCheck={false}
               id="item-code"
               value={itemForm.permissionCode}
               onChange={(event) =>
@@ -879,6 +884,8 @@ export function MenuPage() {
           <Field>
             <FieldLabel htmlFor="item-name">菜单名称</FieldLabel>
             <Input
+              name="item-name"
+              autoComplete="off"
               id="item-name"
               value={itemForm.name}
               onChange={(event) =>
@@ -912,6 +919,9 @@ export function MenuPage() {
           <Field>
             <FieldLabel htmlFor="item-route">路由</FieldLabel>
             <Input
+              name="item-route"
+              autoComplete="off"
+              spellCheck={false}
               id="item-route"
               value={itemForm.route}
               placeholder="/settings/example"

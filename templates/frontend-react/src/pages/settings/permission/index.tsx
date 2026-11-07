@@ -19,6 +19,7 @@ import { ListShell } from "@/components/shared/list-shell"
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
 import { RowActions, type RowAction } from "@/components/shared/row-actions"
+import { useUrlListState } from "@/hooks/use-url-list-state"
 import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -80,7 +81,7 @@ export function PermissionPage() {
     Permission[]
   >([])
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set())
-  const [search, setSearch] = React.useState("")
+  const { search, setSearch } = useUrlListState()
   const [tableLoading, setTableLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [syncing, setSyncing] = React.useState(false)
@@ -277,6 +278,9 @@ export function PermissionPage() {
           <>
             <InputGroup className="w-full md:w-64">
               <InputGroupInput
+                name="q"
+                autoComplete="off"
+                spellCheck={false}
                 placeholder="搜索编码或名称…"
                 aria-label="搜索权限"
                 value={search}
@@ -553,6 +557,9 @@ export function PermissionPage() {
           <Field>
             <FieldLabel htmlFor="perm-code">权限编码</FieldLabel>
             <Input
+              name="perm-code"
+              autoComplete="off"
+              spellCheck={false}
               id="perm-code"
               placeholder="如：users.create"
               value={editForm.code}
@@ -568,6 +575,8 @@ export function PermissionPage() {
           <Field>
             <FieldLabel htmlFor="perm-name">权限名称</FieldLabel>
             <Input
+              name="perm-name"
+              autoComplete="off"
               id="perm-name"
               placeholder="如：新增用户"
               value={editForm.name}

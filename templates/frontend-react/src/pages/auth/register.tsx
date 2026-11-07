@@ -92,6 +92,7 @@ export function RegisterPage() {
                     name="username"
                     placeholder="请输入用户名"
                     autoComplete="username"
+                    spellCheck={false}
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
                     required
@@ -106,6 +107,7 @@ export function RegisterPage() {
                     type="email"
                     placeholder="请输入邮箱"
                     autoComplete="email"
+                    spellCheck={false}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     required

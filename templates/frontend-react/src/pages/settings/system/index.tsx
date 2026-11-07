@@ -361,6 +361,8 @@ export function SystemPage() {
                 <Field>
                   <FieldLabel htmlFor="site-name">站点名称</FieldLabel>
                   <Input
+                    name="site-name"
+                    autoComplete="off"
                     id="site-name"
                     value={config.siteName}
                     onChange={(event) =>
@@ -371,6 +373,8 @@ export function SystemPage() {
                 <Field>
                   <FieldLabel htmlFor="site-desc">站点描述</FieldLabel>
                   <Input
+                    name="site-desc"
+                    autoComplete="off"
                     id="site-desc"
                     value={config.siteDescription}
                     onChange={(event) =>
@@ -384,6 +388,9 @@ export function SystemPage() {
                 <Field>
                   <FieldLabel htmlFor="site-keywords">关键词</FieldLabel>
                   <Input
+                    name="site-keywords"
+                    autoComplete="off"
+                    spellCheck={false}
                     id="site-keywords"
                     value={config.keywords}
                     onChange={(event) =>
@@ -437,6 +444,8 @@ export function SystemPage() {
                   维护提示信息
                 </FieldLabel>
                 <Input
+                  name="maintenance-message"
+                  autoComplete="off"
                   id="maintenance-message"
                   value={config.maintenanceMessage}
                   onChange={(event) =>
@@ -544,6 +553,8 @@ export function SystemPage() {
                 <Field>
                   <FieldLabel htmlFor="welcome-message">欢迎消息</FieldLabel>
                   <Input
+                    name="welcome-message"
+                    autoComplete="off"
                     id="welcome-message"
                     value={config.welcomeMessage}
                     onChange={(event) =>
@@ -620,6 +631,9 @@ export function SystemPage() {
                   <Field>
                     <FieldLabel htmlFor="smtp-host">SMTP 服务器</FieldLabel>
                     <Input
+                      name="smtp-host"
+                      autoComplete="off"
+                      spellCheck={false}
                       id="smtp-host"
                       placeholder="例如：smtp.qq.com"
                       value={config.smtpHost}
@@ -632,6 +646,8 @@ export function SystemPage() {
                   <Field>
                     <FieldLabel htmlFor="smtp-port">端口</FieldLabel>
                     <Input
+                      name="smtp-port"
+                      autoComplete="off"
                       id="smtp-port"
                       type="number"
                       min={1}
@@ -647,6 +663,9 @@ export function SystemPage() {
                   <Field>
                     <FieldLabel htmlFor="smtp-username">用户名</FieldLabel>
                     <Input
+                      name="smtp-username"
+                      autoComplete="off"
+                      spellCheck={false}
                       id="smtp-username"
                       placeholder="例如：your@email.com"
                       value={config.smtpUsername}
@@ -661,6 +680,7 @@ export function SystemPage() {
                       密码 / 授权码
                     </FieldLabel>
                     <Input
+                      name="smtp-password"
                       id="smtp-password"
                       type="password"
                       placeholder="留空保持不变"
@@ -674,6 +694,8 @@ export function SystemPage() {
                   <Field>
                     <FieldLabel htmlFor="smtp-from-name">发件人名称</FieldLabel>
                     <Input
+                      name="smtp-from-name"
+                      autoComplete="off"
                       id="smtp-from-name"
                       placeholder="例如：管理系统"
                       value={config.smtpFromName}
@@ -687,6 +709,9 @@ export function SystemPage() {
                       发件人邮箱
                     </FieldLabel>
                     <Input
+                      name="smtp-from-email"
+                      autoComplete="off"
+                      spellCheck={false}
                       id="smtp-from-email"
                       type="email"
                       placeholder="例如：noreply@example.com"
@@ -744,6 +769,9 @@ export function SystemPage() {
                   <Field>
                     <FieldLabel htmlFor="test-email">收件人邮箱</FieldLabel>
                     <Input
+                      name="test-email"
+                      autoComplete="off"
+                      spellCheck={false}
                       id="test-email"
                       type="email"
                       placeholder="请输入测试收件人邮箱"

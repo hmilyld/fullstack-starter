@@ -85,6 +85,7 @@ export function LoginForm({
                     name="account"
                     placeholder="请输入邮箱或用户名"
                     autoComplete="username"
+                    spellCheck={false}
                     value={account}
                     onChange={(event) => setAccount(event.target.value)}
                     required

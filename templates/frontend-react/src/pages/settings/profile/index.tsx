@@ -112,6 +112,7 @@ export function ProfilePage() {
                     <FieldLabel htmlFor="name">姓名</FieldLabel>
                     <Input
                       id="name"
+                      name="name"
                       placeholder="请输入姓名"
                       autoComplete="name"
                       value={name}
@@ -122,9 +123,11 @@ export function ProfilePage() {
                     <FieldLabel htmlFor="email">邮箱</FieldLabel>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="请输入邮箱"
                       autoComplete="email"
+                      spellCheck={false}
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                     />

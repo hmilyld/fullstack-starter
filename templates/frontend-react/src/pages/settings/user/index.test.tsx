@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react"
+import { MemoryRouter } from "react-router"
 import { describe, expect, it, vi } from "vitest"
 
 import { UsersPage } from "./index"
@@ -67,7 +68,11 @@ vi.mock("@/api/user", () => ({
 
 describe("UsersPage", () => {
   it("renders the list shell, card list and table data", async () => {
-    render(<UsersPage />)
+    render(
+      <MemoryRouter>
+        <UsersPage />
+      </MemoryRouter>
+    )
 
     expect(await screen.findByText("共 1 位用户")).toBeInTheDocument()
     expect(screen.getByText("用户列表")).toBeInTheDocument()

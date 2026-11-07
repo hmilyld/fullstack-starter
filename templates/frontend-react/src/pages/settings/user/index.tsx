@@ -69,6 +69,7 @@ import {
 } from "@/api/user"
 import { getRoles } from "@/api/role"
 import { usePagedList } from "@/hooks/use-paged-list"
+import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useAuth } from "@/lib/auth-context"
 import { appToast } from "@/lib/toast"
@@ -88,12 +89,14 @@ export function UsersPage() {
   const { hasPermission, user: currentUser } = useAuth()
   const [roles, setRoles] = React.useState<Role[]>([])
 
-  const [search, setSearch] = React.useState("")
+  const { search, page, setSearch, setPage } = useUrlListState()
   const debouncedSearch = useDebouncedValue(search)
   const list = usePagedList<User, { search: string }>({
     fetcher: getUsers,
     params: { search: debouncedSearch },
     pageSize: PAGE_SIZE,
+    page,
+    onPageChange: setPage,
   })
 
   React.useEffect(() => {
@@ -368,6 +371,9 @@ export function UsersPage() {
           <>
             <InputGroup className="w-full md:w-64">
               <InputGroupInput
+                name="q"
+                autoComplete="off"
+                spellCheck={false}
                 placeholder="搜索用户名、姓名或邮箱…"
                 aria-label="搜索用户"
                 value={search}
@@ -445,7 +451,12 @@ export function UsersPage() {
                   title={
                     <span className="flex items-center gap-2">
                       <Avatar className="size-7">
-                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarImage
+                          src={user.avatar}
+                          alt={user.name}
+                          width={28}
+                          height={28}
+                        />
                         <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
                       </Avatar>
                       <span className="truncate">{user.name}</span>
@@ -476,7 +487,12 @@ export function UsersPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="size-8">
-                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarImage
+                              src={user.avatar}
+                              alt={user.name}
+                              width={32}
+                              height={32}
+                            />
                             <AvatarFallback>
                               {user.name.slice(0, 1)}
                             </AvatarFallback>
@@ -564,6 +580,9 @@ export function UsersPage() {
           <Field>
             <FieldLabel htmlFor="username">用户名</FieldLabel>
             <Input
+              name="username"
+              autoComplete="off"
+              spellCheck={false}
               id="username"
               placeholder="请输入用户名"
               value={editForm.username}
@@ -579,6 +598,8 @@ export function UsersPage() {
           <Field>
             <FieldLabel htmlFor="name">姓名</FieldLabel>
             <Input
+              name="name"
+              autoComplete="off"
               id="name"
               placeholder="请输入姓名"
               value={editForm.name}
@@ -591,6 +612,9 @@ export function UsersPage() {
           <Field>
             <FieldLabel htmlFor="email">邮箱</FieldLabel>
             <Input
+              name="email"
+              autoComplete="off"
+              spellCheck={false}
               id="email"
               type="email"
               placeholder="请输入邮箱"
@@ -698,7 +722,13 @@ export function UsersPage() {
             <Field>
               <FieldLabel>新密码</FieldLabel>
               <div className="flex gap-2">
-                <Input value={newPassword} readOnly className="font-mono" />
+                <Input
+                  name="newPassword"
+                  autoComplete="off"
+                  value={newPassword}
+                  readOnly
+                  className="font-mono"
+                />
                 <Button
                   variant="outline"
                   size="icon"

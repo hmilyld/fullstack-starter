@@ -261,6 +261,8 @@ export function DataManagementPage() {
               <FieldLabel htmlFor="export-password">压缩密码</FieldLabel>
               <div className="flex items-center gap-2">
                 <Input
+                  name="export-password"
+                  autoComplete="off"
                   id="export-password"
                   readOnly
                   value={exportResult?.password || ""}
@@ -308,6 +310,8 @@ export function DataManagementPage() {
             <Field>
               <FieldLabel htmlFor="import-file">导出包</FieldLabel>
               <Input
+                name="import-file"
+                autoComplete="off"
                 id="import-file"
                 type="file"
                 accept=".zip,application/zip"
@@ -320,6 +324,7 @@ export function DataManagementPage() {
             <Field>
               <FieldLabel htmlFor="import-password">压缩密码</FieldLabel>
               <Input
+                name="import-password"
                 id="import-password"
                 type="password"
                 value={importPassword}

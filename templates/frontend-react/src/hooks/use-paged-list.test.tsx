@@ -108,6 +108,46 @@ describe("usePagedList", () => {
     expect(result.current.page).toBe(1)
   })
 
+  it("supports a controlled page from URL state", async () => {
+    const fetcher = vi.fn(
+      async (params: Params & { page: number; pageSize: number }) =>
+        response(params.page)
+    )
+    const onPageChange = vi.fn()
+
+    const { result, rerender } = renderHook(
+      ({ page }: { page: number }) =>
+        usePagedList<Item, Params>({
+          fetcher,
+          params: { search: "" },
+          pageSize: 8,
+          page,
+          onPageChange,
+        }),
+      { initialProps: { page: 1 } }
+    )
+
+    await waitFor(() =>
+      expect(fetcher).toHaveBeenLastCalledWith({
+        search: "",
+        page: 1,
+        pageSize: 8,
+      })
+    )
+
+    rerender({ page: 2 })
+    await waitFor(() =>
+      expect(fetcher).toHaveBeenLastCalledWith({
+        search: "",
+        page: 2,
+        pageSize: 8,
+      })
+    )
+
+    act(() => result.current.setPage(3))
+    expect(onPageChange).toHaveBeenCalledWith(3)
+  })
+
   it("surfaces API errors", async () => {
     const fetcher = vi.fn(async (): Promise<Response> => ({
       code: -1,
