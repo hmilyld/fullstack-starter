@@ -6,7 +6,7 @@
 
 ## 功能
 
-- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA 支持) 或 Vue 3 (Vite + TypeScript + Tailwind CSS v4 + DaisyUI)
+- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA，站点名/描述/主题色自动适配) 或 Vue 3 (Vite + TypeScript + Tailwind CSS v4 + DaisyUI)
 - ⚙️ **后端可选**：Python (FastAPI) 或 Java (Spring Boot)
 - 🔐 **内置认证**：登录、注册、登出（Python 走 JWT，Java 走 Sa-Token）、维护模式与人工审核
 - 🧩 **完整模块**：用户、角色、权限、菜单、系统设置、AI 模型与预设、审计日志、数据管理、仪表盘
@@ -29,7 +29,7 @@
 | 审计日志 | 写操作与权限拦截记录，按用户/状态/动作/时间筛选，分页查看 |
 | 数据管理 | AES 加密完整导出、同版本完整导入、导入期间全局冻结、全部会话失效 |
 | 个人中心 | 修改资料、修改密码 |
-| 访问适配 | 面向电脑与平板设计，手机访问提示更换设备 |
+| 访问适配 | 手机、平板、电脑自适应；手机使用卡片与抽屉，平板使用图标栏，桌面使用完整侧边栏 |
 
 默认账号：`admin / 123456`（唯一管理员）；`zhangsan / lisi / wangwu / zhaoliu` 密码均为 `123456`（普通用户）。注册新账号时根据系统设置进入「待审核」或「普通用户」角色。
 

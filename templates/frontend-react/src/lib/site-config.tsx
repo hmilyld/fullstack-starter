@@ -9,14 +9,20 @@ type SiteConfigContextType = {
   refresh: () => Promise<void>
 }
 
-const SiteConfigContext = React.createContext<SiteConfigContextType | null>(null)
+const SiteConfigContext = React.createContext<SiteConfigContextType | null>(
+  null
+)
 
-export function SiteConfigProvider({ children }: { children: React.ReactNode }) {
+export function SiteConfigProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const [config, setConfig] = React.useState<PublicConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
 
-  const fetchConfig = React.useCallback(async () => {
-    setLoading(true)
+  const fetchConfig = React.useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await getPublicConfig()
       if (res.code === 0) {
@@ -29,15 +35,18 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   React.useEffect(() => {
-    fetchConfig()
+    void fetchConfig()
   }, [fetchConfig])
+
+  const refresh = React.useCallback(() => fetchConfig(true), [fetchConfig])
 
   // 动态更新页面标题和描述
   React.useEffect(() => {
     if (!config) return
 
     const siteName = config.siteName || "管理系统"
-    const description = config.siteDescription || "基于 React + shadcn/ui 的后台管理框架"
+    const description =
+      config.siteDescription || "基于 React + shadcn/ui 的后台管理框架"
 
     document.title = siteName
 
@@ -52,7 +61,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-svh items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-32" />
@@ -62,7 +71,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <SiteConfigContext.Provider value={{ config, loading, refresh: fetchConfig }}>
+    <SiteConfigContext.Provider value={{ config, loading, refresh }}>
       {children}
     </SiteConfigContext.Provider>
   )
@@ -70,6 +79,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
 export function useSiteConfig() {
   const context = React.useContext(SiteConfigContext)
-  if (!context) throw new Error("useSiteConfig must be used within SiteConfigProvider")
+  if (!context)
+    throw new Error("useSiteConfig must be used within SiteConfigProvider")
   return context
 }

@@ -1,29 +1,32 @@
 import * as React from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { LoadingButton } from "@/components/shared/loading-button"
-import { TableEmptyRow, TableCardSkeleton } from "@/components/shared/table-states"
+import {
+  KeyIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  ShieldIcon,
+  Trash2Icon,
+  UserRoundIcon,
+  UsersIcon,
+} from "lucide-react"
+
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
-import { Pagination } from "@/components/shared/pagination"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { EmptyState } from "@/components/shared/empty-state"
+import { ErrorState } from "@/components/shared/error-state"
+import { FormDialog } from "@/components/shared/form-dialog"
+import { InlineError } from "@/components/shared/inline-error"
+import { ListShell } from "@/components/shared/list-shell"
+import { LoadingButton } from "@/components/shared/loading-button"
+import { PageHeader } from "@/components/shared/page-header"
+import { RecordCard } from "@/components/shared/record-card"
+import { RoleBadge } from "@/components/shared/role-badge"
+import { RowActions, type RowAction } from "@/components/shared/row-actions"
+import { TablePagination } from "@/components/shared/table-pagination"
+import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import {
   Dialog,
   DialogContent,
@@ -32,6 +35,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -40,94 +50,96 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Spinner } from "@/components/ui/spinner"
 import {
-  SearchIcon,
-  PlusIcon,
-  PencilIcon,
-  ShieldIcon,
-  Trash2Icon,
-  KeyIcon,
-} from "lucide-react"
-import { appToast } from "@/lib/toast"
-import { useAuth } from "@/lib/auth-context"
-import type { User } from "@/types/user"
-import type { Role } from "@/types/role"
-import { getUsers, createUser, updateUser, deleteUser as apiDeleteUser, resetPassword, batchUpdateRole } from "@/api/user"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  batchUpdateRole,
+  createUser,
+  deleteUser as apiDeleteUser,
+  getUsers,
+  resetPassword,
+  updateUser,
+} from "@/api/user"
 import { getRoles } from "@/api/role"
+import { usePagedList } from "@/hooks/use-paged-list"
+import { useUrlListState } from "@/hooks/use-url-list-state"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useAuth } from "@/lib/auth-context"
+import { appToast } from "@/lib/toast"
+import type { Role } from "@/types/role"
+import type { User } from "@/types/user"
 
 const PAGE_SIZE = 8
 
-function getRoleBadge(roleName: string) {
-  if (roleName === "管理员") return <Badge variant="default">{roleName}</Badge>
-  if (roleName === "普通用户") return <Badge variant="secondary">{roleName}</Badge>
-  return <Badge variant="outline">{roleName}</Badge>
-}
-
-function findRoleName(roleId: string, roles: Role[]): string {
-  return roles.find((r) => r.id === roleId)?.name ?? "未知角色"
+function generatePassword(length = 12) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  const values = new Uint32Array(length)
+  crypto.getRandomValues(values)
+  return Array.from(values, (value) => chars[value % chars.length]).join("")
 }
 
 export function UsersPage() {
   const { hasPermission, user: currentUser } = useAuth()
-  const isAdmin = currentUser?.role === "admin"
-  const canManageUser = (user: User) => isAdmin || user.roleId !== "admin"
-  const [users, setUsers] = React.useState<User[]>([])
   const [roles, setRoles] = React.useState<Role[]>([])
 
+  const { search, page, setSearch, setPage } = useUrlListState()
+  const debouncedSearch = useDebouncedValue(search)
+  const list = usePagedList<User, { search: string }>({
+    fetcher: getUsers,
+    params: { search: debouncedSearch },
+    pageSize: PAGE_SIZE,
+    page,
+    onPageChange: setPage,
+  })
+
   React.useEffect(() => {
+    let cancelled = false
     getRoles({ pageSize: 100 }).then((res) => {
-      if (res.code === 0) setRoles(res.data.list)
+      if (!cancelled && res.code === 0) setRoles(res.data.list)
     })
-  }, [])
-  const [search, setSearch] = React.useState("")
-  const [debouncedSearch, setDebouncedSearch] = React.useState("")
-  const [page, setPage] = React.useState(1)
-  const [total, setTotal] = React.useState(0)
-  const [tableLoading, setTableLoading] = React.useState(true)
-  const [editSubmitting, setEditSubmitting] = React.useState(false)
-  const [roleSubmitting, setRoleSubmitting] = React.useState(false)
-  const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
-
-  // 搜索防抖：输入停止 300ms 后再触发查询
-  React.useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300)
-    return () => clearTimeout(t)
-  }, [search])
-
-  const loadData = React.useCallback(async () => {
-    setTableLoading(true)
-    const res = await getUsers({ search: debouncedSearch, page, pageSize: PAGE_SIZE })
-    if (res.code === 0) {
-      setUsers(res.data.list)
-      setTotal(res.data.total)
-    } else {
-      appToast.error(res.message || "加载数据失败")
+    return () => {
+      cancelled = true
     }
-    setTableLoading(false)
-  }, [debouncedSearch, page])
-
-  React.useEffect(() => { loadData() }, [loadData])
+  }, [])
 
   // 新增/编辑对话框
   const [editOpen, setEditOpen] = React.useState(false)
   const [editingUser, setEditingUser] = React.useState<User | null>(null)
-  const [editForm, setEditForm] = React.useState({ username: "", name: "", email: "", roleId: "user" })
+  const [editForm, setEditForm] = React.useState({
+    username: "",
+    name: "",
+    email: "",
+    roleId: "user",
+  })
+  const [editSubmitting, setEditSubmitting] = React.useState(false)
 
   // 角色维护对话框
   const [roleOpen, setRoleOpen] = React.useState(false)
   const [roleTarget, setRoleTarget] = React.useState<User | null>(null)
   const [roleValue, setRoleValue] = React.useState("")
+  const [roleSubmitting, setRoleSubmitting] = React.useState(false)
 
   // 删除确认对话框
   const [deleteOpen, setDeleteOpen] = React.useState(false)
   const [deleteTarget, setDeleteTarget] = React.useState<User | null>(null)
+  const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
 
   // 待审核对话框
   const [pendingOpen, setPendingOpen] = React.useState(false)
   const [pendingUsers, setPendingUsers] = React.useState<User[]>([])
-  const [selectedPending, setSelectedPending] = React.useState<Set<string>>(new Set())
+  const [selectedPending, setSelectedPending] = React.useState<Set<string>>(
+    new Set()
+  )
   const [pendingLoading, setPendingLoading] = React.useState(false)
   const [pendingSubmitting, setPendingSubmitting] = React.useState(false)
+  const [rejectOpen, setRejectOpen] = React.useState(false)
 
   // 重置密码对话框
   const [resetOpen, setResetOpen] = React.useState(false)
@@ -135,48 +147,35 @@ export function UsersPage() {
   const [newPassword, setNewPassword] = React.useState("")
   const [resetSubmitting, setResetSubmitting] = React.useState(false)
 
-  // 搜索过滤
-  const filtered = users
-
-  // 分页
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-
-  React.useEffect(() => {
-    setPage(1)
-  }, [search])
-
-  // 打开新增
   function handleAdd() {
     setEditingUser(null)
     setEditForm({ username: "", name: "", email: "", roleId: "user" })
     setEditOpen(true)
   }
 
-  // 打开编辑
   function handleEdit(user: User) {
     setEditingUser(user)
-    setEditForm({ username: user.username, name: user.name, email: user.email, roleId: user.roleId })
+    setEditForm({
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      roleId: user.roleId,
+    })
     setEditOpen(true)
   }
 
-  // 提交新增/编辑
-  async function handleEditSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleEditSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setEditSubmitting(true)
+    const payload = {
+      username: editForm.username,
+      name: editForm.name,
+      email: editForm.email,
+      roleId: editForm.roleId,
+    }
     const res = editingUser
-      ? await updateUser(editingUser.id, {
-          username: editForm.username,
-          name: editForm.name,
-          email: editForm.email,
-          roleId: editForm.roleId,
-        })
-      : await createUser({
-          username: editForm.username,
-          name: editForm.name,
-          email: editForm.email,
-          roleId: editForm.roleId,
-        })
+      ? await updateUser(editingUser.id, payload)
+      : await createUser(payload)
     setEditSubmitting(false)
     if (res.code !== 0) {
       appToast.error(res.message || "操作失败")
@@ -184,17 +183,15 @@ export function UsersPage() {
     }
     appToast.success(editingUser ? "保存成功" : "创建成功")
     setEditOpen(false)
-    loadData()
+    list.refresh()
   }
 
-  // 打开角色维护
   function handleRole(user: User) {
     setRoleTarget(user)
     setRoleValue(user.roleId)
     setRoleOpen(true)
   }
 
-  // 提交角色修改
   async function handleRoleSubmit() {
     if (!roleTarget) return
     setRoleSubmitting(true)
@@ -206,16 +203,14 @@ export function UsersPage() {
     }
     appToast.success("角色已更新")
     setRoleOpen(false)
-    loadData()
+    list.refresh()
   }
 
-  // 打开删除确认
   function handleDelete(user: User) {
     setDeleteTarget(user)
     setDeleteOpen(true)
   }
 
-  // 确认删除
   async function handleDeleteConfirm() {
     if (!deleteTarget) return
     setDeleteSubmitting(true)
@@ -227,76 +222,85 @@ export function UsersPage() {
     }
     appToast.success("删除成功")
     setDeleteOpen(false)
-    loadData()
+    list.refresh()
   }
 
-  // 打开待审核对话框
   async function openPending() {
     setPendingOpen(true)
     setPendingLoading(true)
     setSelectedPending(new Set())
     const res = await getUsers({ pageSize: 100 })
     if (res.code === 0) {
-      setPendingUsers(res.data.list.filter((u) => u.roleId === "pending_review"))
+      setPendingUsers(
+        res.data.list.filter((user) => user.roleId === "pending_review")
+      )
+    } else {
+      appToast.error(res.message || "加载待审核用户失败")
     }
     setPendingLoading(false)
   }
 
-  // 切换选中状态
   function togglePending(id: string) {
-    setSelectedPending((prev) => {
-      const next = new Set(prev)
+    setSelectedPending((previous) => {
+      const next = new Set(previous)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
   }
 
-  // 全选/取消全选
   function toggleAllPending() {
     if (selectedPending.size === pendingUsers.length) {
       setSelectedPending(new Set())
     } else {
-      setSelectedPending(new Set(pendingUsers.map((u) => u.id)))
+      setSelectedPending(new Set(pendingUsers.map((user) => user.id)))
     }
   }
 
-  // 批量通过
   async function handleBatchApprove() {
     if (selectedPending.size === 0) return
     setPendingSubmitting(true)
-    const userIds = Array.from(selectedPending).map(Number)
-    await batchUpdateRole(userIds, "user")
-    appToast.success(`已通过 ${userIds.length} 位用户审核`)
+    const res = await batchUpdateRole(
+      Array.from(selectedPending, Number),
+      "user"
+    )
     setPendingSubmitting(false)
+    if (res.code !== 0) {
+      appToast.error(res.message || "审核失败")
+      return
+    }
+    appToast.success(`已通过 ${selectedPending.size} 位用户审核`)
     setPendingOpen(false)
-    loadData()
+    list.refresh()
   }
 
-  // 批量拒绝（删除）
   async function handleBatchReject() {
     if (selectedPending.size === 0) return
     setPendingSubmitting(true)
-    for (const id of selectedPending) {
-      await apiDeleteUser(id)
-    }
-    appToast.success(`已拒绝 ${selectedPending.size} 位用户`)
+    const results = await Promise.all(
+      Array.from(selectedPending).map((id) => apiDeleteUser(id))
+    )
     setPendingSubmitting(false)
+    setRejectOpen(false)
+
+    const failed = results.filter((res) => res.code !== 0).length
+    if (failed > 0) {
+      appToast.error(`${failed} 位用户拒绝失败`)
+      await openPending()
+      return
+    }
+
+    appToast.success(`已拒绝 ${selectedPending.size} 位用户`)
     setPendingOpen(false)
-    loadData()
+    list.refresh()
   }
 
-  // 打开重置密码
   function openReset(user: User) {
     setResetTarget(user)
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    let pwd = ""
-    for (let i = 0; i < 12; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length))
-    setNewPassword(pwd)
+    setNewPassword(generatePassword())
     setResetOpen(true)
   }
 
-  // 确认重置密码
   async function handleResetSubmit() {
     if (!resetTarget) return
     setResetSubmitting(true)
@@ -308,205 +312,329 @@ export function UsersPage() {
     }
     appToast.success("密码已重置")
     setResetOpen(false)
-    loadData()
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">用户管理</h1>
-        <p className="text-muted-foreground">管理团队成员及其角色权限。</p>
-      </div>
+  async function copyPassword() {
+    await navigator.clipboard.writeText(newPassword)
+    appToast.success("密码已复制到剪贴板")
+  }
 
-      {tableLoading ? (
-        <TableCardSkeleton colSpan={5} />
-      ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>用户列表</CardTitle>
-                <CardDescription>共 {filtered.length} 位用户</CardDescription>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="relative w-full sm:w-64">
-                  <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="搜索用户名、姓名或邮箱..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                {hasPermission("users.create") && (
-                  <Button onClick={handleAdd} className="w-full sm:w-auto">
-                    <PlusIcon data-icon="inline-start" />
-                    新增用户
-                  </Button>
-                )}
-              {hasPermission("users.edit") && (
-                <Button variant="outline" onClick={openPending} className="w-full sm:w-auto">
-                  待审核
+  function buildUserActions(user: User): RowAction[] {
+    const actions: RowAction[] = []
+    if (hasPermission("users.edit")) {
+      actions.push({
+        label: "编辑",
+        icon: PencilIcon,
+        onSelect: () => handleEdit(user),
+      })
+    }
+    if (hasPermission("users.assign_role")) {
+      actions.push({
+        label: "维护角色",
+        icon: ShieldIcon,
+        onSelect: () => handleRole(user),
+      })
+    }
+    if (hasPermission("users.edit")) {
+      actions.push({
+        label: "重置密码",
+        icon: KeyIcon,
+        onSelect: () => openReset(user),
+      })
+    }
+    if (hasPermission("users.delete") && user.id !== currentUser?.id) {
+      actions.push({
+        label: "删除",
+        icon: Trash2Icon,
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => handleDelete(user),
+      })
+    }
+    return actions
+  }
+
+  const allPendingSelected =
+    pendingUsers.length > 0 && selectedPending.size === pendingUsers.length
+  const somePendingSelected = selectedPending.size > 0 && !allPendingSelected
+  const hasUsers = list.items.length > 0
+  const showEmpty = !list.loading && !hasUsers
+
+  return (
+    <div className="flex flex-col gap-(--page-gap)">
+      <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
+
+      <ListShell
+        title="用户列表"
+        description={`共 ${list.total} 位用户`}
+        actions={
+          <>
+            <InputGroup className="w-full md:w-64">
+              <InputGroupInput
+                name="q"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="搜索用户名、姓名或邮箱…"
+                aria-label="搜索用户"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <InputGroupAddon>
+                <SearchIcon />
+              </InputGroupAddon>
+            </InputGroup>
+            {hasPermission("users.create") && (
+              <Button onClick={handleAdd} className="w-full md:w-auto">
+                <PlusIcon data-icon="inline-start" />
+                新增用户
+              </Button>
+            )}
+            {hasPermission("users.edit") && (
+              <Button
+                variant="outline"
+                onClick={openPending}
+                className="w-full md:w-auto"
+              >
+                待审核
+              </Button>
+            )}
+          </>
+        }
+        footer={
+          hasUsers ? (
+            <TablePagination
+              page={list.page}
+              totalPages={list.totalPages}
+              total={list.total}
+              itemLabel="位用户"
+              onPageChange={list.setPage}
+            />
+          ) : null
+        }
+      >
+        {list.error && hasUsers && (
+          <InlineError message={list.error} onRetry={list.refresh} />
+        )}
+
+        {list.loading && !hasUsers ? (
+          <TableSkeletonRow colSpan={5} />
+        ) : list.error && !hasUsers ? (
+          <ErrorState message={list.error} onRetry={list.refresh} />
+        ) : showEmpty ? (
+          <EmptyState
+            icon={UsersIcon}
+            title={debouncedSearch ? "没有匹配的用户" : "还没有用户"}
+            description={
+              debouncedSearch
+                ? "换个关键词，或清空搜索条件后再试。"
+                : "创建第一位用户，或等待注册审核通过。"
+            }
+            action={
+              debouncedSearch ? (
+                <Button variant="outline" onClick={() => setSearch("")}>
+                  清空搜索
                 </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>用户名</TableHead>
-                <TableHead>姓名</TableHead>
-                <TableHead>邮箱</TableHead>
-                <TableHead>角色</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
-                        <AvatarImage src={user.avatar} alt={user.name} />
+              ) : hasPermission("users.create") ? (
+                <Button onClick={handleAdd}>
+                  <PlusIcon data-icon="inline-start" />
+                  新增用户
+                </Button>
+              ) : null
+            }
+          />
+        ) : (
+          <>
+            <div className="flex flex-col gap-2 md:hidden">
+              {list.items.map((user) => (
+                <RecordCard
+                  key={user.id}
+                  title={
+                    <span className="flex items-center gap-2">
+                      <Avatar className="size-7">
+                        <AvatarImage
+                          src={user.avatar}
+                          alt={user.name}
+                          width={28}
+                          height={28}
+                        />
                         <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-medium">{user.username}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(findRoleName(user.roleId, roles))}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {hasPermission("users.edit") && canManageUser(user) && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)}>
-                          <PencilIcon data-icon="inline-start" />
-                          <span className="sr-only">编辑</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.assign_role") && canManageUser(user) && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleRole(user)}>
-                          <ShieldIcon data-icon="inline-start" />
-                          <span className="sr-only">维护角色</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.delete") && canManageUser(user) && user.id !== currentUser?.id && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user)}>
-                          <Trash2Icon data-icon="inline-start" />
-                          <span className="sr-only">删除</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.edit") && canManageUser(user) && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => openReset(user)}>
-                          <KeyIcon data-icon="inline-start" />
-                          <span className="sr-only">重置密码</span>
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                      <span className="truncate">{user.name}</span>
+                    </span>
+                  }
+                  badges={<RoleBadge roleId={user.roleId} roles={roles} />}
+                  subtitle={`@${user.username} · ${user.email}`}
+                  actions={<RowActions actions={buildUserActions(user)} />}
+                />
               ))}
-              {!tableLoading && users.length === 0 && <TableEmptyRow colSpan={5} />}
-            </TableBody>
-          </Table>
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>用户名</TableHead>
+                    <TableHead className="hidden md:table-cell">姓名</TableHead>
+                    <TableHead className="hidden lg:table-cell">邮箱</TableHead>
+                    <TableHead>角色</TableHead>
+                    <TableHead className="sticky right-0 bg-card text-right">
+                      操作
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.items.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="size-8">
+                            <AvatarImage
+                              src={user.avatar}
+                              alt={user.name}
+                              width={32}
+                              height={32}
+                            />
+                            <AvatarFallback>
+                              {user.name.slice(0, 1)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">
+                            {user.username}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {user.name}
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground lg:table-cell">
+                        {user.email}
+                      </TableCell>
+                      <TableCell>
+                        <RoleBadge roleId={user.roleId} roles={roles} />
+                      </TableCell>
+                      <TableCell className="sticky right-0 bg-inherit text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {hasPermission("users.edit") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleEdit(user)}
+                            >
+                              <PencilIcon />
+                              <span className="sr-only">编辑 {user.name}</span>
+                            </Button>
+                          )}
+                          {hasPermission("users.assign_role") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleRole(user)}
+                            >
+                              <ShieldIcon />
+                              <span className="sr-only">维护角色</span>
+                            </Button>
+                          )}
+                          {hasPermission("users.edit") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => openReset(user)}
+                            >
+                              <KeyIcon />
+                              <span className="sr-only">重置密码</span>
+                            </Button>
+                          )}
+                          {hasPermission("users.delete") &&
+                            user.id !== currentUser?.id && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handleDelete(user)}
+                              >
+                                <Trash2Icon />
+                                <span className="sr-only">删除</span>
+                              </Button>
+                            )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </ListShell>
 
-          {/* 分页 */}
-          <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
-        </CardContent>
-      </Card>
-      )}
-
-      {/* 新增/编辑对话框 */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingUser ? "编辑用户" : "新增用户"}</DialogTitle>
-            <DialogDescription>
-              {editingUser ? "修改用户的基本信息。" : "填写以下信息创建新用户。"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleEditSubmit}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="username">用户名</FieldLabel>
-                <Input
-                  id="username"
-                  placeholder="请输入用户名"
-                  value={editForm.username}
-                  onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="name">姓名</FieldLabel>
-                <Input
-                  id="name"
-                  placeholder="请输入姓名"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="email">邮箱</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="请输入邮箱"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-                  required
-                />
-              </Field>
-              {hasPermission("users.assign_role") && (
-                <Field>
-                  <FieldLabel>角色</FieldLabel>
-                  <Select value={editForm.roleId} onValueChange={(v) => setEditForm((f) => ({ ...f, roleId: v }))}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="请选择角色" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {roles.map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
-            </FieldGroup>
-            <DialogFooter className="mt-4">
-              <LoadingButton type="submit" loading={editSubmitting}>
-                {editingUser ? "保存" : "创建"}
-              </LoadingButton>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* 角色维护对话框 */}
-      <Dialog open={roleOpen} onOpenChange={setRoleOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>维护角色</DialogTitle>
-            <DialogDescription>
-              为 <span className="font-medium text-foreground">{roleTarget?.name}</span> 修改角色。
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
+      <FormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title={editingUser ? "编辑用户" : "新增用户"}
+        description={
+          editingUser ? "修改用户的基本信息。" : "填写以下信息创建新用户。"
+        }
+        submitting={editSubmitting}
+        submitLabel={editingUser ? "保存" : "创建"}
+        onSubmit={handleEditSubmit}
+      >
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="username">用户名</FieldLabel>
+            <Input
+              name="username"
+              autoComplete="off"
+              spellCheck={false}
+              id="username"
+              placeholder="请输入用户名"
+              value={editForm.username}
+              onChange={(event) =>
+                setEditForm((form) => ({
+                  ...form,
+                  username: event.target.value,
+                }))
+              }
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="name">姓名</FieldLabel>
+            <Input
+              name="name"
+              autoComplete="off"
+              id="name"
+              placeholder="请输入姓名"
+              value={editForm.name}
+              onChange={(event) =>
+                setEditForm((form) => ({ ...form, name: event.target.value }))
+              }
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="email">邮箱</FieldLabel>
+            <Input
+              name="email"
+              autoComplete="off"
+              spellCheck={false}
+              id="email"
+              type="email"
+              placeholder="请输入邮箱"
+              value={editForm.email}
+              onChange={(event) =>
+                setEditForm((form) => ({ ...form, email: event.target.value }))
+              }
+              required
+            />
+          </Field>
+          {hasPermission("users.assign_role") && (
             <Field>
-              <FieldLabel>当前角色</FieldLabel>
-              <div>{roleTarget && getRoleBadge(findRoleName(roleTarget.roleId, roles))}</div>
-            </Field>
-            <Field>
-              <FieldLabel>新角色</FieldLabel>
-              <Select value={roleValue} onValueChange={setRoleValue}>
-                <SelectTrigger className="w-full">
+              <FieldLabel>角色</FieldLabel>
+              <Select
+                value={editForm.roleId}
+                onValueChange={(value) =>
+                  setEditForm((form) => ({ ...form, roleId: value }))
+                }
+              >
+                <SelectTrigger className="w-full" aria-label="角色">
                   <SelectValue placeholder="请选择角色" />
                 </SelectTrigger>
                 <SelectContent>
@@ -520,16 +648,59 @@ export function UsersPage() {
                 </SelectContent>
               </Select>
             </Field>
-          </div>
-          <DialogFooter>
-            <LoadingButton onClick={handleRoleSubmit} loading={roleSubmitting}>
-              确认修改
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          )}
+        </FieldGroup>
+      </FormDialog>
 
-      {/* 删除确认对话框 */}
+      <FormDialog
+        open={roleOpen}
+        onOpenChange={setRoleOpen}
+        title="维护角色"
+        description={
+          <>
+            为{" "}
+            <span className="font-medium text-foreground">
+              {roleTarget?.name}
+            </span>{" "}
+            修改角色。
+          </>
+        }
+        submitting={roleSubmitting}
+        submitLabel="确认修改"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void handleRoleSubmit()
+        }}
+      >
+        <FieldGroup>
+          <Field>
+            <FieldLabel>当前角色</FieldLabel>
+            <div>
+              {roleTarget && (
+                <RoleBadge roleId={roleTarget.roleId} roles={roles} />
+              )}
+            </div>
+          </Field>
+          <Field>
+            <FieldLabel>新角色</FieldLabel>
+            <Select value={roleValue} onValueChange={setRoleValue}>
+              <SelectTrigger className="w-full" aria-label="新角色">
+                <SelectValue placeholder="请选择角色" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
+        </FieldGroup>
+      </FormDialog>
+
       <ConfirmDeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -538,64 +709,90 @@ export function UsersPage() {
         loading={deleteSubmitting}
       />
 
-      {/* 重置密码对话框 */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>重置密码</DialogTitle>
             <DialogDescription>
-              为 <span className="font-medium">{resetTarget?.name}</span> 重置密码
+              为 <span className="font-medium">{resetTarget?.name}</span>{" "}
+              重置密码
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
+          <FieldGroup>
             <Field>
               <FieldLabel>新密码</FieldLabel>
               <div className="flex gap-2">
-                <Input value={newPassword} readOnly />
-                <Button variant="outline" onClick={() => {
-                  navigator.clipboard.writeText(newPassword)
-                  appToast.success("密码已复制到剪贴板")
-                }}>
+                <Input
+                  name="newPassword"
+                  autoComplete="off"
+                  value={newPassword}
+                  readOnly
+                  className="font-mono"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="重新生成密码"
+                  onClick={() => setNewPassword(generatePassword())}
+                >
+                  <RefreshCwIcon />
+                </Button>
+                <Button variant="outline" onClick={copyPassword}>
                   复制
                 </Button>
               </div>
-              <span className="text-sm text-muted-foreground">请将密码发送给用户。</span>
+              <p className="text-sm text-muted-foreground">
+                请将密码发送给用户。
+              </p>
             </Field>
-          </div>
+          </FieldGroup>
           <DialogFooter>
-            <LoadingButton onClick={handleResetSubmit} loading={resetSubmitting}>
+            <LoadingButton
+              onClick={handleResetSubmit}
+              loading={resetSubmitting}
+            >
               确认重置
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 待审核对话框 */}
       <Dialog open={pendingOpen} onOpenChange={setPendingOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>待审核用户</DialogTitle>
             <DialogDescription>
-              共 {pendingUsers.length} 位用户等待审核，已选择 {selectedPending.size} 位。
+              共 {pendingUsers.length} 位用户等待审核，已选择{" "}
+              {selectedPending.size} 位。
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[400px] overflow-auto">
             {pendingLoading ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                加载中...
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                <Spinner />
+                加载中…
               </div>
             ) : pendingUsers.length === 0 ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                暂无待审核用户
-              </div>
+              <EmptyState
+                icon={UserRoundIcon}
+                title="暂无待审核用户"
+                description="开启人工审核后，新注册用户会出现在这里。"
+              />
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
                       <Checkbox
-                        checked={selectedPending.size === pendingUsers.length && pendingUsers.length > 0}
+                        checked={
+                          allPendingSelected
+                            ? true
+                            : somePendingSelected
+                              ? "indeterminate"
+                              : false
+                        }
                         onCheckedChange={toggleAllPending}
+                        aria-label="选择全部待审核用户"
                       />
                     </TableHead>
                     <TableHead>用户名</TableHead>
@@ -610,6 +807,7 @@ export function UsersPage() {
                         <Checkbox
                           checked={selectedPending.has(user.id)}
                           onCheckedChange={() => togglePending(user.id)}
+                          aria-label={`选择 ${user.name}`}
                         />
                       </TableCell>
                       <TableCell>{user.username}</TableCell>
@@ -625,7 +823,7 @@ export function UsersPage() {
             <Button
               variant="destructive"
               disabled={selectedPending.size === 0 || pendingSubmitting}
-              onClick={handleBatchReject}
+              onClick={() => setRejectOpen(true)}
             >
               拒绝 ({selectedPending.size})
             </Button>
@@ -639,6 +837,15 @@ export function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+        targetName={`选中的 ${selectedPending.size} 位用户`}
+        description="拒绝后这些账号会被删除。"
+        onConfirm={handleBatchReject}
+        loading={pendingSubmitting}
+      />
     </div>
   )
 }

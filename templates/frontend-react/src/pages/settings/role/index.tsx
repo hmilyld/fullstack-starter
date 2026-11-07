@@ -1,18 +1,42 @@
 import * as React from "react"
+import {
+  LockIcon,
+  PencilIcon,
+  PlusIcon,
+  SearchIcon,
+  ShieldCheckIcon,
+  Trash2Icon,
+} from "lucide-react"
+
+import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
+import { EmptyState } from "@/components/shared/empty-state"
+import { ErrorState } from "@/components/shared/error-state"
+import { FormDialog } from "@/components/shared/form-dialog"
+import { InlineError } from "@/components/shared/inline-error"
+import { ListShell } from "@/components/shared/list-shell"
+import { PageHeader } from "@/components/shared/page-header"
+import { RecordCard } from "@/components/shared/record-card"
+import { RowActions, type RowAction } from "@/components/shared/row-actions"
+import { TablePagination } from "@/components/shared/table-pagination"
+import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { LoadingButton } from "@/components/shared/loading-button"
-import { TableEmptyRow, TableCardSkeleton } from "@/components/shared/table-states"
-import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
-import { Pagination } from "@/components/shared/pagination"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Table,
   TableBody,
@@ -21,101 +45,73 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
-import {
-  SearchIcon,
-  PlusIcon,
-  PencilIcon,
-  Trash2Icon,
-  LockIcon,
-} from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
-import type { Role } from "@/types/role"
-import type { Permission } from "@/types/permission"
-import { getRoles, createRole, updateRole, deleteRole as apiDeleteRole } from "@/api/role"
 import { getPermissions } from "@/api/permission"
+import {
+  createRole,
+  deleteRole as apiDeleteRole,
+  getRoles,
+  updateRole,
+} from "@/api/role"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { usePagedList } from "@/hooks/use-paged-list"
+import { useUrlListState } from "@/hooks/use-url-list-state"
+import { useAuth } from "@/lib/auth-context"
 import { appToast } from "@/lib/toast"
+import type { Permission } from "@/types/permission"
+import type { Role } from "@/types/role"
 
 const PAGE_SIZE = 8
 
 export function RolesPage() {
   const { hasPermission } = useAuth()
-  const [roles, setRoles] = React.useState<Role[]>([])
-  const [search, setSearch] = React.useState("")
-  const [debouncedSearch, setDebouncedSearch] = React.useState("")
-  const [page, setPage] = React.useState(1)
-  const [total, setTotal] = React.useState(0)
-  const [tableLoading, setTableLoading] = React.useState(true)
-  const [editSubmitting, setEditSubmitting] = React.useState(false)
-  const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
+  const { search, page, setSearch, setPage } = useUrlListState()
+  const debouncedSearch = useDebouncedValue(search)
+  const list = usePagedList<Role, { search: string }>({
+    fetcher: getRoles,
+    params: { search: debouncedSearch },
+    pageSize: PAGE_SIZE,
+    page,
+    onPageChange: setPage,
+  })
+
   const [menuPermissions, setMenuPermissions] = React.useState<Permission[]>([])
-  const [operationPermissions, setOperationPermissions] = React.useState<Permission[]>([])
+  const [operationPermissions, setOperationPermissions] = React.useState<
+    Permission[]
+  >([])
+  const [permissionsLoading, setPermissionsLoading] = React.useState(true)
+  const [permissionsError, setPermissionsError] = React.useState<string | null>(
+    null
+  )
 
   const loadPermissions = React.useCallback(async () => {
+    setPermissionsLoading(true)
+    setPermissionsError(null)
     const [menuRes, opRes] = await Promise.all([
       getPermissions({ type: "menu" }),
       getPermissions({ type: "operation" }),
     ])
     if (menuRes.code === 0) setMenuPermissions(menuRes.data)
-    else appToast.error(menuRes.message || "加载菜单权限失败")
+    else setPermissionsError(menuRes.message || "加载菜单权限失败")
     if (opRes.code === 0) setOperationPermissions(opRes.data)
-    else appToast.error(opRes.message || "加载操作权限失败")
+    else setPermissionsError(opRes.message || "加载操作权限失败")
+    setPermissionsLoading(false)
   }, [])
 
-  React.useEffect(() => { loadPermissions() }, [loadPermissions])
-
-  // 搜索防抖：输入停止 300ms 后再触发查询
   React.useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300)
-    return () => clearTimeout(t)
-  }, [search])
-
-  const loadData = React.useCallback(async () => {
-    setTableLoading(true)
-    const res = await getRoles({ search: debouncedSearch, page, pageSize: PAGE_SIZE })
-    if (res.code === 0) {
-      setRoles(res.data.list)
-      setTotal(res.data.total)
-    } else {
-      appToast.error(res.message || "加载数据失败")
-    }
-    setTableLoading(false)
-  }, [debouncedSearch, page])
-
-  React.useEffect(() => { loadData() }, [loadData])
+    void loadPermissions()
+  }, [loadPermissions])
 
   // 新增/编辑对话框
   const [editOpen, setEditOpen] = React.useState(false)
   const [editingRole, setEditingRole] = React.useState<Role | null>(null)
   const [editForm, setEditForm] = React.useState({ name: "", description: "" })
   const [editPermissions, setEditPermissions] = React.useState<string[]>([])
+  const [editSubmitting, setEditSubmitting] = React.useState(false)
 
   // 删除确认对话框
   const [deleteOpen, setDeleteOpen] = React.useState(false)
   const [deleteTarget, setDeleteTarget] = React.useState<Role | null>(null)
-
-  // 搜索过滤
-  const filtered = roles
-
-  // 分页
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-
-  React.useEffect(() => {
-    setPage(1)
-  }, [search])
-
-  // ---- 新增/编辑 ----
+  const [deleteSubmitting, setDeleteSubmitting] = React.useState(false)
 
   function handleAdd() {
     setEditingRole(null)
@@ -131,20 +127,17 @@ export function RolesPage() {
     setEditOpen(true)
   }
 
-  async function handleEditSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleEditSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setEditSubmitting(true)
+    const payload = {
+      name: editForm.name,
+      description: editForm.description,
+      permissions: editPermissions,
+    }
     const res = editingRole
-      ? await updateRole(editingRole.id, {
-          name: editForm.name,
-          description: editForm.description,
-          permissions: editPermissions,
-        })
-      : await createRole({
-          name: editForm.name,
-          description: editForm.description,
-          permissions: editPermissions,
-        })
+      ? await updateRole(editingRole.id, payload)
+      : await createRole(payload)
     setEditSubmitting(false)
     if (res.code !== 0) {
       appToast.error(res.message || "操作失败")
@@ -152,45 +145,68 @@ export function RolesPage() {
     }
     appToast.success(editingRole ? "保存成功" : "创建成功")
     setEditOpen(false)
-    loadData()
+    list.refresh()
   }
 
-  // ---- 权限勾选 ----
-
   function togglePermission(code: string) {
-    setEditPermissions((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    setEditPermissions((previous) =>
+      previous.includes(code)
+        ? previous.filter((item) => item !== code)
+        : [...previous, code]
     )
   }
 
   function toggleMenuPermission(code: string) {
-    setEditPermissions((prev) => {
-      const has = prev.includes(code)
+    setEditPermissions((previous) => {
+      const has = previous.includes(code)
       if (has) {
         // 取消菜单权限时，同时移除其下所有操作权限
-        return prev.filter(
-          (c) => c !== code && !operationPermissions.some((op) => op.code === c && op.parent === code)
+        return previous.filter(
+          (item) =>
+            item !== code &&
+            !operationPermissions.some(
+              (operation) =>
+                operation.code === item && operation.parent === code
+            )
         )
-      } else {
-        // 勾选菜单权限时，同时勾选其下所有操作权限
-        const childOps = operationPermissions.filter((op) => op.parent === code).map((op) => op.code)
-        return [...prev, code, ...childOps.filter((c) => !prev.includes(c))]
       }
+      // 勾选菜单权限时，同时勾选其下所有操作权限
+      const childOperations = operationPermissions
+        .filter((operation) => operation.parent === code)
+        .map((operation) => operation.code)
+      return [
+        ...previous,
+        code,
+        ...childOperations.filter((c) => !previous.includes(c)),
+      ]
     })
   }
 
-  function isMenuChecked(code: string): boolean {
+  function isMenuChecked(code: string) {
     return editPermissions.includes(code)
   }
 
-  function isMenuIndeterminate(code: string): boolean {
-    const children = operationPermissions.filter((op) => op.parent === code)
+  function isMenuIndeterminate(code: string) {
+    const children = operationPermissions.filter(
+      (operation) => operation.parent === code
+    )
     if (children.length === 0) return false
-    const checkedCount = children.filter((c) => editPermissions.includes(c.code)).length
-    return checkedCount > 0 && checkedCount < children.length
+    const checked = children.filter((operation) =>
+      editPermissions.includes(operation.code)
+    ).length
+    return checked > 0
   }
 
-  // ---- 删除 ----
+  function selectAllPermissions() {
+    setEditPermissions([
+      ...menuPermissions.map((permission) => permission.code),
+      ...operationPermissions.map((permission) => permission.code),
+    ])
+  }
+
+  function clearPermissions() {
+    setEditPermissions([])
+  }
 
   function handleDelete(role: Role) {
     setDeleteTarget(role)
@@ -208,186 +224,347 @@ export function RolesPage() {
     }
     appToast.success("删除成功")
     setDeleteOpen(false)
-    loadData()
+    list.refresh()
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">角色管理</h1>
-        <p className="text-muted-foreground">管理系统角色及其权限分配。</p>
-      </div>
+  function buildRoleActions(role: Role): RowAction[] {
+    const actions: RowAction[] = []
+    if (hasPermission("roles.edit")) {
+      actions.push({
+        label: "编辑",
+        icon: PencilIcon,
+        onSelect: () => handleEdit(role),
+      })
+    }
+    if (!role.isPreset && hasPermission("roles.delete")) {
+      actions.push({
+        label: "删除",
+        icon: Trash2Icon,
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => handleDelete(role),
+      })
+    }
+    return actions
+  }
 
-      {tableLoading ? (
-        <TableCardSkeleton colSpan={5} />
-      ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>角色列表</CardTitle>
-                <CardDescription>共 {filtered.length} 个角色</CardDescription>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="relative w-full sm:w-64">
-                  <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="搜索角色名称..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                {hasPermission("roles.create") && (
-                  <Button onClick={handleAdd} className="w-full sm:w-auto">
+  const hasRoles = list.items.length > 0
+  const showEmpty = !list.loading && !hasRoles
+
+  return (
+    <div className="flex flex-col gap-(--page-gap)">
+      <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
+
+      <ListShell
+        title="角色列表"
+        description={`共 ${list.total} 个角色`}
+        actions={
+          <>
+            <InputGroup className="w-full md:w-64">
+              <InputGroupInput
+                name="q"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="搜索角色名称…"
+                aria-label="搜索角色"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <InputGroupAddon>
+                <SearchIcon />
+              </InputGroupAddon>
+            </InputGroup>
+            {hasPermission("roles.create") && (
+              <Button onClick={handleAdd} className="w-full md:w-auto">
+                <PlusIcon data-icon="inline-start" />
+                新增角色
+              </Button>
+            )}
+          </>
+        }
+        footer={
+          hasRoles ? (
+            <TablePagination
+              page={list.page}
+              totalPages={list.totalPages}
+              total={list.total}
+              itemLabel="个角色"
+              onPageChange={list.setPage}
+            />
+          ) : null
+        }
+      >
+        {list.error && hasRoles && (
+          <InlineError message={list.error} onRetry={list.refresh} />
+        )}
+
+        {list.loading && !hasRoles ? (
+          <TableSkeletonRow colSpan={5} />
+        ) : list.error && !hasRoles ? (
+          <ErrorState message={list.error} onRetry={list.refresh} />
+        ) : showEmpty ? (
+          <EmptyState
+            icon={ShieldCheckIcon}
+            title={debouncedSearch ? "没有匹配的角色" : "还没有角色"}
+            description={
+              debouncedSearch
+                ? "换个关键词，或清空搜索条件后再试。"
+                : "创建角色并分配权限，再把角色授予用户。"
+            }
+            action={
+              debouncedSearch ? (
+                <Button variant="outline" onClick={() => setSearch("")}>
+                  清空搜索
+                </Button>
+              ) : hasPermission("roles.create") ? (
+                <Button onClick={handleAdd}>
                   <PlusIcon data-icon="inline-start" />
                   新增角色
                 </Button>
-              )}
+              ) : null
+            }
+          />
+        ) : (
+          <>
+            <div className="flex flex-col gap-2 md:hidden">
+              {list.items.map((role) => (
+                <RecordCard
+                  key={role.id}
+                  title={role.name}
+                  badges={
+                    <>
+                      {role.isPreset ? (
+                        <Badge variant="outline">预设</Badge>
+                      ) : (
+                        <Badge variant="secondary">自定义</Badge>
+                      )}
+                      <Badge variant="secondary">
+                        {role.permissions.length} 项权限
+                      </Badge>
+                    </>
+                  }
+                  subtitle={role.description || "暂无描述"}
+                  actions={<RowActions actions={buildRoleActions(role)} />}
+                />
+              ))}
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>角色名称</TableHead>
+                    <TableHead className="hidden md:table-cell">描述</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      权限数
+                    </TableHead>
+                    <TableHead>类型</TableHead>
+                    <TableHead className="sticky right-0 bg-card text-right">
+                      操作
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.items.map((role) => (
+                    <TableRow key={role.id}>
+                      <TableCell className="font-medium">{role.name}</TableCell>
+                      <TableCell className="hidden text-muted-foreground md:table-cell">
+                        {role.description || "-"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Badge variant="secondary">
+                          {role.permissions.length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {role.isPreset ? (
+                          <Badge variant="outline">
+                            <LockIcon />
+                            预设
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">自定义</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="sticky right-0 bg-inherit text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {hasPermission("roles.edit") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleEdit(role)}
+                            >
+                              <PencilIcon />
+                              <span className="sr-only">编辑 {role.name}</span>
+                            </Button>
+                          )}
+                          {!role.isPreset && hasPermission("roles.delete") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleDelete(role)}
+                            >
+                              <Trash2Icon />
+                              <span className="sr-only">删除 {role.name}</span>
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </ListShell>
+
+      <FormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title={editingRole ? "编辑角色" : "新增角色"}
+        description={
+          editingRole ? "修改角色信息和权限分配。" : "填写角色信息并分配权限。"
+        }
+        submitting={editSubmitting}
+        className="sm:max-w-lg"
+        onSubmit={handleEditSubmit}
+      >
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="role-name">角色名称</FieldLabel>
+            <Input
+              name="role-name"
+              autoComplete="off"
+              id="role-name"
+              placeholder="请输入角色名称"
+              value={editForm.name}
+              onChange={(event) =>
+                setEditForm((form) => ({ ...form, name: event.target.value }))
+              }
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="role-desc">描述</FieldLabel>
+            <Input
+              name="role-desc"
+              autoComplete="off"
+              id="role-desc"
+              placeholder="请输入角色描述"
+              value={editForm.description}
+              onChange={(event) =>
+                setEditForm((form) => ({
+                  ...form,
+                  description: event.target.value,
+                }))
+              }
+            />
+          </Field>
+        </FieldGroup>
+
+        <FieldSet className="gap-3">
+          <FieldLegend variant="label" className="mb-0">
+            权限分配
+          </FieldLegend>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <FieldDescription>
+              勾选菜单权限时，会自动勾选该菜单下的所有操作权限。
+            </FieldDescription>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={selectAllPermissions}
+              >
+                全选
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={clearPermissions}
+              >
+                清空
+              </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>角色名称</TableHead>
-                <TableHead>描述</TableHead>
-                <TableHead>权限数</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {roles.map((role) => (
-                <TableRow key={role.id}>
-                  <TableCell className="font-medium">{role.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{role.description}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{role.permissions.length}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {role.isPreset ? (
-                      <Badge variant="outline">
-                        <LockIcon data-icon="inline-start" />
-                        预设
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">自定义</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {hasPermission("roles.edit") && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(role)}>
-                          <PencilIcon data-icon="inline-start" />
-                          <span className="sr-only">编辑</span>
-                        </Button>
-                      )}
-                      {!role.isPreset && hasPermission("roles.delete") && (
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(role)}>
-                          <Trash2Icon data-icon="inline-start" />
-                          <span className="sr-only">删除</span>
-                        </Button>
+
+          {permissionsLoading ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              权限加载中…
+            </div>
+          ) : permissionsError ? (
+            <div className="flex flex-col items-start gap-2 rounded-md border p-3 text-sm">
+              <span className="text-destructive">{permissionsError}</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={loadPermissions}
+              >
+                重试
+              </Button>
+            </div>
+          ) : (
+            <ScrollArea className="h-[min(50vh,420px)] pr-3">
+              <div className="flex flex-col gap-3">
+                {menuPermissions.map((permission) => {
+                  const children = operationPermissions.filter(
+                    (operation) => operation.parent === permission.code
+                  )
+                  const checked = isMenuChecked(permission.code)
+                  const indeterminate = isMenuIndeterminate(permission.code)
+
+                  return (
+                    <div key={permission.code} className="flex flex-col gap-2">
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={
+                            checked
+                              ? true
+                              : indeterminate
+                                ? "indeterminate"
+                                : false
+                          }
+                          onCheckedChange={() =>
+                            toggleMenuPermission(permission.code)
+                          }
+                        />
+                        {permission.name}
+                      </label>
+                      {children.length > 0 && (checked || indeterminate) && (
+                        <div className="ml-6 flex flex-wrap gap-x-4 gap-y-2">
+                          {children.map((child) => (
+                            <label
+                              key={child.code}
+                              className="flex items-center gap-2 text-sm text-muted-foreground"
+                            >
+                              <Checkbox
+                                checked={editPermissions.includes(child.code)}
+                                onCheckedChange={() =>
+                                  togglePermission(child.code)
+                                }
+                              />
+                              {child.name}
+                            </label>
+                          ))}
+                        </div>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!tableLoading && roles.length === 0 && <TableEmptyRow colSpan={5} />}
-            </TableBody>
-          </Table>
-
-          {/* 分页 */}
-          <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
-        </CardContent>
-      </Card>
-      )}
-
-      {/* 新增/编辑对话框 */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingRole ? "编辑角色" : "新增角色"}</DialogTitle>
-            <DialogDescription>
-              {editingRole ? "修改角色信息和权限分配。" : "填写角色信息并分配权限。"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleEditSubmit}>
-            <div className="flex flex-col gap-4">
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="role-name">角色名称</FieldLabel>
-                  <Input
-                    id="role-name"
-                    placeholder="请输入角色名称"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="role-desc">描述</FieldLabel>
-                  <Input
-                    id="role-desc"
-                    placeholder="请输入角色描述"
-                    value={editForm.description}
-                    onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
-                  />
-                </Field>
-              </FieldGroup>
-
-              <Separator />
-
-              {/* 权限分配 */}
-              <div className="flex flex-col gap-3">
-                <span className="text-sm font-medium">权限分配</span>
-
-                {/* 菜单权限 */}
-                <div className="flex max-h-[50vh] flex-col gap-2 overflow-auto">
-                  <span className="text-xs font-medium text-muted-foreground">菜单权限</span>
-                  {menuPermissions.map((perm) => {
-                    const children = operationPermissions.filter((op) => op.parent === perm.code)
-                    const hasChildren = children.length > 0
-                    return (
-                      <div key={perm.code} className="flex flex-col gap-1">
-                        <label className="flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={hasChildren ? isMenuChecked(perm.code) || isMenuIndeterminate(perm.code) : isMenuChecked(perm.code)}
-                            onCheckedChange={() => toggleMenuPermission(perm.code)}
-                          />
-                          {perm.name}
-                        </label>
-                        {hasChildren && isMenuChecked(perm.code) && (
-                          <div className="ml-6 flex flex-wrap gap-x-4 gap-y-1">
-                            {children.map((child) => (
-                              <label key={child.code} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Checkbox
-                                  checked={editPermissions.includes(child.code)}
-                                  onCheckedChange={() => togglePermission(child.code)}
-                                />
-                                {child.name}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                  )
+                })}
+                {menuPermissions.length === 0 && (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    暂无可分配的权限
+                  </p>
+                )}
               </div>
-            </div>
+            </ScrollArea>
+          )}
+        </FieldSet>
+      </FormDialog>
 
-            <DialogFooter className="mt-4">
-              <LoadingButton type="submit" loading={editSubmitting}>
-                保存
-              </LoadingButton>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* 删除确认对话框 */}
       <ConfirmDeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

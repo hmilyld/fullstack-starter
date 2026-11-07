@@ -1,15 +1,42 @@
 import * as React from "react"
+import { useSearchParams } from "react-router"
+import {
+  RotateCcwIcon,
+  SearchIcon,
+  SearchXIcon,
+  ShieldAlertIcon,
+  SlidersHorizontalIcon,
+  XIcon,
+} from "lucide-react"
+
+import { EmptyState } from "@/components/shared/empty-state"
+import { ErrorState } from "@/components/shared/error-state"
+import { InlineError } from "@/components/shared/inline-error"
+import { ListShell } from "@/components/shared/list-shell"
+import { PageHeader } from "@/components/shared/page-header"
+import { RecordCard } from "@/components/shared/record-card"
+import { TablePagination } from "@/components/shared/table-pagination"
+import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { TableEmptyRow, TableCardSkeleton } from "@/components/shared/table-states"
-import { Pagination } from "@/components/shared/pagination"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Field, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -18,255 +45,422 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { SearchIcon, RotateCcwIcon, XIcon } from "lucide-react"
-import { appToast } from "@/lib/toast"
-import type { AuditLog } from "@/types/audit-log"
 import { getAuditLogs } from "@/api/audit-log"
+import { usePagedList } from "@/hooks/use-paged-list"
+import { useUrlPage } from "@/hooks/use-url-list-state"
+import { formatDateTime } from "@/lib/format"
+import type { AuditLog } from "@/types/audit-log"
 
 const PAGE_SIZE = 10
 
 type FilterKey = "userId" | "status" | "action" | "startTime" | "endTime"
 type AuditFilters = Record<FilterKey, string>
 
+const EMPTY_FILTERS: AuditFilters = {
+  userId: "",
+  status: "",
+  action: "",
+  startTime: "",
+  endTime: "",
+}
+
 const FILTER_LABELS: Record<FilterKey, string> = {
-  userId: "用户ID",
+  userId: "用户 ID",
   status: "状态",
   action: "动作",
   startTime: "开始时间",
   endTime: "结束时间",
 }
 
-function getStatusBadge(status: AuditLog["status"]) {
-  if (status === "success") return <Badge variant="default">成功</Badge>
-  if (status === "fail") return <Badge variant="destructive">失败</Badge>
-  return <Badge variant="outline">权限不足</Badge>
+const STATUS_LABELS: Record<string, string> = {
+  success: "成功",
+  fail: "失败",
+  permission_denied: "权限不足",
 }
 
-function formatTime(value: string) {
-  if (!value) return "-"
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleString("zh-CN", { hour12: false })
+function getStatusBadge(status: AuditLog["status"]) {
+  if (status === "success") return <Badge variant="success">成功</Badge>
+  if (status === "fail") return <Badge variant="destructive">失败</Badge>
+  return <Badge variant="warning">权限不足</Badge>
 }
+
+function formatFilterValue(key: FilterKey, value: string) {
+  if (key === "status") return STATUS_LABELS[value] ?? value
+  if (key === "startTime" || key === "endTime") return formatDateTime(value)
+  return value
+}
+
+const FILTER_KEYS: FilterKey[] = [
+  "userId",
+  "status",
+  "action",
+  "startTime",
+  "endTime",
+]
 
 export function AuditLogPage() {
-  const [logs, setLogs] = React.useState<AuditLog[]>([])
-  const [tableLoading, setTableLoading] = React.useState(true)
-
-  // 筛选条件（点击查询后生效）
-  const [userId, setUserId] = React.useState("")
-  const [status, setStatus] = React.useState("")
-  const [action, setAction] = React.useState("")
-  const [startTime, setStartTime] = React.useState("")
-  const [endTime, setEndTime] = React.useState("")
-  const [query, setQuery] = React.useState<AuditFilters>({
-    userId: "",
-    status: "",
-    action: "",
-    startTime: "",
-    endTime: "",
+  const [searchParams, setSearchParams] = useSearchParams()
+  const query: AuditFilters = {
+    userId: searchParams.get("userId") ?? "",
+    status: searchParams.get("status") ?? "",
+    action: searchParams.get("action") ?? "",
+    startTime: searchParams.get("startTime") ?? "",
+    endTime: searchParams.get("endTime") ?? "",
+  }
+  const queryKey = JSON.stringify(query)
+  const { page, setPage } = useUrlPage()
+  const [draft, setDraft] = React.useState<AuditFilters>(query)
+  const [filterOpen, setFilterOpen] = React.useState(false)
+  const list = usePagedList<AuditLog, AuditFilters>({
+    fetcher: getAuditLogs,
+    params: query,
+    pageSize: PAGE_SIZE,
+    page,
+    onPageChange: setPage,
   })
 
-  const [page, setPage] = React.useState(1)
-  const [total, setTotal] = React.useState(0)
-
-  const loadData = React.useCallback(async () => {
-    setTableLoading(true)
-    const res = await getAuditLogs({
-      userId: query.userId,
-      status: query.status,
-      action: query.action,
-      startTime: query.startTime,
-      endTime: query.endTime,
-      page,
-      pageSize: PAGE_SIZE,
-    })
-    if (res.code === 0) {
-      setLogs(res.data.list)
-      setTotal(res.data.total)
-    } else {
-      appToast.error(res.message || "加载数据失败")
-    }
-    setTableLoading(false)
-  }, [query, page])
-
+  // 浏览器前进/后退或外部链接改变筛选条件时，同步表单草稿
   React.useEffect(() => {
-    loadData()
-  }, [loadData])
+    setDraft(JSON.parse(queryKey) as AuditFilters)
+  }, [queryKey])
+
+  function writeFilters(filters: AuditFilters) {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        for (const key of FILTER_KEYS) {
+          if (filters[key]) next.set(key, filters[key])
+          else next.delete(key)
+        }
+        next.delete("page")
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  function updateDraft(key: FilterKey, value: string) {
+    setDraft((previous) => ({ ...previous, [key]: value }))
+  }
 
   function handleSearch() {
-    setPage(1)
-    setQuery({ userId: userId.trim(), status, action: action.trim(), startTime, endTime })
+    writeFilters({
+      userId: draft.userId.trim(),
+      status: draft.status,
+      action: draft.action.trim(),
+      startTime: draft.startTime,
+      endTime: draft.endTime,
+    })
   }
 
   function handleReset() {
-    setUserId("")
-    setStatus("")
-    setAction("")
-    setStartTime("")
-    setEndTime("")
-    setPage(1)
-    setQuery({ userId: "", status: "", action: "", startTime: "", endTime: "" })
+    setDraft(EMPTY_FILTERS)
+    writeFilters(EMPTY_FILTERS)
+  }
+
+  function writeSingleFilter(key: FilterKey, value: string) {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (value) next.set(key, value)
+        else next.delete(key)
+        next.delete("page")
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  function removeFilter(key: FilterKey) {
+    setDraft((previous) => ({ ...previous, [key]: "" }))
+    writeSingleFilter(key, "")
   }
 
   const activeFilters = (Object.keys(query) as FilterKey[])
     .filter((key) => query[key] !== "")
-    .map((key) => ({ key, label: FILTER_LABELS[key], value: query[key] }))
+    .map((key) => ({
+      key,
+      label: FILTER_LABELS[key],
+      value: formatFilterValue(key, query[key]),
+    }))
 
-  function removeFilter(key: FilterKey) {
-    const clearInput: Record<FilterKey, () => void> = {
-      userId: () => setUserId(""),
-      status: () => setStatus(""),
-      action: () => setAction(""),
-      startTime: () => setStartTime(""),
-      endTime: () => setEndTime(""),
-    }
-    clearInput[key]()
-    setQuery((prev) => ({ ...prev, [key]: "" }))
-    setPage(1)
+  function renderFilterFields(prefix: string) {
+    return (
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-user`}>用户 ID</FieldLabel>
+          <Input
+            name="audit-user"
+            autoComplete="off"
+            spellCheck={false}
+            id={`${prefix}-user`}
+            value={draft.userId}
+            placeholder="例如：1"
+            onChange={(event) => updateDraft("userId", event.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel>状态</FieldLabel>
+          <Select
+            value={draft.status || "all"}
+            onValueChange={(value) =>
+              updateDraft("status", value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-full" aria-label="状态">
+              <SelectValue placeholder="全部状态" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="all">全部状态</SelectItem>
+                <SelectItem value="success">成功</SelectItem>
+                <SelectItem value="fail">失败</SelectItem>
+                <SelectItem value="permission_denied">权限不足</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-action`}>动作</FieldLabel>
+          <Input
+            name="audit-action"
+            autoComplete="off"
+            spellCheck={false}
+            id={`${prefix}-action`}
+            value={draft.action}
+            placeholder="例如：users.create"
+            onChange={(event) => updateDraft("action", event.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-start`}>开始时间</FieldLabel>
+          <Input
+            name="audit-start"
+            autoComplete="off"
+            id={`${prefix}-start`}
+            type="datetime-local"
+            value={draft.startTime}
+            onChange={(event) => updateDraft("startTime", event.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${prefix}-end`}>结束时间</FieldLabel>
+          <Input
+            name="audit-end"
+            autoComplete="off"
+            id={`${prefix}-end`}
+            type="datetime-local"
+            value={draft.endTime}
+            onChange={(event) => updateDraft("endTime", event.target.value)}
+          />
+        </Field>
+      </div>
+    )
   }
 
-  function clearAllFilters() {
-    handleReset()
-  }
-
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
+  const hasLogs = list.items.length > 0
+  const showEmpty = !list.loading && !hasLogs
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">审计日志</h1>
-        <p className="text-muted-foreground">查看系统的写操作与权限拦截记录。</p>
-      </div>
+    <div className="flex flex-col gap-(--page-gap)">
+      <PageHeader
+        title="审计日志"
+        description="查看系统的写操作与权限拦截记录。"
+      />
 
-      {tableLoading ? (
-        <TableCardSkeleton colSpan={6} />
-      ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4">
-              <div>
-                <CardTitle>操作记录</CardTitle>
-                <CardDescription>共 {total} 条记录</CardDescription>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  placeholder="用户ID"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  className="w-36"
-                />
-                <Input
-                  placeholder="状态"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-32"
-                />
-                <Input
-                  placeholder="动作"
-                  value={action}
-                  onChange={(e) => setAction(e.target.value)}
-                  className="w-48"
-                />
-                <Input
-                  type="datetime-local"
-                  aria-label="开始时间"
-                  title="开始时间"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-44"
-                />
-                <Input
-                  type="datetime-local"
-                  aria-label="结束时间"
-                  title="结束时间"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-44"
-                />
-                <Button onClick={handleSearch} className="shrink-0">
-                  <SearchIcon data-icon="inline-start" />
-                  查询
-                </Button>
-                <Button variant="outline" onClick={handleReset} className="shrink-0">
-                  <RotateCcwIcon data-icon="inline-start" />
-                  重置
-                </Button>
-              </div>
-              {activeFilters.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2" aria-label="当前筛选条件">
-                  <span className="text-xs text-muted-foreground">当前筛选:</span>
-                  {activeFilters.map((f) => (
-                    <button
-                      key={f.key}
-                      type="button"
-                      onClick={() => removeFilter(f.key)}
-                      title={`移除筛选：${f.label}`}
-                      className="inline-flex items-center gap-1.5 rounded-full border bg-background py-1 pl-3 pr-1.5 text-xs transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 hover:border-destructive/40 hover:text-destructive"
-                    >
-                      <span>
-                        {f.label}: <span className="font-medium">{f.value}</span>
-                      </span>
-                      <XIcon className="size-3.5 rounded-full bg-muted p-0.5" />
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="rounded-sm text-xs text-muted-foreground underline-offset-4 transition-colors outline-none select-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/30"
-                  >
-                    清除全部
-                  </button>
-                </div>
-              )}
+      <ListShell
+        title="操作记录"
+        description={`共 ${list.total} 条记录`}
+        footer={
+          hasLogs ? (
+            <TablePagination
+              page={list.page}
+              totalPages={list.totalPages}
+              total={list.total}
+              itemLabel="条记录"
+              onPageChange={list.setPage}
+            />
+          ) : null
+        }
+      >
+        <div className="flex flex-col gap-3 pb-4">
+          <div className="hidden flex-col gap-3 md:flex">
+            {renderFilterFields("audit")}
+            <div className="flex items-center gap-2">
+              <Button onClick={handleSearch}>
+                <SearchIcon data-icon="inline-start" />
+                查询
+              </Button>
+              <Button variant="outline" onClick={handleReset}>
+                <RotateCcwIcon data-icon="inline-start" />
+                重置
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>时间</TableHead>
-                  <TableHead>操作者</TableHead>
-                  <TableHead>动作</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>详情</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">
-                      {formatTime(log.createdAt)}
-                    </TableCell>
-                    <TableCell>{log.username || "未知"}</TableCell>
-                    <TableCell className="font-mono text-xs">{log.action}</TableCell>
-                    <TableCell className="text-muted-foreground">{log.ip || "-"}</TableCell>
-                    <TableCell>{getStatusBadge(log.status)}</TableCell>
-                    <TableCell className="max-w-[240px] truncate text-muted-foreground">
-                      {log.detail || "-"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {!tableLoading && logs.length === 0 && (
-                  <TableEmptyRow
-                    colSpan={6}
-                    text={
-                      activeFilters.length > 0
-                        ? "没有符合条件的记录，试着放宽筛选条件"
-                        : "暂无审计记录，系统的写操作和权限拦截会自动记录在这里"
-                    }
-                  />
-                )}
-              </TableBody>
-            </Table>
+          </div>
+          <div className="flex items-center gap-2 md:hidden">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setFilterOpen(true)}
+            >
+              <SlidersHorizontalIcon data-icon="inline-start" />
+              筛选
+              {activeFilters.length > 0 ? ` · ${activeFilters.length}` : ""}
+            </Button>
+            <Button className="flex-1" onClick={handleSearch}>
+              <SearchIcon data-icon="inline-start" />
+              查询
+            </Button>
+          </div>
+          {activeFilters.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">当前筛选：</span>
+              {activeFilters.map((filter) => (
+                <Button
+                  key={filter.key}
+                  variant="secondary"
+                  size="xs"
+                  onClick={() => removeFilter(filter.key)}
+                  aria-label={`移除筛选：${filter.label}`}
+                >
+                  {filter.label}：{filter.value}
+                  <XIcon data-icon="inline-end" />
+                </Button>
+              ))}
+              <Button variant="ghost" size="xs" onClick={handleReset}>
+                清除全部
+              </Button>
+            </div>
+          )}
+        </div>
 
-            <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
-          </CardContent>
-        </Card>
-      )}
+        <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+          <SheetContent
+            side="bottom"
+            className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0"
+          >
+            <SheetHeader className="border-b p-4 pr-14">
+              <SheetTitle>筛选条件</SheetTitle>
+              <SheetDescription>
+                按用户、状态、动作或时间范围筛选审计记录。
+              </SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+              {renderFilterFields("audit-mobile")}
+            </div>
+            <SheetFooter className="flex-row gap-2 border-t p-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  handleReset()
+                  setFilterOpen(false)
+                }}
+              >
+                重置
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  handleSearch()
+                  setFilterOpen(false)
+                }}
+              >
+                应用筛选
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+
+        {list.error && hasLogs && (
+          <InlineError message={list.error} onRetry={list.refresh} />
+        )}
+
+        {list.loading && !hasLogs ? (
+          <TableSkeletonRow colSpan={6} />
+        ) : list.error && !hasLogs ? (
+          <ErrorState message={list.error} onRetry={list.refresh} />
+        ) : showEmpty ? (
+          <EmptyState
+            icon={activeFilters.length > 0 ? SearchXIcon : ShieldAlertIcon}
+            title={
+              activeFilters.length > 0 ? "没有符合条件的记录" : "还没有审计记录"
+            }
+            description={
+              activeFilters.length > 0
+                ? "试着放宽筛选条件，或清除筛选后重试。"
+                : "系统的写操作和权限拦截会自动记录在这里。"
+            }
+            action={
+              activeFilters.length > 0 ? (
+                <Button variant="outline" onClick={handleReset}>
+                  清除筛选
+                </Button>
+              ) : null
+            }
+          />
+        ) : (
+          <>
+            <div className="flex flex-col gap-2 md:hidden">
+              {list.items.map((log) => (
+                <RecordCard
+                  key={log.id}
+                  title={log.action}
+                  badges={getStatusBadge(log.status)}
+                  subtitle={formatDateTime(log.createdAt)}
+                  meta={
+                    <>
+                      <span>{log.username || "未知"}</span>
+                      <span>{log.ip || "-"}</span>
+                      {log.detail && (
+                        <span className="w-full truncate">{log.detail}</span>
+                      )}
+                    </>
+                  }
+                />
+              ))}
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>时间</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      操作者
+                    </TableHead>
+                    <TableHead>动作</TableHead>
+                    <TableHead className="hidden lg:table-cell">IP</TableHead>
+                    <TableHead>状态</TableHead>
+                    <TableHead className="hidden xl:table-cell">详情</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.items.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
+                        {formatDateTime(log.createdAt)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {log.username || "未知"}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {log.action}
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground lg:table-cell">
+                        {log.ip || "-"}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(log.status)}</TableCell>
+                      <TableCell className="hidden max-w-[240px] truncate text-muted-foreground xl:table-cell">
+                        {log.detail || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </ListShell>
     </div>
   )
 }

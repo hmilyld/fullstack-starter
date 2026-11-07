@@ -4,6 +4,10 @@ node_modules/
 # 构建产物
 dist/
 dist-ssr/
+coverage/
+test-results/
+playwright-report/
+blob-report/
 
 # 环境变量
 *.local

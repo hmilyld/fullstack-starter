@@ -1,5 +1,9 @@
 import { apiClient } from "@/api/client"
-import type { AiModel, AiModelPreset, AiModelTestResult } from "@/types/ai-model"
+import type {
+  AiModel,
+  AiModelPreset,
+  AiModelTestResult,
+} from "@/types/ai-model"
 import type { PaginatedData } from "@/types/common"
 
 export async function getAiModels(params?: {
@@ -18,7 +22,10 @@ export async function createAiModel(data: Omit<AiModel, "id">) {
   return apiClient.post<AiModel>("/ai-models", data)
 }
 
-export async function updateAiModel(id: string, data: Partial<Omit<AiModel, "id">>) {
+export async function updateAiModel(
+  id: string,
+  data: Partial<Omit<AiModel, "id">>
+) {
   return apiClient.put<AiModel>(`/ai-models/${id}`, data)
 }
 
@@ -67,7 +74,10 @@ export async function createAiModelPreset(data: Omit<AiModelPreset, "id">) {
   return apiClient.post<AiModelPreset>("/ai-models/presets", data)
 }
 
-export async function updateAiModelPreset(id: string, data: Partial<Omit<AiModelPreset, "id">>) {
+export async function updateAiModelPreset(
+  id: string,
+  data: Partial<Omit<AiModelPreset, "id">>
+) {
   return apiClient.put<AiModelPreset>(`/ai-models/presets/${id}`, data)
 }
 

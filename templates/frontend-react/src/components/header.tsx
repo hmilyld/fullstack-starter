@@ -1,7 +1,8 @@
 import * as React from "react"
 import { Link, useLocation } from "react-router"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
+
+import { ThemeToggle } from "@/components/theme-toggle"
+import { UserMenu } from "@/components/user-menu"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,89 +11,58 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Button } from "@/components/ui/button"
-import { BellIcon } from "lucide-react"
-
-/** 所有有效路由及其面包屑标签，hasRoute=false 表示该路径无对应路由页面 */
-const routeMap: Record<string, { label: string; hasRoute?: boolean }> = {
-  dashboard: { label: "仪表盘" },
-  settings: { label: "设置", hasRoute: false },
-  user: { label: "用户管理" },
-  role: { label: "角色管理" },
-  permission: { label: "权限管理" },
-  menu: { label: "菜单管理" },
-  profile: { label: "个人设置" },
-  system: { label: "系统设置" },
-  "ai-model": { label: "AI模型配置" },
-  "audit-log": { label: "审计日志" },
-  data: { label: "数据管理" },
-}
-
-/** 从路径生成面包屑层级 */
-function buildBreadcrumbs(pathname: string) {
-  const segments = pathname.split("/").filter(Boolean)
-  const crumbs: { segment: string; label: string; path: string; hasRoute: boolean }[] = []
-
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i]
-    const route = routeMap[seg]
-    if (!route) continue
-
-    const path = `/${segments.slice(0, i + 1).join("/")}`
-    crumbs.push({
-      segment: seg,
-      label: route.label,
-      path,
-      hasRoute: route.hasRoute !== false,
-    })
-  }
-
-  return crumbs
-}
+import { Separator } from "@/components/ui/separator"
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import { buildBreadcrumbs } from "@/lib/routes"
 
 export function Header() {
   const location = useLocation()
   const crumbs = buildBreadcrumbs(location.pathname)
+  const currentCrumb = crumbs[crumbs.length - 1]
 
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-2 border-b px-4 py-2 transition-[width,height] ease-linear">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-        <Breadcrumb key={location.pathname}>
-          <BreadcrumbList>
-            <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink asChild>
-                <Link to="/dashboard">管理后台</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            {crumbs.map((crumb, index) => {
-              const isLast = index === crumbs.length - 1
-              return (
-                <React.Fragment key={crumb.path}>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    {isLast || !crumb.hasRoute ? (
-                      <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                    ) : (
-                      <BreadcrumbLink asChild>
-                        <Link to={crumb.path}>{crumb.label}</Link>
-                      </BreadcrumbLink>
-                    )}
-                  </BreadcrumbItem>
-                </React.Fragment>
-              )
-            })}
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-      <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon">
-          <BellIcon data-icon="inline-start" />
-          <span className="sr-only">通知</span>
-        </Button>
-        <ThemeToggle />
+    <header className="sticky top-0 z-20 shrink-0 border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto flex min-h-14 w-full max-w-(--layout-max) items-center gap-2 px-(--layout-gutter) py-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 hidden data-[orientation=vertical]:h-4 md:block"
+          />
+          <Breadcrumb className="hidden md:block">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/dashboard">管理后台</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {crumbs.map((crumb, index) => {
+                const isLast = index === crumbs.length - 1
+                return (
+                  <React.Fragment key={crumb.path}>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      {isLast || !crumb.hasRoute ? (
+                        <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink asChild>
+                          <Link to={crumb.path}>{crumb.label}</Link>
+                        </BreadcrumbLink>
+                      )}
+                    </BreadcrumbItem>
+                  </React.Fragment>
+                )
+              })}
+            </BreadcrumbList>
+          </Breadcrumb>
+          <span className="truncate text-sm font-medium md:hidden">
+            {currentCrumb?.label ?? "管理后台"}
+          </span>
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <ThemeToggle />
+          <UserMenu />
+        </div>
       </div>
     </header>
   )

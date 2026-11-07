@@ -5,7 +5,11 @@ export async function login(account: string, password: string) {
   return apiClient.post<LoginResponse>("/auth/login", { account, password })
 }
 
-export async function register(data: { username: string; email: string; password: string }) {
+export async function register(data: {
+  username: string
+  email: string
+  password: string
+}) {
   return apiClient.post<LoginResponse | null>("/auth/register", data)
 }
 
