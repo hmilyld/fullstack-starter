@@ -368,7 +368,7 @@ export function UsersPage() {
           <>
             <InputGroup className="w-full md:w-64">
               <InputGroupInput
-                placeholder="搜索用户名、姓名或邮箱..."
+                placeholder="搜索用户名、姓名或邮箱…"
                 aria-label="搜索用户"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -740,7 +740,7 @@ export function UsersPage() {
             {pendingLoading ? (
               <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
                 <Spinner />
-                加载中...
+                加载中…
               </div>
             ) : pendingUsers.length === 0 ? (
               <EmptyState

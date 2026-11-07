@@ -12,9 +12,9 @@ export function AuthShell({ children }: { children: ReactNode }) {
       <div className="flex flex-col items-center gap-2 text-center">
         <BrandMark className="size-10" />
         <div className="flex flex-col gap-1">
-          <span className="text-xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-tight">
             {config?.siteName || "管理系统"}
-          </span>
+          </h1>
           <span className="text-sm text-muted-foreground">
             {config?.siteDescription || "登录后管理用户、角色与系统设置"}
           </span>

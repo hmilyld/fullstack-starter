@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useNavigate } from "react-router"
+import { Link } from "react-router"
 import {
   ChevronRightIcon,
   KeyRoundIcon,
@@ -74,7 +74,6 @@ function buildTree(
 }
 
 export function PermissionPage() {
-  const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const [menuPermissions, setMenuPermissions] = React.useState<Permission[]>([])
   const [operationPermissions, setOperationPermissions] = React.useState<
@@ -278,7 +277,7 @@ export function PermissionPage() {
           <>
             <InputGroup className="w-full md:w-64">
               <InputGroupInput
-                placeholder="搜索编码或名称..."
+                placeholder="搜索编码或名称…"
                 aria-label="搜索权限"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -298,12 +297,11 @@ export function PermissionPage() {
                   {!syncing && <RefreshCwIcon data-icon="inline-start" />}
                   同步权限
                 </LoadingButton>
-                <Button
-                  onClick={() => navigate("/settings/menu")}
-                  className="w-full md:w-auto"
-                >
-                  <PlusIcon data-icon="inline-start" />
-                  菜单管理
+                <Button asChild className="w-full md:w-auto">
+                  <Link to="/settings/menu">
+                    <PlusIcon data-icon="inline-start" />
+                    菜单管理
+                  </Link>
                 </Button>
               </>
             )}
@@ -333,8 +331,8 @@ export function PermissionPage() {
                   清空搜索
                 </Button>
               ) : hasPermission("permissions.create") ? (
-                <Button onClick={() => navigate("/settings/menu")}>
-                  前往菜单管理
+                <Button asChild>
+                  <Link to="/settings/menu">前往菜单管理</Link>
                 </Button>
               ) : null
             }

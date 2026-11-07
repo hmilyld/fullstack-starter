@@ -259,7 +259,7 @@ export function RolesPage() {
           <>
             <InputGroup className="w-full md:w-64">
               <InputGroupInput
-                placeholder="搜索角色名称..."
+                placeholder="搜索角色名称…"
                 aria-label="搜索角色"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -482,7 +482,7 @@ export function RolesPage() {
 
           {permissionsLoading ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
-              权限加载中...
+              权限加载中…
             </div>
           ) : permissionsError ? (
             <div className="flex flex-col items-start gap-2 rounded-md border p-3 text-sm">

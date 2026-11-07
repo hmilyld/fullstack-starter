@@ -114,7 +114,7 @@ export function NavUser({
               {loggingOut ? (
                 <>
                   <Spinner />
-                  退出中...
+                  退出中…
                 </>
               ) : (
                 <>

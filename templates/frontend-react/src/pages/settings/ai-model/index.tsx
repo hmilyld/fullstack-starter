@@ -279,7 +279,7 @@ function AiModelPresetManager() {
             </Select>
             <InputGroup className="w-full md:w-60">
               <InputGroupInput
-                placeholder="搜索别名或模型名称..."
+                placeholder="搜索别名或模型名称…"
                 aria-label="搜索预设模型"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -759,7 +759,7 @@ export function AiModelPage() {
     const actions: RowAction[] = []
     if (hasPermission("ai_models")) {
       actions.push({
-        label: testingId === model.id ? "测试中..." : "测试",
+        label: testingId === model.id ? "测试中…" : "测试",
         icon: TestTubeIcon,
         disabled: testingId === model.id,
         onSelect: () => handleTest(model),
@@ -809,7 +809,7 @@ export function AiModelPage() {
               <>
                 <InputGroup className="w-full md:w-64">
                   <InputGroupInput
-                    placeholder="搜索别名或模型名称..."
+                    placeholder="搜索别名或模型名称…"
                     aria-label="搜索模型"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -1059,7 +1059,7 @@ export function AiModelPage() {
                 }}
               >
                 <SelectTrigger className="w-full" aria-label="快速选择预设模型">
-                  <SelectValue placeholder="选择常用 AI 模型..." />
+                  <SelectValue placeholder="选择常用 AI 模型…" />
                 </SelectTrigger>
                 <SelectContent>
                   {groupedPresets.map(([group, items]) => (
