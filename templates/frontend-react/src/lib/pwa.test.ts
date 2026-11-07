@@ -20,7 +20,11 @@ describe("buildPwaManifest", () => {
     expect(manifest.description).toContain("React")
     expect(manifest.theme_color).toBe("#ffffff")
     expect(manifest.background_color).toBe("#ffffff")
-    expect(manifest.icons[0]?.src).toBe("/icons/icon.svg")
+    const sources = manifest.icons.map((icon) => icon.src)
+    expect(sources).toContain("/icons/icon-192.png")
+    expect(sources).toContain("/icons/icon-512.png")
+    expect(sources).toContain("/icons/icon-512-maskable.png")
+    expect(sources).toContain("/icons/icon.svg")
   })
 
   it("follows site name, description and theme", () => {
