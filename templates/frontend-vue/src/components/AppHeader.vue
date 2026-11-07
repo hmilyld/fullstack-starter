@@ -1,92 +1,68 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import ThemeToggle from '@/components/ThemeToggle.vue'
-import { Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
-
-defineProps<{
-  sidebarCollapsed?: boolean
-}>()
-
-const emit = defineEmits<{
-  (e: 'toggle-sidebar'): void
-}>()
+import { computed } from "vue"
+import { RouterLink, useRoute } from "vue-router"
+import ThemeToggle from "@/components/ThemeToggle.vue"
+import UserMenu from "@/components/UserMenu.vue"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import { buildBreadcrumbs } from "@/lib/routes"
 
 const route = useRoute()
-const router = useRouter()
-
-const routeMap: Record<string, { label: string; hasRoute?: boolean }> = {
-  dashboard: { label: '仪表盘' },
-  settings: { label: '设置', hasRoute: false },
-  user: { label: '用户管理' },
-  role: { label: '角色管理' },
-  permission: { label: '权限管理' },
-  menu: { label: '菜单管理' },
-  profile: { label: '个人设置' },
-  system: { label: '系统设置' },
-  'ai-model': { label: 'AI模型配置' },
-  'audit-log': { label: '审计日志' },
-  data: { label: '数据管理' },
-}
-
-const breadcrumbs = computed(() => {
-  const segments = route.path.split('/').filter(Boolean)
-  const crumbs: { segment: string; label: string; path: string; hasRoute: boolean }[] = []
-
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i]
-    const routeInfo = routeMap[seg]
-    if (!routeInfo) continue
-    const path = `/${segments.slice(0, i + 1).join('/')}`
-    crumbs.push({
-      segment: seg,
-      label: routeInfo.label,
-      path,
-      hasRoute: routeInfo.hasRoute !== false,
-    })
-  }
-
-  return crumbs
-})
+const crumbs = computed(() => buildBreadcrumbs(route.path))
+const currentCrumb = computed(() => crumbs.value[crumbs.value.length - 1])
 </script>
 
 <template>
-  <header class="bg-base-100 flex h-12 shrink-0 items-center gap-2 border-b border-base-content/10 px-4">
-    <div class="flex items-center gap-2">
-      <button class="btn btn-ghost btn-xs btn-square" @click="emit('toggle-sidebar')">
-        <PanelLeftClose v-if="!sidebarCollapsed" class="size-4" />
-        <PanelLeftOpen v-else class="size-4" />
-      </button>
-      <div class="breadcrumbs text-sm">
-        <ul>
-          <li class="hidden md:block">
-            <a class="text-base-content/50 hover:text-base-content" @click.prevent="router.push('/dashboard')">管理后台</a>
-          </li>
-          <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
-            <li>
-              <span
-                v-if="index === breadcrumbs.length - 1 || !crumb.hasRoute"
-                class="font-medium text-base-content"
-              >
-                {{ crumb.label }}
-              </span>
-              <a
-                v-else
-                class="text-base-content/50 hover:text-base-content"
-                @click.prevent="router.push(crumb.path)"
-              >
-                {{ crumb.label }}
-              </a>
-            </li>
-          </template>
-        </ul>
+  <header
+    class="sticky top-0 z-20 shrink-0 border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/80"
+  >
+    <div
+      class="mx-auto flex min-h-14 w-full max-w-(--layout-max) items-center gap-2 px-(--layout-gutter) py-2"
+    >
+      <div class="flex min-w-0 items-center gap-2">
+        <SidebarTrigger class="-ml-1" />
+        <Separator
+          orientation="vertical"
+          class="mr-2 hidden data-[orientation=vertical]:h-4 md:block"
+        />
+        <Breadcrumb class="hidden md:block">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink as-child>
+                <RouterLink to="/dashboard">管理后台</RouterLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <template v-for="(crumb, index) in crumbs" :key="crumb.path">
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage
+                  v-if="index === crumbs.length - 1 || !crumb.hasRoute"
+                >
+                  {{ crumb.label }}
+                </BreadcrumbPage>
+                <BreadcrumbLink v-else as-child>
+                  <RouterLink :to="crumb.path">{{ crumb.label }}</RouterLink>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </template>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <span class="truncate text-sm font-medium md:hidden">
+          {{ currentCrumb?.label ?? "管理后台" }}
+        </span>
       </div>
-    </div>
-    <div class="ml-auto flex items-center gap-1">
-      <button class="btn btn-ghost btn-xs btn-square text-base-content/50 hover:text-base-content">
-        <Bell class="size-4" />
-      </button>
-      <ThemeToggle />
+      <div class="ml-auto flex items-center gap-1">
+        <ThemeToggle />
+        <UserMenu />
+      </div>
     </div>
   </header>
 </template>

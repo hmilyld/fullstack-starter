@@ -1,229 +1,380 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
-import { getAuditLogs } from '@/api/audit-log'
-import type { AuditLog } from '@/types/audit-log'
-import { useToast } from '@/composables/use-toast'
-import Pagination from '@/components/shared/Pagination.vue'
-import PageSkeleton from '@/components/shared/PageSkeleton.vue'
-import { Search, RotateCcw, X } from 'lucide-vue-next'
-
-const toast = useToast()
+import { computed, ref, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import {
+  RotateCcw,
+  Search,
+  SearchX,
+  ShieldAlert,
+  SlidersHorizontal,
+  X,
+} from "@lucide/vue"
+import EmptyState from "@/components/shared/EmptyState.vue"
+import ErrorState from "@/components/shared/ErrorState.vue"
+import InlineError from "@/components/shared/InlineError.vue"
+import ListShell from "@/components/shared/ListShell.vue"
+import PageHeader from "@/components/shared/PageHeader.vue"
+import RecordCard from "@/components/shared/RecordCard.vue"
+import TablePagination from "@/components/shared/TablePagination.vue"
+import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
+import AuditFilterFields from "@/pages/settings/AuditLog/AuditFilterFields.vue"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { getAuditLogs } from "@/api/audit-log"
+import { usePagedList } from "@/composables/use-paged-list"
+import { useUrlPage } from "@/composables/use-url-list-state"
+import { formatDateTime } from "@/lib/format"
+import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
 const PAGE_SIZE = 10
 
-type FilterKey = 'userId' | 'status' | 'action' | 'startTime' | 'endTime'
-
-const FILTER_LABELS: Record<FilterKey, string> = {
-  userId: '用户ID',
-  status: '状态',
-  action: '动作',
-  startTime: '开始时间',
-  endTime: '结束时间',
+const EMPTY_FILTERS: AuditFilters = {
+  userId: "",
+  status: "",
+  action: "",
+  startTime: "",
+  endTime: "",
 }
 
-const logs = ref<AuditLog[]>([])
-const tableLoading = ref(true)
-const page = ref(1)
-const total = ref(0)
-const totalPages = ref(1)
+const FILTER_LABELS: Record<AuditFilterKey, string> = {
+  userId: "用户 ID",
+  status: "状态",
+  action: "动作",
+  startTime: "开始时间",
+  endTime: "结束时间",
+}
 
-// 筛选条件（点击查询后生效）
-const userId = ref('')
-const status = ref('')
-const action = ref('')
-const startTime = ref('')
-const endTime = ref('')
-const query = ref({ userId: '', status: '', action: '', startTime: '', endTime: '' })
+const STATUS_LABELS: Record<string, string> = {
+  success: "成功",
+  fail: "失败",
+  permission_denied: "权限不足",
+}
 
-async function loadData() {
-  tableLoading.value = true
-  const res = await getAuditLogs({
-    userId: query.value.userId,
-    status: query.value.status,
-    action: query.value.action,
-    startTime: query.value.startTime,
-    endTime: query.value.endTime,
-    page: page.value,
-    pageSize: PAGE_SIZE,
-  })
-  if (res.code === 0) {
-    logs.value = res.data.list
-    total.value = res.data.total
-    totalPages.value = Math.max(1, Math.ceil(res.data.total / PAGE_SIZE))
-  } else {
-    toast.error(res.message || '加载数据失败')
+function readQuery(value: unknown): string {
+  return typeof value === "string" ? value : ""
+}
+
+const route = useRoute()
+const router = useRouter()
+
+const query = computed<AuditFilters>(() => ({
+  userId: readQuery(route.query.userId),
+  status: readQuery(route.query.status),
+  action: readQuery(route.query.action),
+  startTime: readQuery(route.query.startTime),
+  endTime: readQuery(route.query.endTime),
+}))
+
+const { page, setPage } = useUrlPage()
+const draft = ref<AuditFilters>({ ...query.value })
+const filterOpen = ref(false)
+
+const {
+  items: logs,
+  total,
+  page: currentPage,
+  totalPages,
+  loading: listLoading,
+  error: listError,
+  setPage: setListPage,
+  refresh: refreshList,
+} = usePagedList<AuditLog, AuditFilters>({
+  fetcher: getAuditLogs,
+  params: query,
+  pageSize: PAGE_SIZE,
+  page,
+  onPageChange: setPage,
+})
+
+// 浏览器前进/后退或外部链接改变筛选条件时，同步表单草稿
+watch(query, (value) => {
+  draft.value = { ...value }
+})
+
+const FILTER_KEYS: AuditFilterKey[] = [
+  "userId",
+  "status",
+  "action",
+  "startTime",
+  "endTime",
+]
+
+function writeFilters(filters: AuditFilters) {
+  const next = { ...route.query }
+  for (const key of FILTER_KEYS) {
+    if (filters[key]) next[key] = filters[key]
+    else delete next[key]
   }
-  tableLoading.value = false
+  delete next.page
+  void router.replace({ query: next })
 }
-
-watch(page, () => loadData())
-
-onMounted(loadData)
 
 function handleSearch() {
-  page.value = 1
-  query.value = {
-    userId: userId.value.trim(),
-    status: status.value,
-    action: action.value.trim(),
-    startTime: startTime.value,
-    endTime: endTime.value,
-  }
+  writeFilters({
+    userId: draft.value.userId.trim(),
+    status: draft.value.status,
+    action: draft.value.action.trim(),
+    startTime: draft.value.startTime,
+    endTime: draft.value.endTime,
+  })
 }
 
 function handleReset() {
-  userId.value = ''
-  status.value = ''
-  action.value = ''
-  startTime.value = ''
-  endTime.value = ''
-  page.value = 1
-  query.value = { userId: '', status: '', action: '', startTime: '', endTime: '' }
+  draft.value = { ...EMPTY_FILTERS }
+  writeFilters(EMPTY_FILTERS)
 }
 
-const activeFilters = computed<{ key: FilterKey; label: string; value: string }[]>(() => {
-  const fields: { key: FilterKey; label: string; value: string }[] = [
-    { key: 'userId', label: FILTER_LABELS.userId, value: query.value.userId },
-    { key: 'status', label: FILTER_LABELS.status, value: query.value.status },
-    { key: 'action', label: FILTER_LABELS.action, value: query.value.action },
-    { key: 'startTime', label: FILTER_LABELS.startTime, value: query.value.startTime },
-    { key: 'endTime', label: FILTER_LABELS.endTime, value: query.value.endTime },
-  ]
-  return fields.filter((f) => f.value)
-})
-
-function removeFilter(key: FilterKey) {
-  const clearInput: Record<FilterKey, () => void> = {
-    userId: () => (userId.value = ''),
-    status: () => (status.value = ''),
-    action: () => (action.value = ''),
-    startTime: () => (startTime.value = ''),
-    endTime: () => (endTime.value = ''),
-  }
-  clearInput[key]()
-  query.value[key] = ''
-  if (page.value === 1) {
-    loadData()
-  } else {
-    page.value = 1
-  }
+function searchAndClose() {
+  handleSearch()
+  filterOpen.value = false
 }
 
-function clearAllFilters() {
+function resetAndClose() {
   handleReset()
+  filterOpen.value = false
 }
 
-function getStatusBadgeClass(s: string) {
-  if (s === 'success') return 'badge badge-primary'
-  if (s === 'fail') return 'badge badge-error'
-  return 'badge badge-outline'
+function removeFilter(key: AuditFilterKey) {
+  draft.value = { ...draft.value, [key]: "" }
+  const next = { ...route.query }
+  delete next[key]
+  delete next.page
+  void router.replace({ query: next })
 }
 
-function getStatusLabel(s: string) {
-  if (s === 'success') return '成功'
-  if (s === 'fail') return '失败'
-  return '权限不足'
+function formatFilterValue(key: AuditFilterKey, value: string) {
+  if (key === "status") return STATUS_LABELS[value] ?? value
+  if (key === "startTime" || key === "endTime") return formatDateTime(value)
+  return value
 }
 
-function formatTime(value: string) {
-  if (!value) return '-'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+const activeFilters = computed(() =>
+  (Object.keys(query.value) as AuditFilterKey[])
+    .filter((key) => query.value[key] !== "")
+    .map((key) => ({
+      key,
+      label: FILTER_LABELS[key],
+      value: formatFilterValue(key, query.value[key]),
+    }))
+)
+
+function statusVariant(status: AuditLog["status"]) {
+  if (status === "success") return "success"
+  if (status === "fail") return "destructive"
+  return "warning"
 }
+
+function statusLabel(status: AuditLog["status"]) {
+  return STATUS_LABELS[status] ?? status
+}
+
+const hasLogs = computed(() => logs.value.length > 0)
+const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">审计日志</h1>
-      <p class="text-base-content/50">查看系统的写操作与权限拦截记录。</p>
-    </div>
+  <div class="flex flex-col gap-(--page-gap)">
+    <PageHeader
+      title="审计日志"
+      description="查看系统的写操作与权限拦截记录。"
+    />
 
-    <PageSkeleton v-if="tableLoading" :cols="6" />
+    <ListShell title="操作记录" :description="`共 ${total} 条记录`">
+      <template v-if="hasLogs" #footer>
+        <TablePagination
+          :page="currentPage"
+          :total-pages="totalPages"
+          :total="total"
+          item-label="条记录"
+          @page-change="setListPage"
+        />
+      </template>
 
-    <div v-else class="card border border-base-content/10 rounded-xl">
-      <div class="card-body">
-        <div class="flex flex-col gap-4">
-          <div>
-            <h3 class="card-title">操作记录</h3>
-            <p class="text-sm text-base-content/50">共 {{ total }} 条记录</p>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <input v-model="userId" placeholder="用户ID" class="input input-bordered input-sm w-36" />
-            <input v-model="status" placeholder="状态" class="input input-bordered input-sm w-32" />
-            <input v-model="action" placeholder="动作" class="input input-bordered input-sm w-48" />
-            <input v-model="startTime" type="datetime-local" aria-label="开始时间" title="开始时间" class="input input-bordered input-sm w-44" />
-            <input v-model="endTime" type="datetime-local" aria-label="结束时间" title="结束时间" class="input input-bordered input-sm w-44" />
-            <button class="btn btn-primary btn-sm shrink-0" @click="handleSearch">
-              <Search class="size-4" />
+      <div class="flex flex-col gap-3 pb-4">
+        <div class="hidden flex-col gap-3 md:flex">
+          <AuditFilterFields v-model="draft" prefix="audit" />
+          <div class="flex items-center gap-2">
+            <Button @click="handleSearch">
+              <Search data-icon="inline-start" />
               查询
-            </button>
-            <button class="btn btn-outline btn-sm shrink-0" @click="handleReset">
-              <RotateCcw class="size-4" />
+            </Button>
+            <Button variant="outline" @click="handleReset">
+              <RotateCcw data-icon="inline-start" />
               重置
-            </button>
-          </div>
-
-          <div v-if="activeFilters.length" class="flex flex-wrap items-center gap-2" aria-label="当前筛选条件">
-            <span class="text-xs text-base-content/50">当前筛选:</span>
-            <button
-              v-for="f in activeFilters"
-              :key="f.key"
-              type="button"
-              class="badge badge-outline badge-sm gap-1 rounded-full py-2 pl-3 pr-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:border-error/40 hover:text-error"
-              :title="`移除筛选：${f.label}`"
-              @click="removeFilter(f.key)"
-            >
-              {{ f.label }}: <span class="font-medium">{{ f.value }}</span>
-              <X class="size-3 rounded-full bg-base-content/10" />
-            </button>
-            <button
-              type="button"
-              class="rounded-sm text-xs text-base-content/50 underline-offset-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:text-base-content hover:underline"
-              @click="clearAllFilters"
-            >
-              清除全部
-            </button>
+            </Button>
           </div>
         </div>
-
-        <div class="overflow-x-auto">
-          <table class="table table-zebra">
-            <thead>
-              <tr>
-                <th>时间</th>
-                <th>操作者</th>
-                <th>动作</th>
-                <th>IP</th>
-                <th>状态</th>
-                <th>详情</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="log in logs" :key="log.id">
-                <td class="whitespace-nowrap text-base-content/50">{{ formatTime(log.createdAt) }}</td>
-                <td>{{ log.username || '未知' }}</td>
-                <td class="font-mono text-xs">{{ log.action }}</td>
-                <td class="text-base-content/50">{{ log.ip || '-' }}</td>
-                <td>
-                  <span :class="getStatusBadgeClass(log.status)">{{ getStatusLabel(log.status) }}</span>
-                </td>
-                <td class="max-w-[240px] truncate text-base-content/50">{{ log.detail || '-' }}</td>
-              </tr>
-              <tr v-if="logs.length === 0">
-                <td colspan="6" class="text-center text-base-content/50">
-                  {{ activeFilters.length ? '没有符合条件的记录，试着放宽筛选条件' : '暂无审计记录，系统的写操作和权限拦截会自动记录在这里' }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="flex items-center gap-2 md:hidden">
+          <Button variant="outline" class="flex-1" @click="filterOpen = true">
+            <SlidersHorizontal data-icon="inline-start" />
+            筛选
+            {{ activeFilters.length > 0 ? ` · ${activeFilters.length}` : "" }}
+          </Button>
+          <Button class="flex-1" @click="handleSearch">
+            <Search data-icon="inline-start" />
+            查询
+          </Button>
         </div>
-
-        <Pagination :page="page" :total-pages="totalPages" @update:page="page = $event" />
+        <div
+          v-if="activeFilters.length > 0"
+          class="flex flex-wrap items-center gap-2"
+        >
+          <span class="text-xs text-muted-foreground">当前筛选：</span>
+          <Button
+            v-for="filter in activeFilters"
+            :key="filter.key"
+            variant="secondary"
+            size="xs"
+            :aria-label="`移除筛选：${filter.label}`"
+            @click="removeFilter(filter.key)"
+          >
+            {{ filter.label }}：{{ filter.value }}
+            <X data-icon="inline-end" />
+          </Button>
+          <Button variant="ghost" size="xs" @click="handleReset">
+            清除全部
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <Sheet :open="filterOpen" @update:open="filterOpen = $event">
+        <SheetContent
+          side="bottom"
+          class="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0"
+        >
+          <SheetHeader class="border-b p-4 pr-14">
+            <SheetTitle>筛选条件</SheetTitle>
+            <SheetDescription>
+              按用户、状态、动作或时间范围筛选审计记录。
+            </SheetDescription>
+          </SheetHeader>
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+            <AuditFilterFields v-model="draft" prefix="audit-mobile" />
+          </div>
+          <SheetFooter class="flex-row gap-2 border-t p-4">
+            <Button variant="outline" class="flex-1" @click="resetAndClose">
+              重置
+            </Button>
+            <Button class="flex-1" @click="searchAndClose">应用筛选</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <InlineError
+        v-if="listError && hasLogs"
+        :message="listError"
+        :on-retry="refreshList"
+      />
+
+      <TableSkeletonRow v-if="listLoading && !hasLogs" :col-span="6" />
+      <ErrorState
+        v-else-if="listError && !hasLogs"
+        :message="listError"
+        :on-retry="refreshList"
+      />
+      <EmptyState
+        v-else-if="showEmpty"
+        :icon="activeFilters.length > 0 ? SearchX : ShieldAlert"
+        :title="
+          activeFilters.length > 0 ? '没有符合条件的记录' : '还没有审计记录'
+        "
+        :description="
+          activeFilters.length > 0
+            ? '试着放宽筛选条件，或清除筛选后重试。'
+            : '系统的写操作和权限拦截会自动记录在这里。'
+        "
+      >
+        <template v-if="activeFilters.length > 0" #action>
+          <Button
+            v-if="activeFilters.length > 0"
+            variant="outline"
+            @click="handleReset"
+          >
+            清除筛选
+          </Button>
+        </template>
+      </EmptyState>
+
+      <template v-else>
+        <div class="flex flex-col gap-2 md:hidden">
+          <RecordCard
+            v-for="log in logs"
+            :key="log.id"
+            :title="log.action"
+            :subtitle="formatDateTime(log.createdAt)"
+          >
+            <template #badges>
+              <Badge :variant="statusVariant(log.status)">
+                {{ statusLabel(log.status) }}
+              </Badge>
+            </template>
+            <template #meta>
+              <span>{{ log.username || "未知" }}</span>
+              <span>{{ log.ip || "-" }}</span>
+              <span v-if="log.detail" class="w-full truncate">
+                {{ log.detail }}
+              </span>
+            </template>
+          </RecordCard>
+        </div>
+
+        <div class="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>时间</TableHead>
+                <TableHead class="hidden md:table-cell">操作者</TableHead>
+                <TableHead>动作</TableHead>
+                <TableHead class="hidden lg:table-cell">IP</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead class="hidden xl:table-cell">详情</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="log in logs" :key="log.id">
+                <TableCell class="whitespace-nowrap text-muted-foreground">
+                  {{ formatDateTime(log.createdAt) }}
+                </TableCell>
+                <TableCell class="hidden md:table-cell">
+                  {{ log.username || "未知" }}
+                </TableCell>
+                <TableCell class="font-mono text-xs">{{
+                  log.action
+                }}</TableCell>
+                <TableCell class="hidden text-muted-foreground lg:table-cell">
+                  {{ log.ip || "-" }}
+                </TableCell>
+                <TableCell>
+                  <Badge :variant="statusVariant(log.status)">
+                    {{ statusLabel(log.status) }}
+                  </Badge>
+                </TableCell>
+                <TableCell
+                  class="hidden max-w-[240px] truncate text-muted-foreground xl:table-cell"
+                >
+                  {{ log.detail || "-" }}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </template>
+    </ListShell>
   </div>
 </template>

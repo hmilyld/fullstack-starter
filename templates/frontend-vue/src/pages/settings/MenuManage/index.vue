@@ -1,10 +1,28 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useToast } from '@/composables/use-toast'
-import ConfirmDeleteDialog from '@/components/shared/ConfirmDeleteDialog.vue'
-import IconPicker from '@/components/shared/IconPicker.vue'
-import MenuIcon from '@/components/shared/MenuIcon.vue'
+import { computed, onMounted, ref } from "vue"
+import { DragDropProvider, type DragEndEvent } from "@dnd-kit/vue"
+import { isSortable } from "@dnd-kit/vue/sortable"
+import { Plus, Save } from "@lucide/vue"
+import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
+import EmptyState from "@/components/shared/EmptyState.vue"
+import FormDialog from "@/components/shared/FormDialog.vue"
+import IconPicker from "@/components/shared/IconPicker.vue"
+import LoadingButton from "@/components/shared/LoadingButton.vue"
+import PageFormSkeleton from "@/components/shared/PageFormSkeleton.vue"
+import PageHeader from "@/components/shared/PageHeader.vue"
+import MenuSortableGroup from "@/pages/settings/MenuManage/MenuSortableGroup.vue"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   createMenuGroup,
   createMenuItem,
@@ -14,144 +32,160 @@ import {
   saveMenuLayout,
   updateMenuGroup,
   updateMenuItem,
-} from '@/api/menu'
-import type { MenuConfig, MenuGroup, MenuItem } from '@/types/menu'
-import { GripVertical, Pencil, Plus, Save, Trash2 } from 'lucide-vue-next'
+} from "@/api/menu"
+import { useAuthStore } from "@/stores/auth"
+import { useToast } from "@/composables/use-toast"
+import type { MenuConfig, MenuGroup, MenuItem } from "@/types/menu"
+import {
+  applyMenuDrag,
+  cloneMenuConfig,
+  moveMenuGroup,
+  moveMenuItem,
+  type MenuDragData,
+} from "@/pages/settings/MenuManage/menu-drag"
 
-type DragState =
-  | { type: 'group'; groupId: string }
-  | { type: 'item'; groupId: string; permissionCode: string }
+const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
+
+type DeleteTarget =
+  | { type: "group"; id: string; name: string }
+  | { type: "item"; id: string; name: string }
   | null
 
 const auth = useAuthStore()
 const toast = useToast()
+
 const config = ref<MenuConfig | null>(null)
+const savedConfig = ref<MenuConfig | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 const submitting = ref(false)
-const dragState = ref<DragState>(null)
+
 const groupOpen = ref(false)
 const editingGroup = ref<MenuGroup | null>(null)
-const groupName = ref('')
+const groupName = ref("")
+
 const itemOpen = ref(false)
 const editingItem = ref<MenuItem | null>(null)
 const itemForm = ref({
-  permissionCode: '',
-  name: '',
-  groupId: '',
-  route: '',
-  icon: 'circle',
+  permissionCode: "",
+  name: "",
+  groupId: "",
+  route: "",
+  icon: "circle",
 })
-const deleteOpen = ref(false)
-const deleteTarget = ref<
-  { type: 'group'; id: string; name: string } | { type: 'item'; id: string; name: string } | null
->(null)
+
+const deleteTarget = ref<DeleteTarget>(null)
 const deleteLoading = ref(false)
+const dragEpoch = ref(0)
 
-function cloneConfig(value: MenuConfig): MenuConfig {
-  return {
-    version: value.version,
-    groups: value.groups.map((group) => ({
-      ...group,
-      items: group.items.map((item) => ({ ...item })),
-    })),
-  }
-}
-
-function normalize(value: MenuConfig): MenuConfig {
-  return {
-    ...value,
-    groups: value.groups.map((group, groupIndex) => ({
-      ...group,
-      sortOrder: groupIndex + 1,
-      items: group.items.map((item, itemIndex) => ({
-        ...item,
-        groupId: group.id,
-        sortOrder: itemIndex + 1,
-      })),
-    })),
-  }
-}
+const canReorder = computed(() => auth.hasPermission("menus.reorder"))
+const canCreate = computed(() => auth.hasPermission("menus.create"))
+const canEdit = computed(() => auth.hasPermission("menus.edit"))
+const canDelete = computed(() => auth.hasPermission("menus.delete"))
 
 async function load() {
   loading.value = true
   const response = await getMenuConfig()
-  if (response.code === 0) config.value = cloneConfig(response.data)
-  else toast.error(response.message || '加载菜单失败')
+  if (response.code === 0) {
+    config.value = cloneMenuConfig(response.data)
+    savedConfig.value = cloneMenuConfig(response.data)
+  } else {
+    toast.error(response.message || "加载菜单失败")
+  }
   loading.value = false
 }
 
-onMounted(load)
+onMounted(() => {
+  void load()
+})
 
-const groupCount = computed(() => config.value?.groups.length || 0)
+const dirty = computed(
+  () =>
+    config.value !== null &&
+    savedConfig.value !== null &&
+    JSON.stringify(config.value) !== JSON.stringify(savedConfig.value)
+)
 
-function dropGroup(targetId: string) {
-  if (!config.value || dragState.value?.type !== 'group' || dragState.value.groupId === targetId) return
-  const groups = config.value.groups
-  const sourceIndex = groups.findIndex((group) => group.id === dragState.value?.groupId)
-  const targetIndex = groups.findIndex((group) => group.id === targetId)
-  if (sourceIndex < 0 || targetIndex < 0) return
-  const [group] = groups.splice(sourceIndex, 1)
-  groups.splice(targetIndex, 0, group)
-  config.value = normalize(config.value)
-  dragState.value = null
+function moveGroup(groupId: string, direction: -1 | 1) {
+  if (!config.value) return
+  config.value = moveMenuGroup(config.value, groupId, direction)
 }
 
-function dropItem(targetGroupId: string, targetCode?: string) {
-  if (!config.value || dragState.value?.type !== 'item') return
-  const activeDrag = dragState.value
-  const sourceGroup = config.value.groups.find((group) => group.id === activeDrag.groupId)
-  const targetGroup = config.value.groups.find((group) => group.id === targetGroupId)
-  if (!sourceGroup || !targetGroup) return
-  const sourceIndex = sourceGroup.items.findIndex(
-    (item) => item.permissionCode === activeDrag.permissionCode,
-  )
-  if (sourceIndex < 0) return
-  const [item] = sourceGroup.items.splice(sourceIndex, 1)
-  const targetIndex = targetCode
-    ? targetGroup.items.findIndex((candidate) => candidate.permissionCode === targetCode)
-    : targetGroup.items.length
-  targetGroup.items.splice(targetIndex < 0 ? targetGroup.items.length : targetIndex, 0, item)
-  config.value = normalize(config.value)
-  dragState.value = null
+function moveItem(groupId: string, permissionCode: string, direction: -1 | 1) {
+  if (!config.value) return
+  config.value = moveMenuItem(config.value, groupId, permissionCode, direction)
 }
 
-function handleGroupDrop(groupId: string) {
-  if (dragState.value?.type === 'item') dropItem(groupId)
-  else dropGroup(groupId)
+function handleDragEnd(event: DragEndEvent) {
+  if (event.canceled) return
+  const source = event.operation.source
+  if (!source || !isSortable(source)) return
+
+  const sourceData = source.data as MenuDragData | undefined
+  if (!sourceData) return
+
+  const targetData = event.operation.target?.data as MenuDragData | undefined
+  const before = config.value ? JSON.stringify(config.value) : ""
+
+  if (config.value) {
+    config.value = applyMenuDrag(
+      config.value,
+      {
+        type: sourceData.type === "group" ? "group" : "item",
+        initialIndex: source.initialIndex,
+        index: source.index,
+        groupId: sourceData.groupId,
+        permissionCode:
+          sourceData.type === "item" ? sourceData.permissionCode : undefined,
+        initialGroup: source.initialGroup as string | undefined,
+        group: source.group as string | undefined,
+      },
+      targetData
+        ? {
+            type: targetData.type,
+            groupId: targetData.groupId,
+            index: targetData.index,
+          }
+        : undefined
+    )
+  }
+
+  const after = config.value ? JSON.stringify(config.value) : ""
+  if (before === after) dragEpoch.value += 1
 }
 
 async function handleSave() {
-  if (!config.value) return
+  if (!config.value || !dirty.value) return
   saving.value = true
-  try {
-    const response = await saveMenuLayout({
-      version: config.value.version,
-      groups: config.value.groups.map((group) => ({
-        id: group.id,
-        sortOrder: group.sortOrder,
-        items: group.items.map((item) => ({
-          permissionCode: item.permissionCode,
-          sortOrder: item.sortOrder,
-        })),
+  const response = await saveMenuLayout({
+    version: config.value.version,
+    groups: config.value.groups.map((group) => ({
+      id: group.id,
+      sortOrder: group.sortOrder,
+      items: group.items.map((item) => ({
+        permissionCode: item.permissionCode,
+        sortOrder: item.sortOrder,
       })),
-    })
-    if (response.code === 0) {
-      config.value.version = response.data.version
-      window.dispatchEvent(new Event('navigation-refresh'))
-      toast.success('菜单顺序已保存')
-    } else {
-      toast.error(response.message || '保存失败')
-    }
-  } catch {
-    toast.error('保存失败')
-  }
+    })),
+  })
   saving.value = false
+  if (response.code !== 0) {
+    toast.error(response.message || "保存失败")
+    return
+  }
+  if (config.value) {
+    const next = cloneMenuConfig(config.value)
+    next.version = response.data.version
+    config.value = next
+    savedConfig.value = cloneMenuConfig(next)
+  }
+  window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+  toast.success("菜单顺序已保存")
 }
 
 function openCreateGroup() {
   editingGroup.value = null
-  groupName.value = ''
+  groupName.value = ""
   groupOpen.value = true
 }
 
@@ -163,27 +197,29 @@ function openEditGroup(group: MenuGroup) {
 
 async function submitGroup() {
   submitting.value = true
-  try {
-    const response = editingGroup.value
-      ? await updateMenuGroup(editingGroup.value.id, groupName.value)
-      : await createMenuGroup(groupName.value)
-    if (response.code === 0) {
-      groupOpen.value = false
-      await load()
-      window.dispatchEvent(new Event('navigation-refresh'))
-      toast.success(editingGroup.value ? '分组已更新' : '分组已创建')
-    } else {
-      toast.error(response.message || '操作失败')
-    }
-  } catch {
-    toast.error('操作失败')
-  }
+  const response = editingGroup.value
+    ? await updateMenuGroup(editingGroup.value.id, groupName.value)
+    : await createMenuGroup(groupName.value)
   submitting.value = false
+  if (response.code !== 0) {
+    toast.error(response.message || "操作失败")
+    return
+  }
+  groupOpen.value = false
+  await load()
+  window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+  toast.success(editingGroup.value ? "分组已更新" : "分组已创建")
 }
 
 function openCreateItem(groupId: string) {
   editingItem.value = null
-  itemForm.value = { permissionCode: '', name: '', groupId, route: '', icon: 'circle' }
+  itemForm.value = {
+    permissionCode: "",
+    name: "",
+    groupId,
+    route: "",
+    icon: "circle",
+  }
   itemOpen.value = true
 }
 
@@ -201,272 +237,227 @@ function openEditItem(item: MenuItem) {
 
 async function submitItem() {
   submitting.value = true
-  try {
-    const response = editingItem.value
-      ? await updateMenuItem(editingItem.value.permissionCode, {
-          name: itemForm.value.name,
-          groupId: itemForm.value.groupId,
-          route: itemForm.value.route,
-          icon: itemForm.value.icon,
-        })
-      : await createMenuItem(itemForm.value)
-    if (response.code === 0) {
-      itemOpen.value = false
-      await load()
-      window.dispatchEvent(new Event('navigation-refresh'))
-      toast.success(editingItem.value ? '菜单已更新' : '菜单已创建')
-    } else {
-      toast.error(response.message || '操作失败')
-    }
-  } catch {
-    toast.error('操作失败')
-  }
+  const response = editingItem.value
+    ? await updateMenuItem(editingItem.value.permissionCode, {
+        name: itemForm.value.name,
+        groupId: itemForm.value.groupId,
+        route: itemForm.value.route,
+        icon: itemForm.value.icon,
+      })
+    : await createMenuItem(itemForm.value)
   submitting.value = false
-}
-
-function askDeleteGroup(group: MenuGroup) {
-  deleteTarget.value = { type: 'group', id: group.id, name: group.name }
-  deleteOpen.value = true
-}
-
-function askDeleteItem(item: MenuItem) {
-  deleteTarget.value = { type: 'item', id: item.permissionCode, name: item.name }
-  deleteOpen.value = true
+  if (response.code !== 0) {
+    toast.error(response.message || "操作失败")
+    return
+  }
+  itemOpen.value = false
+  await load()
+  window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+  toast.success(editingItem.value ? "菜单已更新" : "菜单已创建")
 }
 
 async function confirmDelete() {
   if (!deleteTarget.value) return
   deleteLoading.value = true
-  try {
-    const response =
-      deleteTarget.value.type === 'group'
-        ? await deleteMenuGroup(deleteTarget.value.id)
-        : await deleteMenuItem(deleteTarget.value.id)
-    if (response.code === 0) {
-      deleteOpen.value = false
-      deleteTarget.value = null
-      await load()
-      window.dispatchEvent(new Event('navigation-refresh'))
-      toast.success('删除成功')
-    } else {
-      toast.error(response.message || '删除失败')
-    }
-  } catch {
-    toast.error('删除失败')
-  }
+  const response =
+    deleteTarget.value.type === "group"
+      ? await deleteMenuGroup(deleteTarget.value.id)
+      : await deleteMenuItem(deleteTarget.value.id)
   deleteLoading.value = false
+  if (response.code !== 0) {
+    toast.error(response.message || "删除失败")
+    return
+  }
+  deleteTarget.value = null
+  await load()
+  window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+  toast.success("删除成功")
 }
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">菜单管理</h1>
-        <p class="text-base-content/50">维护系统分组、菜单入口与显示顺序。</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button
-          v-if="auth.hasPermission('menus.create')"
-          class="btn btn-outline btn-sm"
-          @click="openCreateGroup"
-        >
-          <Plus class="size-4" />
+  <div class="flex flex-col gap-(--page-gap)">
+    <PageHeader
+      title="菜单管理"
+      description="维护系统分组、菜单入口与显示顺序。"
+    >
+      <template #actions>
+        <Badge v-if="dirty" variant="warning">有未保存的排序修改</Badge>
+        <Button v-if="canCreate" variant="outline" @click="openCreateGroup">
+          <Plus data-icon="inline-start" />
           新增分组
-        </button>
-        <button
-          v-if="auth.hasPermission('menus.reorder')"
-          class="btn btn-primary btn-sm"
-          :disabled="saving"
+        </Button>
+        <LoadingButton
+          v-if="canReorder"
+          :loading="saving"
+          :disabled="!dirty"
           @click="handleSave"
         >
-          <span v-if="saving" class="loading loading-spinner loading-sm"></span>
-          <Save v-else class="size-4" />
+          <Save data-icon="inline-start" />
           保存排序
-        </button>
-      </div>
-    </div>
+        </LoadingButton>
+      </template>
+    </PageHeader>
 
-    <div v-if="loading" class="skeleton h-96 w-full"></div>
-    <div v-else class="flex flex-col gap-4">
-      <div v-if="groupCount === 0" class="rounded-xl border border-dashed p-10 text-center text-base-content/50">
-        暂无菜单分组
+    <PageFormSkeleton v-if="loading || !config" />
+
+    <EmptyState
+      v-else-if="config.groups.length === 0"
+      title="还没有菜单分组"
+      description="先创建一个分组，再把菜单入口放进去。"
+    >
+      <template #action>
+        <Button v-if="canCreate" @click="openCreateGroup">
+          <Plus data-icon="inline-start" />
+          新增分组
+        </Button>
+      </template>
+    </EmptyState>
+
+    <DragDropProvider v-else @drag-end="handleDragEnd">
+      <div class="flex flex-col gap-4">
+        <MenuSortableGroup
+          v-for="(group, groupIndex) in config.groups"
+          :key="`${group.id}:${dragEpoch}`"
+          :group="group"
+          :index="groupIndex"
+          :can-reorder="canReorder"
+          :can-create="canCreate"
+          :can-edit="canEdit"
+          :can-delete="canDelete"
+          :can-move-up="groupIndex > 0"
+          :can-move-down="groupIndex < config.groups.length - 1"
+          @create-item="openCreateItem"
+          @edit-group="openEditGroup"
+          @delete-group="
+            deleteTarget = {
+              type: 'group',
+              id: $event.id,
+              name: $event.name,
+            }
+          "
+          @edit-item="openEditItem"
+          @delete-item="
+            deleteTarget = {
+              type: 'item',
+              id: $event.permissionCode,
+              name: $event.name,
+            }
+          "
+          @move-up="moveGroup(group.id, -1)"
+          @move-down="moveGroup(group.id, 1)"
+          @move-item="moveItem"
+        />
       </div>
-      <div
-        v-for="group in config?.groups"
-        :key="group.id"
-        class="card rounded-xl border border-base-content/10"
-        @dragover.prevent
-        @drop="handleGroupDrop(group.id)"
-      >
-        <div class="card-body p-0">
-          <div class="flex items-center justify-between gap-3 border-b border-base-content/10 px-4 py-3">
-            <div class="flex min-w-0 items-center gap-2">
-              <button
-                v-if="auth.hasPermission('menus.reorder')"
-                type="button"
-                draggable="true"
-                class="cursor-grab text-base-content/40"
-                @dragstart="dragState = { type: 'group', groupId: group.id }"
-                @dragend="dragState = null"
-              >
-                <GripVertical class="size-4" />
-              </button>
-              <h3 class="truncate font-semibold">{{ group.name }}</h3>
-              <span v-if="group.isSystem" class="badge badge-ghost badge-sm">内置</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <button
-                v-if="auth.hasPermission('menus.create')"
-                class="btn btn-ghost btn-sm"
-                @click="openCreateItem(group.id)"
-              >
-                <Plus class="size-4" />
-                新增菜单
-              </button>
-              <button
-                v-if="auth.hasPermission('menus.edit')"
-                class="btn btn-ghost btn-sm btn-square"
-                @click="openEditGroup(group)"
-              >
-                <Pencil class="size-4" />
-              </button>
-              <button
-                v-if="auth.hasPermission('menus.delete') && !group.isSystem"
-                class="btn btn-ghost btn-sm btn-square"
-                @click="askDeleteGroup(group)"
-              >
-                <Trash2 class="size-4" />
-              </button>
-            </div>
-          </div>
-          <div class="flex flex-col gap-1 p-2">
-            <div
-              v-for="item in group.items"
-              :key="item.permissionCode"
-              :draggable="auth.hasPermission('menus.reorder')"
-              class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-base-200"
-              @dragstart.stop="
-                dragState = {
-                  type: 'item',
-                  groupId: group.id,
-                  permissionCode: item.permissionCode,
-                }
-              "
-              @dragend="dragState = null"
-              @dragover.prevent
-              @drop.stop="dropItem(group.id, item.permissionCode)"
-            >
-              <div class="flex min-w-0 items-center gap-3">
-                <GripVertical class="size-4 shrink-0 cursor-grab text-base-content/30" />
-                <MenuIcon :name="item.icon" class="size-4 shrink-0" />
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-medium">{{ item.name }}</p>
-                  <p class="truncate text-xs text-base-content/50">{{ item.route }}</p>
-                </div>
-                <span v-if="item.isSystem" class="badge badge-ghost badge-sm">内置</span>
-              </div>
-              <div class="flex shrink-0 items-center gap-1">
-                <button
-                  v-if="auth.hasPermission('menus.edit')"
-                  class="btn btn-ghost btn-xs btn-square"
-                  @click="openEditItem(item)"
+    </DragDropProvider>
+
+    <FormDialog
+      :open="groupOpen"
+      :title="editingGroup ? '编辑分组' : '新增分组'"
+      description="分组名称仅用于侧边栏展示。"
+      :submitting="submitting"
+      @update:open="groupOpen = $event"
+      @submit="submitGroup"
+    >
+      <FieldGroup>
+        <Field>
+          <FieldLabel for="group-name">分组名称</FieldLabel>
+          <Input
+            id="group-name"
+            v-model="groupName"
+            name="group-name"
+            autocomplete="off"
+            required
+          />
+        </Field>
+      </FieldGroup>
+    </FormDialog>
+
+    <FormDialog
+      :open="itemOpen"
+      :title="editingItem ? '编辑菜单' : '新增菜单'"
+      description="菜单路由需要由前端页面提供。"
+      :submitting="submitting"
+      @update:open="itemOpen = $event"
+      @submit="submitItem"
+    >
+      <FieldGroup>
+        <Field>
+          <FieldLabel for="item-code">权限编码</FieldLabel>
+          <Input
+            id="item-code"
+            v-model="itemForm.permissionCode"
+            name="item-code"
+            autocomplete="off"
+            :spellcheck="false"
+            :disabled="!!editingItem"
+            required
+            pattern="^[a-z0-9_.-]+$"
+            title="只能包含小写字母、数字、点、下划线和连字符"
+          />
+        </Field>
+        <Field>
+          <FieldLabel for="item-name">菜单名称</FieldLabel>
+          <Input
+            id="item-name"
+            v-model="itemForm.name"
+            name="item-name"
+            autocomplete="off"
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel>所属分组</FieldLabel>
+          <Select v-model="itemForm.groupId">
+            <SelectTrigger class="w-full" aria-label="所属分组">
+              <SelectValue placeholder="请选择分组" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem
+                  v-for="group in config?.groups ?? []"
+                  :key="group.id"
+                  :value="group.id"
                 >
-                  <Pencil class="size-3" />
-                </button>
-                <button
-                  v-if="auth.hasPermission('menus.delete') && !item.isSystem"
-                  class="btn btn-ghost btn-xs btn-square"
-                  @click="askDeleteItem(item)"
-                >
-                  <Trash2 class="size-3" />
-                </button>
-              </div>
-            </div>
-            <div v-if="group.items.length === 0" class="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-base-content/50">
-              暂无菜单
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <dialog :class="{ modal: true, 'modal-open': groupOpen }">
-      <div class="modal-box">
-        <h3 class="text-lg font-bold">{{ editingGroup ? '编辑分组' : '新增分组' }}</h3>
-        <form @submit.prevent="submitGroup">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">分组名称</legend>
-            <input v-model="groupName" class="input input-bordered w-full" required />
-          </fieldset>
-          <div class="modal-action">
-            <button type="button" class="btn" @click="groupOpen = false">取消</button>
-            <button type="submit" class="btn btn-primary" :disabled="submitting">
-              <span v-if="submitting" class="loading loading-spinner loading-sm"></span>
-              保存
-            </button>
-          </div>
-        </form>
-      </div>
-      <form method="dialog" class="modal-backdrop"><button @click="groupOpen = false">close</button></form>
-    </dialog>
-
-    <dialog :class="{ modal: true, 'modal-open': itemOpen }">
-      <div class="modal-box">
-        <h3 class="text-lg font-bold">{{ editingItem ? '编辑菜单' : '新增菜单' }}</h3>
-        <form @submit.prevent="submitItem">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">权限编码</legend>
-            <input
-              v-model="itemForm.permissionCode"
-              class="input input-bordered w-full"
-              :disabled="!!editingItem"
-              required
-            />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">菜单名称</legend>
-            <input v-model="itemForm.name" class="input input-bordered w-full" required />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">所属分组</legend>
-            <select v-model="itemForm.groupId" class="select select-bordered w-full">
-              <option v-for="group in config?.groups" :key="group.id" :value="group.id">
-                {{ group.name }}
-              </option>
-            </select>
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">路由</legend>
-            <input
-              v-model="itemForm.route"
-              class="input input-bordered w-full"
-              placeholder="/settings/example"
-              required
-            />
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">图标</legend>
-            <IconPicker v-model="itemForm.icon" />
-          </fieldset>
-          <div class="modal-action">
-            <button type="button" class="btn" @click="itemOpen = false">取消</button>
-            <button type="submit" class="btn btn-primary" :disabled="submitting">
-              <span v-if="submitting" class="loading loading-spinner loading-sm"></span>
-              保存
-            </button>
-          </div>
-        </form>
-      </div>
-      <form method="dialog" class="modal-backdrop"><button @click="itemOpen = false">close</button></form>
-    </dialog>
+                  {{ group.name }}
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel for="item-route">路由</FieldLabel>
+          <Input
+            id="item-route"
+            v-model="itemForm.route"
+            name="item-route"
+            autocomplete="off"
+            :spellcheck="false"
+            placeholder="/settings/example"
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel>图标</FieldLabel>
+          <IconPicker v-model="itemForm.icon" />
+        </Field>
+      </FieldGroup>
+    </FormDialog>
 
     <ConfirmDeleteDialog
-      :open="deleteOpen"
+      :open="!!deleteTarget"
       :target-name="deleteTarget?.name || ''"
-      :description="deleteTarget?.type === 'group' ? '仅空分组可以删除。' : '对应菜单权限和角色授权也会被删除。'"
+      :description="
+        deleteTarget?.type === 'group'
+          ? '仅空分组可以删除。'
+          : '对应菜单权限和角色授权也会被删除。'
+      "
       :loading="deleteLoading"
-      @update:open="deleteOpen = $event"
+      @update:open="
+        (open) => {
+          if (!open) deleteTarget = null
+        }
+      "
       @confirm="confirmDelete"
     />
   </div>

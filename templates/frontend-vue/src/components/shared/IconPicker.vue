@@ -1,35 +1,38 @@
 <script setup lang="ts">
-defineProps<{
-  modelValue: string
-}>()
+import { iconOptions, menuIcons, type MenuIconName } from "@/lib/icons"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
-
-const options = [
-  { value: 'circle', label: '默认' },
-  { value: 'layout-dashboard', label: '仪表盘' },
-  { value: 'users', label: '用户' },
-  { value: 'shield-check', label: '角色' },
-  { value: 'key-round', label: '权限' },
-  { value: 'panel-left', label: '菜单' },
-  { value: 'settings', label: '设置' },
-  { value: 'bot', label: 'AI' },
-  { value: 'file-text', label: '文档' },
-  { value: 'database', label: '数据' },
-]
-
+const model = defineModel<string>({ default: "circle" })
 </script>
 
 <template>
-  <select
-    class="select select-bordered w-full"
-    :value="modelValue"
-    @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
-  >
-    <option v-for="item in options" :key="item.value" :value="item.value">
-      {{ item.label }}
-    </option>
-  </select>
+  <Select v-model="model">
+    <SelectTrigger class="w-full" aria-label="选择图标">
+      <SelectValue placeholder="选择图标" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectGroup>
+        <SelectItem
+          v-for="item in iconOptions"
+          :key="item.value"
+          :value="item.value"
+        >
+          <span class="flex items-center gap-2">
+            <component
+              :is="menuIcons[item.value as MenuIconName]"
+              class="size-4"
+            />
+            {{ item.label }}
+          </span>
+        </SelectItem>
+      </SelectGroup>
+    </SelectContent>
+  </Select>
 </template>

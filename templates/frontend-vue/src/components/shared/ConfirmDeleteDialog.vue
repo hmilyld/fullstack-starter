@@ -1,58 +1,57 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { Spinner } from "@/components/ui/spinner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-const props = defineProps<{
-  open: boolean
-  targetName: string
-  description?: string
-  loading?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    open: boolean
+    targetName: string
+    description?: string
+    loading?: boolean
+  }>(),
+  {
+    loading: false,
+  }
+)
 
 const emit = defineEmits<{
-  (e: 'update:open', value: boolean): void
-  (e: 'confirm'): void
+  (e: "update:open", value: boolean): void
+  (e: "confirm"): void
 }>()
-
-const dialog = ref<HTMLDialogElement | null>(null)
-const cancelBtn = ref<HTMLButtonElement | null>(null)
-
-watch(() => props.open, async (val) => {
-  if (val) {
-    dialog.value?.showModal()
-    await nextTick()
-    cancelBtn.value?.focus()
-  } else {
-    dialog.value?.close()
-  }
-})
-
-function close() {
-  emit('update:open', false)
-}
 </script>
 
 <template>
-  <dialog
-    ref="dialog"
-    class="modal"
-    @close="close"
-  >
-    <div class="modal-box">
-      <h3 class="text-lg font-bold">确认删除</h3>
-      <p class="py-4">
-        确定要删除 <span class="font-bold">{{ targetName }}</span> 吗？此操作不可撤销。
-        <span v-if="description" class="block mt-1 text-base-content/70">{{ description }}</span>
-      </p>
-      <div class="modal-action">
-        <button ref="cancelBtn" class="btn" @click="close">取消</button>
-        <button class="btn btn-error" :disabled="loading" @click="emit('confirm')">
-          <span v-if="loading" class="loading loading-spinner loading-sm"></span>
+  <AlertDialog :open="open" @update:open="emit('update:open', $event)">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>确认删除</AlertDialogTitle>
+        <AlertDialogDescription>
+          确定要删除
+          <span class="font-medium text-foreground">{{ targetName }}</span>
+          吗？此操作不可撤销。
+          <template v-if="description"> {{ description }}</template>
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>取消</AlertDialogCancel>
+        <AlertDialogAction
+          variant="destructive"
+          :disabled="loading"
+          @click.prevent="emit('confirm')"
+        >
+          <Spinner v-if="loading" data-icon="inline-start" />
           删除
-        </button>
-      </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>

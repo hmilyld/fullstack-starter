@@ -1,32 +1,94 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
-import { RouterView } from 'vue-router'
-import { useSiteConfigStore } from '@/stores/site-config'
-import UnsupportedViewport from '@/components/UnsupportedViewport.vue'
+import { onErrorCaptured, onMounted, watch } from "vue"
+import { RouterLink, RouterView, useRoute } from "vue-router"
+import { TriangleAlert } from "@lucide/vue"
+import EmptyState from "@/components/shared/EmptyState.vue"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Toaster } from "@/components/ui/sonner"
+import { useMediaQuery } from "@/composables/use-media-query"
+import { usePwaManifest } from "@/composables/use-pwa-manifest"
+import { appError, clearAppError, setAppError } from "@/lib/app-error"
+import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from "@/lib/pwa"
+import { useSiteConfigStore } from "@/stores/site-config"
+import { useThemeStore } from "@/stores/theme"
 
+const route = useRoute()
 const siteConfig = useSiteConfigStore()
+const themeStore = useThemeStore()
+const isDesktop = useMediaQuery("(min-width: 768px)")
+
+usePwaManifest()
 
 onMounted(async () => {
   await siteConfig.fetchConfig()
 })
 
-watch(() => siteConfig.config, (config) => {
-  if (config) {
-    document.title = config.siteName || '管理系统'
-    let metaDesc = document.querySelector('meta[name="description"]')
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta')
-      metaDesc.setAttribute('name', 'description')
-      document.head.appendChild(metaDesc)
-    }
-    metaDesc.setAttribute('content', config.siteDescription || '')
+onErrorCaptured((error) => {
+  setAppError(error)
+  return false
+})
+
+watch(
+  () => route.fullPath,
+  () => {
+    clearAppError()
   }
-}, { immediate: true })
+)
+
+watch(
+  () => siteConfig.config,
+  (config) => {
+    if (config) {
+      document.title = config.siteName || DEFAULT_SITE_NAME
+      let metaDesc = document.querySelector('meta[name="description"]')
+      if (!metaDesc) {
+        metaDesc = document.createElement("meta")
+        metaDesc.setAttribute("name", "description")
+        document.head.appendChild(metaDesc)
+      }
+      metaDesc.setAttribute(
+        "content",
+        config.siteDescription || DEFAULT_SITE_DESCRIPTION
+      )
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
-  <UnsupportedViewport />
-  <div class="hidden md:block">
-    <RouterView />
+  <div v-if="appError" class="flex min-h-svh items-center justify-center p-6">
+    <EmptyState
+      class="max-w-lg"
+      :icon="TriangleAlert"
+      title="页面加载失败"
+      :description="appError"
+    >
+      <template #action>
+        <Button as-child>
+          <RouterLink to="/dashboard" @click="clearAppError()"
+            >返回仪表盘</RouterLink
+          >
+        </Button>
+      </template>
+    </EmptyState>
   </div>
+  <div
+    v-else-if="siteConfig.loading"
+    class="flex min-h-svh items-center justify-center"
+  >
+    <div class="flex flex-col items-center gap-4">
+      <Skeleton class="h-8 w-48" />
+      <Skeleton class="h-4 w-32" />
+    </div>
+  </div>
+  <RouterView v-else />
+  <Toaster
+    :theme="themeStore.resolvedTheme"
+    :position="isDesktop ? 'bottom-right' : 'top-center'"
+    :mobile-offset="{ top: '4.5rem' }"
+    rich-colors
+    close-button
+  />
 </template>

@@ -1,16 +1,16 @@
-import { apiClient } from '@/api/client'
-import type { MenuConfig, NavigationGroup } from '@/types/menu'
+import { apiClient } from "@/api/client"
+import type { MenuConfig, NavigationGroup } from "@/types/menu"
 
 export function getNavigation() {
-  return apiClient.get<NavigationGroup[]>('/menus/navigation')
+  return apiClient.get<NavigationGroup[]>("/menus/navigation")
 }
 
 export function getMenuConfig() {
-  return apiClient.get<MenuConfig>('/menus')
+  return apiClient.get<MenuConfig>("/menus")
 }
 
 export function createMenuGroup(name: string) {
-  return apiClient.post('/menus/groups', { name })
+  return apiClient.post("/menus/groups", { name })
 }
 
 export function updateMenuGroup(id: string, name: string) {
@@ -28,7 +28,7 @@ export function createMenuItem(data: {
   route: string
   icon: string
 }) {
-  return apiClient.post('/menus/items', data)
+  return apiClient.post("/menus/items", data)
 }
 
 export function updateMenuItem(
@@ -38,7 +38,7 @@ export function updateMenuItem(
     groupId?: string
     route?: string
     icon?: string
-  },
+  }
 ) {
   return apiClient.put(`/menus/items/${permissionCode}`, data)
 }
@@ -55,5 +55,5 @@ export function saveMenuLayout(data: {
     items: Array<{ permissionCode: string; sortOrder: number }>
   }>
 }) {
-  return apiClient.put<{ version: number }>('/menus/layout', data)
+  return apiClient.put<{ version: number }>("/menus/layout", data)
 }

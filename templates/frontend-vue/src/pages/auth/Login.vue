@@ -1,137 +1,136 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useSiteConfigStore } from '@/stores/site-config'
-import { login as apiLogin } from '@/api/auth'
-import { useToast } from '@/composables/use-toast'
+import { computed, ref } from "vue"
+import { RouterLink, useRouter } from "vue-router"
+import AuthShell from "@/components/shared/AuthShell.vue"
+import LoadingButton from "@/components/shared/LoadingButton.vue"
+import PasswordInput from "@/components/shared/PasswordInput.vue"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { login as apiLogin } from "@/api/auth"
+import { useAuthStore } from "@/stores/auth"
+import { useSiteConfigStore } from "@/stores/site-config"
+import { useToast } from "@/composables/use-toast"
 
-const router = useRouter()
 const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
+const router = useRouter()
 const toast = useToast()
 
-const account = ref('')
-const password = ref('')
+const account = ref("")
+const password = ref("")
+const passwordError = ref<string | null>(null)
 const submitting = ref(false)
-const errorMessage = ref('')
-const touched = ref({ account: false, password: false })
 
-const maintenanceEnabled = siteConfig.config !== null && siteConfig.config.maintenanceEnabled
-
-const accountError = ref('')
-const passwordError = ref('')
-
-function validateAccount() {
-  if (!account.value) {
-    accountError.value = '请输入邮箱或用户名'
-    return false
-  }
-  accountError.value = ''
-  return true
-}
-
-function validatePassword() {
-  if (!password.value) {
-    passwordError.value = '请输入密码'
-    return false
-  }
-  if (password.value.length < 6) {
-    passwordError.value = '密码至少6个字符'
-    return false
-  }
-  passwordError.value = ''
-  return true
-}
-
-function handleBlur(field: 'account' | 'password') {
-  touched.value[field] = true
-  if (field === 'account') validateAccount()
-  else validatePassword()
-}
+const maintenanceEnabled = computed(
+  () => siteConfig.config !== null && siteConfig.config.maintenanceEnabled
+)
 
 async function handleSubmit() {
-  touched.value = { account: true, password: true }
-  const accountValid = validateAccount()
-  const passwordValid = validatePassword()
-  if (!accountValid || !passwordValid) return
+  if (password.value.length < 6) {
+    passwordError.value = "密码至少 6 位"
+    return
+  }
 
+  passwordError.value = null
   submitting.value = true
-  errorMessage.value = ''
   const res = await apiLogin(account.value, password.value)
   if (res.code === 0) {
     auth.login(res.data.token, res.data.user)
-    toast.success('登录成功')
-    router.push('/dashboard')
-  } else {
-    errorMessage.value = res.message || '登录失败'
+    toast.success("登录成功")
+    await router.replace("/dashboard")
+    return
   }
+
+  toast.error(res.message || "登录失败")
   submitting.value = false
 }
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center p-6">
-    <div class="w-full max-w-sm">
-      <div v-if="maintenanceEnabled" role="alert" class="mb-4 rounded-lg border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
-        <div class="font-medium">系统维护中</div>
-        <div class="mt-1 text-xs opacity-80">{{ siteConfig.config?.maintenanceMessage || '系统正在维护中，请稍后再试。' }}</div>
-      </div>
+  <AuthShell>
+    <div class="flex flex-col gap-6">
+      <Alert v-if="maintenanceEnabled">
+        <AlertTitle>系统维护中</AlertTitle>
+        <AlertDescription>
+          {{
+            siteConfig.config?.maintenanceMessage ||
+            "系统正在维护中，请稍后再试。"
+          }}
+        </AlertDescription>
+      </Alert>
 
-      <div class="card border border-base-content/10 rounded-xl">
-        <div class="card-body">
-          <h2 class="card-title justify-center text-lg">欢迎回来</h2>
-          <p class="text-center text-xs text-base-content/50">使用邮箱或用户名登录您的账户</p>
-
-          <div v-if="errorMessage" role="alert" class="mb-2 rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-sm text-error">
-            {{ errorMessage }}
-          </div>
-
+      <Card>
+        <CardHeader class="text-center">
+          <CardTitle class="text-xl">欢迎回来</CardTitle>
+          <CardDescription>使用邮箱或用户名登录您的账户</CardDescription>
+        </CardHeader>
+        <CardContent>
           <form @submit.prevent="handleSubmit">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs">邮箱或用户名</legend>
-              <input
-                v-model="account"
-                type="text"
-                placeholder="请输入邮箱或用户名"
-                class="input input-bordered input-sm w-full"
-                :class="{ 'input-error': touched.account && accountError }"
-                required
-                @blur="handleBlur('account')"
-              />
-              <span v-if="touched.account && accountError" class="text-xs text-error mt-1">{{ accountError }}</span>
-            </fieldset>
-
-            <fieldset class="fieldset mt-1">
-              <legend class="fieldset-legend text-xs">密码</legend>
-              <input
-                v-model="password"
-                type="password"
-                placeholder="请输入密码"
-                class="input input-bordered input-sm w-full"
-                :class="{ 'input-error': touched.password && passwordError }"
-                required
-                @blur="handleBlur('password')"
-              />
-              <span v-if="touched.password && passwordError" class="text-xs text-error mt-1">{{ passwordError }}</span>
-            </fieldset>
-
-            <button
-              type="submit"
-              class="btn btn-primary btn-sm mt-3 w-full"
-              :disabled="submitting"
-            >
-              <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
-              登录
-            </button>
-
-            <p class="mt-3 text-center text-xs text-base-content/50">
-              还没有账号？
-              <RouterLink to="/register" class="link link-primary">立即注册</RouterLink>
-            </p>
+            <FieldGroup>
+              <Field>
+                <FieldLabel for="account">邮箱或用户名</FieldLabel>
+                <Input
+                  id="account"
+                  v-model="account"
+                  name="account"
+                  placeholder="请输入邮箱或用户名"
+                  autocomplete="username"
+                  :spellcheck="false"
+                  required
+                />
+              </Field>
+              <Field :data-invalid="!!passwordError">
+                <FieldLabel for="password">密码</FieldLabel>
+                <PasswordInput
+                  id="password"
+                  v-model="password"
+                  name="password"
+                  placeholder="请输入密码"
+                  autocomplete="current-password"
+                  :aria-invalid="!!passwordError"
+                  required
+                  @update:model-value="passwordError = null"
+                />
+                <FieldError v-if="passwordError">{{
+                  passwordError
+                }}</FieldError>
+              </Field>
+              <Field>
+                <LoadingButton
+                  type="submit"
+                  class="w-full"
+                  :loading="submitting"
+                >
+                  登录
+                </LoadingButton>
+                <FieldDescription class="text-center">
+                  还没有账号？
+                  <RouterLink
+                    to="/register"
+                    class="underline-offset-4 hover:underline"
+                  >
+                    立即注册
+                  </RouterLink>
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
-  </div>
+  </AuthShell>
 </template>

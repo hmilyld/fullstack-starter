@@ -1,119 +1,247 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getDashboardStats, getDashboardActivity } from '@/api/dashboard'
-import type { DashboardStats, ActivityItem } from '@/types/dashboard'
+import { computed, onMounted, ref } from "vue"
+import { RouterLink } from "vue-router"
 import {
-  Users,
   Activity,
+  ChevronRight,
+  Database,
   DollarSign,
+  FileText,
+  Info,
+  RefreshCw,
+  ShieldCheck,
   TrendingUp,
-} from 'lucide-vue-next'
+  Users,
+} from "@lucide/vue"
+import EmptyState from "@/components/shared/EmptyState.vue"
+import ErrorState from "@/components/shared/ErrorState.vue"
+import InlineError from "@/components/shared/InlineError.vue"
+import PageHeader from "@/components/shared/PageHeader.vue"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { getDashboardActivity, getDashboardStats } from "@/api/dashboard"
+import { useAuthStore } from "@/stores/auth"
+import { cn } from "@/lib/utils"
+import type { ActivityItem, DashboardStats } from "@/types/dashboard"
 
+const QUICK_LINKS = [
+  {
+    href: "/settings/user",
+    label: "用户管理",
+    description: "维护团队成员及其角色",
+    icon: Users,
+    permission: "users",
+  },
+  {
+    href: "/settings/role",
+    label: "角色管理",
+    description: "分配角色与权限",
+    icon: ShieldCheck,
+    permission: "roles",
+  },
+  {
+    href: "/settings/audit-log",
+    label: "审计日志",
+    description: "查看写操作与权限拦截",
+    icon: FileText,
+    permission: "audit_logs",
+  },
+  {
+    href: "/settings/data",
+    label: "数据管理",
+    description: "导出或恢复系统数据",
+    icon: Database,
+    permission: "data_management.export",
+  },
+]
+
+const auth = useAuthStore()
 const stats = ref<DashboardStats | null>(null)
 const activity = ref<ActivityItem[]>([])
 const loading = ref(true)
+const error = ref<string | null>(null)
 
-onMounted(async () => {
+async function load() {
+  loading.value = true
+  error.value = null
   const [statsRes, activityRes] = await Promise.all([
     getDashboardStats(),
     getDashboardActivity(),
   ])
   if (statsRes.code === 0) stats.value = statsRes.data
   if (activityRes.code === 0) activity.value = activityRes.data
+  if (statsRes.code !== 0 || activityRes.code !== 0) {
+    error.value = statsRes.message || activityRes.message || "加载数据失败"
+  }
   loading.value = false
+}
+
+onMounted(() => {
+  void load()
 })
 
-const statItems = [
-  { title: '总用户数', key: 'totalUsers' as const, icon: Users, change: '+20.1%', description: '较上月' },
-  { title: '当前活跃', key: 'activeNow' as const, icon: Activity, change: '+12.2%', description: '较上小时' },
-  { title: '收入', key: 'revenue' as const, icon: DollarSign, change: '+15.3%', description: '较上月' },
-  { title: '增长率', key: 'growth' as const, icon: TrendingUp, change: '+4.5%', description: '较上季度' },
-]
+const statItems = computed(() =>
+  stats.value
+    ? [
+        {
+          title: "总用户数",
+          value: String(stats.value.totalUsers),
+          icon: Users,
+        },
+        {
+          title: "当前活跃",
+          value: String(stats.value.activeNow),
+          icon: Activity,
+        },
+        { title: "收入", value: stats.value.revenue, icon: DollarSign },
+        { title: "增长率", value: stats.value.growth, icon: TrendingUp },
+      ]
+    : []
+)
+
+const quickLinks = computed(() =>
+  QUICK_LINKS.filter((link) => auth.hasPermission(link.permission))
+)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div>
-      <h1 class="text-xl font-semibold">仪表盘</h1>
-      <p class="text-sm text-base-content/50">欢迎回来，以下是您的项目概览。</p>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <template v-if="loading">
-        <div v-for="i in 4" :key="i" class="card border border-base-content/10 rounded-xl bg-transparent">
-          <div class="card-body">
-            <div class="skeleton h-3 w-16"></div>
-            <div class="skeleton mb-1 h-6 w-20"></div>
-            <div class="skeleton h-3 w-24"></div>
-          </div>
-        </div>
+  <div class="flex flex-col gap-(--page-gap)">
+    <PageHeader title="仪表盘" description="欢迎回来，以下是系统概览。">
+      <template #actions>
+        <Button variant="outline" :disabled="loading" @click="load">
+          <RefreshCw data-icon="inline-start" />
+          刷新
+        </Button>
       </template>
-      <template v-else>
-        <div v-for="stat in statItems" :key="stat.title" class="card border border-base-content/10 rounded-xl bg-transparent">
-          <div class="card-body">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-base-content/50">{{ stat.title }}</span>
-              <component :is="stat.icon" class="size-4 text-base-content/30" />
-            </div>
-            <div class="text-xl font-semibold">{{ stats?.[stat.key] }}</div>
-            <p class="text-xs text-base-content/40">
-              <span class="text-success">{{ stat.change }}</span>
-              {{ stat.description }}
-            </p>
-          </div>
-        </div>
-      </template>
-    </div>
+    </PageHeader>
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <div class="card border border-base-content/10 rounded-xl bg-transparent">
-        <div class="card-body">
-          <h3 class="text-sm font-medium">最近动态</h3>
-          <div class="flex flex-col gap-3">
-            <template v-if="loading">
-              <div v-for="i in 5" :key="i" class="flex items-center justify-between">
+    <Alert>
+      <Info />
+      <AlertTitle>演示数据</AlertTitle>
+      <AlertDescription>
+        “当前活跃”“收入”“增长率”和“最近动态”由后端占位接口返回，接入真实业务统计后请替换。
+      </AlertDescription>
+    </Alert>
+
+    <InlineError v-if="error && stats" :message="error" :on-retry="load" />
+
+    <ErrorState v-if="error && !stats" :message="error" :on-retry="load" />
+
+    <template v-else>
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <template v-if="loading">
+          <Card v-for="index in 4" :key="index">
+            <CardHeader class="flex flex-row items-center justify-between">
+              <Skeleton class="h-4 w-20" />
+              <Skeleton class="size-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton class="h-8 w-24" />
+            </CardContent>
+          </Card>
+        </template>
+        <template v-else>
+          <Card v-for="stat in statItems" :key="stat.title">
+            <CardHeader class="flex flex-row items-center justify-between">
+              <CardTitle class="text-sm font-medium">
+                {{ stat.title }}
+              </CardTitle>
+              <component :is="stat.icon" class="text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold tabular-nums">
+                {{ stat.value }}
+              </div>
+            </CardContent>
+          </Card>
+        </template>
+      </div>
+
+      <div :class="cn('grid gap-4', quickLinks.length > 0 && 'md:grid-cols-2')">
+        <Card>
+          <CardHeader>
+            <CardTitle>最近动态</CardTitle>
+            <CardDescription>工作区中的最新操作记录。</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div v-if="loading" class="flex flex-col gap-4">
+              <div
+                v-for="index in 5"
+                :key="index"
+                class="flex items-center justify-between"
+              >
                 <div class="flex flex-col gap-1">
-                  <div class="skeleton h-3 w-16"></div>
-                  <div class="skeleton h-3 w-28"></div>
+                  <Skeleton class="h-4 w-16" />
+                  <Skeleton class="h-3 w-32" />
                 </div>
-                <div class="skeleton h-3 w-12"></div>
-              </div>
-            </template>
-            <template v-else>
-              <div v-for="item in activity" :key="item.user" class="flex items-center justify-between">
-                <div class="flex flex-col">
-                  <span class="text-sm">{{ item.user }}</span>
-                  <span class="text-xs text-base-content/40">{{ item.action }}</span>
-                </div>
-                <span class="text-xs text-base-content/40">{{ item.time }}</span>
-              </div>
-            </template>
-          </div>
-        </div>
-      </div>
-
-      <div class="card border border-base-content/10 rounded-xl bg-transparent">
-        <div class="card-body">
-          <h3 class="text-sm font-medium">快捷操作</h3>
-          <div class="flex flex-col gap-2">
-            <div
-              v-for="action in [
-                { label: '创建项目', desc: '开始一个新的工作空间' },
-                { label: '邀请团队', desc: '添加协作者' },
-                { label: '查看报表', desc: '数据分析与洞察' },
-                { label: '管理账单', desc: '更新支付方式' },
-              ]"
-              :key="action.label"
-              class="flex cursor-pointer items-center justify-between rounded-xl border border-base-content/10 p-3 transition-colors hover:border-base-content/20"
-            >
-              <div>
-                <div class="text-sm">{{ action.label }}</div>
-                <div class="text-xs text-base-content/40">{{ action.desc }}</div>
+                <Skeleton class="h-3 w-16" />
               </div>
             </div>
-          </div>
-        </div>
+            <EmptyState
+              v-else-if="activity.length === 0"
+              :icon="Activity"
+              title="暂无动态"
+              description="系统产生操作记录后会显示在这里。"
+            />
+            <div v-else class="flex flex-col gap-4">
+              <div
+                v-for="(item, index) in activity"
+                :key="`${item.user}-${index}`"
+                class="flex items-center justify-between gap-3"
+              >
+                <div class="flex min-w-0 flex-col">
+                  <span class="truncate text-sm font-medium">
+                    {{ item.user }}
+                  </span>
+                  <span class="truncate text-xs text-muted-foreground">
+                    {{ item.action }}
+                  </span>
+                </div>
+                <span class="shrink-0 text-xs text-muted-foreground">
+                  {{ item.time }}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card v-if="quickLinks.length > 0">
+          <CardHeader>
+            <CardTitle>快捷入口</CardTitle>
+            <CardDescription>只显示您有权限访问的页面。</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="flex flex-col gap-2">
+              <RouterLink
+                v-for="link in quickLinks"
+                :key="link.href"
+                :to="link.href"
+                class="flex items-center gap-3 rounded-xl border p-3 transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30"
+              >
+                <component
+                  :is="link.icon"
+                  class="size-4 shrink-0 text-muted-foreground"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-medium">{{ link.label }}</div>
+                  <div class="truncate text-xs text-muted-foreground">
+                    {{ link.description }}
+                  </div>
+                </div>
+                <ChevronRight class="size-4 shrink-0 text-muted-foreground" />
+              </RouterLink>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </template>
   </div>
 </template>

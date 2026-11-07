@@ -6,7 +6,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 
 ## Features
 
-- 🎨 **Choose a frontend**: React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui, with PWA; name, description and theme color adapt to site settings) or Vue 3 (Vite + TypeScript + Tailwind CSS v4 + DaisyUI)
+- 🎨 **Choose a frontend**: React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui, with PWA; name, description and theme color adapt to site settings) or Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI, with PWA; name, description and theme color adapt to site settings)
 - ⚙️ **Choose a backend**: Python (FastAPI) or Java (Spring Boot)
 - 🔐 **Authentication built in**: login, registration, logout (Python uses JWT, Java uses Sa-Token), maintenance mode, and manual review
 - 🧩 **Complete modules**: users, roles, permissions, menus, system settings, AI models and presets, audit logs, data management, dashboard
@@ -155,6 +155,7 @@ mkdir -p templates/frontend-svelte
 npm run dev
 # Choose frontend/backend/project name, then verify the generated project:
 cd <generated project>/frontend && npm install && npm run build
+cd <generated project>/frontend && npm test && npx playwright install chromium && npm run test:e2e
 cd <generated project>/backend && start the backend
 ```
 
@@ -165,11 +166,11 @@ cd <generated project>/backend && start the backend
 | Framework | React 19 | Vue 3.5+ (Composition API) |
 | Build | Vite | Vite |
 | Language | TypeScript | TypeScript |
-| Styling | Tailwind CSS v4 + shadcn/ui (with PWA) | Tailwind CSS v4 + DaisyUI |
+| Styling | Tailwind CSS v4 + shadcn/ui (with PWA) | Tailwind CSS v4 + shadcn-vue + Reka UI (with PWA) |
 | HTTP | Native fetch wrapper (auto logout on 401) | Native fetch wrapper (auto logout on 401) |
-| Routing | react-router v7 | vue-router v4 |
+| Routing | react-router v7 | vue-router v5 |
 | State | React Context (lib/) | Pinia (stores/) |
-| Icons | lucide-react | lucide-vue-next |
+| Icons | lucide-react | @lucide/vue |
 
 | Component | Python template | Java template |
 |-----------|-----------------|---------------|

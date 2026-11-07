@@ -1,0 +1,55 @@
+<script setup lang="ts">
+import type { AlertDialogContentEmits, AlertDialogContentProps } from "reka-ui"
+import type { HTMLAttributes } from "vue"
+import { reactiveOmit } from "@vueuse/core"
+import { cn } from "@/lib/utils"
+import {
+  AlertDialogContent,
+  AlertDialogOverlay,
+  AlertDialogPortal,
+  useForwardPropsEmits,
+} from "reka-ui"
+
+defineOptions({
+  inheritAttrs: false,
+})
+
+const props = withDefaults(
+  defineProps<
+    AlertDialogContentProps & {
+      class?: HTMLAttributes["class"]
+      size?: "default" | "sm"
+    }
+  >(),
+  {
+    size: "default",
+  }
+)
+const emits = defineEmits<AlertDialogContentEmits>()
+
+const delegatedProps = reactiveOmit(props, "class", "size")
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits)
+</script>
+
+<template>
+  <AlertDialogPortal>
+    <AlertDialogOverlay
+      data-slot="alert-dialog-overlay"
+      class="fixed inset-0 z-50 bg-black/30 duration-100 supports-backdrop-filter:backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+    />
+    <AlertDialogContent
+      data-slot="alert-dialog-content"
+      :data-size="size"
+      v-bind="{ ...$attrs, ...forwarded }"
+      :class="
+        cn(
+          'group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-var(--dialog-inset)*2)] w-full -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto overscroll-contain rounded-[min(var(--radius-4xl),24px)] bg-popover p-6 text-popover-foreground shadow-xl ring-1 ring-foreground/5 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-md dark:ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          props.class
+        )
+      "
+    >
+      <slot />
+    </AlertDialogContent>
+  </AlertDialogPortal>
+</template>

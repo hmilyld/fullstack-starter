@@ -1,4 +1,4 @@
-export type PermissionType = 'menu' | 'operation'
+export type PermissionType = "menu" | "operation"
 
 export type Permission = {
   code: string
