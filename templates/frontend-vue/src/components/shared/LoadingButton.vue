@@ -1,19 +1,35 @@
 <script setup lang="ts">
-defineProps<{
-  loading?: boolean
-  disabled?: boolean
-  type?: "button" | "submit" | "reset"
-  class?: string
-}>()
+import type { ButtonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
+import { cn } from "@/lib/utils"
+
+withDefaults(
+  defineProps<{
+    loading?: boolean
+    disabled?: boolean
+    type?: "button" | "submit" | "reset"
+    variant?: ButtonVariants["variant"]
+    size?: ButtonVariants["size"]
+  }>(),
+  {
+    type: "button",
+    variant: "default",
+    size: "default",
+  }
+)
 </script>
 
 <template>
-  <button
-    :type="type || 'button'"
+  <Button
+    :type="type"
+    :variant="variant"
+    :size="size"
+    :aria-busy="loading"
     :disabled="disabled || loading"
-    :class="['btn', $attrs.class]"
+    :class="cn($attrs.class)"
   >
-    <span v-if="loading" class="loading loading-spinner loading-sm"></span>
+    <Spinner v-if="loading" data-icon="inline-start" />
     <slot />
-  </button>
+  </Button>
 </template>

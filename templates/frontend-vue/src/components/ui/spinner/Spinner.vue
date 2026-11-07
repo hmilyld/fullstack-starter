@@ -12,7 +12,7 @@ const props = defineProps<{
 <template>
   <Loader2Icon
     role="status"
-    aria-label="Loading"
+    aria-label="加载中"
     :class="cn('size-4 animate-spin', props.class)"
   />
 </template>
