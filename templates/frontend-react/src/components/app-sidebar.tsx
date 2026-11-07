@@ -74,7 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           onClick={() => {
             if (isMobile) setOpenMobile(false)
           }}
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none group-data-[collapsible=icon]:justify-center focus-visible:ring-3 focus-visible:ring-ring/30"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none group-data-[collapsible=icon]:justify-center focus-visible:ring-3 focus-visible:ring-ring/30 max-md:pr-10"
         >
           <BrandMark />
           <span className="truncate text-base font-semibold group-data-[collapsible=icon]:hidden">
