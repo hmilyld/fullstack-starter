@@ -33,6 +33,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getRoles } from "@/api/role"
 import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
+import { useSiteConfig } from "@/lib/site-config"
 import { appToast } from "@/lib/toast"
 import type { SystemConfig } from "@/types/system"
 
@@ -127,6 +128,7 @@ function SaveFooter({
 }
 
 export function SystemPage() {
+  const { refresh: refreshSiteConfig } = useSiteConfig()
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get("tab")
   const activeTab =
@@ -244,11 +246,12 @@ export function SystemPage() {
       appToast.error("请输入站点名称")
       return
     }
-    await savePatch("site", {
+    const ok = await savePatch("site", {
       siteName: config!.siteName,
       siteDescription: config!.siteDescription,
       keywords: config!.keywords,
     })
+    if (ok) await refreshSiteConfig()
   }
 
   async function handleSaveMaintenance() {

@@ -21,8 +21,8 @@ export function SiteConfigProvider({
   const [config, setConfig] = React.useState<PublicConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
 
-  const fetchConfig = React.useCallback(async () => {
-    setLoading(true)
+  const fetchConfig = React.useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await getPublicConfig()
       if (res.code === 0) {
@@ -35,8 +35,10 @@ export function SiteConfigProvider({
   }, [])
 
   React.useEffect(() => {
-    fetchConfig()
+    void fetchConfig()
   }, [fetchConfig])
+
+  const refresh = React.useCallback(() => fetchConfig(true), [fetchConfig])
 
   // 动态更新页面标题和描述
   React.useEffect(() => {
@@ -59,7 +61,7 @@ export function SiteConfigProvider({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-svh items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-32" />
@@ -69,9 +71,7 @@ export function SiteConfigProvider({
   }
 
   return (
-    <SiteConfigContext.Provider
-      value={{ config, loading, refresh: fetchConfig }}
-    >
+    <SiteConfigContext.Provider value={{ config, loading, refresh }}>
       {children}
     </SiteConfigContext.Provider>
   )

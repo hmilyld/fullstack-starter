@@ -20,7 +20,7 @@ export function Header() {
   const currentCrumb = crumbs[crumbs.length - 1]
 
   return (
-    <header className="sticky top-0 z-20 shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-20 shrink-0 border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex min-h-14 w-full max-w-(--layout-max) items-center gap-2 px-(--layout-gutter) py-2">
         <div className="flex min-w-0 items-center gap-2">
           <SidebarTrigger className="-ml-1" />

@@ -16,7 +16,11 @@ export default defineConfig({
         name: "管理系统",
         short_name: "管理系统",
         description: "基于 React + shadcn/ui 的后台管理框架",
-        theme_color: "#0a0a0a",
+        lang: "zh-CN",
+        id: "/",
+        orientation: "any",
+        categories: ["business", "productivity"],
+        theme_color: "#ffffff",
         background_color: "#ffffff",
         display: "standalone",
         scope: "/",
@@ -32,28 +36,12 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
       },
     }),
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   server: {
