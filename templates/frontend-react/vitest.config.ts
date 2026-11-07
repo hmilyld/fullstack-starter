@@ -16,8 +16,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/components/ui/**", "src/test/**", "src/**/*.d.ts"],
+      // 覆盖率聚焦可单元测试的共享层；页面交互由 smoke test 与三端手工验收覆盖
+      include: [
+        "src/components/shared/**/*.{ts,tsx}",
+        "src/hooks/**/*.{ts,tsx}",
+        "src/lib/**/*.{ts,tsx}",
+        "src/pages/settings/user/index.tsx",
+      ],
+      exclude: ["src/**/*.test.*", "src/test/**", "src/**/*.d.ts"],
     },
   },
 })
