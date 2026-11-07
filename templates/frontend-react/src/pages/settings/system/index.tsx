@@ -521,7 +521,7 @@ export function SystemPage() {
                       updateField("defaultRoleId", value)
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label="默认角色">
                       <SelectValue placeholder="请选择默认角色" />
                     </SelectTrigger>
                     <SelectContent>
@@ -590,7 +590,7 @@ export function SystemPage() {
               <Field>
                 <FieldLabel>快捷配置</FieldLabel>
                 <Select value={smtpPreset} onValueChange={applySmtpPreset}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" aria-label="快捷配置">
                     <SelectValue placeholder="选择常用邮箱快速配置..." />
                   </SelectTrigger>
                   <SelectContent>

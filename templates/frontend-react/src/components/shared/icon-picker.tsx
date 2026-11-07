@@ -19,7 +19,7 @@ export function IconPicker({
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger className="w-full" aria-label="选择图标">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

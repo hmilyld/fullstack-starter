@@ -895,7 +895,7 @@ export function MenuPage() {
                 setItemForm((form) => ({ ...form, groupId: value }))
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="所属分组">
                 <SelectValue placeholder="请选择分组" />
               </SelectTrigger>
               <SelectContent>

@@ -149,7 +149,7 @@ export function AuditLogPage() {
             updateDraft("status", value === "all" ? "" : value)
           }
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full" aria-label="状态">
             <SelectValue placeholder="全部状态" />
           </SelectTrigger>
           <SelectContent>

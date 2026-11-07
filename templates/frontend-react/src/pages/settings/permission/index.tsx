@@ -587,7 +587,7 @@ export function PermissionPage() {
                 setEditForm((form) => ({ ...form, parent: value }))
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="所属菜单">
                 <SelectValue placeholder="请选择所属菜单" />
               </SelectTrigger>
               <SelectContent>

@@ -263,7 +263,7 @@ function AiModelPresetManager() {
                 setSelectedGroup(value === "all" ? "" : value)
               }
             >
-              <SelectTrigger className="w-full md:w-40">
+              <SelectTrigger className="w-full md:w-40" aria-label="按分组筛选">
                 <SelectValue placeholder="全部分组" />
               </SelectTrigger>
               <SelectContent>
@@ -1058,7 +1058,7 @@ export function AiModelPage() {
                   })
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-label="快速选择预设模型">
                   <SelectValue placeholder="选择常用 AI 模型..." />
                 </SelectTrigger>
                 <SelectContent>

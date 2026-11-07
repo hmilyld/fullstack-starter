@@ -610,7 +610,7 @@ export function UsersPage() {
                   setEditForm((form) => ({ ...form, roleId: value }))
                 }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-label="角色">
                   <SelectValue placeholder="请选择角色" />
                 </SelectTrigger>
                 <SelectContent>
@@ -660,7 +660,7 @@ export function UsersPage() {
           <Field>
             <FieldLabel>新角色</FieldLabel>
             <Select value={roleValue} onValueChange={setRoleValue}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="新角色">
                 <SelectValue placeholder="请选择角色" />
               </SelectTrigger>
               <SelectContent>
