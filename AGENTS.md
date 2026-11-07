@@ -54,6 +54,16 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`.
 - **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx`, API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
 
+## Frontend Responsive Rules (frontend-react)
+
+- Three modes: **Compact `< 768px`**, **Medium `768–1023px`**, **Expanded `≥ 1024px`**. Content max width is `1440px`.
+- Layout switches **by width**; control density switches by **input modality** (`pointer: coarse`) and compact width. Do not tie touch sizing only to a breakpoint.
+- Compact: mobile Sheet nav (`ui/sidebar` built-in), card lists (`RecordCard`), filter bottom sheets, full-width page actions.
+- Medium: icon rail, tables with priority columns, inline filters.
+- Expanded: full sidebar, all columns.
+- New list pages must provide cards below `md` and a table with column priorities above; reuse `PageHeader`, `ListShell`, `RecordCard`, `RowActions`, `FormDialog`, `TablePagination`, `EmptyState`.
+- Layout tokens live in `src/index.css` (`--layout-gutter`, `--layout-max`, `--page-gap`, `--control-h`, `--icon-btn`, `--dialog-inset`). See `templates/frontend-react/DESIGN.md` for the full spec and page checklist.
+
 ## Docker Architecture
 
 Generated projects use a **single Docker image** containing Nginx + backend:

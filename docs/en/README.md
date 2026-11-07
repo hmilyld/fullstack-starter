@@ -29,7 +29,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | Audit logs | Records of write operations and permission denials, filtered by user/status/action/time, paginated view |
 | Data management | AES-encrypted full export, same-version full import, global freeze during import, all sessions invalidated |
 | Profile | Edit profile, change password |
-| Device support | Designed for desktop and tablet; phones are prompted to switch devices |
+| Device support | Responsive across phone, tablet, and desktop; phones use cards and drawers, tablets use an icon rail, desktop uses the full sidebar |
 
 Default accounts: `admin / 123456` (the only administrator); `zhangsan / lisi / wangwu / zhaoliu` all use the password `123456` (regular users). New accounts are assigned the "pending review" or "regular user" role according to system settings.
 
