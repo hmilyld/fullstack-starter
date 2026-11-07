@@ -4,6 +4,7 @@ import {
   SearchIcon,
   SearchXIcon,
   ShieldAlertIcon,
+  SlidersHorizontalIcon,
   XIcon,
 } from "lucide-react"
 
@@ -17,6 +18,14 @@ import { TablePagination } from "@/components/shared/table-pagination"
 import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -82,6 +91,7 @@ function formatFilterValue(key: FilterKey, value: string) {
 export function AuditLogPage() {
   const [draft, setDraft] = React.useState<AuditFilters>(EMPTY_FILTERS)
   const [query, setQuery] = React.useState<AuditFilters>(EMPTY_FILTERS)
+  const [filterOpen, setFilterOpen] = React.useState(false)
   const list = usePagedList<AuditLog, AuditFilters>({
     fetcher: getAuditLogs,
     params: query,
@@ -120,6 +130,68 @@ export function AuditLogPage() {
       value: formatFilterValue(key, query[key]),
     }))
 
+  const filterFields = (
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <Field>
+        <FieldLabel htmlFor="audit-user">用户 ID</FieldLabel>
+        <Input
+          id="audit-user"
+          value={draft.userId}
+          placeholder="例如：1"
+          onChange={(event) => updateDraft("userId", event.target.value)}
+        />
+      </Field>
+      <Field>
+        <FieldLabel>状态</FieldLabel>
+        <Select
+          value={draft.status || "all"}
+          onValueChange={(value) =>
+            updateDraft("status", value === "all" ? "" : value)
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="全部状态" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="success">成功</SelectItem>
+              <SelectItem value="fail">失败</SelectItem>
+              <SelectItem value="permission_denied">权限不足</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="audit-action">动作</FieldLabel>
+        <Input
+          id="audit-action"
+          value={draft.action}
+          placeholder="例如：users.create"
+          onChange={(event) => updateDraft("action", event.target.value)}
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="audit-start">开始时间</FieldLabel>
+        <Input
+          id="audit-start"
+          type="datetime-local"
+          value={draft.startTime}
+          onChange={(event) => updateDraft("startTime", event.target.value)}
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="audit-end">结束时间</FieldLabel>
+        <Input
+          id="audit-end"
+          type="datetime-local"
+          value={draft.endTime}
+          onChange={(event) => updateDraft("endTime", event.target.value)}
+        />
+      </Field>
+    </div>
+  )
+
   const hasLogs = list.items.length > 0
   const showEmpty = !list.loading && !hasLogs
 
@@ -146,75 +218,32 @@ export function AuditLogPage() {
         }
       >
         <div className="flex flex-col gap-3 pb-4">
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-            <Field>
-              <FieldLabel htmlFor="audit-user">用户 ID</FieldLabel>
-              <Input
-                id="audit-user"
-                value={draft.userId}
-                placeholder="例如：1"
-                onChange={(event) => updateDraft("userId", event.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>状态</FieldLabel>
-              <Select
-                value={draft.status || "all"}
-                onValueChange={(value) =>
-                  updateDraft("status", value === "all" ? "" : value)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="全部状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="all">全部状态</SelectItem>
-                    <SelectItem value="success">成功</SelectItem>
-                    <SelectItem value="fail">失败</SelectItem>
-                    <SelectItem value="permission_denied">权限不足</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="audit-action">动作</FieldLabel>
-              <Input
-                id="audit-action"
-                value={draft.action}
-                placeholder="例如：users.create"
-                onChange={(event) => updateDraft("action", event.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="audit-start">开始时间</FieldLabel>
-              <Input
-                id="audit-start"
-                type="datetime-local"
-                value={draft.startTime}
-                onChange={(event) =>
-                  updateDraft("startTime", event.target.value)
-                }
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="audit-end">结束时间</FieldLabel>
-              <Input
-                id="audit-end"
-                type="datetime-local"
-                value={draft.endTime}
-                onChange={(event) => updateDraft("endTime", event.target.value)}
-              />
-            </Field>
+          <div className="hidden flex-col gap-3 md:flex">
+            {filterFields}
+            <div className="flex items-center gap-2">
+              <Button onClick={handleSearch}>
+                <SearchIcon data-icon="inline-start" />
+                查询
+              </Button>
+              <Button variant="outline" onClick={handleReset}>
+                <RotateCcwIcon data-icon="inline-start" />
+                重置
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleSearch}>
+          <div className="flex items-center gap-2 md:hidden">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setFilterOpen(true)}
+            >
+              <SlidersHorizontalIcon data-icon="inline-start" />
+              筛选
+              {activeFilters.length > 0 ? ` · ${activeFilters.length}` : ""}
+            </Button>
+            <Button className="flex-1" onClick={handleSearch}>
               <SearchIcon data-icon="inline-start" />
               查询
-            </Button>
-            <Button variant="outline" onClick={handleReset}>
-              <RotateCcwIcon data-icon="inline-start" />
-              重置
             </Button>
           </div>
           {activeFilters.length > 0 && (
@@ -238,6 +267,44 @@ export function AuditLogPage() {
             </div>
           )}
         </div>
+
+        <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+          <SheetContent
+            side="bottom"
+            className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0"
+          >
+            <SheetHeader className="border-b p-4 pr-14">
+              <SheetTitle>筛选条件</SheetTitle>
+              <SheetDescription>
+                按用户、状态、动作或时间范围筛选审计记录。
+              </SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+              {filterFields}
+            </div>
+            <SheetFooter className="flex-row gap-2 border-t p-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  handleReset()
+                  setFilterOpen(false)
+                }}
+              >
+                重置
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  handleSearch()
+                  setFilterOpen(false)
+                }}
+              >
+                应用筛选
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
 
         {list.error && hasLogs && (
           <InlineError message={list.error} onRetry={list.refresh} />

@@ -189,7 +189,11 @@ export function DataManagementPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <LoadingButton loading={exportLoading} onClick={handleExport}>
+              <LoadingButton
+                loading={exportLoading}
+                onClick={handleExport}
+                className="w-full md:w-auto"
+              >
                 <DownloadIcon data-icon="inline-start" />
                 生成并下载
               </LoadingButton>
@@ -215,6 +219,7 @@ export function DataManagementPage() {
             <CardContent>
               <Button
                 variant="destructive"
+                className="w-full md:w-auto"
                 onClick={() => {
                   setImportFile(null)
                   setImportPassword("")

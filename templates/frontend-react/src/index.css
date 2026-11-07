@@ -166,10 +166,30 @@
   }
 }
 
+/* 手机上始终使用触控尺寸；平板/桌面触屏设备由 pointer: coarse 触发 */
+@media (max-width: 767px) {
+  :root {
+    --control-h: 2.75rem;
+    --icon-btn: 2.5rem;
+    --icon-btn-xs: 2.25rem;
+  }
+}
+
 @media (pointer: coarse) {
   :root {
     --control-h: 2.75rem;
     --icon-btn: 2.5rem;
     --icon-btn-xs: 2.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

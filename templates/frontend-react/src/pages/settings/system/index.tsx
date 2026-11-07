@@ -110,7 +110,12 @@ function SaveFooter({
 }) {
   return (
     <CardFooter className="flex flex-wrap items-center gap-3">
-      <LoadingButton loading={loading} disabled={!dirty} onClick={onSave}>
+      <LoadingButton
+        loading={loading}
+        disabled={!dirty}
+        onClick={onSave}
+        className="w-full md:w-auto"
+      >
         <SaveIcon data-icon="inline-start" />
         {children}
       </LoadingButton>
@@ -343,7 +348,7 @@ export function SystemPage() {
         </TabsList>
 
         <TabsContent value="site" className="flex flex-col gap-(--page-gap)">
-          <Card>
+          <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
               <CardDescription>配置站点名称、描述等基本信息。</CardDescription>
@@ -397,7 +402,7 @@ export function SystemPage() {
             </SaveFooter>
           </Card>
 
-          <Card>
+          <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>维护模式</CardTitle>
               <CardDescription>
@@ -451,7 +456,7 @@ export function SystemPage() {
           value="register"
           className="flex flex-col gap-(--page-gap)"
         >
-          <Card>
+          <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>注册策略</CardTitle>
               <CardDescription>控制用户注册方式和验证流程。</CardDescription>
@@ -499,7 +504,7 @@ export function SystemPage() {
             </SaveFooter>
           </Card>
 
-          <Card>
+          <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>默认配置</CardTitle>
               <CardDescription>
@@ -556,7 +561,7 @@ export function SystemPage() {
         </TabsContent>
 
         <TabsContent value="smtp" className="flex flex-col gap-(--page-gap)">
-          <Card>
+          <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>SMTP 邮件配置</CardTitle>
               <CardDescription>
@@ -717,7 +722,7 @@ export function SystemPage() {
             </SaveFooter>
           </Card>
 
-          <Card>
+          <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>测试邮件</CardTitle>
               <CardDescription>
@@ -753,6 +758,7 @@ export function SystemPage() {
                 form="test-email-form"
                 loading={testEmailSending}
                 disabled={!config.smtpEnabled || !testEmailAddr}
+                className="w-full md:w-auto"
               >
                 <MailIcon data-icon="inline-start" />
                 发送测试邮件

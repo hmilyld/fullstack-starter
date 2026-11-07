@@ -8,7 +8,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
   const { config } = useSiteConfig()
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6">
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 px-(--layout-gutter) py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
       <div className="flex flex-col items-center gap-2 text-center">
         <BrandMark className="size-10" />
         <div className="flex flex-col gap-1">

@@ -2,7 +2,8 @@ import * as React from "react"
 import {
   DndContext,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCenter,
   useDroppable,
   useSensor,
@@ -19,6 +20,8 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
+  ChevronDownIcon,
+  ChevronUpIcon,
   GripVerticalIcon,
   PencilIcon,
   PlusIcon,
@@ -31,6 +34,7 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
+import { RowActions, type RowAction } from "@/components/shared/row-actions"
 import { PageFormSkeleton } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -108,16 +112,24 @@ function SortableMenuItem({
   canReorder,
   canEdit,
   canDelete,
+  canMoveUp,
+  canMoveDown,
   onEdit,
   onDelete,
+  onMoveUp,
+  onMoveDown,
 }: {
   item: MenuItem
   groupId: string
   canReorder: boolean
   canEdit: boolean
   canDelete: boolean
+  canMoveUp: boolean
+  canMoveDown: boolean
   onEdit: (item: MenuItem) => void
   onDelete: (item: MenuItem) => void
+  onMoveUp: () => void
+  onMoveDown: () => void
 }) {
   const {
     attributes,
@@ -139,6 +151,40 @@ function SortableMenuItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  }
+
+  const actions: RowAction[] = []
+  if (canEdit) {
+    actions.push({
+      label: "编辑",
+      icon: PencilIcon,
+      onSelect: () => onEdit(item),
+    })
+  }
+  if (canReorder) {
+    actions.push(
+      {
+        label: "上移",
+        icon: ChevronUpIcon,
+        disabled: !canMoveUp,
+        onSelect: onMoveUp,
+      },
+      {
+        label: "下移",
+        icon: ChevronDownIcon,
+        disabled: !canMoveDown,
+        onSelect: onMoveDown,
+      }
+    )
+  }
+  if (canDelete && !item.isSystem) {
+    actions.push({
+      label: "删除",
+      icon: Trash2Icon,
+      destructive: true,
+      separatorBefore: true,
+      onSelect: () => onDelete(item),
+    })
   }
 
   return (
@@ -170,20 +216,7 @@ function SortableMenuItem({
         </div>
         {item.isSystem && <Badge variant="outline">内置</Badge>}
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {canEdit && (
-          <Button variant="ghost" size="icon-sm" onClick={() => onEdit(item)}>
-            <PencilIcon />
-            <span className="sr-only">编辑 {item.name}</span>
-          </Button>
-        )}
-        {canDelete && !item.isSystem && (
-          <Button variant="ghost" size="icon-sm" onClick={() => onDelete(item)}>
-            <Trash2Icon />
-            <span className="sr-only">删除 {item.name}</span>
-          </Button>
-        )}
-      </div>
+      <RowActions actions={actions} label={`${item.name} 的操作`} />
     </div>
   )
 }
@@ -194,22 +227,36 @@ function SortableGroup({
   canCreate,
   canEdit,
   canDelete,
+  canMoveUp,
+  canMoveDown,
   onCreateItem,
   onEditGroup,
   onDeleteGroup,
   onEditItem,
   onDeleteItem,
+  onMoveUp,
+  onMoveDown,
+  onMoveItem,
 }: {
   group: MenuGroup
   canReorder: boolean
   canCreate: boolean
   canEdit: boolean
   canDelete: boolean
+  canMoveUp: boolean
+  canMoveDown: boolean
   onCreateItem: (groupId: string) => void
   onEditGroup: (group: MenuGroup) => void
   onDeleteGroup: (group: MenuGroup) => void
   onEditItem: (item: MenuItem) => void
   onDeleteItem: (item: MenuItem) => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onMoveItem: (
+    groupId: string,
+    permissionCode: string,
+    direction: -1 | 1
+  ) => void
 }) {
   const {
     attributes,
@@ -231,6 +278,40 @@ function SortableGroup({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  }
+
+  const actions: RowAction[] = []
+  if (canEdit) {
+    actions.push({
+      label: "编辑分组",
+      icon: PencilIcon,
+      onSelect: () => onEditGroup(group),
+    })
+  }
+  if (canReorder) {
+    actions.push(
+      {
+        label: "上移分组",
+        icon: ChevronUpIcon,
+        disabled: !canMoveUp,
+        onSelect: onMoveUp,
+      },
+      {
+        label: "下移分组",
+        icon: ChevronDownIcon,
+        disabled: !canMoveDown,
+        onSelect: onMoveDown,
+      }
+    )
+  }
+  if (canDelete && !group.isSystem) {
+    actions.push({
+      label: "删除分组",
+      icon: Trash2Icon,
+      destructive: true,
+      separatorBefore: true,
+      onSelect: () => onDeleteGroup(group),
+    })
   }
 
   return (
@@ -262,32 +343,15 @@ function SortableGroup({
               <Button
                 variant="ghost"
                 size="sm"
+                className="max-md:w-8 max-md:px-0"
+                aria-label="新增菜单"
                 onClick={() => onCreateItem(group.id)}
               >
                 <PlusIcon data-icon="inline-start" />
-                新增菜单
+                <span className="hidden md:inline">新增菜单</span>
               </Button>
             )}
-            {canEdit && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onEditGroup(group)}
-              >
-                <PencilIcon />
-                <span className="sr-only">编辑分组 {group.name}</span>
-              </Button>
-            )}
-            {canDelete && !group.isSystem && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onDeleteGroup(group)}
-              >
-                <Trash2Icon />
-                <span className="sr-only">删除分组 {group.name}</span>
-              </Button>
-            )}
+            <RowActions actions={actions} label={`${group.name} 分组的操作`} />
           </div>
         </div>
       </CardHeader>
@@ -304,7 +368,7 @@ function SortableGroup({
           )}
           strategy={verticalListSortingStrategy}
         >
-          {group.items.map((item) => (
+          {group.items.map((item, itemIndex) => (
             <SortableMenuItem
               key={item.permissionCode}
               item={item}
@@ -312,8 +376,12 @@ function SortableGroup({
               canReorder={canReorder}
               canEdit={canEdit}
               canDelete={canDelete}
+              canMoveUp={itemIndex > 0}
+              canMoveDown={itemIndex < group.items.length - 1}
               onEdit={onEditItem}
               onDelete={onDeleteItem}
+              onMoveUp={() => onMoveItem(group.id, item.permissionCode, -1)}
+              onMoveDown={() => onMoveItem(group.id, item.permissionCode, 1)}
             />
           ))}
         </SortableContext>
@@ -379,7 +447,10 @@ export function MenuPage() {
     JSON.stringify(config) !== JSON.stringify(savedConfig)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
@@ -398,6 +469,43 @@ export function MenuPage() {
     setConfig((current) =>
       current ? normalize(updater(cloneConfig(current))) : current
     )
+  }
+
+  function moveGroup(groupId: string, direction: -1 | 1) {
+    updateDraft((current) => {
+      const index = current.groups.findIndex((group) => group.id === groupId)
+      const target = index + direction
+      if (index < 0 || target < 0 || target >= current.groups.length) {
+        return current
+      }
+      return { ...current, groups: arrayMove(current.groups, index, target) }
+    })
+  }
+
+  function moveItem(
+    groupId: string,
+    permissionCode: string,
+    direction: -1 | 1
+  ) {
+    updateDraft((current) => {
+      const group = current.groups.find((item) => item.id === groupId)
+      if (!group) return current
+      const index = group.items.findIndex(
+        (item) => item.permissionCode === permissionCode
+      )
+      const target = index + direction
+      if (index < 0 || target < 0 || target >= group.items.length) {
+        return current
+      }
+      return {
+        ...current,
+        groups: current.groups.map((item) =>
+          item.id === groupId
+            ? { ...item, items: arrayMove(item.items, index, target) }
+            : item
+        ),
+      }
+    })
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -684,7 +792,7 @@ export function MenuPage() {
             strategy={verticalListSortingStrategy}
           >
             <div className="flex flex-col gap-4">
-              {config.groups.map((group) => (
+              {config.groups.map((group, groupIndex) => (
                 <SortableGroup
                   key={group.id}
                   group={group}
@@ -692,6 +800,8 @@ export function MenuPage() {
                   canCreate={canCreate}
                   canEdit={canEdit}
                   canDelete={canDelete}
+                  canMoveUp={groupIndex > 0}
+                  canMoveDown={groupIndex < config.groups.length - 1}
                   onCreateItem={openCreateItem}
                   onEditGroup={openEditGroup}
                   onDeleteGroup={(target) =>
@@ -701,6 +811,9 @@ export function MenuPage() {
                       name: target.name,
                     })
                   }
+                  onMoveUp={() => moveGroup(group.id, -1)}
+                  onMoveDown={() => moveGroup(group.id, 1)}
+                  onMoveItem={moveItem}
                   onEditItem={openEditItem}
                   onDeleteItem={(item) =>
                     setDeleteTarget({

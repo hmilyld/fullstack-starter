@@ -100,7 +100,7 @@ export function ProfilePage() {
         </TabsList>
 
         <TabsContent value="profile" className="flex flex-col gap-(--page-gap)">
-          <Card>
+          <Card className="max-w-2xl">
             <CardHeader>
               <CardTitle>基本资料</CardTitle>
               <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
@@ -138,6 +138,7 @@ export function ProfilePage() {
                 form="profile-form"
                 loading={profileSaving}
                 disabled={!profileDirty}
+                className="w-full md:w-auto"
               >
                 保存更改
               </LoadingButton>
@@ -145,8 +146,11 @@ export function ProfilePage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="flex flex-col gap-(--page-gap)">
-          <Card>
+        <TabsContent
+          value="security"
+          className="flex flex-col gap-(--page-gap)"
+        >
+          <Card className="max-w-2xl">
             <CardHeader>
               <CardTitle>密码修改</CardTitle>
               <CardDescription>
@@ -211,6 +215,7 @@ export function ProfilePage() {
                 form="password-form"
                 loading={passwordSaving}
                 disabled={!currentPassword || !newPassword || !confirmPassword}
+                className="w-full md:w-auto"
               >
                 更新密码
               </LoadingButton>
