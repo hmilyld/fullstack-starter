@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onErrorCaptured, onMounted, ref, watch } from "vue"
-import { RouterView } from "vue-router"
-import ErrorState from "@/components/shared/ErrorState.vue"
+import { RouterLink, RouterView, useRoute } from "vue-router"
+import { TriangleAlert } from "@lucide/vue"
+import EmptyState from "@/components/shared/EmptyState.vue"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "@/components/ui/sonner"
 import { useMediaQuery } from "@/composables/use-media-query"
@@ -10,6 +12,7 @@ import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useThemeStore } from "@/stores/theme"
 
+const route = useRoute()
 const siteConfig = useSiteConfigStore()
 const themeStore = useThemeStore()
 const isDesktop = useMediaQuery("(min-width: 768px)")
@@ -27,9 +30,12 @@ onErrorCaptured((error) => {
   return false
 })
 
-function retry() {
-  window.location.reload()
-}
+watch(
+  () => route.fullPath,
+  () => {
+    if (appError.value) appError.value = null
+  }
+)
 
 watch(
   () => siteConfig.config,
@@ -54,12 +60,20 @@ watch(
 
 <template>
   <div v-if="appError" class="flex min-h-svh items-center justify-center p-6">
-    <ErrorState
+    <EmptyState
       class="max-w-lg"
+      :icon="TriangleAlert"
       title="页面加载失败"
-      :message="appError"
-      :on-retry="retry"
-    />
+      :description="appError"
+    >
+      <template #action>
+        <Button as-child>
+          <RouterLink to="/dashboard" @click="appError = null"
+            >返回仪表盘</RouterLink
+          >
+        </Button>
+      </template>
+    </EmptyState>
   </div>
   <div
     v-else-if="siteConfig.loading"
