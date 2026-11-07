@@ -501,6 +501,7 @@ function AiModelPresetManager() {
               </div>
               <Switch
                 id="preset-active"
+                aria-label="启用预设"
                 checked={editForm.isActive}
                 onCheckedChange={(checked) =>
                   setEditForm((form) => ({ ...form, isActive: checked }))
@@ -1035,6 +1036,7 @@ export function AiModelPage() {
             </div>
             <Switch
               id="model-default"
+              aria-label="设为默认模型"
               checked={editForm.isDefault}
               onCheckedChange={(checked) =>
                 setEditForm((form) => ({ ...form, isDefault: checked }))

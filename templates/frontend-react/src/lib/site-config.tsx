@@ -9,9 +9,15 @@ type SiteConfigContextType = {
   refresh: () => Promise<void>
 }
 
-const SiteConfigContext = React.createContext<SiteConfigContextType | null>(null)
+const SiteConfigContext = React.createContext<SiteConfigContextType | null>(
+  null
+)
 
-export function SiteConfigProvider({ children }: { children: React.ReactNode }) {
+export function SiteConfigProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const [config, setConfig] = React.useState<PublicConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
 
@@ -37,7 +43,8 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     if (!config) return
 
     const siteName = config.siteName || "管理系统"
-    const description = config.siteDescription || "基于 React + shadcn/ui 的后台管理框架"
+    const description =
+      config.siteDescription || "基于 React + shadcn/ui 的后台管理框架"
 
     document.title = siteName
 
@@ -62,7 +69,9 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <SiteConfigContext.Provider value={{ config, loading, refresh: fetchConfig }}>
+    <SiteConfigContext.Provider
+      value={{ config, loading, refresh: fetchConfig }}
+    >
       {children}
     </SiteConfigContext.Provider>
   )
@@ -70,6 +79,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
 export function useSiteConfig() {
   const context = React.useContext(SiteConfigContext)
-  if (!context) throw new Error("useSiteConfig must be used within SiteConfigProvider")
+  if (!context)
+    throw new Error("useSiteConfig must be used within SiteConfigProvider")
   return context
 }

@@ -2,6 +2,12 @@ import type { ApiResponse } from "@/types/common"
 
 const BASE_URL = "/api"
 
+function redirectToLogin() {
+  localStorage.removeItem("token")
+  localStorage.removeItem("user")
+  window.location.replace("/login")
+}
+
 class ApiClient {
   private getToken(): string | null {
     return localStorage.getItem("token")
@@ -28,17 +34,22 @@ class ApiClient {
       })
 
       if (response.status === 401) {
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
-        window.location.href = "/login"
+        redirectToLogin()
         return { code: -1, message: "未登录或登录已过期", data: undefined as T }
+      }
+
+      if (response.status === 204) {
+        return { code: 0, message: "success", data: undefined as T }
       }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null)
         return {
           code: -1,
-          message: errorData?.detail || `HTTP ${response.status}`,
+          message:
+            errorData?.message ||
+            errorData?.detail ||
+            `HTTP ${response.status}`,
           data: undefined as T,
         }
       }
@@ -74,19 +85,22 @@ class ApiClient {
     })
 
     if (response.status === 401) {
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      window.location.href = "/login"
+      redirectToLogin()
       throw new Error("未登录或登录已过期")
     }
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
-      throw new Error(errorData?.message || errorData?.detail || `HTTP ${response.status}`)
+      throw new Error(
+        errorData?.message || errorData?.detail || `HTTP ${response.status}`
+      )
     }
     return response
   }
 
-  async get<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<ApiResponse<T>> {
+  async get<T>(
+    path: string,
+    params?: Record<string, string | number | boolean | undefined>
+  ): Promise<ApiResponse<T>> {
     const searchParams = new URLSearchParams()
     if (params) {
       Object.entries(params).forEach(([key, value]) => {

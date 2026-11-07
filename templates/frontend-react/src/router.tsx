@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router"
 
 import { AdminLayout } from "@/components/admin-layout"
 import { ProtectedRoute } from "@/components/protected-route"
+import { FullPageLoader } from "@/components/shared/full-page-loader"
 import { LoginPage } from "@/pages/auth/login"
 import { RegisterPage } from "@/pages/auth/register"
 import { RouteErrorPage } from "@/pages/route-error"
@@ -9,6 +10,7 @@ import { RouteErrorPage } from "@/pages/route-error"
 export const router = createBrowserRouter([
   {
     errorElement: <RouteErrorPage />,
+    hydrateFallbackElement: <FullPageLoader />,
     children: [
       {
         path: "/login",

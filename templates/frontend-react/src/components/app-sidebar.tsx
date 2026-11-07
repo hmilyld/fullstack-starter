@@ -69,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <Link
           to="/dashboard"
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none group-data-[collapsible=icon]:justify-center focus-visible:ring-3 focus-visible:ring-ring/30"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none group-data-[collapsible=icon]:justify-center focus-visible:ring-3 focus-visible:ring-ring/30"
         >
           <BrandMark />
           <span className="truncate text-base font-semibold group-data-[collapsible=icon]:hidden">

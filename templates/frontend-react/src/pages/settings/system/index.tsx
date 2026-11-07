@@ -416,6 +416,7 @@ export function SystemPage() {
                 </div>
                 <Switch
                   id="maintenance-enabled"
+                  aria-label="开启维护模式"
                   checked={config.maintenanceEnabled}
                   onCheckedChange={(checked) =>
                     updateField("maintenanceEnabled", checked)
@@ -460,6 +461,7 @@ export function SystemPage() {
                 </div>
                 <Switch
                   id="open-registration"
+                  aria-label="开放注册"
                   checked={config.openRegistration}
                   onCheckedChange={(checked) =>
                     updateField("openRegistration", checked)
@@ -476,6 +478,7 @@ export function SystemPage() {
                 </div>
                 <Switch
                   id="manual-review"
+                  aria-label="人工审核"
                   checked={config.manualReview}
                   onCheckedChange={(checked) =>
                     updateField("manualReview", checked)
@@ -567,6 +570,7 @@ export function SystemPage() {
                 </div>
                 <Switch
                   id="smtp-enabled"
+                  aria-label="启用邮件"
                   checked={config.smtpEnabled}
                   onCheckedChange={(checked) =>
                     updateField("smtpEnabled", checked)
@@ -692,6 +696,7 @@ export function SystemPage() {
                   </div>
                   <Switch
                     id="smtp-ssl"
+                    aria-label="使用 SSL"
                     checked={config.smtpUseSsl}
                     onCheckedChange={(checked) =>
                       updateField("smtpUseSsl", checked)

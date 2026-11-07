@@ -34,7 +34,9 @@ export function ConfirmDeleteDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>确认删除</AlertDialogTitle>
           <AlertDialogDescription>
-            确定要删除 <span className="font-medium text-foreground">{targetName}</span> 吗？此操作不可撤销。
+            确定要删除{" "}
+            <span className="font-medium text-foreground">{targetName}</span>{" "}
+            吗？此操作不可撤销。
             {description && <>{description}</>}
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -24,5 +24,9 @@ export async function deletePermission(code: string) {
 }
 
 export async function syncPermissions() {
-  return apiClient.post<{ added: string[]; updated: string[]; granted: string[] }>("/permissions/sync")
+  return apiClient.post<{
+    added: string[]
+    updated: string[]
+    granted: string[]
+  }>("/permissions/sync")
 }
