@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
-import { useDroppable } from "@dnd-kit/vue"
 import { useSortable } from "@dnd-kit/vue/sortable"
 import {
   ChevronDown,
@@ -52,8 +51,6 @@ const emit = defineEmits<{
 
 const element = ref<HTMLElement | null>(null)
 const handle = ref<HTMLElement | null>(null)
-const dropElement = ref<HTMLElement | null>(null)
-
 const { isDragging } = useSortable({
   id: groupSortableId(props.group.id),
   index: computed(() => props.index),
@@ -64,16 +61,6 @@ const { isDragging } = useSortable({
     type: "group",
     groupId: props.group.id,
     index: props.index,
-  })),
-})
-
-const { isDropTarget } = useDroppable({
-  id: `drop:${props.group.id}`,
-  element: dropElement,
-  data: computed<MenuDragData>(() => ({
-    type: "group-drop",
-    groupId: props.group.id,
-    index: props.group.items.length,
   })),
 })
 
@@ -153,15 +140,7 @@ const actions = computed<RowAction[]>(() => {
           </div>
         </div>
       </CardHeader>
-      <CardContent
-        ref="dropElement"
-        :class="
-          cn(
-            'flex flex-col gap-1 p-2 transition-colors',
-            isDropTarget && 'bg-muted/40'
-          )
-        "
-      >
+      <CardContent class="flex flex-col gap-1 p-2 transition-colors">
         <MenuSortableItem
           v-for="(item, itemIndex) in group.items"
           :key="item.permissionCode"

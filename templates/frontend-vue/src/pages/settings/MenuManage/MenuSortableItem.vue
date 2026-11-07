@@ -44,6 +44,7 @@ const handle = ref<HTMLElement | null>(null)
 const { isDragging } = useSortable({
   id: itemSortableId(props.groupId, props.item.permissionCode),
   index: computed(() => props.index),
+  group: computed(() => props.groupId),
   element,
   handle,
   disabled: computed(() => !props.canReorder),

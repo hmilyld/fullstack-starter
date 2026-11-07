@@ -181,9 +181,13 @@ function handleDragEnd(event: DragEndEvent) {
   const before = config.value ? JSON.stringify(config.value) : ""
   const initialIndex = source.initialIndex
   const nextIndex = source.index
+  const targetData = event.operation.target?.data as MenuDragData | undefined
   const sourceGroupId =
     (source.initialGroup as string | undefined) ?? sourceData.groupId
-  const targetGroupId = (source.group as string | undefined) ?? sourceGroupId
+  const targetGroupId =
+    (source.group as string | undefined) ?? targetData?.groupId ?? sourceGroupId
+  const nextGroupIndex =
+    targetGroupId !== sourceGroupId && targetData ? targetData.index : nextIndex
 
   if (sourceData.type === "group") {
     if (initialIndex !== nextIndex) {
@@ -215,7 +219,7 @@ function handleDragEnd(event: DragEndEvent) {
             group.id === sourceGroup.id
               ? {
                   ...group,
-                  items: arrayMove(group.items, initialIndex, nextIndex),
+                  items: arrayMove(group.items, initialIndex, nextGroupIndex),
                 }
               : group
           ),
@@ -236,7 +240,8 @@ function handleDragEnd(event: DragEndEvent) {
           }
           if (group.id === targetGroup.id) {
             const items = [...group.items]
-            const targetIndex = nextIndex < 0 ? items.length : nextIndex
+            const targetIndex =
+              nextGroupIndex < 0 ? items.length : nextGroupIndex
             items.splice(targetIndex, 0, item)
             return { ...group, items }
           }
