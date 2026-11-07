@@ -100,6 +100,20 @@ describe("applyPwaManifest", () => {
     ).toBe("default")
   })
 
+  it("keeps the static manifest when Blob URLs are unavailable", () => {
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: undefined,
+    })
+
+    expect(applyPwaManifest(buildPwaManifest(config, "light"))).toBe("")
+    expect(
+      document
+        .querySelector<HTMLLinkElement>('link[rel="manifest"]')
+        ?.getAttribute("href")
+    ).toBe("/manifest.webmanifest")
+  })
+
   it("revokes the previous blob when the manifest is refreshed", () => {
     applyPwaManifest(buildPwaManifest(config, "light"))
     applyPwaManifest(buildPwaManifest(config, "dark"))

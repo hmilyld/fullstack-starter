@@ -85,6 +85,22 @@ export function buildPwaManifest(
  * 返回当前 Blob URL，便于下一次更新时释放。
  */
 export function applyPwaManifest(manifest: PwaManifest): string {
+  // 老浏览器或受限环境（例如部分 WebView）不支持 Blob URL 时保留静态 manifest
+  if (
+    typeof Blob === "undefined" ||
+    typeof URL.createObjectURL !== "function"
+  ) {
+    return ""
+  }
+
+  try {
+    return writeManifest(manifest)
+  } catch {
+    return ""
+  }
+}
+
+function writeManifest(manifest: PwaManifest): string {
   const blob = new Blob([JSON.stringify(manifest)], {
     type: "application/manifest+json",
   })
