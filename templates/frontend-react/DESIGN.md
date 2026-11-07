@@ -15,6 +15,7 @@
 - **布局按宽度切换，控件密度按输入方式切换**。触屏设备通过 `pointer: coarse` 放大控件；Compact 宽度下也始终使用触控尺寸。
 - 内容最大宽度 `1440px`，超宽屏居中，不把表格或表单拉满整屏。
 - Medium 默认收起侧边栏为图标栏；Expanded 默认展开。用户手动切换后写入 cookie。
+- 顶栏固定：左侧为菜单/面包屑，右侧为主题切换与账户菜单。账户菜单统一放在右上角（`UserMenu`），不要放回侧边栏底部。
 
 ## 2. Token
 
@@ -48,6 +49,7 @@
 | 加载失败 | `ErrorState` / `InlineError` | 只弹 Toast |
 | 筛选 | 桌面内联；手机 `Sheet side="bottom"` | 手机堆 5 个筛选框 |
 | 导航开关 | `SidebarTrigger` | 自写菜单按钮 |
+| 账户菜单 | `UserMenu`（Header 右上角） | 侧边栏底部用户块 |
 
 `ui/sidebar` 已内置移动端 Sheet 与 `openMobile` 状态；不要在 Header 里另造移动抽屉。
 

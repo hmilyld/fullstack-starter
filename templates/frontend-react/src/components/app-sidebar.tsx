@@ -3,24 +3,20 @@ import { Link } from "react-router"
 
 import { BrandMark } from "@/components/brand-mark"
 import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { getNavigation } from "@/api/menu"
-import { useAuth } from "@/lib/auth-context"
 import { useSiteConfig } from "@/lib/site-config"
 import type { NavigationGroup } from "@/types/menu"
 
 const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useAuth()
   const { config } = useSiteConfig()
   const { isMobile, setOpenMobile } = useSidebar()
   const [navGroups, setNavGroups] = React.useState<NavigationGroup[]>([])
@@ -54,18 +50,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     })),
   }))
 
-  const navUser = user
-    ? {
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar || "",
-      }
-    : {
-        name: "",
-        email: "",
-        avatar: "",
-      }
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -85,9 +69,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain groups={groups} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={navUser} />
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

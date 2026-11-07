@@ -15,4 +15,7 @@ test("logs in and lands on the dashboard", async ({ page }) => {
     page.getByRole("heading", { level: 1, name: "仪表盘" })
   ).toBeVisible()
   await expect(page.getByText("总用户数")).toBeVisible()
+
+  await page.getByRole("button", { name: /的账户菜单$/ }).click()
+  await expect(page.getByRole("menuitem", { name: "个人设置" })).toBeVisible()
 })

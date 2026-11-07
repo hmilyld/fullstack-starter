@@ -2,6 +2,7 @@ import * as React from "react"
 import { Link, useLocation } from "react-router"
 
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserMenu } from "@/components/user-menu"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -58,8 +59,9 @@ export function Header() {
             {currentCrumb?.label ?? "管理后台"}
           </span>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
+          <UserMenu />
         </div>
       </div>
     </header>

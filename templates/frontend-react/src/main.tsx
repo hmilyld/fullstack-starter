@@ -17,6 +17,7 @@ function AppToaster() {
   return (
     <Toaster
       position={isDesktop ? "bottom-right" : "top-center"}
+      mobileOffset={{ top: "4.5rem" }}
       richColors
       closeButton
     />

@@ -65,6 +65,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Layout tokens live in `src/index.css` (`--layout-gutter`, `--layout-max`, `--page-gap`, `--control-h`, `--icon-btn`, `--dialog-inset`). See `templates/frontend-react/DESIGN.md` for the full spec and page checklist.
 - PWA icons live in `templates/frontend-react/public/icons/` (SVG, 192/512 PNG, 512 maskable, 180 apple-touch). When changing the brand mark, regenerate all sizes and keep `index.html`, `vite.config.ts`, `src/lib/pwa.ts` and `DESIGN.md` in sync.
 - List URL state uses `q` / `page`; audit filters use their own keys; AI presets use `presetQ` / `presetGroup`. Keep this contract when refactoring the Vue template so both frontends behave the same.
+- The account menu (`UserMenu`) belongs in the header top-right, not in the sidebar footer. Keep this location in the Vue template.
 
 ## Docker Architecture
 
