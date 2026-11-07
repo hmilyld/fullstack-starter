@@ -1,11 +1,10 @@
+import { AuthShell } from "@/components/shared/auth-shell"
 import { LoginForm } from "@/components/login-form"
 
 export function LoginPage() {
   return (
-    <div className="flex min-h-svh items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <LoginForm />
-      </div>
-    </div>
+    <AuthShell>
+      <LoginForm />
+    </AuthShell>
   )
 }
