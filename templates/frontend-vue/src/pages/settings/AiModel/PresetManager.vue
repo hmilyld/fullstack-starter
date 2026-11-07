@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { Pencil, Plus, Search, Star, Trash2 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
@@ -123,6 +123,10 @@ async function loadData() {
 }
 
 onMounted(() => {
+  void loadData()
+})
+
+watch([debouncedSearch, selectedGroup], () => {
   void loadData()
 })
 
