@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useLocation } from "react-router"
+import { useSearchParams } from "react-router"
 import { LoadingButton } from "@/components/shared/loading-button"
 import {
   Card,
@@ -16,15 +16,12 @@ import { updateMe, changePassword } from "@/api/user"
 import { appToast } from "@/lib/toast"
 
 export function ProfilePage() {
-  const location = useLocation()
-  const state = location.state as { tab?: string } | null
-  const [activeTab, setActiveTab] = React.useState(state?.tab ?? "profile")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = searchParams.get("tab") === "security" ? "security" : "profile"
 
-  React.useEffect(() => {
-    if (state?.tab) {
-      setActiveTab(state.tab)
-    }
-  }, [state])
+  function setActiveTab(tab: string) {
+    setSearchParams(tab === "profile" ? {} : { tab }, { replace: true })
+  }
 
   // 个人信息表单
   const [name, setName] = React.useState("")

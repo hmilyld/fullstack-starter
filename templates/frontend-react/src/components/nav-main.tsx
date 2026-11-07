@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router"
+
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -6,16 +7,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { MenuIcon } from "@/lib/icons"
 
 type NavItem = {
   title: string
   url: string
-  icon?: React.ReactNode
+  icon: string
 }
 
 type NavGroup = {
   label: string
   items: NavItem[]
+}
+
+function isActivePath(pathname: string, url: string) {
+  return pathname === url || pathname.startsWith(`${url}/`)
 }
 
 export function NavMain({ groups }: { groups: NavGroup[] }) {
@@ -28,14 +34,14 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
           <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
           <SidebarMenu>
             {group.items.map((item) => (
-              <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton
                   asChild
-                  isActive={location.pathname === item.url}
+                  isActive={isActivePath(location.pathname, item.url)}
                   tooltip={item.title}
                 >
                   <Link to={item.url}>
-                    {item.icon}
+                    <MenuIcon name={item.icon} />
                     <span>{item.title}</span>
                   </Link>
                 </SidebarMenuButton>

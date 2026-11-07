@@ -1,16 +1,17 @@
 import { RouterProvider } from "react-router"
-import { router } from "@/router"
+
 import { UnsupportedViewport } from "@/components/unsupported-viewport"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import { router } from "@/router"
 
 export function App() {
-  return (
-    <>
-      <UnsupportedViewport />
-      <div className="hidden md:block">
-        <RouterProvider router={router} />
-      </div>
-    </>
-  )
+  const isSupported = useMediaQuery("(min-width: 768px)")
+
+  if (!isSupported) {
+    return <UnsupportedViewport />
+  }
+
+  return <RouterProvider router={router} />
 }
 
 export default App

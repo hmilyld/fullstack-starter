@@ -1,48 +1,14 @@
 import {
-  BotIcon,
-  CircleIcon,
-  DatabaseIcon,
-  FileTextIcon,
-  KeyIcon,
-  LayoutDashboardIcon,
-  PanelLeftIcon,
-  Settings2Icon,
-  ShieldCheckIcon,
-  UsersIcon,
-} from "lucide-react"
-import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { iconOptions, menuIcons } from "@/lib/icons"
 
-export const iconOptions = [
-  { value: "circle", label: "默认" },
-  { value: "layout-dashboard", label: "仪表盘" },
-  { value: "users", label: "用户" },
-  { value: "shield-check", label: "角色" },
-  { value: "key-round", label: "权限" },
-  { value: "panel-left", label: "菜单" },
-  { value: "settings", label: "设置" },
-  { value: "bot", label: "AI" },
-  { value: "file-text", label: "文档" },
-  { value: "database", label: "数据" },
-]
-
-const iconMap = {
-  circle: CircleIcon,
-  "layout-dashboard": LayoutDashboardIcon,
-  users: UsersIcon,
-  "shield-check": ShieldCheckIcon,
-  "key-round": KeyIcon,
-  "panel-left": PanelLeftIcon,
-  settings: Settings2Icon,
-  bot: BotIcon,
-  "file-text": FileTextIcon,
-  database: DatabaseIcon,
-}
+export { MenuIcon } from "@/lib/icons"
 
 export function IconPicker({
   value,
@@ -53,27 +19,24 @@ export function IconPicker({
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger>
+      <SelectTrigger className="w-full">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {iconOptions.map((item) => {
-          const Icon = iconMap[item.value as keyof typeof iconMap] || CircleIcon
-          return (
-            <SelectItem key={item.value} value={item.value}>
-              <span className="flex items-center gap-2">
-                <Icon className="size-4" />
-                {item.label}
-              </span>
-            </SelectItem>
-          )
-        })}
+        <SelectGroup>
+          {iconOptions.map((item) => {
+            const Icon = menuIcons[item.value]
+            return (
+              <SelectItem key={item.value} value={item.value}>
+                <span className="flex items-center gap-2">
+                  <Icon className="size-4" />
+                  {item.label}
+                </span>
+              </SelectItem>
+            )
+          })}
+        </SelectGroup>
       </SelectContent>
     </Select>
   )
-}
-
-export function MenuIcon({ name, className }: { name: string; className?: string }) {
-  const Icon = iconMap[name as keyof typeof iconMap] || CircleIcon
-  return <Icon className={className} />
 }

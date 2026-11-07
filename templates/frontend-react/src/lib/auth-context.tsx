@@ -1,4 +1,5 @@
 import * as React from "react"
+
 import type { AuthUser } from "@/types/auth"
 
 type User = AuthUser
@@ -10,15 +11,25 @@ type AuthContextType = {
   hasPermission: (code: string) => boolean
   login: (token: string, user: User) => void
   logout: () => void
+  updateUser: (patch: Partial<User>) => void
 }
 
 const AuthContext = React.createContext<AuthContextType | null>(null)
 
+function readStoredUser(): User | null {
+  const stored = localStorage.getItem("user")
+  if (!stored) return null
+
+  try {
+    return JSON.parse(stored) as User
+  } catch {
+    localStorage.removeItem("user")
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<User | null>(() => {
-    const stored = localStorage.getItem("user")
-    return stored ? JSON.parse(stored) : null
-  })
+  const [user, setUser] = React.useState<User | null>(readStoredUser)
   const [token, setToken] = React.useState<string | null>(() =>
     localStorage.getItem("token")
   )
@@ -28,7 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasPermission = React.useCallback(
     (code: string) => {
       if (!user) return false
-      if (user.role === "admin") return true
       return user.permissions.includes(code)
     },
     [user]
@@ -48,8 +58,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
   }, [])
 
+  const updateUser = React.useCallback((patch: Partial<User>) => {
+    setUser((current) => {
+      if (!current) return current
+      const next = { ...current, ...patch }
+      localStorage.setItem("user", JSON.stringify(next))
+      return next
+    })
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, hasPermission, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated,
+        hasPermission,
+        login,
+        logout,
+        updateUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

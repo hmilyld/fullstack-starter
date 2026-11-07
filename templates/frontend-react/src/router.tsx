@@ -1,52 +1,104 @@
 import { createBrowserRouter, Navigate } from "react-router"
+
 import { AdminLayout } from "@/components/admin-layout"
+import { ProtectedRoute } from "@/components/protected-route"
 import { LoginPage } from "@/pages/auth/login"
 import { RegisterPage } from "@/pages/auth/register"
-import { DashboardPage } from "@/pages/dashboard"
-import { UsersPage } from "@/pages/settings/user"
-import { RolesPage } from "@/pages/settings/role"
-import { PermissionPage } from "@/pages/settings/permission"
-import { MenuPage } from "@/pages/settings/menu"
-import { ProfilePage } from "@/pages/settings/profile"
-import { SystemPage } from "@/pages/settings/system"
-import { AiModelPage } from "@/pages/settings/ai-model"
-import { AuditLogPage } from "@/pages/settings/audit-log"
-import { DataManagementPage } from "@/pages/settings/data-management"
-import { NotFoundPage } from "@/pages/not-found"
-import { ProtectedRoute } from "@/components/protected-route"
+import { RouteErrorPage } from "@/pages/route-error"
 
 export const router = createBrowserRouter([
   {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-  {
-    path: "/",
-    element: (
-      <ProtectedRoute>
-        <AdminLayout />
-      </ProtectedRoute>
-    ),
+    errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: "dashboard", element: <DashboardPage /> },
-      { path: "settings/user", element: <UsersPage /> },
-      { path: "settings/role", element: <RolesPage /> },
-      { path: "settings/permission", element: <PermissionPage /> },
-      { path: "settings/menu", element: <MenuPage /> },
-      { path: "settings/profile", element: <ProfilePage /> },
-      { path: "settings/system", element: <SystemPage /> },
-      { path: "settings/ai-model", element: <AiModelPage /> },
-      { path: "settings/audit-log", element: <AuditLogPage /> },
-      { path: "settings/data", element: <DataManagementPage /> },
+      {
+        path: "/login",
+        element: <LoginPage />,
+      },
+      {
+        path: "/register",
+        element: <RegisterPage />,
+      },
+      {
+        path: "/",
+        element: (
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        ),
+        children: [
+          { index: true, element: <Navigate to="/dashboard" replace /> },
+          {
+            path: "dashboard",
+            lazy: async () => ({
+              Component: (await import("@/pages/dashboard")).DashboardPage,
+            }),
+          },
+          {
+            path: "settings/user",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/user")).UsersPage,
+            }),
+          },
+          {
+            path: "settings/role",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/role")).RolesPage,
+            }),
+          },
+          {
+            path: "settings/permission",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/permission"))
+                .PermissionPage,
+            }),
+          },
+          {
+            path: "settings/menu",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/menu")).MenuPage,
+            }),
+          },
+          {
+            path: "settings/profile",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/profile")).ProfilePage,
+            }),
+          },
+          {
+            path: "settings/system",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/system")).SystemPage,
+            }),
+          },
+          {
+            path: "settings/ai-model",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/ai-model"))
+                .AiModelPage,
+            }),
+          },
+          {
+            path: "settings/audit-log",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/audit-log"))
+                .AuditLogPage,
+            }),
+          },
+          {
+            path: "settings/data",
+            lazy: async () => ({
+              Component: (await import("@/pages/settings/data-management"))
+                .DataManagementPage,
+            }),
+          },
+        ],
+      },
+      {
+        path: "*",
+        lazy: async () => ({
+          Component: (await import("@/pages/not-found")).NotFoundPage,
+        }),
+      },
     ],
-  },
-  {
-    path: "*",
-    element: <NotFoundPage />,
   },
 ])

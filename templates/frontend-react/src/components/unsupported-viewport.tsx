@@ -22,7 +22,7 @@ export function UnsupportedViewport() {
         <line x1="152" y1="52" x2="148" y2="60" className="stroke-primary" strokeWidth="3" />
       </svg>
 
-      <div className="space-y-1.5">
+      <div className="flex flex-col gap-1.5">
         <p className="text-xs font-medium tracking-widest text-muted-foreground">设备提示</p>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           请在电脑或平板端访问

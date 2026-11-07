@@ -1,5 +1,6 @@
 import * as React from "react"
 import { useNavigate } from "react-router"
+
 import { logout as apiLogout } from "@/api/auth"
 import { useAuth } from "@/lib/auth-context"
 import { useSiteConfig } from "@/lib/site-config"
@@ -21,9 +22,9 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import {
   ChevronsUpDownIcon,
-  UserCogIcon,
   KeyIcon,
   LogOutIcon,
+  UserCogIcon,
 } from "lucide-react"
 
 export function NavUser({
@@ -41,32 +42,23 @@ export function NavUser({
   const [loggingOut, setLoggingOut] = React.useState(false)
 
   function handleNavigate(tab: string) {
-    navigate("/settings/profile", {
-      state: { tab, ts: Date.now() },
-      replace: false,
-    })
+    navigate(`/settings/profile?tab=${tab}`)
   }
 
   async function handleLogout() {
     setLoggingOut(true)
-    await apiLogout()
-    logout()
-    await refresh()
-    navigate("/login", { replace: true })
+    try {
+      await apiLogout()
+    } finally {
+      logout()
+      await refresh()
+      navigate("/login", { replace: true })
+    }
   }
 
   return (
-    <>
-      {loggingOut && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex flex-col items-center gap-2 rounded-lg bg-background p-6 shadow-lg">
-            <Spinner className="size-6" />
-            <span className="text-sm text-muted-foreground">正在退出登录...</span>
-          </div>
-        </div>
-      )}
-      <SidebarMenu>
-        <SidebarMenuItem>
+    <SidebarMenu>
+      <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
@@ -75,7 +67,9 @@ export function NavUser({
             >
               <Avatar className="size-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{user.name?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {user.name?.charAt(0).toUpperCase() || "?"}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -85,7 +79,7 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-fit"
+            className="w-56"
             side="right"
             align="end"
             sideOffset={4}
@@ -94,7 +88,9 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="size-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">{user.name?.charAt(0) || "?"}</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {user.name?.charAt(0) || "?"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -114,13 +110,10 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={loggingOut}
-              onClick={handleLogout}
-            >
+            <DropdownMenuItem disabled={loggingOut} onClick={handleLogout}>
               {loggingOut ? (
                 <>
-                  <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <Spinner />
                   退出中...
                 </>
               ) : (
@@ -134,6 +127,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-    </>
   )
 }
