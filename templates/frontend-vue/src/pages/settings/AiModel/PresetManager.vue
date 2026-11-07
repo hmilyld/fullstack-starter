@@ -296,7 +296,14 @@ const showEmpty = computed(() => !loading.value && !hasPresets.value)
           : '预设在新增模型时用于快速填充模型名称和接口地址。'
       "
     >
-      <template #action>
+      <template
+        v-if="
+          debouncedSearch ||
+          selectedGroup ||
+          auth.hasPermission('ai_models.presets.create')
+        "
+        #action
+      >
         <Button
           v-if="debouncedSearch || selectedGroup"
           variant="outline"
@@ -492,11 +499,12 @@ const showEmpty = computed(() => !loading.value && !hasPresets.value)
           <FieldLabel for="preset-sort-order">排序</FieldLabel>
           <Input
             id="preset-sort-order"
-            v-model.number="editForm.sortOrder"
+            :model-value="editForm.sortOrder"
             name="preset-sort-order"
             autocomplete="off"
             type="number"
             :min="0"
+            @update:model-value="editForm.sortOrder = Number($event) || 0"
           />
         </Field>
         <Field orientation="horizontal">

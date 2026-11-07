@@ -34,8 +34,8 @@ const forwarded = useForwardProps(delegatedProps)
     v-bind="forwarded"
   >
     <slot>
-      <span class="hidden sm:block">Next</span>
-      <ChevronRightIcon data-icon="inline-end" class="cn-rtl-flip" />
+      <span class="hidden sm:block">下一页</span>
+      <ChevronRightIcon data-icon="inline-end" />
     </slot>
   </PaginationNext>
 </template>

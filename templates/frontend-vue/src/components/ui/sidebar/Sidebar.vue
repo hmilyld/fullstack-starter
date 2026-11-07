@@ -52,8 +52,8 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
       }"
     >
       <SheetHeader class="sr-only">
-        <SheetTitle>Sidebar</SheetTitle>
-        <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+        <SheetTitle>导航菜单</SheetTitle>
+        <SheetDescription>系统功能导航</SheetDescription>
       </SheetHeader>
       <div class="flex h-full w-full flex-col">
         <slot />

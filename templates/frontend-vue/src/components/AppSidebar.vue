@@ -11,6 +11,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { getNavigation } from "@/api/menu"
+import { DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
 import type { NavigationGroup } from "@/types/menu"
 
@@ -20,7 +21,9 @@ const siteConfig = useSiteConfigStore()
 const { isMobile, setOpenMobile } = useSidebar()
 const navGroups = ref<NavigationGroup[]>([])
 
-const siteName = computed(() => siteConfig.config?.siteName || "管理系统")
+const siteName = computed(
+  () => siteConfig.config?.siteName || DEFAULT_SITE_NAME
+)
 
 const groups = computed(() =>
   navGroups.value.map((group) => ({

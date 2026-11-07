@@ -375,9 +375,8 @@ const showEmpty = computed(() => !listLoading.value && !hasModels.value)
             </Button>
           </template>
 
-          <template #footer>
+          <template v-if="hasModels" #footer>
             <TablePagination
-              v-if="hasModels"
               :page="currentPage"
               :total-pages="totalPages"
               :total="total"
@@ -408,7 +407,10 @@ const showEmpty = computed(() => !listLoading.value && !hasModels.value)
                 : '新增模型后，其他模块即可通过别名调用。'
             "
           >
-            <template #action>
+            <template
+              v-if="debouncedSearch || auth.hasPermission('ai_models.create')"
+              #action
+            >
               <Button
                 v-if="debouncedSearch"
                 variant="outline"

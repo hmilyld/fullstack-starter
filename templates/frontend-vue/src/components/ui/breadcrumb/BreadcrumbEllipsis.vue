@@ -21,6 +21,6 @@ const props = defineProps<{
     <slot>
       <MoreHorizontalIcon />
     </slot>
-    <span class="sr-only">More</span>
+    <span class="sr-only">更多</span>
   </span>
 </template>

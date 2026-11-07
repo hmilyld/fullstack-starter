@@ -203,7 +203,9 @@ async function handlePasswordSubmit() {
                     required
                     @update:model-value="clearPasswordError"
                   />
-                  <FieldError>{{ passwordError }}</FieldError>
+                  <FieldError v-if="passwordError">{{
+                    passwordError
+                  }}</FieldError>
                 </Field>
               </FieldGroup>
             </form>

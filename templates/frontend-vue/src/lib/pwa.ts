@@ -2,8 +2,8 @@ import type { PublicConfig } from "@/types/system"
 
 export type PwaTheme = "light" | "dark"
 
-const DEFAULT_NAME = "管理系统"
-const DEFAULT_DESCRIPTION = "基于 Vue 3 + shadcn-vue 的后台管理框架"
+export const DEFAULT_SITE_NAME = "管理系统"
+export const DEFAULT_SITE_DESCRIPTION = "基于 Vue 3 + shadcn-vue 的后台管理框架"
 
 export type PwaManifest = {
   name: string
@@ -32,14 +32,14 @@ export function buildPwaManifest(
   config: PublicConfig | null,
   theme: PwaTheme
 ): PwaManifest {
-  const name = config?.siteName?.trim() || DEFAULT_NAME
+  const name = config?.siteName?.trim() || DEFAULT_SITE_NAME
   const shortName = [...name].slice(0, 12).join("")
   const background = theme === "dark" ? "#0a0a0a" : "#ffffff"
 
   return {
     name,
     short_name: shortName,
-    description: config?.siteDescription?.trim() || DEFAULT_DESCRIPTION,
+    description: config?.siteDescription?.trim() || DEFAULT_SITE_DESCRIPTION,
     lang: "zh-CN",
     dir: "ltr",
     id: "/",

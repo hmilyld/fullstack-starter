@@ -319,7 +319,10 @@ const hasPermissions = computed(() => tree.value.length > 0)
             : '在菜单管理中新增菜单后，会自动生成对应的菜单权限。'
         "
       >
-        <template #action>
+        <template
+          v-if="search || auth.hasPermission('permissions.create')"
+          #action
+        >
           <Button v-if="search" variant="outline" @click="setSearch('')">
             清空搜索
           </Button>

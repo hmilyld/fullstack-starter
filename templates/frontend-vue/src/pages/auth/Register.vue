@@ -132,7 +132,9 @@ async function handleSubmit() {
                   :disabled="registrationDisabled"
                   @update:model-value="passwordError = null"
                 />
-                <FieldError>{{ passwordError }}</FieldError>
+                <FieldError v-if="passwordError">{{
+                  passwordError
+                }}</FieldError>
               </Field>
               <Field>
                 <LoadingButton

@@ -404,9 +404,8 @@ const showEmpty = computed(() => !listLoading.value && !hasUsers.value)
         </Button>
       </template>
 
-      <template #footer>
+      <template v-if="hasUsers" #footer>
         <TablePagination
-          v-if="hasUsers"
           :page="currentPage"
           :total-pages="totalPages"
           :total="total"
@@ -437,7 +436,10 @@ const showEmpty = computed(() => !listLoading.value && !hasUsers.value)
             : '创建第一位用户，或等待注册审核通过。'
         "
       >
-        <template #action>
+        <template
+          v-if="debouncedSearch || auth.hasPermission('users.create')"
+          #action
+        >
           <Button
             v-if="debouncedSearch"
             variant="outline"

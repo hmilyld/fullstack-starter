@@ -32,7 +32,7 @@ const forwarded = useForwardProps(delegatedProps)
     v-bind="forwarded"
   >
     <slot>
-      <span class="hidden sm:block">Last</span>
+      <span class="hidden sm:block">末页</span>
       <ChevronsRightIcon data-icon="inline-end" />
     </slot>
   </PaginationLast>

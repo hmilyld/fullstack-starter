@@ -105,7 +105,9 @@ async function handleSubmit() {
                   required
                   @update:model-value="passwordError = null"
                 />
-                <FieldError>{{ passwordError }}</FieldError>
+                <FieldError v-if="passwordError">{{
+                  passwordError
+                }}</FieldError>
               </Field>
               <Field>
                 <LoadingButton

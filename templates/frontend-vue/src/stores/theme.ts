@@ -29,7 +29,6 @@ function applyTheme(theme: ResolvedTheme) {
   root.classList.remove("light", "dark")
   root.classList.add(theme)
   root.style.colorScheme = theme
-  root.setAttribute("data-theme", theme)
 }
 
 function loadTheme(): Theme {
@@ -48,14 +47,23 @@ export const useThemeStore = defineStore("theme", () => {
 
   watch(resolvedTheme, (value) => applyTheme(value), { immediate: true })
 
+  // 与 React 模板一致：其他标签页切换主题时同步当前页面
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", (event) => {
+      if (event.key !== THEME_STORAGE_KEY) return
+      theme.value =
+        event.newValue === "dark" ||
+        event.newValue === "light" ||
+        event.newValue === "system"
+          ? event.newValue
+          : "system"
+    })
+  }
+
   function setTheme(nextTheme: Theme) {
     localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
     theme.value = nextTheme
   }
 
-  function toggleTheme() {
-    setTheme(resolvedTheme.value === "dark" ? "light" : "dark")
-  }
-
-  return { theme, resolvedTheme, setTheme, toggleTheme }
+  return { theme, resolvedTheme, setTheme }
 })

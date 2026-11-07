@@ -34,8 +34,8 @@ const forwarded = useForwardProps(delegatedProps)
     v-bind="forwarded"
   >
     <slot>
-      <ChevronLeftIcon data-icon="inline-start" class="cn-rtl-flip" />
-      <span class="hidden sm:block">Previous</span>
+      <ChevronLeftIcon data-icon="inline-start" />
+      <span class="hidden sm:block">上一页</span>
     </slot>
   </PaginationPrev>
 </template>

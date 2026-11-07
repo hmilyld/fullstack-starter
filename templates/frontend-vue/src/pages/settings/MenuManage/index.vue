@@ -36,7 +36,13 @@ import {
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 import type { MenuConfig, MenuGroup, MenuItem } from "@/types/menu"
-import type { MenuDragData } from "@/pages/settings/MenuManage/menu-drag"
+import {
+  applyMenuDrag,
+  cloneMenuConfig,
+  moveMenuGroup,
+  moveMenuItem,
+  type MenuDragData,
+} from "@/pages/settings/MenuManage/menu-drag"
 
 const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
 
@@ -77,37 +83,12 @@ const canCreate = computed(() => auth.hasPermission("menus.create"))
 const canEdit = computed(() => auth.hasPermission("menus.edit"))
 const canDelete = computed(() => auth.hasPermission("menus.delete"))
 
-function cloneConfig(value: MenuConfig): MenuConfig {
-  return {
-    version: value.version,
-    groups: value.groups.map((group) => ({
-      ...group,
-      items: group.items.map((item) => ({ ...item })),
-    })),
-  }
-}
-
-function normalize(value: MenuConfig): MenuConfig {
-  return {
-    ...value,
-    groups: value.groups.map((group, groupIndex) => ({
-      ...group,
-      sortOrder: groupIndex + 1,
-      items: group.items.map((item, itemIndex) => ({
-        ...item,
-        groupId: group.id,
-        sortOrder: itemIndex + 1,
-      })),
-    })),
-  }
-}
-
 async function load() {
   loading.value = true
   const response = await getMenuConfig()
   if (response.code === 0) {
-    config.value = cloneConfig(response.data)
-    savedConfig.value = cloneConfig(response.data)
+    config.value = cloneMenuConfig(response.data)
+    savedConfig.value = cloneMenuConfig(response.data)
   } else {
     toast.error(response.message || "加载菜单失败")
   }
@@ -125,49 +106,14 @@ const dirty = computed(
     JSON.stringify(config.value) !== JSON.stringify(savedConfig.value)
 )
 
-function updateDraft(updater: (current: MenuConfig) => MenuConfig) {
-  if (!config.value) return
-  config.value = normalize(updater(cloneConfig(config.value)))
-}
-
-function arrayMove<T>(items: T[], from: number, to: number) {
-  const next = [...items]
-  const [moved] = next.splice(from, 1)
-  next.splice(to, 0, moved)
-  return next
-}
-
 function moveGroup(groupId: string, direction: -1 | 1) {
-  updateDraft((current) => {
-    const index = current.groups.findIndex((group) => group.id === groupId)
-    const target = index + direction
-    if (index < 0 || target < 0 || target >= current.groups.length) {
-      return current
-    }
-    return { ...current, groups: arrayMove(current.groups, index, target) }
-  })
+  if (!config.value) return
+  config.value = moveMenuGroup(config.value, groupId, direction)
 }
 
 function moveItem(groupId: string, permissionCode: string, direction: -1 | 1) {
-  updateDraft((current) => {
-    const group = current.groups.find((item) => item.id === groupId)
-    if (!group) return current
-    const index = group.items.findIndex(
-      (item) => item.permissionCode === permissionCode
-    )
-    const target = index + direction
-    if (index < 0 || target < 0 || target >= group.items.length) {
-      return current
-    }
-    return {
-      ...current,
-      groups: current.groups.map((item) =>
-        item.id === groupId
-          ? { ...item, items: arrayMove(item.items, index, target) }
-          : item
-      ),
-    }
-  })
+  if (!config.value) return
+  config.value = moveMenuItem(config.value, groupId, permissionCode, direction)
 }
 
 function handleDragEnd(event: DragEndEvent) {
@@ -178,77 +124,30 @@ function handleDragEnd(event: DragEndEvent) {
   const sourceData = source.data as MenuDragData | undefined
   if (!sourceData) return
 
-  const before = config.value ? JSON.stringify(config.value) : ""
-  const initialIndex = source.initialIndex
-  const nextIndex = source.index
   const targetData = event.operation.target?.data as MenuDragData | undefined
-  const sourceGroupId =
-    (source.initialGroup as string | undefined) ?? sourceData.groupId
-  const targetGroupId =
-    (source.group as string | undefined) ?? targetData?.groupId ?? sourceGroupId
-  const nextGroupIndex =
-    targetGroupId !== sourceGroupId && targetData ? targetData.index : nextIndex
+  const before = config.value ? JSON.stringify(config.value) : ""
 
-  if (sourceData.type === "group") {
-    if (initialIndex !== nextIndex) {
-      updateDraft((current) => ({
-        ...current,
-        groups: arrayMove(current.groups, initialIndex, nextIndex),
-      }))
-    }
-  } else if (sourceData.type === "item") {
-    updateDraft((current) => {
-      const sourceGroup = current.groups.find(
-        (group) => group.id === sourceGroupId
-      )
-      const targetGroup = current.groups.find(
-        (group) => group.id === targetGroupId
-      )
-      if (!sourceGroup || !targetGroup) return current
-
-      const item = sourceGroup.items.find(
-        (candidate) => candidate.permissionCode === sourceData.permissionCode
-      )
-      if (!item) return current
-
-      if (sourceGroup.id === targetGroup.id) {
-        if (initialIndex === nextIndex) return current
-        return {
-          ...current,
-          groups: current.groups.map((group) =>
-            group.id === sourceGroup.id
-              ? {
-                  ...group,
-                  items: arrayMove(group.items, initialIndex, nextGroupIndex),
-                }
-              : group
-          ),
-        }
-      }
-
-      return {
-        ...current,
-        groups: current.groups.map((group) => {
-          if (group.id === sourceGroup.id) {
-            return {
-              ...group,
-              items: group.items.filter(
-                (candidate) =>
-                  candidate.permissionCode !== sourceData.permissionCode
-              ),
-            }
+  if (config.value) {
+    config.value = applyMenuDrag(
+      config.value,
+      {
+        type: sourceData.type === "group" ? "group" : "item",
+        initialIndex: source.initialIndex,
+        index: source.index,
+        groupId: sourceData.groupId,
+        permissionCode:
+          sourceData.type === "item" ? sourceData.permissionCode : undefined,
+        initialGroup: source.initialGroup as string | undefined,
+        group: source.group as string | undefined,
+      },
+      targetData
+        ? {
+            type: targetData.type,
+            groupId: targetData.groupId,
+            index: targetData.index,
           }
-          if (group.id === targetGroup.id) {
-            const items = [...group.items]
-            const targetIndex =
-              nextGroupIndex < 0 ? items.length : nextGroupIndex
-            items.splice(targetIndex, 0, item)
-            return { ...group, items }
-          }
-          return group
-        }),
-      }
-    })
+        : undefined
+    )
   }
 
   const after = config.value ? JSON.stringify(config.value) : ""
@@ -275,10 +174,10 @@ async function handleSave() {
     return
   }
   if (config.value) {
-    const next = cloneConfig(config.value)
+    const next = cloneMenuConfig(config.value)
     next.version = response.data.version
     config.value = next
-    savedConfig.value = cloneConfig(next)
+    savedConfig.value = cloneMenuConfig(next)
   }
   window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
   toast.success("菜单顺序已保存")

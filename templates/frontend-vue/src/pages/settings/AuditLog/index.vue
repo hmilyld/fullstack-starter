@@ -196,9 +196,8 @@ const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
     />
 
     <ListShell title="操作记录" :description="`共 ${total} 条记录`">
-      <template #footer>
+      <template v-if="hasLogs" #footer>
         <TablePagination
-          v-if="hasLogs"
           :page="currentPage"
           :total-pages="totalPages"
           :total="total"
@@ -301,7 +300,7 @@ const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
             : '系统的写操作和权限拦截会自动记录在这里。'
         "
       >
-        <template #action>
+        <template v-if="activeFilters.length > 0" #action>
           <Button
             v-if="activeFilters.length > 0"
             variant="outline"

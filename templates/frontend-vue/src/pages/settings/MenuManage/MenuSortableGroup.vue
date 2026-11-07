@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useDroppable } from "@dnd-kit/vue"
 import { useSortable } from "@dnd-kit/vue/sortable"
 import {
   ChevronDown,
@@ -51,6 +52,7 @@ const emit = defineEmits<{
 
 const element = ref<HTMLElement | null>(null)
 const handle = ref<HTMLElement | null>(null)
+const dropElement = ref<HTMLElement | null>(null)
 const { isDragging } = useSortable({
   id: groupSortableId(props.group.id),
   index: computed(() => props.index),
@@ -61,6 +63,16 @@ const { isDragging } = useSortable({
     type: "group",
     groupId: props.group.id,
     index: props.index,
+  })),
+})
+
+const { isDropTarget } = useDroppable({
+  id: `drop:${props.group.id}`,
+  element: dropElement,
+  data: computed<MenuDragData>(() => ({
+    type: "group-drop",
+    groupId: props.group.id,
+    index: props.group.items.length,
   })),
 })
 
@@ -140,7 +152,14 @@ const actions = computed<RowAction[]>(() => {
           </div>
         </div>
       </CardHeader>
-      <CardContent class="flex flex-col gap-1 p-2 transition-colors">
+      <CardContent
+        :class="
+          cn(
+            'flex flex-col gap-1 p-2 transition-colors',
+            isDropTarget && 'bg-muted/40'
+          )
+        "
+      >
         <MenuSortableItem
           v-for="(item, itemIndex) in group.items"
           :key="item.permissionCode"
@@ -159,10 +178,22 @@ const actions = computed<RowAction[]>(() => {
         />
         <div
           v-if="group.items.length === 0"
-          class="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground"
+          ref="dropElement"
+          :class="
+            cn(
+              'rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground',
+              isDropTarget && 'bg-muted/40'
+            )
+          "
         >
           暂无菜单
         </div>
+        <div
+          v-else
+          ref="dropElement"
+          aria-hidden="true"
+          :class="cn('h-4 rounded-lg', isDropTarget && 'bg-muted/40')"
+        />
       </CardContent>
     </Card>
   </div>

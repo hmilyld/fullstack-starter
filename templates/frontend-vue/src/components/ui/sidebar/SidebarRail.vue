@@ -7,16 +7,17 @@ const props = defineProps<{
   class?: HTMLAttributes["class"]
 }>()
 
-const { toggleSidebar } = useSidebar()
+const { isMobile, toggleSidebar } = useSidebar()
 </script>
 
 <template>
   <button
+    v-if="!isMobile"
     data-sidebar="rail"
     data-slot="sidebar-rail"
-    aria-label="Toggle Sidebar"
+    aria-label="切换侧边栏"
     :tabindex="-1"
-    title="Toggle Sidebar"
+    title="切换侧边栏"
     :class="
       cn(
         'absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-0.5 hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2',

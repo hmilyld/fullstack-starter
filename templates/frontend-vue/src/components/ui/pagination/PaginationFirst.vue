@@ -33,7 +33,7 @@ const forwarded = useForwardProps(delegatedProps)
   >
     <slot>
       <ChevronsLeftIcon data-icon="inline-start" />
-      <span class="hidden sm:block">First</span>
+      <span class="hidden sm:block">首页</span>
     </slot>
   </PaginationFirst>
 </template>

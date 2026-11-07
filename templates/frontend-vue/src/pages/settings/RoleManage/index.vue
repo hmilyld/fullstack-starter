@@ -285,9 +285,8 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
         </Button>
       </template>
 
-      <template #footer>
+      <template v-if="hasRoles" #footer>
         <TablePagination
-          v-if="hasRoles"
           :page="currentPage"
           :total-pages="totalPages"
           :total="total"
@@ -318,7 +317,10 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
             : '创建角色并分配权限，再把角色授予用户。'
         "
       >
-        <template #action>
+        <template
+          v-if="debouncedSearch || auth.hasPermission('roles.create')"
+          #action
+        >
           <Button
             v-if="debouncedSearch"
             variant="outline"

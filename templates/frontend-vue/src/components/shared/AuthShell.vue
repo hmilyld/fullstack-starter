@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import BrandMark from "@/components/BrandMark.vue"
+import { DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
 
 const siteConfig = useSiteConfigStore()
 
-const siteName = computed(() => siteConfig.config?.siteName || "管理系统")
+const siteName = computed(
+  () => siteConfig.config?.siteName || DEFAULT_SITE_NAME
+)
 const siteDescription = computed(
   () => siteConfig.config?.siteDescription || "登录后管理用户、角色与系统设置"
 )
