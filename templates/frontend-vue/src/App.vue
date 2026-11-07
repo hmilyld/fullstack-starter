@@ -2,7 +2,7 @@
 import { onErrorCaptured, onMounted, ref, watch } from "vue"
 import { RouterView } from "vue-router"
 import ErrorState from "@/components/shared/ErrorState.vue"
-import FullPageLoader from "@/components/shared/FullPageLoader.vue"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "@/components/ui/sonner"
 import { useMediaQuery } from "@/composables/use-media-query"
 import { usePwaManifest } from "@/composables/use-pwa-manifest"
@@ -61,7 +61,15 @@ watch(
       :on-retry="retry"
     />
   </div>
-  <FullPageLoader v-else-if="siteConfig.loading" />
+  <div
+    v-else-if="siteConfig.loading"
+    class="flex min-h-svh items-center justify-center"
+  >
+    <div class="flex flex-col items-center gap-4">
+      <Skeleton class="h-8 w-48" />
+      <Skeleton class="h-4 w-32" />
+    </div>
+  </div>
   <RouterView v-else />
   <Toaster
     :theme="themeStore.resolvedTheme"
