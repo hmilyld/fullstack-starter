@@ -172,7 +172,7 @@ export function DataManagementPage() {
         description="导出或恢复当前系统的完整数据。"
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {hasPermission("data_management.export") && (
           <Card>
             <CardHeader>

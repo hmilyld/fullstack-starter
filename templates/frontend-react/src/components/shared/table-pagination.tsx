@@ -45,7 +45,7 @@ export function TablePagination({
   const pageItems = getPageItems(page, totalPages)
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <p className="text-sm text-muted-foreground">
         共 {total} {itemLabel}，第 {page} / {totalPages} 页
       </p>
@@ -64,11 +64,14 @@ export function TablePagination({
           </PaginationItem>
           {pageItems.map((item, index) =>
             item === "ellipsis" ? (
-              <PaginationItem key={`ellipsis-${index}`}>
+              <PaginationItem
+                key={`ellipsis-${index}`}
+                className="hidden md:flex"
+              >
                 <PaginationEllipsis />
               </PaginationItem>
             ) : (
-              <PaginationItem key={item}>
+              <PaginationItem key={item} className="hidden md:flex">
                 <Button
                   variant={item === page ? "outline" : "ghost"}
                   size="icon-sm"

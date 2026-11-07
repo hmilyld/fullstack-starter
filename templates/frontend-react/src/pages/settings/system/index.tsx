@@ -447,7 +447,10 @@ export function SystemPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="register" className="flex flex-col gap-(--page-gap)">
+        <TabsContent
+          value="register"
+          className="flex flex-col gap-(--page-gap)"
+        >
           <Card>
             <CardHeader>
               <CardTitle>注册策略</CardTitle>
@@ -605,7 +608,7 @@ export function SystemPage() {
               <Separator />
 
               <FieldGroup>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="smtp-host">SMTP 服务器</FieldLabel>
                     <Input
@@ -632,7 +635,7 @@ export function SystemPage() {
                     />
                   </Field>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="smtp-username">用户名</FieldLabel>
                     <Input
@@ -659,7 +662,7 @@ export function SystemPage() {
                     />
                   </Field>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="smtp-from-name">发件人名称</FieldLabel>
                     <Input

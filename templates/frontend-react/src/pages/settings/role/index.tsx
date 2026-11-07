@@ -15,6 +15,8 @@ import { FormDialog } from "@/components/shared/form-dialog"
 import { InlineError } from "@/components/shared/inline-error"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
+import { RecordCard } from "@/components/shared/record-card"
+import { RowActions, type RowAction } from "@/components/shared/row-actions"
 import { TablePagination } from "@/components/shared/table-pagination"
 import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
@@ -222,6 +224,27 @@ export function RolesPage() {
     list.refresh()
   }
 
+  function buildRoleActions(role: Role): RowAction[] {
+    const actions: RowAction[] = []
+    if (hasPermission("roles.edit")) {
+      actions.push({
+        label: "编辑",
+        icon: PencilIcon,
+        onSelect: () => handleEdit(role),
+      })
+    }
+    if (!role.isPreset && hasPermission("roles.delete")) {
+      actions.push({
+        label: "删除",
+        icon: Trash2Icon,
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => handleDelete(role),
+      })
+    }
+    return actions
+  }
+
   const hasRoles = list.items.length > 0
   const showEmpty = !list.loading && !hasRoles
 
@@ -234,7 +257,7 @@ export function RolesPage() {
         description={`共 ${list.total} 个角色`}
         actions={
           <>
-            <InputGroup className="w-full sm:w-64">
+            <InputGroup className="w-full md:w-64">
               <InputGroupInput
                 placeholder="搜索角色名称..."
                 aria-label="搜索角色"
@@ -246,7 +269,7 @@ export function RolesPage() {
               </InputGroupAddon>
             </InputGroup>
             {hasPermission("roles.create") && (
-              <Button onClick={handleAdd} className="w-full sm:w-auto">
+              <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
                 新增角色
               </Button>
@@ -296,64 +319,96 @@ export function RolesPage() {
             }
           />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>角色名称</TableHead>
-                <TableHead>描述</TableHead>
-                <TableHead>权限数</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="flex flex-col gap-2 md:hidden">
               {list.items.map((role) => (
-                <TableRow key={role.id}>
-                  <TableCell className="font-medium">{role.name}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {role.description || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{role.permissions.length}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {role.isPreset ? (
-                      <Badge variant="outline">
-                        <LockIcon />
-                        预设
+                <RecordCard
+                  key={role.id}
+                  title={role.name}
+                  badges={
+                    <>
+                      {role.isPreset ? (
+                        <Badge variant="outline">预设</Badge>
+                      ) : (
+                        <Badge variant="secondary">自定义</Badge>
+                      )}
+                      <Badge variant="secondary">
+                        {role.permissions.length} 项权限
                       </Badge>
-                    ) : (
-                      <Badge variant="secondary">自定义</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {hasPermission("roles.edit") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleEdit(role)}
-                        >
-                          <PencilIcon />
-                          <span className="sr-only">编辑 {role.name}</span>
-                        </Button>
-                      )}
-                      {!role.isPreset && hasPermission("roles.delete") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleDelete(role)}
-                        >
-                          <Trash2Icon />
-                          <span className="sr-only">删除 {role.name}</span>
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                    </>
+                  }
+                  subtitle={role.description || "暂无描述"}
+                  actions={<RowActions actions={buildRoleActions(role)} />}
+                />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>角色名称</TableHead>
+                    <TableHead className="hidden md:table-cell">描述</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      权限数
+                    </TableHead>
+                    <TableHead>类型</TableHead>
+                    <TableHead className="sticky right-0 bg-card text-right">
+                      操作
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.items.map((role) => (
+                    <TableRow key={role.id}>
+                      <TableCell className="font-medium">{role.name}</TableCell>
+                      <TableCell className="hidden text-muted-foreground md:table-cell">
+                        {role.description || "-"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Badge variant="secondary">
+                          {role.permissions.length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {role.isPreset ? (
+                          <Badge variant="outline">
+                            <LockIcon />
+                            预设
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">自定义</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="sticky right-0 bg-inherit text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {hasPermission("roles.edit") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleEdit(role)}
+                            >
+                              <PencilIcon />
+                              <span className="sr-only">编辑 {role.name}</span>
+                            </Button>
+                          )}
+                          {!role.isPreset && hasPermission("roles.delete") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleDelete(role)}
+                            >
+                              <Trash2Icon />
+                              <span className="sr-only">删除 {role.name}</span>
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </ListShell>
 

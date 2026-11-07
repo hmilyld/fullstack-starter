@@ -18,6 +18,7 @@ import { InlineError } from "@/components/shared/inline-error"
 import { ListShell } from "@/components/shared/list-shell"
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
+import { RowActions, type RowAction } from "@/components/shared/row-actions"
 import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -240,6 +241,27 @@ export function PermissionPage() {
     void loadData()
   }
 
+  function buildPermissionActions(permission: Permission): RowAction[] {
+    const actions: RowAction[] = []
+    if (hasPermission("permissions.edit")) {
+      actions.push({
+        label: "编辑",
+        icon: PencilIcon,
+        onSelect: () => handleEdit(permission),
+      })
+    }
+    if (hasPermission("permissions.delete")) {
+      actions.push({
+        label: "删除",
+        icon: Trash2Icon,
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => handleDelete(permission),
+      })
+    }
+    return actions
+  }
+
   const hasPermissions = tree.length > 0
 
   return (
@@ -254,7 +276,7 @@ export function PermissionPage() {
         description={`共 ${menuPermissions.length} 个菜单权限，${operationPermissions.length} 个操作权限`}
         actions={
           <>
-            <InputGroup className="w-full sm:w-64">
+            <InputGroup className="w-full md:w-64">
               <InputGroupInput
                 placeholder="搜索编码或名称..."
                 aria-label="搜索权限"
@@ -271,14 +293,14 @@ export function PermissionPage() {
                   variant="outline"
                   onClick={handleSync}
                   loading={syncing}
-                  className="w-full sm:w-auto"
+                  className="w-full md:w-auto"
                 >
                   {!syncing && <RefreshCwIcon data-icon="inline-start" />}
                   同步权限
                 </LoadingButton>
                 <Button
                   onClick={() => navigate("/settings/menu")}
-                  className="w-full sm:w-auto"
+                  className="w-full md:w-auto"
                 >
                   <PlusIcon data-icon="inline-start" />
                   菜单管理
@@ -318,124 +340,202 @@ export function PermissionPage() {
             }
           />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40%]">权限名称</TableHead>
-                <TableHead className="w-[25%]">权限编码</TableHead>
-                <TableHead className="w-[10%]">类型</TableHead>
-                <TableHead className="w-[25%] text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="flex flex-col gap-2 md:hidden">
               {tree.map((node) => {
                 const isExpanded = expanded.has(node.code)
 
                 return (
-                  <React.Fragment key={node.code}>
-                    <TableRow className="bg-muted/30">
-                      <TableCell>
+                  <div key={node.code} className="rounded-2xl border bg-card">
+                    <div className="flex items-start justify-between gap-2 p-4">
+                      <div className="flex min-w-0 flex-col gap-1">
                         <div className="flex items-center gap-2">
+                          <span className="font-medium">{node.name}</span>
+                          <Badge variant="default">菜单</Badge>
+                        </div>
+                        <code className="truncate text-xs text-muted-foreground">
+                          {node.code}
+                        </code>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {hasPermission("permissions.create") && (
                           <Button
                             variant="ghost"
-                            size="icon-xs"
-                            aria-expanded={isExpanded}
-                            aria-label={`${isExpanded ? "收起" : "展开"} ${node.name}`}
-                            onClick={() => toggleExpand(node.code)}
+                            size="icon-sm"
+                            aria-label={`新增 ${node.name} 的子权限`}
+                            onClick={() => handleAddOperation(node.code)}
                           >
-                            <ChevronRightIcon
-                              className={cn(
-                                "transition-transform",
-                                isExpanded && "rotate-90"
-                              )}
-                            />
+                            <PlusIcon />
                           </Button>
-                          <span className="font-medium">{node.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {node.code}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="default">菜单</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {hasPermission("permissions.create") && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleAddOperation(node.code)}
-                            >
-                              <PlusIcon />
-                              <span className="sr-only">
-                                新增 {node.name} 的子权限
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`${isExpanded ? "收起" : "展开"} ${node.name}`}
+                          aria-expanded={isExpanded}
+                          onClick={() => toggleExpand(node.code)}
+                        >
+                          <ChevronRightIcon
+                            className={cn(
+                              "transition-transform",
+                              isExpanded && "rotate-90"
+                            )}
+                          />
+                        </Button>
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div className="border-t p-2">
+                        {node.children.map((child) => (
+                          <div
+                            key={child.code}
+                            className="flex items-start justify-between gap-2 rounded-xl px-2 py-2"
+                          >
+                            <div className="flex min-w-0 flex-col gap-0.5">
+                              <span className="truncate text-sm">
+                                {child.name}
                               </span>
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                              <code className="truncate text-xs text-muted-foreground">
+                                {child.code}
+                              </code>
+                            </div>
+                            <RowActions
+                              actions={buildPermissionActions(child)}
+                            />
+                          </div>
+                        ))}
+                        {node.children.length === 0 && (
+                          <p className="px-2 py-3 text-sm text-muted-foreground">
+                            暂无操作权限
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40%]">权限名称</TableHead>
+                    <TableHead className="w-[25%]">权限编码</TableHead>
+                    <TableHead className="w-[10%]">类型</TableHead>
+                    <TableHead className="w-[25%] text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tree.map((node) => {
+                    const isExpanded = expanded.has(node.code)
 
-                    {isExpanded &&
-                      node.children.map((child) => (
-                        <TableRow key={child.code}>
+                    return (
+                      <React.Fragment key={node.code}>
+                        <TableRow className="bg-muted/30">
                           <TableCell>
-                            <div className="flex items-center gap-2 pl-9">
-                              <span>{child.name}</span>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                aria-expanded={isExpanded}
+                                aria-label={`${isExpanded ? "收起" : "展开"} ${node.name}`}
+                                onClick={() => toggleExpand(node.code)}
+                              >
+                                <ChevronRightIcon
+                                  className={cn(
+                                    "transition-transform",
+                                    isExpanded && "rotate-90"
+                                  )}
+                                />
+                              </Button>
+                              <span className="font-medium">{node.name}</span>
                             </div>
                           </TableCell>
                           <TableCell className="font-mono text-sm">
-                            {child.code}
+                            {node.code}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary">操作</Badge>
+                            <Badge variant="default">菜单</Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              {hasPermission("permissions.edit") && (
+                              {hasPermission("permissions.create") && (
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
-                                  onClick={() => handleEdit(child)}
+                                  onClick={() => handleAddOperation(node.code)}
                                 >
-                                  <PencilIcon />
+                                  <PlusIcon />
                                   <span className="sr-only">
-                                    编辑 {child.name}
-                                  </span>
-                                </Button>
-                              )}
-                              {hasPermission("permissions.delete") && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => handleDelete(child)}
-                                >
-                                  <Trash2Icon />
-                                  <span className="sr-only">
-                                    删除 {child.name}
+                                    新增 {node.name} 的子权限
                                   </span>
                                 </Button>
                               )}
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
 
-                    {isExpanded && node.children.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4}>
-                          <div className="pl-9 text-sm text-muted-foreground">
-                            暂无操作权限
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
-                )
-              })}
-            </TableBody>
-          </Table>
+                        {isExpanded &&
+                          node.children.map((child) => (
+                            <TableRow key={child.code}>
+                              <TableCell>
+                                <div className="flex items-center gap-2 pl-9">
+                                  <span>{child.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-mono text-sm">
+                                {child.code}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">操作</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  {hasPermission("permissions.edit") && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => handleEdit(child)}
+                                    >
+                                      <PencilIcon />
+                                      <span className="sr-only">
+                                        编辑 {child.name}
+                                      </span>
+                                    </Button>
+                                  )}
+                                  {hasPermission("permissions.delete") && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => handleDelete(child)}
+                                    >
+                                      <Trash2Icon />
+                                      <span className="sr-only">
+                                        删除 {child.name}
+                                      </span>
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+
+                        {isExpanded && node.children.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4}>
+                              <div className="pl-9 text-sm text-muted-foreground">
+                                暂无操作权限
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </ListShell>
 

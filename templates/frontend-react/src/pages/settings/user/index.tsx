@@ -19,7 +19,9 @@ import { InlineError } from "@/components/shared/inline-error"
 import { ListShell } from "@/components/shared/list-shell"
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
+import { RecordCard } from "@/components/shared/record-card"
 import { RoleBadge } from "@/components/shared/role-badge"
+import { RowActions, type RowAction } from "@/components/shared/row-actions"
 import { TablePagination } from "@/components/shared/table-pagination"
 import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -314,6 +316,41 @@ export function UsersPage() {
     appToast.success("密码已复制到剪贴板")
   }
 
+  function buildUserActions(user: User): RowAction[] {
+    const actions: RowAction[] = []
+    if (hasPermission("users.edit")) {
+      actions.push({
+        label: "编辑",
+        icon: PencilIcon,
+        onSelect: () => handleEdit(user),
+      })
+    }
+    if (hasPermission("users.assign_role")) {
+      actions.push({
+        label: "维护角色",
+        icon: ShieldIcon,
+        onSelect: () => handleRole(user),
+      })
+    }
+    if (hasPermission("users.edit")) {
+      actions.push({
+        label: "重置密码",
+        icon: KeyIcon,
+        onSelect: () => openReset(user),
+      })
+    }
+    if (hasPermission("users.delete") && user.id !== currentUser?.id) {
+      actions.push({
+        label: "删除",
+        icon: Trash2Icon,
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => handleDelete(user),
+      })
+    }
+    return actions
+  }
+
   const allPendingSelected =
     pendingUsers.length > 0 && selectedPending.size === pendingUsers.length
   const somePendingSelected = selectedPending.size > 0 && !allPendingSelected
@@ -329,7 +366,7 @@ export function UsersPage() {
         description={`共 ${list.total} 位用户`}
         actions={
           <>
-            <InputGroup className="w-full sm:w-64">
+            <InputGroup className="w-full md:w-64">
               <InputGroupInput
                 placeholder="搜索用户名、姓名或邮箱..."
                 aria-label="搜索用户"
@@ -341,7 +378,7 @@ export function UsersPage() {
               </InputGroupAddon>
             </InputGroup>
             {hasPermission("users.create") && (
-              <Button onClick={handleAdd} className="w-full sm:w-auto">
+              <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
                 新增用户
               </Button>
@@ -350,7 +387,7 @@ export function UsersPage() {
               <Button
                 variant="outline"
                 onClick={openPending}
-                className="w-full sm:w-auto"
+                className="w-full md:w-auto"
               >
                 待审核
               </Button>
@@ -400,86 +437,115 @@ export function UsersPage() {
             }
           />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>用户名</TableHead>
-                <TableHead>姓名</TableHead>
-                <TableHead>邮箱</TableHead>
-                <TableHead>角色</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="flex flex-col gap-2 md:hidden">
               {list.items.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
+                <RecordCard
+                  key={user.id}
+                  title={
+                    <span className="flex items-center gap-2">
+                      <Avatar className="size-7">
                         <AvatarImage src={user.avatar} alt={user.name} />
                         <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-medium">
-                        {user.username}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {user.email}
-                  </TableCell>
-                  <TableCell>
-                    <RoleBadge roleId={user.roleId} roles={roles} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {hasPermission("users.edit") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleEdit(user)}
-                        >
-                          <PencilIcon />
-                          <span className="sr-only">编辑 {user.name}</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.assign_role") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleRole(user)}
-                        >
-                          <ShieldIcon />
-                          <span className="sr-only">维护角色</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.edit") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => openReset(user)}
-                        >
-                          <KeyIcon />
-                          <span className="sr-only">重置密码</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.delete") &&
-                        user.id !== currentUser?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => handleDelete(user)}
-                          >
-                            <Trash2Icon />
-                            <span className="sr-only">删除</span>
-                          </Button>
-                        )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                      <span className="truncate">{user.name}</span>
+                    </span>
+                  }
+                  badges={<RoleBadge roleId={user.roleId} roles={roles} />}
+                  subtitle={`@${user.username} · ${user.email}`}
+                  actions={<RowActions actions={buildUserActions(user)} />}
+                />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>用户名</TableHead>
+                    <TableHead className="hidden md:table-cell">姓名</TableHead>
+                    <TableHead className="hidden lg:table-cell">邮箱</TableHead>
+                    <TableHead>角色</TableHead>
+                    <TableHead className="sticky right-0 bg-card text-right">
+                      操作
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.items.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="size-8">
+                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarFallback>
+                              {user.name.slice(0, 1)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">
+                            {user.username}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {user.name}
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground lg:table-cell">
+                        {user.email}
+                      </TableCell>
+                      <TableCell>
+                        <RoleBadge roleId={user.roleId} roles={roles} />
+                      </TableCell>
+                      <TableCell className="sticky right-0 bg-inherit text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {hasPermission("users.edit") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleEdit(user)}
+                            >
+                              <PencilIcon />
+                              <span className="sr-only">编辑 {user.name}</span>
+                            </Button>
+                          )}
+                          {hasPermission("users.assign_role") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleRole(user)}
+                            >
+                              <ShieldIcon />
+                              <span className="sr-only">维护角色</span>
+                            </Button>
+                          )}
+                          {hasPermission("users.edit") && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => openReset(user)}
+                            >
+                              <KeyIcon />
+                              <span className="sr-only">重置密码</span>
+                            </Button>
+                          )}
+                          {hasPermission("users.delete") &&
+                            user.id !== currentUser?.id && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handleDelete(user)}
+                              >
+                                <Trash2Icon />
+                                <span className="sr-only">删除</span>
+                              </Button>
+                            )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </ListShell>
 

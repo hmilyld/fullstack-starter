@@ -12,6 +12,7 @@ import { ErrorState } from "@/components/shared/error-state"
 import { InlineError } from "@/components/shared/inline-error"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
+import { RecordCard } from "@/components/shared/record-card"
 import { TablePagination } from "@/components/shared/table-pagination"
 import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
@@ -145,7 +146,7 @@ export function AuditLogPage() {
         }
       >
         <div className="flex flex-col gap-3 pb-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
             <Field>
               <FieldLabel htmlFor="audit-user">用户 ID</FieldLabel>
               <Input
@@ -266,38 +267,65 @@ export function AuditLogPage() {
             }
           />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>时间</TableHead>
-                <TableHead>操作者</TableHead>
-                <TableHead>动作</TableHead>
-                <TableHead>IP</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>详情</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            <div className="flex flex-col gap-2 md:hidden">
               {list.items.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">
-                    {formatDateTime(log.createdAt)}
-                  </TableCell>
-                  <TableCell>{log.username || "未知"}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {log.action}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {log.ip || "-"}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(log.status)}</TableCell>
-                  <TableCell className="max-w-[240px] truncate text-muted-foreground">
-                    {log.detail || "-"}
-                  </TableCell>
-                </TableRow>
+                <RecordCard
+                  key={log.id}
+                  title={log.action}
+                  badges={getStatusBadge(log.status)}
+                  subtitle={formatDateTime(log.createdAt)}
+                  meta={
+                    <>
+                      <span>{log.username || "未知"}</span>
+                      <span>{log.ip || "-"}</span>
+                      {log.detail && (
+                        <span className="w-full truncate">{log.detail}</span>
+                      )}
+                    </>
+                  }
+                />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>时间</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      操作者
+                    </TableHead>
+                    <TableHead>动作</TableHead>
+                    <TableHead className="hidden lg:table-cell">IP</TableHead>
+                    <TableHead>状态</TableHead>
+                    <TableHead className="hidden xl:table-cell">详情</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.items.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
+                        {formatDateTime(log.createdAt)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {log.username || "未知"}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {log.action}
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground lg:table-cell">
+                        {log.ip || "-"}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(log.status)}</TableCell>
+                      <TableCell className="hidden max-w-[240px] truncate text-muted-foreground xl:table-cell">
+                        {log.detail || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </ListShell>
     </div>
