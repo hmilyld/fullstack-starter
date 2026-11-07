@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref } from "vue"
 
 const props = defineProps<{
   page: number
@@ -7,10 +7,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:page', value: number): void
+  (e: "update:page", value: number): void
 }>()
 
-const jumpPage = ref('')
+const jumpPage = ref("")
 
 const visiblePages = computed(() => {
   const pages: (number | string)[] = []
@@ -21,11 +21,15 @@ const visiblePages = computed(() => {
     for (let i = 1; i <= total; i++) pages.push(i)
   } else {
     pages.push(1)
-    if (current > 3) pages.push('...')
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+    if (current > 3) pages.push("...")
+    for (
+      let i = Math.max(2, current - 1);
+      i <= Math.min(total - 1, current + 1);
+      i++
+    ) {
       pages.push(i)
     }
-    if (current < total - 2) pages.push('...')
+    if (current < total - 2) pages.push("...")
     pages.push(total)
   }
 
@@ -35,15 +39,17 @@ const visiblePages = computed(() => {
 function handleJump() {
   const num = parseInt(jumpPage.value)
   if (num >= 1 && num <= props.totalPages) {
-    emit('update:page', num)
-    jumpPage.value = ''
+    emit("update:page", num)
+    jumpPage.value = ""
   }
 }
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
-    <span class="text-sm text-base-content/50">
+  <div
+    class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <span class="text-base-content/50 text-sm">
       第 {{ page }} / {{ totalPages }} 页
     </span>
     <div class="flex flex-wrap items-center gap-2">
@@ -63,7 +69,7 @@ function handleJump() {
       </button>
 
       <template v-for="(p, idx) in visiblePages" :key="idx">
-        <span v-if="p === '...'" class="px-1 text-base-content/50">...</span>
+        <span v-if="p === '...'" class="text-base-content/50 px-1">...</span>
         <button
           v-else
           class="btn btn-xs"
@@ -90,7 +96,7 @@ function handleJump() {
       </button>
 
       <div class="flex items-center gap-1">
-        <span class="text-xs text-base-content/50">跳至</span>
+        <span class="text-base-content/50 text-xs">跳至</span>
         <input
           v-model="jumpPage"
           type="number"
@@ -99,7 +105,7 @@ function handleJump() {
           :max="totalPages"
           @keyup.enter="handleJump"
         />
-        <span class="text-xs text-base-content/50">页</span>
+        <span class="text-base-content/50 text-xs">页</span>
       </div>
     </div>
   </div>

@@ -1,74 +1,75 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useSiteConfigStore } from '@/stores/site-config'
-import { register } from '@/api/auth'
-import { useToast } from '@/composables/use-toast'
+import { ref } from "vue"
+import { useRouter, RouterLink } from "vue-router"
+import { useAuthStore } from "@/stores/auth"
+import { useSiteConfigStore } from "@/stores/site-config"
+import { register } from "@/api/auth"
+import { useToast } from "@/composables/use-toast"
 
 const router = useRouter()
 const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
 const toast = useToast()
 
-const username = ref('')
-const email = ref('')
-const password = ref('')
+const username = ref("")
+const email = ref("")
+const password = ref("")
 const submitting = ref(false)
-const errorMessage = ref('')
+const errorMessage = ref("")
 const touched = ref({ username: false, email: false, password: false })
 
-const registrationDisabled = siteConfig.config !== null && !siteConfig.config.openRegistration
+const registrationDisabled =
+  siteConfig.config !== null && !siteConfig.config.openRegistration
 const manualReview = siteConfig.config?.manualReview && !registrationDisabled
 
-const usernameError = ref('')
-const emailError = ref('')
-const passwordError = ref('')
+const usernameError = ref("")
+const emailError = ref("")
+const passwordError = ref("")
 
 function validateUsername() {
   if (!username.value) {
-    usernameError.value = '请输入用户名'
+    usernameError.value = "请输入用户名"
     return false
   }
   if (username.value.length < 3) {
-    usernameError.value = '用户名至少3个字符'
+    usernameError.value = "用户名至少3个字符"
     return false
   }
-  usernameError.value = ''
+  usernameError.value = ""
   return true
 }
 
 function validateEmail() {
   if (!email.value) {
-    emailError.value = '请输入邮箱'
+    emailError.value = "请输入邮箱"
     return false
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email.value)) {
-    emailError.value = '请输入有效的邮箱地址'
+    emailError.value = "请输入有效的邮箱地址"
     return false
   }
-  emailError.value = ''
+  emailError.value = ""
   return true
 }
 
 function validatePassword() {
   if (!password.value) {
-    passwordError.value = '请输入密码'
+    passwordError.value = "请输入密码"
     return false
   }
   if (password.value.length < 6) {
-    passwordError.value = '密码至少6个字符'
+    passwordError.value = "密码至少6个字符"
     return false
   }
-  passwordError.value = ''
+  passwordError.value = ""
   return true
 }
 
-function handleBlur(field: 'username' | 'email' | 'password') {
+function handleBlur(field: "username" | "email" | "password") {
   touched.value[field] = true
-  if (field === 'username') validateUsername()
-  else if (field === 'email') validateEmail()
+  if (field === "username") validateUsername()
+  else if (field === "email") validateEmail()
   else validatePassword()
 }
 
@@ -80,7 +81,7 @@ async function handleSubmit() {
   if (!usernameValid || !emailValid || !passwordValid) return
 
   submitting.value = true
-  errorMessage.value = ''
+  errorMessage.value = ""
   const res = await register({
     username: username.value,
     email: email.value,
@@ -88,13 +89,13 @@ async function handleSubmit() {
   })
   if (res.code === 0 && res.data?.token) {
     auth.login(res.data.token, res.data.user)
-    toast.success('注册成功')
-    router.push('/dashboard')
+    toast.success("注册成功")
+    router.push("/dashboard")
   } else if (res.code === 0) {
-    toast.success(res.message || '注册成功，请等待管理员审核')
-    router.push('/login')
+    toast.success(res.message || "注册成功，请等待管理员审核")
+    router.push("/login")
   } else {
-    errorMessage.value = res.message || '注册失败'
+    errorMessage.value = res.message || "注册失败"
   }
   submitting.value = false
 }
@@ -103,21 +104,35 @@ async function handleSubmit() {
 <template>
   <div class="flex min-h-screen items-center justify-center p-6">
     <div class="w-full max-w-sm">
-      <div v-if="registrationDisabled" role="alert" class="mb-4 rounded-lg border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
+      <div
+        v-if="registrationDisabled"
+        role="alert"
+        class="mb-4 rounded-lg border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning"
+      >
         <div class="font-medium">注册功能已关闭</div>
         <div class="mt-1 text-xs opacity-80">请联系管理员开通注册。</div>
       </div>
 
-      <div v-if="manualReview" role="alert" class="mb-4 rounded-lg border border-info/20 bg-info/10 px-4 py-3 text-sm text-info">
+      <div
+        v-if="manualReview"
+        role="alert"
+        class="border-info/20 bg-info/10 text-info mb-4 rounded-lg border px-4 py-3 text-sm"
+      >
         <div class="text-xs">注册后需管理员审核通过才能登录</div>
       </div>
 
-      <div class="card border border-base-content/10 rounded-xl">
+      <div class="card border-base-content/10 rounded-xl border">
         <div class="card-body">
           <h2 class="card-title justify-center text-lg">创建账号</h2>
-          <p class="text-center text-xs text-base-content/50">填写以下信息完成注册</p>
+          <p class="text-base-content/50 text-center text-xs">
+            填写以下信息完成注册
+          </p>
 
-          <div v-if="errorMessage" role="alert" class="mb-2 rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-sm text-error">
+          <div
+            v-if="errorMessage"
+            role="alert"
+            class="border-error/20 bg-error/10 text-error mb-2 rounded-lg border px-4 py-3 text-sm"
+          >
             {{ errorMessage }}
           </div>
 
@@ -134,7 +149,11 @@ async function handleSubmit() {
                 :disabled="registrationDisabled"
                 @blur="handleBlur('username')"
               />
-              <span v-if="touched.username && usernameError" class="text-xs text-error mt-1">{{ usernameError }}</span>
+              <span
+                v-if="touched.username && usernameError"
+                class="text-error mt-1 text-xs"
+                >{{ usernameError }}</span
+              >
             </fieldset>
 
             <fieldset class="fieldset mt-1">
@@ -149,7 +168,11 @@ async function handleSubmit() {
                 :disabled="registrationDisabled"
                 @blur="handleBlur('email')"
               />
-              <span v-if="touched.email && emailError" class="text-xs text-error mt-1">{{ emailError }}</span>
+              <span
+                v-if="touched.email && emailError"
+                class="text-error mt-1 text-xs"
+                >{{ emailError }}</span
+              >
             </fieldset>
 
             <fieldset class="fieldset mt-1">
@@ -164,7 +187,11 @@ async function handleSubmit() {
                 :disabled="registrationDisabled"
                 @blur="handleBlur('password')"
               />
-              <span v-if="touched.password && passwordError" class="text-xs text-error mt-1">{{ passwordError }}</span>
+              <span
+                v-if="touched.password && passwordError"
+                class="text-error mt-1 text-xs"
+                >{{ passwordError }}</span
+              >
             </fieldset>
 
             <button
@@ -172,13 +199,18 @@ async function handleSubmit() {
               class="btn btn-primary btn-sm mt-3 w-full"
               :disabled="submitting || registrationDisabled"
             >
-              <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+              <span
+                v-if="submitting"
+                class="loading loading-spinner loading-xs"
+              ></span>
               注册
             </button>
 
-            <p class="mt-3 text-center text-xs text-base-content/50">
+            <p class="text-base-content/50 mt-3 text-center text-xs">
               已有账号？
-              <RouterLink to="/login" class="link link-primary">立即登录</RouterLink>
+              <RouterLink to="/login" class="link link-primary"
+                >立即登录</RouterLink
+              >
             </p>
           </form>
         </div>

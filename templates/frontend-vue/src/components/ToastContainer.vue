@@ -1,42 +1,61 @@
 <script setup lang="ts">
-import { useToast } from '@/composables/use-toast'
-import { AlertCircle, CheckCircle, Info, AlertTriangle, X } from 'lucide-vue-next'
+import { useToast } from "@/composables/use-toast"
+import { AlertCircle, CheckCircle, Info, AlertTriangle, X } from "@lucide/vue"
 
 const { toasts, removeToast } = useToast()
 
 function iconFor(type: string) {
   switch (type) {
-    case 'success': return CheckCircle
-    case 'error': return AlertCircle
-    case 'info': return Info
-    case 'warning': return AlertTriangle
-    default: return Info
+    case "success":
+      return CheckCircle
+    case "error":
+      return AlertCircle
+    case "info":
+      return Info
+    case "warning":
+      return AlertTriangle
+    default:
+      return Info
   }
 }
 
 function colorFor(type: string) {
   switch (type) {
-    case 'success': return 'text-success'
-    case 'error': return 'text-error'
-    case 'info': return 'text-info'
-    case 'warning': return 'text-warning'
-    default: return 'text-base-content'
+    case "success":
+      return "text-success"
+    case "error":
+      return "text-error"
+    case "info":
+      return "text-info"
+    case "warning":
+      return "text-warning"
+    default:
+      return "text-base-content"
   }
 }
 </script>
 
 <template>
-  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none">
+  <div
+    class="pointer-events-none fixed top-4 left-1/2 z-50 flex -translate-x-1/2 flex-col gap-2"
+  >
     <TransitionGroup name="toast">
       <div
         v-for="toast in toasts"
         :key="toast.id"
         role="alert"
-        class="pointer-events-auto flex items-center gap-3 rounded-lg border border-base-content/10 bg-base-100 px-4 py-3 shadow-lg"
+        class="border-base-content/10 bg-base-100 pointer-events-auto flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg"
       >
-        <component :is="iconFor(toast.type)" class="size-4 shrink-0" :class="colorFor(toast.type)" />
-        <span class="text-sm text-base-content">{{ toast.message }}</span>
-        <button class="ml-2 shrink-0 text-base-content/40 hover:text-base-content" @click="removeToast(toast.id)">
+        <component
+          :is="iconFor(toast.type)"
+          class="size-4 shrink-0"
+          :class="colorFor(toast.type)"
+        />
+        <span class="text-base-content text-sm">{{ toast.message }}</span>
+        <button
+          class="text-base-content/40 hover:text-base-content ml-2 shrink-0"
+          @click="removeToast(toast.id)"
+        >
           <X class="size-3.5" />
         </button>
       </div>

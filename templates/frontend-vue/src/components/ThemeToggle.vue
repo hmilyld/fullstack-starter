@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { useThemeStore } from '@/stores/theme'
-import { computed } from 'vue'
-import { Sun, Moon } from 'lucide-vue-next'
+import { useThemeStore } from "@/stores/theme"
+import { computed } from "vue"
+import { Sun, Moon } from "@lucide/vue"
 
 const themeStore = useThemeStore()
 
 const isDark = computed(() => {
-  if (themeStore.theme === 'system') {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  if (themeStore.theme === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
   }
-  return themeStore.theme === 'dark'
+  return themeStore.theme === "dark"
 })
 </script>
 
@@ -21,15 +21,36 @@ const isDark = computed(() => {
         <Moon v-else key="moon" class="size-4" />
       </Transition>
     </div>
-    <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-content/10 rounded-box z-10 w-32 p-1 shadow-sm">
+    <ul
+      tabindex="0"
+      class="dropdown-content menu bg-base-100 border-base-content/10 rounded-box z-10 w-32 border p-1 shadow-sm"
+    >
       <li>
-        <button class="text-xs" :class="{ active: themeStore.theme === 'light' }" @click="themeStore.setTheme('light')">浅色</button>
+        <button
+          class="text-xs"
+          :class="{ active: themeStore.theme === 'light' }"
+          @click="themeStore.setTheme('light')"
+        >
+          浅色
+        </button>
       </li>
       <li>
-        <button class="text-xs" :class="{ active: themeStore.theme === 'dark' }" @click="themeStore.setTheme('dark')">深色</button>
+        <button
+          class="text-xs"
+          :class="{ active: themeStore.theme === 'dark' }"
+          @click="themeStore.setTheme('dark')"
+        >
+          深色
+        </button>
       </li>
       <li>
-        <button class="text-xs" :class="{ active: themeStore.theme === 'system' }" @click="themeStore.setTheme('system')">跟随系统</button>
+        <button
+          class="text-xs"
+          :class="{ active: themeStore.theme === 'system' }"
+          @click="themeStore.setTheme('system')"
+        >
+          跟随系统
+        </button>
       </li>
     </ul>
   </div>

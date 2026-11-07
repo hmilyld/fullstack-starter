@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { getUsers, createUser, updateUser, deleteUser, resetPassword, batchUpdateRole } from '@/api/user'
-import { getRoles } from '@/api/role'
-import type { User } from '@/types/user'
-import type { Role } from '@/types/role'
-import { useToast } from '@/composables/use-toast'
-import Pagination from '@/components/shared/Pagination.vue'
-import ConfirmDeleteDialog from '@/components/shared/ConfirmDeleteDialog.vue'
-import PageSkeleton from '@/components/shared/PageSkeleton.vue'
-import { Pencil, Shield, Trash2, KeyRound, Plus, Search } from 'lucide-vue-next'
+import { ref, watch, onMounted, computed, onUnmounted } from "vue"
+import { useAuthStore } from "@/stores/auth"
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  resetPassword,
+  batchUpdateRole,
+} from "@/api/user"
+import { getRoles } from "@/api/role"
+import type { User } from "@/types/user"
+import type { Role } from "@/types/role"
+import { useToast } from "@/composables/use-toast"
+import Pagination from "@/components/shared/Pagination.vue"
+import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
+import PageSkeleton from "@/components/shared/PageSkeleton.vue"
+import { Pencil, Shield, Trash2, KeyRound, Plus, Search } from "@lucide/vue"
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -18,7 +25,7 @@ const PAGE_SIZE = 8
 
 const users = ref<User[]>([])
 const roles = ref<Role[]>([])
-const search = ref('')
+const search = ref("")
 const page = ref(1)
 const total = ref(0)
 const tableLoading = ref(true)
@@ -32,7 +39,7 @@ const roleMap = computed(() => {
   return map
 })
 
-const isAdmin = computed(() => auth.user?.role === 'admin')
+const isAdmin = computed(() => auth.user?.role === "admin")
 
 onMounted(async () => {
   const res = await getRoles({ pageSize: 100 })
@@ -42,13 +49,17 @@ onMounted(async () => {
 
 async function loadData() {
   tableLoading.value = true
-  const res = await getUsers({ search: search.value, page: page.value, pageSize: PAGE_SIZE })
+  const res = await getUsers({
+    search: search.value,
+    page: page.value,
+    pageSize: PAGE_SIZE,
+  })
   if (res.code === 0) {
     users.value = res.data.list
     total.value = res.data.total
     totalPages.value = Math.max(1, Math.ceil(res.data.total / PAGE_SIZE))
   } else {
-    toast.error(res.message || '加载数据失败')
+    toast.error(res.message || "加载数据失败")
   }
   tableLoading.value = false
 }
@@ -67,30 +78,35 @@ onUnmounted(() => {
 })
 
 function findRoleName(roleId: string): string {
-  return roleMap.value.get(roleId) ?? '未知角色'
+  return roleMap.value.get(roleId) ?? "未知角色"
 }
 
 function getRoleBadgeClass(roleId: string) {
-  if (roleId === 'admin') return 'badge badge-primary'
-  if (roleId === 'user') return 'badge badge-secondary'
-  return 'badge badge-outline'
+  if (roleId === "admin") return "badge badge-primary"
+  if (roleId === "user") return "badge badge-secondary"
+  return "badge badge-outline"
 }
 
 // Edit dialog
 const editOpen = ref(false)
 const editingUser = ref<User | null>(null)
-const editForm = ref({ username: '', name: '', email: '', roleId: 'user' })
+const editForm = ref({ username: "", name: "", email: "", roleId: "user" })
 const editSubmitting = ref(false)
 
 function handleAdd() {
   editingUser.value = null
-  editForm.value = { username: '', name: '', email: '', roleId: 'user' }
+  editForm.value = { username: "", name: "", email: "", roleId: "user" }
   editOpen.value = true
 }
 
 function handleEdit(user: User) {
   editingUser.value = user
-  editForm.value = { username: user.username, name: user.name, email: user.email, roleId: user.roleId }
+  editForm.value = {
+    username: user.username,
+    name: user.name,
+    email: user.email,
+    roleId: user.roleId,
+  }
   editOpen.value = true
 }
 
@@ -101,14 +117,14 @@ async function handleEditSubmit() {
       ? await updateUser(editingUser.value.id, editForm.value)
       : await createUser(editForm.value)
     if (res.code === 0) {
-      toast.success(editingUser.value ? '更新成功' : '创建成功')
+      toast.success(editingUser.value ? "更新成功" : "创建成功")
       editOpen.value = false
       loadData()
     } else {
-      toast.error(res.message || '操作失败')
+      toast.error(res.message || "操作失败")
     }
   } catch {
-    toast.error('网络请求失败')
+    toast.error("网络请求失败")
   }
   editSubmitting.value = false
 }
@@ -116,7 +132,7 @@ async function handleEditSubmit() {
 // Role dialog
 const roleOpen = ref(false)
 const roleTarget = ref<User | null>(null)
-const roleValue = ref('')
+const roleValue = ref("")
 const roleSubmitting = ref(false)
 
 function handleRole(user: User) {
@@ -129,17 +145,19 @@ async function handleRoleSubmit() {
   roleSubmitting.value = true
   try {
     if (roleTarget.value) {
-      const res = await updateUser(roleTarget.value.id, { roleId: roleValue.value })
+      const res = await updateUser(roleTarget.value.id, {
+        roleId: roleValue.value,
+      })
       if (res.code === 0) {
-        toast.success('角色修改成功')
+        toast.success("角色修改成功")
         roleOpen.value = false
         loadData()
       } else {
-        toast.error(res.message || '修改失败')
+        toast.error(res.message || "修改失败")
       }
     }
   } catch {
-    toast.error('网络请求失败')
+    toast.error("网络请求失败")
   }
   roleSubmitting.value = false
 }
@@ -160,15 +178,15 @@ async function handleDeleteConfirm() {
     if (deleteTarget.value) {
       const res = await deleteUser(deleteTarget.value.id)
       if (res.code === 0) {
-        toast.success('删除成功')
+        toast.success("删除成功")
         deleteOpen.value = false
         loadData()
       } else {
-        toast.error(res.message || '删除失败')
+        toast.error(res.message || "删除失败")
       }
     }
   } catch {
-    toast.error('网络请求失败')
+    toast.error("网络请求失败")
   }
   deleteSubmitting.value = false
 }
@@ -176,14 +194,15 @@ async function handleDeleteConfirm() {
 // Reset password dialog
 const resetOpen = ref(false)
 const resetTarget = ref<User | null>(null)
-const newPassword = ref('')
+const newPassword = ref("")
 const resetSubmitting = ref(false)
 
 function openReset(user: User) {
   resetTarget.value = user
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let pwd = ''
-  for (let i = 0; i < 12; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  let pwd = ""
+  for (let i = 0; i < 12; i++)
+    pwd += chars.charAt(Math.floor(Math.random() * chars.length))
   newPassword.value = pwd
   resetOpen.value = true
 }
@@ -194,14 +213,14 @@ async function handleResetSubmit() {
   try {
     const res = await resetPassword(resetTarget.value.id, newPassword.value)
     if (res.code === 0) {
-      toast.success('密码重置成功')
+      toast.success("密码重置成功")
       resetOpen.value = false
       loadData()
     } else {
-      toast.error(res.message || '重置失败')
+      toast.error(res.message || "重置失败")
     }
   } catch {
-    toast.error('网络请求失败')
+    toast.error("网络请求失败")
   }
   resetSubmitting.value = false
 }
@@ -219,7 +238,9 @@ async function openPending() {
   selectedPending.value = new Set()
   const res = await getUsers({ pageSize: 100 })
   if (res.code === 0) {
-    pendingUsers.value = res.data.list.filter((u) => u.roleId === 'pending_review')
+    pendingUsers.value = res.data.list.filter(
+      (u) => u.roleId === "pending_review"
+    )
   }
   pendingLoading.value = false
 }
@@ -244,16 +265,16 @@ async function handleBatchApprove() {
   pendingSubmitting.value = true
   try {
     const userIds = Array.from(selectedPending.value).map(Number)
-    const res = await batchUpdateRole(userIds, 'user')
+    const res = await batchUpdateRole(userIds, "user")
     if (res.code === 0) {
       toast.success(`已通过 ${userIds.length} 位用户审核`)
       pendingOpen.value = false
       loadData()
     } else {
-      toast.error(res.message || '操作失败')
+      toast.error(res.message || "操作失败")
     }
   } catch {
-    toast.error('网络请求失败')
+    toast.error("网络请求失败")
   }
   pendingSubmitting.value = false
 }
@@ -269,7 +290,7 @@ async function handleBatchReject() {
     pendingOpen.value = false
     loadData()
   } catch {
-    toast.error('网络请求失败')
+    toast.error("网络请求失败")
   }
   pendingSubmitting.value = false
 }
@@ -277,9 +298,9 @@ async function handleBatchReject() {
 function copyPassword() {
   try {
     navigator.clipboard.writeText(newPassword.value)
-    toast.success('密码已复制到剪贴板')
+    toast.success("密码已复制到剪贴板")
   } catch {
-    toast.error('复制失败，请手动复制')
+    toast.error("复制失败，请手动复制")
   }
 }
 </script>
@@ -293,28 +314,48 @@ function copyPassword() {
 
     <PageSkeleton v-if="tableLoading" :cols="5" />
 
-    <div v-else class="card border border-base-content/10 rounded-xl">
+    <div v-else class="card border-base-content/10 rounded-xl border">
       <div class="card-body">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div>
             <h3 class="card-title">用户列表</h3>
-            <p class="text-sm text-base-content/50">共 {{ users.length }} 位用户</p>
+            <p class="text-base-content/50 text-sm">
+              共 {{ users.length }} 位用户
+            </p>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div class="relative w-full sm:w-64">
-              <Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-base-content/50" />
-              <input v-model="search" placeholder="搜索用户名、姓名或邮箱..." class="input input-bordered input-sm w-full pl-8" />
+              <Search
+                class="text-base-content/50 absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
+              />
+              <input
+                v-model="search"
+                placeholder="搜索用户名、姓名或邮箱..."
+                class="input input-bordered input-sm w-full pl-8"
+              />
             </div>
-            <button v-if="auth.hasPermission('users.create')" class="btn btn-primary btn-sm" @click="handleAdd">
+            <button
+              v-if="auth.hasPermission('users.create')"
+              class="btn btn-primary btn-sm"
+              @click="handleAdd"
+            >
               <Plus class="size-4" />
               新增用户
             </button>
-            <button v-if="auth.hasPermission('users.edit')" class="btn btn-outline btn-sm" @click="openPending">待审核</button>
+            <button
+              v-if="auth.hasPermission('users.edit')"
+              class="btn btn-outline btn-sm"
+              @click="openPending"
+            >
+              待审核
+            </button>
           </div>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="table table-zebra">
+          <table class="table-zebra table">
             <thead>
               <tr>
                 <th>用户名</th>
@@ -329,7 +370,9 @@ function copyPassword() {
                 <td>
                   <div class="flex items-center gap-3">
                     <div class="avatar avatar-placeholder size-8">
-                      <div class="w-8 rounded-lg bg-neutral text-neutral-content">
+                      <div
+                        class="bg-neutral text-neutral-content w-8 rounded-lg"
+                      >
                         <span>{{ user.name?.charAt(0) }}</span>
                       </div>
                     </div>
@@ -339,65 +382,144 @@ function copyPassword() {
                 <td>{{ user.name }}</td>
                 <td class="text-base-content/50">{{ user.email }}</td>
                 <td>
-                  <span :class="getRoleBadgeClass(user.roleId)">{{ findRoleName(user.roleId) }}</span>
+                  <span :class="getRoleBadgeClass(user.roleId)">{{
+                    findRoleName(user.roleId)
+                  }}</span>
                 </td>
                 <td class="text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <button v-if="auth.hasPermission('users.edit') && (isAdmin || user.roleId !== 'admin')" class="btn btn-ghost btn-xs" @click="handleEdit(user)">
+                    <button
+                      v-if="
+                        auth.hasPermission('users.edit') &&
+                        (isAdmin || user.roleId !== 'admin')
+                      "
+                      class="btn btn-ghost btn-xs"
+                      @click="handleEdit(user)"
+                    >
                       <Pencil class="size-3" />
                     </button>
-                    <button v-if="auth.hasPermission('users.assign_role') && (isAdmin || user.roleId !== 'admin')" class="btn btn-ghost btn-xs" @click="handleRole(user)">
+                    <button
+                      v-if="
+                        auth.hasPermission('users.assign_role') &&
+                        (isAdmin || user.roleId !== 'admin')
+                      "
+                      class="btn btn-ghost btn-xs"
+                      @click="handleRole(user)"
+                    >
                       <Shield class="size-3" />
                     </button>
-                    <button v-if="user.id !== auth.user?.id && (isAdmin || user.roleId !== 'admin') && auth.hasPermission('users.delete')" class="btn btn-ghost btn-xs" @click="handleDelete(user)">
+                    <button
+                      v-if="
+                        user.id !== auth.user?.id &&
+                        (isAdmin || user.roleId !== 'admin') &&
+                        auth.hasPermission('users.delete')
+                      "
+                      class="btn btn-ghost btn-xs"
+                      @click="handleDelete(user)"
+                    >
                       <Trash2 class="size-3" />
                     </button>
-                    <button v-if="auth.hasPermission('users.edit') && (isAdmin || user.roleId !== 'admin')" class="btn btn-ghost btn-xs" @click="openReset(user)">
+                    <button
+                      v-if="
+                        auth.hasPermission('users.edit') &&
+                        (isAdmin || user.roleId !== 'admin')
+                      "
+                      class="btn btn-ghost btn-xs"
+                      @click="openReset(user)"
+                    >
                       <KeyRound class="size-3" />
                     </button>
                   </div>
                 </td>
               </tr>
               <tr v-if="users.length === 0">
-                <td colspan="5" class="text-center text-base-content/50">暂无数据</td>
+                <td colspan="5" class="text-base-content/50 text-center">
+                  暂无数据
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <Pagination :page="page" :total-pages="totalPages" @update:page="page = $event" />
+        <Pagination
+          :page="page"
+          :total-pages="totalPages"
+          @update:page="page = $event"
+        />
       </div>
     </div>
 
     <!-- Edit dialog -->
-    <dialog :class="{ modal: true, 'modal-open': editOpen }" @close="editOpen = false">
+    <dialog
+      :class="{ modal: true, 'modal-open': editOpen }"
+      @close="editOpen = false"
+    >
       <div class="modal-box">
-        <h3 class="text-lg font-bold">{{ editingUser ? '编辑用户' : '新增用户' }}</h3>
-        <p class="text-sm text-base-content/50">{{ editingUser ? '修改用户的基本信息。' : '填写以下信息创建新用户。' }}</p>
+        <h3 class="text-lg font-bold">
+          {{ editingUser ? "编辑用户" : "新增用户" }}
+        </h3>
+        <p class="text-base-content/50 text-sm">
+          {{
+            editingUser ? "修改用户的基本信息。" : "填写以下信息创建新用户。"
+          }}
+        </p>
         <form @submit.prevent="handleEditSubmit" class="flex flex-col gap-3">
           <fieldset class="fieldset">
             <legend class="fieldset-legend">用户名</legend>
-            <input v-model="editForm.username" placeholder="请输入用户名" class="input input-bordered w-full" required />
+            <input
+              v-model="editForm.username"
+              placeholder="请输入用户名"
+              class="input input-bordered w-full"
+              required
+            />
           </fieldset>
           <fieldset class="fieldset">
             <legend class="fieldset-legend">姓名</legend>
-            <input v-model="editForm.name" placeholder="请输入姓名" class="input input-bordered w-full" required />
+            <input
+              v-model="editForm.name"
+              placeholder="请输入姓名"
+              class="input input-bordered w-full"
+              required
+            />
           </fieldset>
           <fieldset class="fieldset">
             <legend class="fieldset-legend">邮箱</legend>
-            <input v-model="editForm.email" type="email" placeholder="请输入邮箱" class="input input-bordered w-full" required />
+            <input
+              v-model="editForm.email"
+              type="email"
+              placeholder="请输入邮箱"
+              class="input input-bordered w-full"
+              required
+            />
           </fieldset>
-          <fieldset v-if="auth.hasPermission('users.assign_role')" class="fieldset">
+          <fieldset
+            v-if="auth.hasPermission('users.assign_role')"
+            class="fieldset"
+          >
             <legend class="fieldset-legend">角色</legend>
-            <select v-model="editForm.roleId" class="select select-bordered w-full">
-              <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
+            <select
+              v-model="editForm.roleId"
+              class="select select-bordered w-full"
+            >
+              <option v-for="role in roles" :key="role.id" :value="role.id">
+                {{ role.name }}
+              </option>
             </select>
           </fieldset>
           <div class="modal-action">
-            <button type="button" class="btn" @click="editOpen = false">取消</button>
-            <button type="submit" class="btn btn-primary" :disabled="editSubmitting">
-              <span v-if="editSubmitting" class="loading loading-spinner loading-sm"></span>
-              {{ editingUser ? '保存' : '创建' }}
+            <button type="button" class="btn" @click="editOpen = false">
+              取消
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="editSubmitting"
+            >
+              <span
+                v-if="editSubmitting"
+                class="loading loading-spinner loading-sm"
+              ></span>
+              {{ editingUser ? "保存" : "创建" }}
             </button>
           </div>
         </form>
@@ -406,26 +528,42 @@ function copyPassword() {
     </dialog>
 
     <!-- Role dialog -->
-    <dialog :class="{ modal: true, 'modal-open': roleOpen }" @close="roleOpen = false">
+    <dialog
+      :class="{ modal: true, 'modal-open': roleOpen }"
+      @close="roleOpen = false"
+    >
       <div class="modal-box">
         <h3 class="text-lg font-bold">维护角色</h3>
-        <p class="text-sm text-base-content/50">为 <span class="font-bold">{{ roleTarget?.name }}</span> 修改角色。</p>
+        <p class="text-base-content/50 text-sm">
+          为 <span class="font-bold">{{ roleTarget?.name }}</span> 修改角色。
+        </p>
         <div class="flex flex-col gap-4 py-2">
           <fieldset class="fieldset">
             <legend class="fieldset-legend">当前角色</legend>
-            <span :class="getRoleBadgeClass(roleTarget?.roleId || '')">{{ findRoleName(roleTarget?.roleId || '') }}</span>
+            <span :class="getRoleBadgeClass(roleTarget?.roleId || '')">{{
+              findRoleName(roleTarget?.roleId || "")
+            }}</span>
           </fieldset>
           <fieldset class="fieldset">
             <legend class="fieldset-legend">新角色</legend>
             <select v-model="roleValue" class="select select-bordered w-full">
-              <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
+              <option v-for="role in roles" :key="role.id" :value="role.id">
+                {{ role.name }}
+              </option>
             </select>
           </fieldset>
         </div>
         <div class="modal-action">
           <button class="btn" @click="roleOpen = false">取消</button>
-          <button class="btn btn-primary" :disabled="roleSubmitting" @click="handleRoleSubmit">
-            <span v-if="roleSubmitting" class="loading loading-spinner loading-sm"></span>
+          <button
+            class="btn btn-primary"
+            :disabled="roleSubmitting"
+            @click="handleRoleSubmit"
+          >
+            <span
+              v-if="roleSubmitting"
+              class="loading loading-spinner loading-sm"
+            ></span>
             确认修改
           </button>
         </div>
@@ -434,22 +572,40 @@ function copyPassword() {
     </dialog>
 
     <!-- Reset password dialog -->
-    <dialog :class="{ modal: true, 'modal-open': resetOpen }" @close="resetOpen = false">
+    <dialog
+      :class="{ modal: true, 'modal-open': resetOpen }"
+      @close="resetOpen = false"
+    >
       <div class="modal-box">
         <h3 class="text-lg font-bold">重置密码</h3>
-        <p class="text-sm text-base-content/50">为 <span class="font-bold">{{ resetTarget?.name }}</span> 重置密码</p>
+        <p class="text-base-content/50 text-sm">
+          为 <span class="font-bold">{{ resetTarget?.name }}</span> 重置密码
+        </p>
         <fieldset class="fieldset">
           <legend class="fieldset-legend">新密码</legend>
           <div class="flex gap-2">
-            <input :value="newPassword" readonly class="input input-bordered w-full" />
-            <button type="button" class="btn btn-outline" @click="copyPassword">复制</button>
+            <input
+              :value="newPassword"
+              readonly
+              class="input input-bordered w-full"
+            />
+            <button type="button" class="btn btn-outline" @click="copyPassword">
+              复制
+            </button>
           </div>
           <div class="label">请将密码发送给用户。</div>
         </fieldset>
         <div class="modal-action">
           <button class="btn" @click="resetOpen = false">取消</button>
-          <button class="btn btn-primary" :disabled="resetSubmitting" @click="handleResetSubmit">
-            <span v-if="resetSubmitting" class="loading loading-spinner loading-sm"></span>
+          <button
+            class="btn btn-primary"
+            :disabled="resetSubmitting"
+            @click="handleResetSubmit"
+          >
+            <span
+              v-if="resetSubmitting"
+              class="loading loading-spinner loading-sm"
+            ></span>
             确认重置
           </button>
         </div>
@@ -458,18 +614,42 @@ function copyPassword() {
     </dialog>
 
     <!-- Pending review dialog -->
-    <dialog :class="{ modal: true, 'modal-open': pendingOpen }" @close="pendingOpen = false">
+    <dialog
+      :class="{ modal: true, 'modal-open': pendingOpen }"
+      @close="pendingOpen = false"
+    >
       <div class="modal-box max-w-2xl">
         <h3 class="text-lg font-bold">待审核用户</h3>
-        <p class="text-sm text-base-content/50">共 {{ pendingUsers.length }} 位用户等待审核，已选择 {{ selectedPending.size }} 位。</p>
+        <p class="text-base-content/50 text-sm">
+          共 {{ pendingUsers.length }} 位用户等待审核，已选择
+          {{ selectedPending.size }} 位。
+        </p>
         <div class="max-h-[400px] overflow-auto">
-          <div v-if="pendingLoading" class="py-8 text-center text-base-content/50">加载中...</div>
-          <div v-else-if="pendingUsers.length === 0" class="py-8 text-center text-base-content/50">暂无待审核用户</div>
-          <table v-else class="table table-zebra">
+          <div
+            v-if="pendingLoading"
+            class="text-base-content/50 py-8 text-center"
+          >
+            加载中...
+          </div>
+          <div
+            v-else-if="pendingUsers.length === 0"
+            class="text-base-content/50 py-8 text-center"
+          >
+            暂无待审核用户
+          </div>
+          <table v-else class="table-zebra table">
             <thead>
               <tr>
                 <th class="w-12">
-                  <input type="checkbox" class="checkbox checkbox-sm" :checked="selectedPending.size === pendingUsers.length && pendingUsers.length > 0" @change="toggleAllPending" />
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    :checked="
+                      selectedPending.size === pendingUsers.length &&
+                      pendingUsers.length > 0
+                    "
+                    @change="toggleAllPending"
+                  />
                 </th>
                 <th>用户名</th>
                 <th>姓名</th>
@@ -479,7 +659,12 @@ function copyPassword() {
             <tbody>
               <tr v-for="user in pendingUsers" :key="user.id">
                 <td>
-                  <input type="checkbox" class="checkbox checkbox-sm" :checked="selectedPending.has(user.id)" @change="togglePending(user.id)" />
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    :checked="selectedPending.has(user.id)"
+                    @change="togglePending(user.id)"
+                  />
                 </td>
                 <td>{{ user.username }}</td>
                 <td>{{ user.name }}</td>
@@ -490,11 +675,22 @@ function copyPassword() {
         </div>
         <div class="modal-action">
           <button class="btn" @click="pendingOpen = false">取消</button>
-          <button class="btn btn-error" :disabled="selectedPending.size === 0 || pendingSubmitting" @click="handleBatchReject">
+          <button
+            class="btn btn-error"
+            :disabled="selectedPending.size === 0 || pendingSubmitting"
+            @click="handleBatchReject"
+          >
             拒绝 ({{ selectedPending.size }})
           </button>
-          <button class="btn btn-primary" :disabled="selectedPending.size === 0 || pendingSubmitting" @click="handleBatchApprove">
-            <span v-if="pendingSubmitting" class="loading loading-spinner loading-sm"></span>
+          <button
+            class="btn btn-primary"
+            :disabled="selectedPending.size === 0 || pendingSubmitting"
+            @click="handleBatchApprove"
+          >
+            <span
+              v-if="pendingSubmitting"
+              class="loading loading-spinner loading-sm"
+            ></span>
             通过 ({{ selectedPending.size }})
           </button>
         </div>

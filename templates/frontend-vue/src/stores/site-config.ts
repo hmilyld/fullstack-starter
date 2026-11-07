@@ -1,9 +1,9 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { getPublicConfig } from '@/api/system'
-import type { PublicConfig } from '@/types/system'
+import { defineStore } from "pinia"
+import { ref } from "vue"
+import { getPublicConfig } from "@/api/system"
+import type { PublicConfig } from "@/types/system"
 
-export const useSiteConfigStore = defineStore('site-config', () => {
+export const useSiteConfigStore = defineStore("site-config", () => {
   const config = ref<PublicConfig | null>(null)
   const loading = ref(true)
 

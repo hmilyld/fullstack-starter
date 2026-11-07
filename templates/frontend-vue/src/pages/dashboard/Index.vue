@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getDashboardStats, getDashboardActivity } from '@/api/dashboard'
-import type { DashboardStats, ActivityItem } from '@/types/dashboard'
-import {
-  Users,
-  Activity,
-  DollarSign,
-  TrendingUp,
-} from 'lucide-vue-next'
+import { ref, onMounted } from "vue"
+import { getDashboardStats, getDashboardActivity } from "@/api/dashboard"
+import type { DashboardStats, ActivityItem } from "@/types/dashboard"
+import { Users, Activity, DollarSign, TrendingUp } from "@lucide/vue"
 
 const stats = ref<DashboardStats | null>(null)
 const activity = ref<ActivityItem[]>([])
@@ -24,10 +19,34 @@ onMounted(async () => {
 })
 
 const statItems = [
-  { title: '总用户数', key: 'totalUsers' as const, icon: Users, change: '+20.1%', description: '较上月' },
-  { title: '当前活跃', key: 'activeNow' as const, icon: Activity, change: '+12.2%', description: '较上小时' },
-  { title: '收入', key: 'revenue' as const, icon: DollarSign, change: '+15.3%', description: '较上月' },
-  { title: '增长率', key: 'growth' as const, icon: TrendingUp, change: '+4.5%', description: '较上季度' },
+  {
+    title: "总用户数",
+    key: "totalUsers" as const,
+    icon: Users,
+    change: "+20.1%",
+    description: "较上月",
+  },
+  {
+    title: "当前活跃",
+    key: "activeNow" as const,
+    icon: Activity,
+    change: "+12.2%",
+    description: "较上小时",
+  },
+  {
+    title: "收入",
+    key: "revenue" as const,
+    icon: DollarSign,
+    change: "+15.3%",
+    description: "较上月",
+  },
+  {
+    title: "增长率",
+    key: "growth" as const,
+    icon: TrendingUp,
+    change: "+4.5%",
+    description: "较上季度",
+  },
 ]
 </script>
 
@@ -35,12 +54,16 @@ const statItems = [
   <div class="flex flex-col gap-6">
     <div>
       <h1 class="text-xl font-semibold">仪表盘</h1>
-      <p class="text-sm text-base-content/50">欢迎回来，以下是您的项目概览。</p>
+      <p class="text-base-content/50 text-sm">欢迎回来，以下是您的项目概览。</p>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <template v-if="loading">
-        <div v-for="i in 4" :key="i" class="card border border-base-content/10 rounded-xl bg-transparent">
+        <div
+          v-for="i in 4"
+          :key="i"
+          class="card border-base-content/10 rounded-xl border bg-transparent"
+        >
           <div class="card-body">
             <div class="skeleton h-3 w-16"></div>
             <div class="skeleton mb-1 h-6 w-20"></div>
@@ -49,14 +72,18 @@ const statItems = [
         </div>
       </template>
       <template v-else>
-        <div v-for="stat in statItems" :key="stat.title" class="card border border-base-content/10 rounded-xl bg-transparent">
+        <div
+          v-for="stat in statItems"
+          :key="stat.title"
+          class="card border-base-content/10 rounded-xl border bg-transparent"
+        >
           <div class="card-body">
             <div class="flex items-center justify-between">
-              <span class="text-xs text-base-content/50">{{ stat.title }}</span>
-              <component :is="stat.icon" class="size-4 text-base-content/30" />
+              <span class="text-base-content/50 text-xs">{{ stat.title }}</span>
+              <component :is="stat.icon" class="text-base-content/30 size-4" />
             </div>
             <div class="text-xl font-semibold">{{ stats?.[stat.key] }}</div>
-            <p class="text-xs text-base-content/40">
+            <p class="text-base-content/40 text-xs">
               <span class="text-success">{{ stat.change }}</span>
               {{ stat.description }}
             </p>
@@ -66,12 +93,16 @@ const statItems = [
     </div>
 
     <div class="grid gap-4 md:grid-cols-2">
-      <div class="card border border-base-content/10 rounded-xl bg-transparent">
+      <div class="card border-base-content/10 rounded-xl border bg-transparent">
         <div class="card-body">
           <h3 class="text-sm font-medium">最近动态</h3>
           <div class="flex flex-col gap-3">
             <template v-if="loading">
-              <div v-for="i in 5" :key="i" class="flex items-center justify-between">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="flex items-center justify-between"
+              >
                 <div class="flex flex-col gap-1">
                   <div class="skeleton h-3 w-16"></div>
                   <div class="skeleton h-3 w-28"></div>
@@ -80,19 +111,27 @@ const statItems = [
               </div>
             </template>
             <template v-else>
-              <div v-for="item in activity" :key="item.user" class="flex items-center justify-between">
+              <div
+                v-for="item in activity"
+                :key="item.user"
+                class="flex items-center justify-between"
+              >
                 <div class="flex flex-col">
                   <span class="text-sm">{{ item.user }}</span>
-                  <span class="text-xs text-base-content/40">{{ item.action }}</span>
+                  <span class="text-base-content/40 text-xs">{{
+                    item.action
+                  }}</span>
                 </div>
-                <span class="text-xs text-base-content/40">{{ item.time }}</span>
+                <span class="text-base-content/40 text-xs">{{
+                  item.time
+                }}</span>
               </div>
             </template>
           </div>
         </div>
       </div>
 
-      <div class="card border border-base-content/10 rounded-xl bg-transparent">
+      <div class="card border-base-content/10 rounded-xl border bg-transparent">
         <div class="card-body">
           <h3 class="text-sm font-medium">快捷操作</h3>
           <div class="flex flex-col gap-2">
@@ -104,11 +143,13 @@ const statItems = [
                 { label: '管理账单', desc: '更新支付方式' },
               ]"
               :key="action.label"
-              class="flex cursor-pointer items-center justify-between rounded-xl border border-base-content/10 p-3 transition-colors hover:border-base-content/20"
+              class="border-base-content/10 hover:border-base-content/20 flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-colors"
             >
               <div>
                 <div class="text-sm">{{ action.label }}</div>
-                <div class="text-xs text-base-content/40">{{ action.desc }}</div>
+                <div class="text-base-content/40 text-xs">
+                  {{ action.desc }}
+                </div>
               </div>
             </div>
           </div>

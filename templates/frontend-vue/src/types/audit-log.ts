@@ -4,7 +4,7 @@ export type AuditLog = {
   username: string
   action: string
   ip: string
-  status: 'success' | 'permission_denied' | 'fail'
+  status: "success" | "permission_denied" | "fail"
   detail: string
   createdAt: string
 }

@@ -10,7 +10,7 @@ import {
   Settings2,
   ShieldCheck,
   Users,
-} from 'lucide-vue-next'
+} from "@lucide/vue"
 
 defineProps<{
   name: string
@@ -18,14 +18,14 @@ defineProps<{
 
 const iconMap = {
   circle: Circle,
-  'layout-dashboard': LayoutDashboard,
+  "layout-dashboard": LayoutDashboard,
   users: Users,
-  'shield-check': ShieldCheck,
-  'key-round': KeyRound,
-  'panel-left': PanelLeft,
+  "shield-check": ShieldCheck,
+  "key-round": KeyRound,
+  "panel-left": PanelLeft,
   settings: Settings2,
   bot: Bot,
-  'file-text': FileText,
+  "file-text": FileText,
   database: Database,
 }
 </script>

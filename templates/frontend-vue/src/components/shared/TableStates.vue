@@ -19,12 +19,12 @@ defineProps<{
         <table class="table">
           <thead>
             <tr>
-              <th v-for="i in (colSpan || 5)" :key="i"></th>
+              <th v-for="i in colSpan || 5" :key="i"></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="i in 5" :key="i">
-              <td v-for="j in (colSpan || 5)" :key="j">
+              <td v-for="j in colSpan || 5" :key="j">
                 <div class="skeleton h-4 w-full"></div>
               </td>
             </tr>
