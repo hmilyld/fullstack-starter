@@ -321,7 +321,7 @@ export function UsersPage() {
   const showEmpty = !list.loading && !hasUsers
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
 
       <ListShell

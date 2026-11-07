@@ -694,7 +694,7 @@ export function AiModelPage() {
   const showEmpty = !list.loading && !hasModels
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="AI 模型配置"
         description="管理系统使用的 AI 模型配置，支持多个模型和自定义别名。"
@@ -706,7 +706,7 @@ export function AiModelPage() {
           <TabsTrigger value="presets">预设模型管理</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="models" className="flex flex-col gap-6">
+        <TabsContent value="models" className="flex flex-col gap-(--page-gap)">
           <ListShell
             title="模型列表"
             description={`共 ${list.total} 个模型配置`}
@@ -884,7 +884,7 @@ export function AiModelPage() {
           </ListShell>
         </TabsContent>
 
-        <TabsContent value="presets" className="flex flex-col gap-6">
+        <TabsContent value="presets" className="flex flex-col gap-(--page-gap)">
           <AiModelPresetManager />
         </TabsContent>
       </Tabs>

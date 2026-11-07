@@ -622,7 +622,7 @@ export function MenuPage() {
 
   if (loading || !config) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-(--page-gap)">
         <PageHeader
           title="菜单管理"
           description="维护系统分组、菜单入口与显示顺序。"
@@ -633,7 +633,7 @@ export function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="菜单管理"
         description="维护系统分组、菜单入口与显示顺序。"

@@ -166,7 +166,7 @@ export function DataManagementPage() {
   }, [jobId, jobToken, logout, navigate])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="数据管理"
         description="导出或恢复当前系统的完整数据。"

@@ -107,7 +107,7 @@ export function DashboardPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="仪表盘"
         description="欢迎回来，以下是系统概览。"

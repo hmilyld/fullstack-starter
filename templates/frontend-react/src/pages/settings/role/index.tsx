@@ -226,7 +226,7 @@ export function RolesPage() {
   const showEmpty = !list.loading && !hasRoles
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
 
       <ListShell

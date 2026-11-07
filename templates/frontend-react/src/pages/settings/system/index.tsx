@@ -170,7 +170,7 @@ export function SystemPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-(--page-gap)">
         <PageHeader
           title="系统设置"
           description="管理站点全局配置、注册策略与邮件服务。"
@@ -329,7 +329,7 @@ export function SystemPage() {
   const activePreset = SMTP_PRESETS.find((preset) => preset.name === smtpPreset)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="系统设置"
         description="管理站点全局配置、注册策略与邮件服务。"
@@ -342,7 +342,7 @@ export function SystemPage() {
           <TabsTrigger value="smtp">邮件配置</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="site" className="flex flex-col gap-6">
+        <TabsContent value="site" className="flex flex-col gap-(--page-gap)">
           <Card>
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
@@ -447,7 +447,7 @@ export function SystemPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="register" className="flex flex-col gap-6">
+        <TabsContent value="register" className="flex flex-col gap-(--page-gap)">
           <Card>
             <CardHeader>
               <CardTitle>注册策略</CardTitle>
@@ -552,7 +552,7 @@ export function SystemPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="smtp" className="flex flex-col gap-6">
+        <TabsContent value="smtp" className="flex flex-col gap-(--page-gap)">
           <Card>
             <CardHeader>
               <CardTitle>SMTP 邮件配置</CardTitle>

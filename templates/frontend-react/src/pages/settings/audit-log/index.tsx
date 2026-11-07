@@ -123,7 +123,7 @@ export function AuditLogPage() {
   const showEmpty = !list.loading && !hasLogs
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="审计日志"
         description="查看系统的写操作与权限拦截记录。"

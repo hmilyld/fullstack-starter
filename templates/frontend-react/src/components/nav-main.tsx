@@ -6,6 +6,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { MenuIcon } from "@/lib/icons"
 
@@ -26,6 +27,7 @@ function isActivePath(pathname: string, url: string) {
 
 export function NavMain({ groups }: { groups: NavGroup[] }) {
   const location = useLocation()
+  const { isMobile, setOpenMobile } = useSidebar()
 
   return (
     <>
@@ -40,7 +42,12 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                   isActive={isActivePath(location.pathname, item.url)}
                   tooltip={item.title}
                 >
-                  <Link to={item.url}>
+                  <Link
+                    to={item.url}
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false)
+                    }}
+                  >
                     <MenuIcon name={item.icon} />
                     <span>{item.title}</span>
                   </Link>

@@ -90,7 +90,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -99,7 +99,7 @@ export function ProfilePage() {
           <TabsTrigger value="security">密码修改</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="flex flex-col gap-6">
+        <TabsContent value="profile" className="flex flex-col gap-(--page-gap)">
           <Card>
             <CardHeader>
               <CardTitle>基本资料</CardTitle>
@@ -145,7 +145,7 @@ export function ProfilePage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="flex flex-col gap-6">
+        <TabsContent value="security" className="flex flex-col gap-(--page-gap)">
           <Card>
             <CardHeader>
               <CardTitle>密码修改</CardTitle>

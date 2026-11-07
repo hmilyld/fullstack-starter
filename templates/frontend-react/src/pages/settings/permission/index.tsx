@@ -243,7 +243,7 @@ export function PermissionPage() {
   const hasPermissions = tree.length > 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="权限管理"
         description="管理系统的菜单权限和操作权限。"

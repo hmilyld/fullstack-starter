@@ -10,6 +10,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { getNavigation } from "@/api/menu"
 import { useAuth } from "@/lib/auth-context"
@@ -21,6 +22,7 @@ const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
   const { config } = useSiteConfig()
+  const { isMobile, setOpenMobile } = useSidebar()
   const [navGroups, setNavGroups] = React.useState<NavigationGroup[]>([])
 
   const siteName = config?.siteName || "管理系统"
@@ -69,6 +71,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <Link
           to="/dashboard"
+          onClick={() => {
+            if (isMobile) setOpenMobile(false)
+          }}
           className="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none group-data-[collapsible=icon]:justify-center focus-visible:ring-3 focus-visible:ring-ring/30"
         >
           <BrandMark />
