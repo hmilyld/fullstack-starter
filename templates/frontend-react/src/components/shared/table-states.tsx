@@ -22,17 +22,17 @@ export function TableSkeletonRow({ colSpan = 5 }: { colSpan?: number }) {
 export function PageFormSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-8 w-56" />
+      <div className="flex flex-col gap-6 rounded-[min(var(--radius-4xl),24px)] bg-card p-5 ring-1 ring-foreground/5">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-64" />
+        </div>
         <div className="flex flex-col gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="flex flex-col gap-2">
               <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-8 w-full" />
             </div>
           ))}
         </div>

@@ -1,5 +1,9 @@
 import * as React from "react"
+import { MailIcon, SaveIcon } from "lucide-react"
+import { useSearchParams } from "react-router"
+
 import { LoadingButton } from "@/components/shared/loading-button"
+import { PageHeader } from "@/components/shared/page-header"
 import { PageFormSkeleton } from "@/components/shared/table-states"
 import {
   Card,
@@ -9,11 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select,
   SelectContent,
@@ -22,12 +28,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getSystemConfig, updateSystemConfig, testEmail } from "@/api/system"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getRoles } from "@/api/role"
-import type { SystemConfig } from "@/types/system"
+import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { appToast } from "@/lib/toast"
+import type { SystemConfig } from "@/types/system"
 
-// 常用邮箱 SMTP 预设配置
+type SaveKey = "site" | "maintenance" | "registration" | "default" | "smtp"
+
 const SMTP_PRESETS = [
   {
     name: "QQ 邮箱",
@@ -87,19 +97,53 @@ const SMTP_PRESETS = [
   },
 ]
 
+function SaveFooter({
+  dirty,
+  loading,
+  onSave,
+  children,
+}: {
+  dirty: boolean
+  loading: boolean
+  onSave: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <CardFooter className="flex flex-wrap items-center gap-3">
+      <LoadingButton loading={loading} disabled={!dirty} onClick={onSave}>
+        <SaveIcon data-icon="inline-start" />
+        {children}
+      </LoadingButton>
+      <span className="text-xs text-muted-foreground">
+        {dirty ? "有未保存的修改" : "已保存"}
+      </span>
+    </CardFooter>
+  )
+}
+
 export function SystemPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get("tab")
+  const activeTab =
+    tabParam === "register" || tabParam === "smtp" ? tabParam : "site"
+
+  function setActiveTab(value: string) {
+    setSearchParams(value === "site" ? {} : { tab: value }, { replace: true })
+  }
+
   const [config, setConfig] = React.useState<SystemConfig | null>(null)
+  const [savedConfig, setSavedConfig] = React.useState<SystemConfig | null>(
+    null
+  )
   const [loading, setLoading] = React.useState(true)
-  const [siteSaving, setSiteSaving] = React.useState(false)
-  const [maintainSaving, setMaintainSaving] = React.useState(false)
-  const [registerSaving, setRegisterSaving] = React.useState(false)
-  const [defaultSaving, setDefaultSaving] = React.useState(false)
+  const [saving, setSaving] = React.useState<SaveKey | null>(null)
   const [roles, setRoles] = React.useState<{ id: string; name: string }[]>([])
-  const [smtpSaving, setSmtpSaving] = React.useState(false)
-  const [testEmailAddr, setTestEmailAddr] = React.useState("")
-  const [testEmailSaving, setTestEmailSaving] = React.useState(false)
-  const [smtpPreset, setSmtpPreset] = React.useState("")
+
   const [smtpPassword, setSmtpPassword] = React.useState("")
+  const [smtpPort, setSmtpPort] = React.useState("")
+  const [smtpPreset, setSmtpPreset] = React.useState("")
+  const [testEmailAddr, setTestEmailAddr] = React.useState("")
+  const [testEmailSending, setTestEmailSending] = React.useState(false)
 
   React.useEffect(() => {
     let cancelled = false
@@ -108,143 +152,190 @@ export function SystemPage() {
       if (cancelled) return
       if (res.code === 0) {
         setConfig(res.data)
+        setSavedConfig(res.data)
+        setSmtpPort(String(res.data.smtpPort ?? ""))
       } else if (res.message !== "请求已取消") {
-        appToast.error("数据加载失败")
+        appToast.error(res.message || "数据加载失败")
       }
       setLoading(false)
     }
-    load()
+    void load()
     getRoles({ pageSize: 100 }).then((res) => {
       if (!cancelled && res.code === 0) setRoles(res.data.list)
     })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  if (loading) return <PageFormSkeleton />
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          title="系统设置"
+          description="管理站点全局配置、注册策略与邮件服务。"
+        />
+        <PageFormSkeleton />
+      </div>
+    )
+  }
+
   if (!config) return null
 
-  function updateField<K extends keyof SystemConfig>(key: K, value: SystemConfig[K]) {
-    setConfig((prev) => {
-      if (!prev) return prev
-      return { ...prev, [key]: value }
-    })
+  function updateField<K extends keyof SystemConfig>(
+    key: K,
+    value: SystemConfig[K]
+  ) {
+    setConfig((previous) =>
+      previous ? { ...previous, [key]: value } : previous
+    )
+  }
+
+  function isDirty(keys: (keyof SystemConfig)[]) {
+    if (!savedConfig) return false
+    return keys.some((key) => config?.[key] !== savedConfig[key])
+  }
+
+  const siteDirty = isDirty(["siteName", "siteDescription", "keywords"])
+  const maintenanceDirty = isDirty(["maintenanceEnabled", "maintenanceMessage"])
+  const registrationDirty = isDirty(["openRegistration", "manualReview"])
+  const defaultDirty = isDirty(["defaultRoleId", "welcomeMessage"])
+  const smtpDirty =
+    isDirty([
+      "smtpEnabled",
+      "smtpHost",
+      "smtpUsername",
+      "smtpFromName",
+      "smtpFromEmail",
+      "smtpUseSsl",
+    ]) ||
+    smtpPort !== String(savedConfig?.smtpPort ?? "") ||
+    smtpPassword.trim() !== ""
+
+  async function savePatch(
+    key: SaveKey,
+    patch: Partial<SystemConfig>,
+    successMessage = "保存成功"
+  ) {
+    setSaving(key)
+    const res = await updateSystemConfig(patch)
+    setSaving(null)
+    if (res.code !== 0) {
+      appToast.error(res.message || "保存失败")
+      return false
+    }
+
+    const nextSaved = { ...savedConfig!, ...patch, smtpPassword: "" }
+    setSavedConfig(nextSaved)
+    setConfig((current) =>
+      current ? { ...current, ...patch, smtpPassword: "" } : current
+    )
+    appToast.success(successMessage)
+    return true
   }
 
   async function handleSaveSite() {
-    if (!config) return
-    setSiteSaving(true)
-    const res = await updateSystemConfig({
-      siteName: config.siteName,
-      siteDescription: config.siteDescription,
-      keywords: config.keywords,
-    })
-    setSiteSaving(false)
-    if (res.code === 0) {
-      appToast.success("保存成功")
-      const fresh = await getSystemConfig()
-      if (fresh.code === 0) setConfig(fresh.data)
-    } else {
-      appToast.error(res.message)
+    if (!config!.siteName.trim()) {
+      appToast.error("请输入站点名称")
+      return
     }
+    await savePatch("site", {
+      siteName: config!.siteName,
+      siteDescription: config!.siteDescription,
+      keywords: config!.keywords,
+    })
   }
 
   async function handleSaveMaintenance() {
-    if (!config) return
-    setMaintainSaving(true)
-    const res = await updateSystemConfig({
-      maintenanceEnabled: config.maintenanceEnabled,
-      maintenanceMessage: config.maintenanceMessage,
+    await savePatch("maintenance", {
+      maintenanceEnabled: config!.maintenanceEnabled,
+      maintenanceMessage: config!.maintenanceMessage,
     })
-    setMaintainSaving(false)
-    if (res.code === 0) {
-      appToast.success("保存成功")
-      const fresh = await getSystemConfig()
-      if (fresh.code === 0) setConfig(fresh.data)
-    } else {
-      appToast.error(res.message)
-    }
   }
 
   async function handleSaveRegistration() {
-    if (!config) return
-    setRegisterSaving(true)
-    const res = await updateSystemConfig({
-      openRegistration: config.openRegistration,
-      manualReview: config.manualReview,
+    await savePatch("registration", {
+      openRegistration: config!.openRegistration,
+      manualReview: config!.manualReview,
     })
-    setRegisterSaving(false)
-    if (res.code === 0) {
-      appToast.success("保存成功")
-      const fresh = await getSystemConfig()
-      if (fresh.code === 0) setConfig(fresh.data)
-    } else {
-      appToast.error(res.message)
-    }
   }
 
   async function handleSaveDefault() {
-    if (!config) return
-    setDefaultSaving(true)
-    const res = await updateSystemConfig({
-      defaultRoleId: config.defaultRoleId,
-      welcomeMessage: config.welcomeMessage,
+    await savePatch("default", {
+      defaultRoleId: config!.defaultRoleId,
+      welcomeMessage: config!.welcomeMessage,
     })
-    setDefaultSaving(false)
-    if (res.code === 0) {
-      appToast.success("保存成功")
-      const fresh = await getSystemConfig()
-      if (fresh.code === 0) setConfig(fresh.data)
-    } else {
-      appToast.error(res.message)
-    }
   }
 
   async function handleSaveSmtp() {
-    if (!config) return
-    setSmtpSaving(true)
-    const payload: Partial<SystemConfig> = {
-      smtpEnabled: config.smtpEnabled,
-      smtpHost: config.smtpHost,
-      smtpPort: config.smtpPort,
-      smtpUsername: config.smtpUsername,
-      smtpFromName: config.smtpFromName,
-      smtpFromEmail: config.smtpFromEmail,
-      smtpUseSsl: config.smtpUseSsl,
+    if (
+      !config!.smtpHost.trim() ||
+      !config!.smtpUsername.trim() ||
+      !config!.smtpFromEmail.trim()
+    ) {
+      appToast.error("请填写 SMTP 服务器、用户名和发件人邮箱")
+      return
     }
-    if (smtpPassword.trim()) {
-      payload.smtpPassword = smtpPassword
+    const port = Number(smtpPort)
+    if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+      appToast.error("请输入 1-65535 之间的端口号")
+      return
     }
-    const res = await updateSystemConfig(payload)
-    setSmtpSaving(false)
-    if (res.code === 0) {
-      appToast.success("保存成功")
-      const fresh = await getSystemConfig()
-      if (fresh.code === 0) setConfig(fresh.data)
-    } else {
-      appToast.error(res.message)
+    const patch: Partial<SystemConfig> = {
+      smtpEnabled: config!.smtpEnabled,
+      smtpHost: config!.smtpHost,
+      smtpPort: port,
+      smtpUsername: config!.smtpUsername,
+      smtpFromName: config!.smtpFromName,
+      smtpFromEmail: config!.smtpFromEmail,
+      smtpUseSsl: config!.smtpUseSsl,
+    }
+    if (smtpPassword.trim()) patch.smtpPassword = smtpPassword
+
+    const ok = await savePatch("smtp", patch)
+    if (ok) {
+      setSmtpPassword("")
+      setSmtpPort(String(port))
     }
   }
 
   async function handleTestEmail() {
-    if (!config || !testEmailAddr) return
-    setTestEmailSaving(true)
+    if (!testEmailAddr) return
+    setTestEmailSending(true)
     const res = await testEmail(testEmailAddr)
-    setTestEmailSaving(false)
-    if (res.code === 0) {
-      appToast.success("测试邮件发送成功")
-    } else {
-      appToast.error(res.message)
-    }
+    setTestEmailSending(false)
+    if (res.code === 0) appToast.success("测试邮件发送成功")
+    else appToast.error(res.message || "测试邮件发送失败")
   }
+
+  function applySmtpPreset(name: string) {
+    setSmtpPreset(name)
+    const preset = SMTP_PRESETS.find((item) => item.name === name)
+    if (!preset) return
+    setConfig((current) =>
+      current
+        ? {
+            ...current,
+            smtpHost: preset.host,
+            smtpPort: preset.port,
+            smtpUseSsl: preset.ssl,
+            smtpFromName: preset.fromName,
+          }
+        : current
+    )
+    setSmtpPort(String(preset.port))
+  }
+
+  const activePreset = SMTP_PRESETS.find((preset) => preset.name === smtpPreset)
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">系统设置</h1>
-        <p className="text-muted-foreground">管理站点全局配置和注册策略。</p>
-      </div>
+      <PageHeader
+        title="系统设置"
+        description="管理站点全局配置、注册策略与邮件服务。"
+      />
 
-      <Tabs defaultValue="site" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="site">站点设置</TabsTrigger>
           <TabsTrigger value="register">注册设置</TabsTrigger>
@@ -261,49 +352,97 @@ export function SystemPage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="site-name">站点名称</FieldLabel>
-                  <Input id="site-name" value={config.siteName} onChange={(e) => updateField("siteName", e.target.value)} />
+                  <Input
+                    id="site-name"
+                    value={config.siteName}
+                    onChange={(event) =>
+                      updateField("siteName", event.target.value)
+                    }
+                  />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="site-desc">站点描述</FieldLabel>
-                  <Input id="site-desc" value={config.siteDescription} onChange={(e) => updateField("siteDescription", e.target.value)} />
+                  <Input
+                    id="site-desc"
+                    value={config.siteDescription}
+                    onChange={(event) =>
+                      updateField("siteDescription", event.target.value)
+                    }
+                  />
+                  <FieldDescription>
+                    显示在浏览器标签和搜索结果中。
+                  </FieldDescription>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="site-keywords">关键词</FieldLabel>
-                  <Input id="site-keywords" value={config.keywords} onChange={(e) => updateField("keywords", e.target.value)} />
+                  <Input
+                    id="site-keywords"
+                    value={config.keywords}
+                    onChange={(event) =>
+                      updateField("keywords", event.target.value)
+                    }
+                  />
+                  <FieldDescription>
+                    多个关键词用英文逗号分隔。
+                  </FieldDescription>
                 </Field>
               </FieldGroup>
             </CardContent>
-            <CardFooter>
-              <LoadingButton onClick={handleSaveSite} loading={siteSaving}>
-                保存基本信息
-              </LoadingButton>
-            </CardFooter>
+            <SaveFooter
+              dirty={siteDirty}
+              loading={saving === "site"}
+              onSave={handleSaveSite}
+            >
+              保存基本信息
+            </SaveFooter>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>维护模式</CardTitle>
-              <CardDescription>开启后普通用户将无法访问系统。</CardDescription>
+              <CardDescription>
+                开启后除管理员以外的用户将无法登录。
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
-                  <FieldLabel>开启维护模式</FieldLabel>
-                  <FieldDescription>仅管理员可登录，其他用户看到维护提示。</FieldDescription>
+                  <FieldLabel htmlFor="maintenance-enabled">
+                    开启维护模式
+                  </FieldLabel>
+                  <FieldDescription>
+                    其他用户会看到维护提示，管理员仍可登录。
+                  </FieldDescription>
                 </div>
-                <Switch checked={config.maintenanceEnabled} onCheckedChange={(v) => updateField("maintenanceEnabled", v)} />
+                <Switch
+                  id="maintenance-enabled"
+                  checked={config.maintenanceEnabled}
+                  onCheckedChange={(checked) =>
+                    updateField("maintenanceEnabled", checked)
+                  }
+                />
               </Field>
               <Separator />
               <Field>
-                <FieldLabel htmlFor="maintain-msg">维护提示信息</FieldLabel>
-                <Input id="maintain-msg" value={config.maintenanceMessage} onChange={(e) => updateField("maintenanceMessage", e.target.value)} />
+                <FieldLabel htmlFor="maintenance-message">
+                  维护提示信息
+                </FieldLabel>
+                <Input
+                  id="maintenance-message"
+                  value={config.maintenanceMessage}
+                  onChange={(event) =>
+                    updateField("maintenanceMessage", event.target.value)
+                  }
+                />
               </Field>
             </CardContent>
-            <CardFooter>
-              <LoadingButton onClick={handleSaveMaintenance} loading={maintainSaving}>
-                保存维护设置
-              </LoadingButton>
-            </CardFooter>
+            <SaveFooter
+              dirty={maintenanceDirty}
+              loading={saving === "maintenance"}
+              onSave={handleSaveMaintenance}
+            >
+              保存维护设置
+            </SaveFooter>
           </Card>
         </TabsContent>
 
@@ -316,62 +455,97 @@ export function SystemPage() {
             <CardContent className="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
-                  <FieldLabel>开放注册</FieldLabel>
+                  <FieldLabel htmlFor="open-registration">开放注册</FieldLabel>
                   <FieldDescription>允许新用户自行注册账号。</FieldDescription>
                 </div>
-                <Switch checked={config.openRegistration} onCheckedChange={(v) => updateField("openRegistration", v)} />
+                <Switch
+                  id="open-registration"
+                  checked={config.openRegistration}
+                  onCheckedChange={(checked) =>
+                    updateField("openRegistration", checked)
+                  }
+                />
               </Field>
               <Separator />
-
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
-                  <FieldLabel>人工审核</FieldLabel>
-                  <FieldDescription>新注册用户需要管理员审核后才能使用系统。</FieldDescription>
+                  <FieldLabel htmlFor="manual-review">人工审核</FieldLabel>
+                  <FieldDescription>
+                    新注册用户需要管理员审核后才能使用系统。
+                  </FieldDescription>
                 </div>
-                <Switch checked={config.manualReview} onCheckedChange={(v) => updateField("manualReview", v)} />
+                <Switch
+                  id="manual-review"
+                  checked={config.manualReview}
+                  onCheckedChange={(checked) =>
+                    updateField("manualReview", checked)
+                  }
+                  disabled={!config.openRegistration}
+                />
               </Field>
             </CardContent>
-            <CardFooter>
-              <LoadingButton onClick={handleSaveRegistration} loading={registerSaving}>
-                保存注册策略
-              </LoadingButton>
-            </CardFooter>
+            <SaveFooter
+              dirty={registrationDirty}
+              loading={saving === "registration"}
+              onSave={handleSaveRegistration}
+            >
+              保存注册策略
+            </SaveFooter>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>默认配置</CardTitle>
-              <CardDescription>新注册用户的默认角色和状态。</CardDescription>
+              <CardDescription>
+                新注册用户的默认角色和欢迎信息。
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <FieldGroup>
                 <Field>
                   <FieldLabel>默认角色</FieldLabel>
-                  <Select value={config.defaultRoleId} onValueChange={(v) => updateField("defaultRoleId", v)}>
+                  <Select
+                    value={config.defaultRoleId}
+                    onValueChange={(value) =>
+                      updateField("defaultRoleId", value)
+                    }
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="请选择默认角色" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
                         {roles.map((role) => (
-                          <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
                         ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                  <FieldDescription>新注册用户自动分配的角色。</FieldDescription>
+                  <FieldDescription>
+                    新注册用户自动分配的角色。
+                  </FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="welcome-msg">欢迎消息</FieldLabel>
-                  <Input id="welcome-msg" value={config.welcomeMessage} onChange={(e) => updateField("welcomeMessage", e.target.value)} />
+                  <FieldLabel htmlFor="welcome-message">欢迎消息</FieldLabel>
+                  <Input
+                    id="welcome-message"
+                    value={config.welcomeMessage}
+                    onChange={(event) =>
+                      updateField("welcomeMessage", event.target.value)
+                    }
+                  />
                 </Field>
               </FieldGroup>
             </CardContent>
-            <CardFooter>
-              <LoadingButton onClick={handleSaveDefault} loading={defaultSaving}>
-                保存默认配置
-              </LoadingButton>
-            </CardFooter>
+            <SaveFooter
+              dirty={defaultDirty}
+              loading={saving === "default"}
+              onSave={handleSaveDefault}
+            >
+              保存默认配置
+            </SaveFooter>
           </Card>
         </TabsContent>
 
@@ -379,34 +553,31 @@ export function SystemPage() {
           <Card>
             <CardHeader>
               <CardTitle>SMTP 邮件配置</CardTitle>
-              <CardDescription>配置邮件服务器，用于发送系统通知邮件。</CardDescription>
+              <CardDescription>
+                配置邮件服务器，用于发送系统通知邮件。
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
-                  <FieldLabel>启用邮件</FieldLabel>
-                  <FieldDescription>开启后系统将通过 SMTP 发送邮件。</FieldDescription>
+                  <FieldLabel htmlFor="smtp-enabled">启用邮件</FieldLabel>
+                  <FieldDescription>
+                    开启后系统将通过 SMTP 发送邮件。
+                  </FieldDescription>
                 </div>
-                <Switch checked={config.smtpEnabled} onCheckedChange={(v) => updateField("smtpEnabled", v)} />
+                <Switch
+                  id="smtp-enabled"
+                  checked={config.smtpEnabled}
+                  onCheckedChange={(checked) =>
+                    updateField("smtpEnabled", checked)
+                  }
+                />
               </Field>
               <Separator />
 
-              {/* 快捷配置 */}
               <Field>
                 <FieldLabel>快捷配置</FieldLabel>
-                <Select
-                  value={smtpPreset}
-                  onValueChange={(value) => {
-                    setSmtpPreset(value)
-                    const preset = SMTP_PRESETS.find((p) => p.name === value)
-                    if (preset) {
-                      updateField("smtpHost", preset.host)
-                      updateField("smtpPort", preset.port)
-                      updateField("smtpUseSsl", preset.ssl)
-                      updateField("smtpFromName", preset.fromName)
-                    }
-                  }}
-                >
+                <Select value={smtpPreset} onValueChange={applySmtpPreset}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="选择常用邮箱快速配置..." />
                   </SelectTrigger>
@@ -420,125 +591,169 @@ export function SystemPage() {
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <FieldDescription>选择后将自动填充服务器、端口和 SSL 配置。</FieldDescription>
+                <FieldDescription>
+                  {activePreset
+                    ? activePreset.tip
+                    : "选择后会自动填充服务器、端口和 SSL 配置。"}
+                </FieldDescription>
               </Field>
 
               <Separator />
 
               <FieldGroup>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="smtp-host">SMTP 服务器 *</FieldLabel>
+                    <FieldLabel htmlFor="smtp-host">SMTP 服务器</FieldLabel>
                     <Input
                       id="smtp-host"
-                      placeholder="例如: smtp.qq.com"
+                      placeholder="例如：smtp.qq.com"
                       value={config.smtpHost}
-                      onChange={(e) => updateField("smtpHost", e.target.value)}
+                      onChange={(event) =>
+                        updateField("smtpHost", event.target.value)
+                      }
+                      required
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="smtp-port">端口 *</FieldLabel>
+                    <FieldLabel htmlFor="smtp-port">端口</FieldLabel>
                     <Input
                       id="smtp-port"
                       type="number"
-                      placeholder="例如: 587"
-                      value={config.smtpPort}
-                      onChange={(e) => updateField("smtpPort", parseInt(e.target.value) || 587)}
+                      min={1}
+                      max={65535}
+                      placeholder="例如：587"
+                      value={smtpPort}
+                      onChange={(event) => setSmtpPort(event.target.value)}
+                      required
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="smtp-username">用户名 *</FieldLabel>
+                    <FieldLabel htmlFor="smtp-username">用户名</FieldLabel>
                     <Input
                       id="smtp-username"
-                      placeholder="例如: your@email.com"
+                      placeholder="例如：your@email.com"
                       value={config.smtpUsername}
-                      onChange={(e) => updateField("smtpUsername", e.target.value)}
+                      onChange={(event) =>
+                        updateField("smtpUsername", event.target.value)
+                      }
+                      required
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="smtp-password">密码</FieldLabel>
+                    <FieldLabel htmlFor="smtp-password">
+                      密码 / 授权码
+                    </FieldLabel>
                     <Input
                       id="smtp-password"
                       type="password"
                       placeholder="留空保持不变"
                       value={smtpPassword}
-                      onChange={(e) => setSmtpPassword(e.target.value)}
+                      onChange={(event) => setSmtpPassword(event.target.value)}
+                      autoComplete="new-password"
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="smtp-from-name">发件人名称</FieldLabel>
                     <Input
                       id="smtp-from-name"
-                      placeholder="例如: 管理系统"
+                      placeholder="例如：管理系统"
                       value={config.smtpFromName}
-                      onChange={(e) => updateField("smtpFromName", e.target.value)}
+                      onChange={(event) =>
+                        updateField("smtpFromName", event.target.value)
+                      }
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="smtp-from-email">发件人邮箱 *</FieldLabel>
+                    <FieldLabel htmlFor="smtp-from-email">
+                      发件人邮箱
+                    </FieldLabel>
                     <Input
                       id="smtp-from-email"
                       type="email"
-                      placeholder="例如: noreply@example.com"
+                      placeholder="例如：noreply@example.com"
                       value={config.smtpFromEmail}
-                      onChange={(e) => updateField("smtpFromEmail", e.target.value)}
+                      onChange={(event) =>
+                        updateField("smtpFromEmail", event.target.value)
+                      }
+                      required
                     />
                   </Field>
                 </div>
                 <Field orientation="horizontal">
                   <div className="flex flex-1 flex-col gap-1">
-                    <FieldLabel>使用 SSL</FieldLabel>
-                    <FieldDescription>大多数邮件服务器需要开启 SSL。</FieldDescription>
+                    <FieldLabel htmlFor="smtp-ssl">使用 SSL</FieldLabel>
+                    <FieldDescription>
+                      大多数邮件服务器需要开启 SSL。
+                    </FieldDescription>
                   </div>
-                  <Switch checked={config.smtpUseSsl} onCheckedChange={(v) => updateField("smtpUseSsl", v)} />
+                  <Switch
+                    id="smtp-ssl"
+                    checked={config.smtpUseSsl}
+                    onCheckedChange={(checked) =>
+                      updateField("smtpUseSsl", checked)
+                    }
+                  />
                 </Field>
               </FieldGroup>
             </CardContent>
-            <CardFooter>
-              <LoadingButton onClick={handleSaveSmtp} loading={smtpSaving}>
-                保存邮件配置
-              </LoadingButton>
-            </CardFooter>
+            <SaveFooter
+              dirty={smtpDirty}
+              loading={saving === "smtp"}
+              onSave={handleSaveSmtp}
+            >
+              保存邮件配置
+            </SaveFooter>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>测试邮件</CardTitle>
-              <CardDescription>发送测试邮件以验证邮件配置是否正确。</CardDescription>
+              <CardDescription>
+                发送测试邮件以验证邮件配置是否正确。
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="test-email">收件人邮箱</FieldLabel>
-                  <Input
-                    id="test-email"
-                    type="email"
-                    placeholder="请输入测试收件人邮箱"
-                    value={testEmailAddr}
-                    onChange={(e) => setTestEmailAddr(e.target.value)}
-                  />
-                </Field>
-              </FieldGroup>
+              <form
+                id="test-email-form"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void handleTestEmail()
+                }}
+              >
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="test-email">收件人邮箱</FieldLabel>
+                    <Input
+                      id="test-email"
+                      type="email"
+                      placeholder="请输入测试收件人邮箱"
+                      value={testEmailAddr}
+                      onChange={(event) => setTestEmailAddr(event.target.value)}
+                      required
+                    />
+                  </Field>
+                </FieldGroup>
+              </form>
             </CardContent>
-            <CardFooter>
-              <div className="flex flex-col gap-2">
-                <LoadingButton
-                  onClick={handleTestEmail}
-                  loading={testEmailSaving}
-                  disabled={!testEmailAddr || !config.smtpEnabled}
-                >
-                  发送测试邮件
-                </LoadingButton>
-                {!config.smtpEnabled && (
-                  <span className="text-xs text-muted-foreground">
-                    请先开启"启用邮件"开关并配置SMTP服务器
-                  </span>
-                )}
-              </div>
+            <CardFooter className="flex flex-col items-start gap-2">
+              <LoadingButton
+                type="submit"
+                form="test-email-form"
+                loading={testEmailSending}
+                disabled={!config.smtpEnabled || !testEmailAddr}
+              >
+                <MailIcon data-icon="inline-start" />
+                发送测试邮件
+              </LoadingButton>
+              {!config.smtpEnabled && (
+                <span className="text-xs text-muted-foreground">
+                  请先开启“启用邮件”并保存 SMTP 配置。
+                </span>
+              )}
             </CardFooter>
           </Card>
         </TabsContent>
