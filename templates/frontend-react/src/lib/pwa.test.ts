@@ -89,6 +89,11 @@ describe("applyPwaManifest", () => {
         'meta[name="apple-mobile-web-app-title"]'
       )?.content
     ).toBe("运营后台")
+    expect(
+      document.querySelector<HTMLMetaElement>(
+        'meta[name="apple-mobile-web-app-status-bar-style"]'
+      )?.content
+    ).toBe("default")
   })
 
   it("revokes the previous blob when the manifest is refreshed", () => {
@@ -102,5 +107,10 @@ describe("applyPwaManifest", () => {
       document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
         ?.content
     ).toBe("#0a0a0a")
+    expect(
+      document.querySelector<HTMLMetaElement>(
+        'meta[name="apple-mobile-web-app-status-bar-style"]'
+      )?.content
+    ).toBe("black-translucent")
   })
 })

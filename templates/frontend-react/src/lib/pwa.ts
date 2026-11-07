@@ -87,6 +87,10 @@ export function applyPwaManifest(manifest: PwaManifest): string {
   setMeta("theme-color", manifest.theme_color)
   setMeta("application-name", manifest.name)
   setMeta("apple-mobile-web-app-title", manifest.name)
+  setMeta(
+    "apple-mobile-web-app-status-bar-style",
+    manifest.theme_color === "#0a0a0a" ? "black-translucent" : "default"
+  )
 
   return url
 }
