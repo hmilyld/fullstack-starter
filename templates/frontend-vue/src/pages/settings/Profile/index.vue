@@ -1,222 +1,226 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue"
-import { useRoute } from "vue-router"
-import { updateMe, changePassword } from "@/api/user"
+import { computed, ref } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import LoadingButton from "@/components/shared/LoadingButton.vue"
+import PageHeader from "@/components/shared/PageHeader.vue"
+import PasswordInput from "@/components/shared/PasswordInput.vue"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { changePassword, updateMe } from "@/api/user"
+import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 
+const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 
-const activeTab = ref((route.query.tab as string) || "profile")
-
-watch(
-  () => route.query.tab,
-  (val) => {
-    if (val) activeTab.value = val as string
-  }
+const activeTab = computed(() =>
+  route.query.tab === "security" ? "security" : "profile"
 )
 
-const name = ref("")
-const email = ref("")
+function setActiveTab(tab: string) {
+  void router.replace({ query: tab === "profile" ? {} : { tab } })
+}
+
+const name = ref(auth.user?.name ?? "")
+const email = ref(auth.user?.email ?? "")
 const profileSaving = ref(false)
 
-onMounted(() => {
-  try {
-    const userStr = localStorage.getItem("user")
-    if (userStr) {
-      const user = JSON.parse(userStr)
-      name.value = user.name ?? ""
-      email.value = user.email ?? ""
-    }
-  } catch {
-    // ignore
-  }
-})
-
-async function handleProfileSubmit() {
-  profileSaving.value = true
-  try {
-    const res = await updateMe({ name: name.value, email: email.value })
-    if (res.code === 0) {
-      toast.success("保存成功")
-      try {
-        const userStr = localStorage.getItem("user")
-        if (userStr) {
-          const user = JSON.parse(userStr)
-          user.name = name.value
-          user.email = email.value
-          localStorage.setItem("user", JSON.stringify(user))
-        }
-      } catch {
-        // ignore
-      }
-    } else {
-      toast.error(typeof res.message === "string" ? res.message : "保存失败")
-    }
-  } catch {
-    toast.error("网络请求失败")
-  }
-  profileSaving.value = false
-}
+const profileDirty = computed(
+  () =>
+    name.value !== (auth.user?.name ?? "") ||
+    email.value !== (auth.user?.email ?? "")
+)
 
 const currentPassword = ref("")
 const newPassword = ref("")
 const confirmPassword = ref("")
+const passwordError = ref<string | null>(null)
 const passwordSaving = ref(false)
 
-async function handlePasswordSubmit() {
-  if (newPassword.value !== confirmPassword.value) {
-    toast.error("两次输入的密码不一致")
+function clearPasswordError() {
+  if (passwordError.value) passwordError.value = null
+}
+
+async function handleProfileSubmit() {
+  profileSaving.value = true
+  const res = await updateMe({ name: name.value, email: email.value })
+  profileSaving.value = false
+  if (res.code !== 0) {
+    toast.error(res.message || "保存失败")
     return
   }
-  passwordSaving.value = true
-  try {
-    const res = await changePassword({
-      currentPassword: currentPassword.value,
-      newPassword: newPassword.value,
-    })
-    if (res.code === 0) {
-      toast.success("密码修改成功")
-      currentPassword.value = ""
-      newPassword.value = ""
-      confirmPassword.value = ""
-    } else {
-      toast.error(typeof res.message === "string" ? res.message : "修改失败")
-    }
-  } catch {
-    toast.error("网络请求失败")
+  auth.updateUser({ name: name.value, email: email.value })
+  toast.success("保存成功")
+}
+
+async function handlePasswordSubmit() {
+  if (newPassword.value.length < 6) {
+    passwordError.value = "新密码至少 6 位"
+    return
   }
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = "两次输入的密码不一致"
+    return
+  }
+
+  passwordError.value = null
+  passwordSaving.value = true
+  const res = await changePassword({
+    currentPassword: currentPassword.value,
+    newPassword: newPassword.value,
+  })
   passwordSaving.value = false
+  if (res.code !== 0) {
+    passwordError.value = res.message || "修改失败"
+    return
+  }
+  toast.success("密码修改成功")
+  currentPassword.value = ""
+  newPassword.value = ""
+  confirmPassword.value = ""
 }
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div>
-      <h1 class="text-xl font-semibold">个人设置</h1>
-      <p class="text-base-content/50 text-sm">管理您的账户设置和偏好。</p>
-    </div>
+  <div class="flex flex-col gap-(--page-gap)">
+    <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
 
-    <div class="border-base-content/10 border-b">
-      <div class="flex gap-0">
-        <button
-          class="px-4 py-2 text-sm font-medium transition-colors"
-          :class="
-            activeTab === 'profile'
-              ? 'border-b-2 border-primary text-primary'
-              : 'text-base-content/50 hover:text-base-content'
-          "
-          @click="activeTab = 'profile'"
-        >
-          个人设置
-        </button>
-        <button
-          class="px-4 py-2 text-sm font-medium transition-colors"
-          :class="
-            activeTab === 'security'
-              ? 'border-b-2 border-primary text-primary'
-              : 'text-base-content/50 hover:text-base-content'
-          "
-          @click="activeTab = 'security'"
-        >
-          密码修改
-        </button>
-      </div>
-    </div>
-
-    <div
-      v-if="activeTab === 'profile'"
-      class="card border-base-content/10 rounded-xl border"
+    <Tabs
+      :model-value="activeTab"
+      class="w-full"
+      @update:model-value="setActiveTab(String($event))"
     >
-      <div class="card-body">
-        <h3 class="text-sm font-medium">个人设置</h3>
-        <p class="text-base-content/50 text-xs">更新您的基本账户信息。</p>
-        <form @submit.prevent="handleProfileSubmit">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">姓名</legend>
-            <input
-              v-model="name"
-              type="text"
-              placeholder="请输入姓名"
-              class="input input-bordered input-sm w-full"
-            />
-          </fieldset>
-          <fieldset class="fieldset mt-1">
-            <legend class="fieldset-legend">邮箱</legend>
-            <input
-              v-model="email"
-              type="email"
-              placeholder="请输入邮箱"
-              class="input input-bordered input-sm w-full"
-            />
-          </fieldset>
-          <div class="card-actions mt-3 justify-start">
-            <button
+      <TabsList>
+        <TabsTrigger value="profile">基本资料</TabsTrigger>
+        <TabsTrigger value="security">密码修改</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="profile" class="flex flex-col gap-(--page-gap)">
+        <Card class="max-w-2xl">
+          <CardHeader>
+            <CardTitle>基本资料</CardTitle>
+            <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form id="profile-form" @submit.prevent="handleProfileSubmit">
+              <FieldGroup>
+                <Field>
+                  <FieldLabel for="name">姓名</FieldLabel>
+                  <Input
+                    id="name"
+                    v-model="name"
+                    name="name"
+                    placeholder="请输入姓名"
+                    autocomplete="name"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel for="email">邮箱</FieldLabel>
+                  <Input
+                    id="email"
+                    v-model="email"
+                    name="email"
+                    type="email"
+                    placeholder="请输入邮箱"
+                    autocomplete="email"
+                    :spellcheck="false"
+                  />
+                </Field>
+              </FieldGroup>
+            </form>
+          </CardContent>
+          <CardFooter>
+            <LoadingButton
               type="submit"
-              class="btn btn-primary btn-sm"
-              :disabled="profileSaving"
+              form="profile-form"
+              :loading="profileSaving"
+              :disabled="!profileDirty"
+              class="w-full md:w-auto"
             >
-              <span
-                v-if="profileSaving"
-                class="loading loading-spinner loading-xs"
-              ></span>
               保存更改
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </LoadingButton>
+          </CardFooter>
+        </Card>
+      </TabsContent>
 
-    <div
-      v-if="activeTab === 'security'"
-      class="card border-base-content/10 rounded-xl border"
-    >
-      <div class="card-body">
-        <h3 class="text-sm font-medium">密码修改</h3>
-        <p class="text-base-content/50 text-xs">修改您的登录密码。</p>
-        <form @submit.prevent="handlePasswordSubmit">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">当前密码</legend>
-            <input
-              v-model="currentPassword"
-              type="password"
-              placeholder="请输入当前密码"
-              class="input input-bordered input-sm w-full"
-            />
-          </fieldset>
-          <fieldset class="fieldset mt-1">
-            <legend class="fieldset-legend">新密码</legend>
-            <input
-              v-model="newPassword"
-              type="password"
-              placeholder="请输入新密码"
-              class="input input-bordered input-sm w-full"
-            />
-          </fieldset>
-          <fieldset class="fieldset mt-1">
-            <legend class="fieldset-legend">确认密码</legend>
-            <input
-              v-model="confirmPassword"
-              type="password"
-              placeholder="请再次输入新密码"
-              class="input input-bordered input-sm w-full"
-            />
-          </fieldset>
-          <div class="card-actions mt-3 justify-start">
-            <button
+      <TabsContent value="security" class="flex flex-col gap-(--page-gap)">
+        <Card class="max-w-2xl">
+          <CardHeader>
+            <CardTitle>密码修改</CardTitle>
+            <CardDescription>
+              修改后需要重新登录其他设备上的会话。
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form id="password-form" @submit.prevent="handlePasswordSubmit">
+              <FieldGroup>
+                <Field>
+                  <FieldLabel for="current-password">当前密码</FieldLabel>
+                  <PasswordInput
+                    id="current-password"
+                    v-model="currentPassword"
+                    placeholder="请输入当前密码"
+                    autocomplete="current-password"
+                    required
+                    @update:model-value="clearPasswordError"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel for="new-password">新密码</FieldLabel>
+                  <PasswordInput
+                    id="new-password"
+                    v-model="newPassword"
+                    placeholder="至少 6 位"
+                    autocomplete="new-password"
+                    required
+                    @update:model-value="clearPasswordError"
+                  />
+                </Field>
+                <Field :data-invalid="!!passwordError">
+                  <FieldLabel for="confirm-password">确认新密码</FieldLabel>
+                  <PasswordInput
+                    id="confirm-password"
+                    v-model="confirmPassword"
+                    placeholder="请再次输入新密码"
+                    autocomplete="new-password"
+                    :aria-invalid="!!passwordError"
+                    required
+                    @update:model-value="clearPasswordError"
+                  />
+                  <FieldError>{{ passwordError }}</FieldError>
+                </Field>
+              </FieldGroup>
+            </form>
+          </CardContent>
+          <CardFooter>
+            <LoadingButton
               type="submit"
-              class="btn btn-primary btn-sm"
-              :disabled="passwordSaving"
+              form="password-form"
+              :loading="passwordSaving"
+              :disabled="!currentPassword || !newPassword || !confirmPassword"
+              class="w-full md:w-auto"
             >
-              <span
-                v-if="passwordSaving"
-                class="loading loading-spinner loading-xs"
-              ></span>
               更新密码
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </LoadingButton>
+          </CardFooter>
+        </Card>
+      </TabsContent>
+    </Tabs>
   </div>
 </template>

@@ -14,7 +14,7 @@ fullstack-starter/
 └── templates/
     ├── base/                 # Shared files (.gitignore)
     ├── frontend-react/       # React 19 (Vite + TS + Tailwind CSS v4 + shadcn/ui + PWA)
-    ├── frontend-vue/         # Vue 3 (Vite + TS + Tailwind CSS v4 + DaisyUI + Pinia)
+    ├── frontend-vue/         # Vue 3 (Vite + TS + Tailwind CSS v4 + shadcn-vue + Reka UI + Pinia + PWA)
     ├── backend-python/       # Python (FastAPI + SQLAlchemy async + SQLite, JWT via PyJWT)
     └── backend-java/         # Java (Spring Boot + JPA + SQLite/Flyway, auth via Sa-Token)
 ```
@@ -54,7 +54,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`.
 - **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx`, API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
 
-## Frontend Responsive Rules (frontend-react)
+## Frontend Responsive Rules (frontend-react / frontend-vue)
 
 - Three modes: **Compact `< 768px`**, **Medium `768–1023px`**, **Expanded `≥ 1024px`**. Content max width is `1440px`.
 - Layout switches **by width**; control density switches by **input modality** (`pointer: coarse`) and compact width. Do not tie touch sizing only to a breakpoint.
@@ -62,8 +62,8 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Medium: icon rail, tables with priority columns, inline filters.
 - Expanded: full sidebar, all columns.
 - New list pages must provide cards below `md` and a table with column priorities above; reuse `PageHeader`, `ListShell`, `RecordCard`, `RowActions`, `FormDialog`, `TablePagination`, `EmptyState`.
-- Layout tokens live in `src/index.css` (`--layout-gutter`, `--layout-max`, `--page-gap`, `--control-h`, `--icon-btn`, `--dialog-inset`). See `templates/frontend-react/DESIGN.md` for the full spec and page checklist.
-- PWA icons live in `templates/frontend-react/public/icons/` (SVG, 192/512 PNG, 512 maskable, 180 apple-touch). When changing the brand mark, regenerate all sizes and keep `index.html`, `vite.config.ts`, `src/lib/pwa.ts` and `DESIGN.md` in sync.
+- Layout tokens live in `src/index.css` (React) / `src/assets/main.css` (Vue) (`--layout-gutter`, `--layout-max`, `--page-gap`, `--control-h`, `--icon-btn`, `--dialog-inset`). See `templates/frontend-react/DESIGN.md` and `templates/frontend-vue/DESIGN.md` for the full spec and page checklist.
+- PWA icons live in `templates/frontend-react/public/icons/` and `templates/frontend-vue/public/icons/` (SVG, 192/512 PNG, 512 maskable, 180 apple-touch). When changing the brand mark, regenerate all sizes and keep `index.html`, `vite.config.ts`, `src/lib/pwa.ts` and `DESIGN.md` in sync for both templates.
 - List URL state uses `q` / `page`; audit filters use their own keys; AI presets use `presetQ` / `presetGroup`. Keep this contract when refactoring the Vue template so both frontends behave the same.
 - The account menu (`UserMenu`) belongs in the header top-right, not in the sidebar footer. Keep this location in the Vue template.
 
@@ -89,15 +89,17 @@ Generated projects use a **single Docker image** containing Nginx + backend:
 
 ## Testing
 
-The scaffolding CLI has no automated tests; the generated React frontend template includes Vitest + React Testing Library:
+The scaffolding CLI has no automated tests; both frontend templates include Vitest, Testing Library and Playwright:
 
 ```bash
-cd templates/frontend-react
+cd templates/frontend-react   # or templates/frontend-vue
 npm test
 npm run test:coverage
 npm run typecheck:e2e
 npm run test:e2e        # first run: npx playwright install chromium
 ```
+
+Vue uses `vue-tsc --noEmit -p tsconfig.app.json` for type checking and `@testing-library/vue` for component tests.
 
 Manual verification for the CLI:
 

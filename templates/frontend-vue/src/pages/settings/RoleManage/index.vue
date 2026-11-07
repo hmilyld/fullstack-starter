@@ -1,83 +1,115 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue"
-import { useAuthStore } from "@/stores/auth"
-import { getRoles, createRole, updateRole, deleteRole } from "@/api/role"
-import { getPermissions } from "@/api/permission"
-import type { Role } from "@/types/role"
-import type { Permission } from "@/types/permission"
-import { useToast } from "@/composables/use-toast"
-import Pagination from "@/components/shared/Pagination.vue"
+import { computed, onMounted, ref } from "vue"
+import { Lock, Pencil, Plus, Search, ShieldCheck, Trash2 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
-import { Pencil, Trash2, Plus, Search, Lock } from "@lucide/vue"
+import EmptyState from "@/components/shared/EmptyState.vue"
+import ErrorState from "@/components/shared/ErrorState.vue"
+import FormDialog from "@/components/shared/FormDialog.vue"
+import InlineError from "@/components/shared/InlineError.vue"
+import ListShell from "@/components/shared/ListShell.vue"
+import PageHeader from "@/components/shared/PageHeader.vue"
+import RecordCard from "@/components/shared/RecordCard.vue"
+import RowActions from "@/components/shared/RowActions.vue"
+import type { RowAction } from "@/components/shared/row-action"
+import TablePagination from "@/components/shared/TablePagination.vue"
+import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
+import { Input } from "@/components/ui/input"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { getPermissions } from "@/api/permission"
+import {
+  createRole,
+  deleteRole as apiDeleteRole,
+  getRoles,
+  updateRole,
+} from "@/api/role"
+import { useDebouncedValue } from "@/composables/use-debounced-value"
+import { usePagedList } from "@/composables/use-paged-list"
+import { useUrlListState } from "@/composables/use-url-list-state"
+import { useAuthStore } from "@/stores/auth"
+import { useToast } from "@/composables/use-toast"
+import type { Permission } from "@/types/permission"
+import type { Role } from "@/types/role"
+
+const PAGE_SIZE = 8
 
 const auth = useAuthStore()
 const toast = useToast()
 
-const PAGE_SIZE = 8
+const { search, page, setSearch, setPage } = useUrlListState()
+const debouncedSearch = useDebouncedValue(search)
 
-const roles = ref<Role[]>([])
-const search = ref("")
-const page = ref(1)
-const total = ref(0)
-const tableLoading = ref(true)
-const totalPages = ref(1)
+const {
+  items: roles,
+  total,
+  page: currentPage,
+  totalPages,
+  loading: listLoading,
+  error: listError,
+  setPage: setListPage,
+  refresh: refreshList,
+} = usePagedList<Role, { search: string }>({
+  fetcher: getRoles,
+  params: computed(() => ({ search: debouncedSearch.value })),
+  pageSize: PAGE_SIZE,
+  page,
+  onPageChange: setPage,
+})
 
 const menuPermissions = ref<Permission[]>([])
 const operationPermissions = ref<Permission[]>([])
+const permissionsLoading = ref(true)
+const permissionsError = ref<string | null>(null)
 
 async function loadPermissions() {
+  permissionsLoading.value = true
+  permissionsError.value = null
   const [menuRes, opRes] = await Promise.all([
     getPermissions({ type: "menu" }),
     getPermissions({ type: "operation" }),
   ])
   if (menuRes.code === 0) menuPermissions.value = menuRes.data
+  else permissionsError.value = menuRes.message || "加载菜单权限失败"
   if (opRes.code === 0) operationPermissions.value = opRes.data
-  if (menuRes.code !== 0 || opRes.code !== 0) {
-    toast.error("加载权限数据失败")
-  }
+  else permissionsError.value = opRes.message || "加载操作权限失败"
+  permissionsLoading.value = false
 }
-
-async function loadData() {
-  tableLoading.value = true
-  const res = await getRoles({
-    search: search.value,
-    page: page.value,
-    pageSize: PAGE_SIZE,
-  })
-  if (res.code === 0) {
-    roles.value = res.data.list
-    total.value = res.data.total
-    totalPages.value = Math.max(1, Math.ceil(res.data.total / PAGE_SIZE))
-  } else {
-    toast.error(res.message || "加载数据失败")
-  }
-  tableLoading.value = false
-}
-
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-watch(search, () => {
-  page.value = 1
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => loadData(), 300)
-})
-
-watch(page, () => loadData())
 
 onMounted(() => {
-  loadData()
-  loadPermissions()
+  void loadPermissions()
 })
 
-onUnmounted(() => {
-  if (searchTimer) clearTimeout(searchTimer)
-})
-
-// Edit dialog
 const editOpen = ref(false)
 const editingRole = ref<Role | null>(null)
 const editForm = ref({ name: "", description: "" })
 const editPermissions = ref<string[]>([])
 const editSubmitting = ref(false)
+
+const deleteOpen = ref(false)
+const deleteTarget = ref<Role | null>(null)
+const deleteSubmitting = ref(false)
 
 function handleAdd() {
   editingRole.value = null
@@ -95,79 +127,89 @@ function handleEdit(role: Role) {
 
 async function handleEditSubmit() {
   editSubmitting.value = true
-  try {
-    const res = editingRole.value
-      ? await updateRole(editingRole.value.id, {
-          name: editForm.value.name,
-          description: editForm.value.description,
-          permissions: editPermissions.value,
-        })
-      : await createRole({
-          name: editForm.value.name,
-          description: editForm.value.description,
-          permissions: editPermissions.value,
-        })
-    if (res.code === 0) {
-      toast.success(editingRole.value ? "更新成功" : "创建成功")
-      editOpen.value = false
-      loadData()
-    } else {
-      toast.error(res.message || "操作失败")
-    }
-  } catch {
-    toast.error("网络请求失败")
+  const payload = {
+    name: editForm.value.name,
+    description: editForm.value.description,
+    permissions: editPermissions.value,
   }
+  const res = editingRole.value
+    ? await updateRole(editingRole.value.id, payload)
+    : await createRole(payload)
   editSubmitting.value = false
+  if (res.code !== 0) {
+    toast.error(res.message || "操作失败")
+    return
+  }
+  toast.success(editingRole.value ? "保存成功" : "创建成功")
+  editOpen.value = false
+  refreshList()
 }
 
 function togglePermission(code: string) {
-  const idx = editPermissions.value.indexOf(code)
-  if (idx >= 0) {
-    editPermissions.value.splice(idx, 1)
-  } else {
-    editPermissions.value.push(code)
-  }
+  editPermissions.value = editPermissions.value.includes(code)
+    ? editPermissions.value.filter((item) => item !== code)
+    : [...editPermissions.value, code]
 }
 
 function toggleMenuPermission(code: string) {
   const has = editPermissions.value.includes(code)
   if (has) {
     editPermissions.value = editPermissions.value.filter(
-      (c) =>
-        c !== code &&
+      (item) =>
+        item !== code &&
         !operationPermissions.value.some(
-          (op) => op.code === c && op.parent === code
+          (operation) => operation.code === item && operation.parent === code
         )
     )
-  } else {
-    const childOps = operationPermissions.value
-      .filter((op) => op.parent === code)
-      .map((op) => op.code)
-    editPermissions.value = [
-      ...editPermissions.value,
-      code,
-      ...childOps.filter((c) => !editPermissions.value.includes(c)),
-    ]
+    return
   }
+  const childOperations = operationPermissions.value
+    .filter((operation) => operation.parent === code)
+    .map((operation) => operation.code)
+  editPermissions.value = [
+    ...editPermissions.value,
+    code,
+    ...childOperations.filter((item) => !editPermissions.value.includes(item)),
+  ]
 }
 
-function isMenuChecked(code: string): boolean {
+function isMenuChecked(code: string) {
   return editPermissions.value.includes(code)
 }
 
-function isMenuIndeterminate(code: string): boolean {
-  const children = operationPermissions.value.filter((op) => op.parent === code)
+function isMenuIndeterminate(code: string) {
+  const children = operationPermissions.value.filter(
+    (operation) => operation.parent === code
+  )
   if (children.length === 0) return false
-  const checkedCount = children.filter((c) =>
-    editPermissions.value.includes(c.code)
+  const checked = children.filter((operation) =>
+    editPermissions.value.includes(operation.code)
   ).length
-  return checkedCount > 0 && checkedCount < children.length
+  return checked > 0
 }
 
-// Delete dialog
-const deleteOpen = ref(false)
-const deleteTarget = ref<Role | null>(null)
-const deleteSubmitting = ref(false)
+function menuCheckboxState(code: string) {
+  if (isMenuChecked(code)) return true
+  if (isMenuIndeterminate(code)) return "indeterminate"
+  return false
+}
+
+function childPermissions(code: string) {
+  return operationPermissions.value.filter(
+    (operation) => operation.parent === code
+  )
+}
+
+function selectAllPermissions() {
+  editPermissions.value = [
+    ...menuPermissions.value.map((permission) => permission.code),
+    ...operationPermissions.value.map((permission) => permission.code),
+  ]
+}
+
+function clearPermissions() {
+  editPermissions.value = []
+}
 
 function handleDelete(role: Role) {
   deleteTarget.value = role
@@ -175,239 +217,338 @@ function handleDelete(role: Role) {
 }
 
 async function handleDeleteConfirm() {
+  if (!deleteTarget.value) return
   deleteSubmitting.value = true
-  try {
-    if (deleteTarget.value) {
-      const res = await deleteRole(deleteTarget.value.id)
-      if (res.code === 0) {
-        toast.success("删除成功")
-        deleteOpen.value = false
-        loadData()
-      } else {
-        toast.error(res.message || "删除失败")
-      }
-    }
-  } catch {
-    toast.error("网络请求失败")
-  }
+  const res = await apiDeleteRole(deleteTarget.value.id)
   deleteSubmitting.value = false
+  if (res.code !== 0) {
+    toast.error(res.message || "删除失败")
+    return
+  }
+  toast.success("删除成功")
+  deleteOpen.value = false
+  refreshList()
 }
+
+function buildRoleActions(role: Role): RowAction[] {
+  const actions: RowAction[] = []
+  if (auth.hasPermission("roles.edit")) {
+    actions.push({
+      label: "编辑",
+      icon: Pencil,
+      onSelect: () => handleEdit(role),
+    })
+  }
+  if (!role.isPreset && auth.hasPermission("roles.delete")) {
+    actions.push({
+      label: "删除",
+      icon: Trash2,
+      destructive: true,
+      separatorBefore: true,
+      onSelect: () => handleDelete(role),
+    })
+  }
+  return actions
+}
+
+const hasRoles = computed(() => roles.value.length > 0)
+const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">角色管理</h1>
-      <p class="text-base-content/50">管理系统角色及其权限分配。</p>
-    </div>
+  <div class="flex flex-col gap-(--page-gap)">
+    <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
 
-    <div v-if="tableLoading" class="skeleton h-96 w-full"></div>
-
-    <div v-else class="card border-base-content/10 rounded-xl border">
-      <div class="card-body">
-        <div
-          class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    <ListShell title="角色列表" :description="`共 ${total} 个角色`">
+      <template #actions>
+        <InputGroup class="w-full md:w-64">
+          <InputGroupInput
+            name="q"
+            autocomplete="off"
+            :spellcheck="false"
+            placeholder="搜索角色名称…"
+            aria-label="搜索角色"
+            :model-value="search"
+            @update:model-value="setSearch(String($event))"
+          />
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+        </InputGroup>
+        <Button
+          v-if="auth.hasPermission('roles.create')"
+          class="w-full md:w-auto"
+          @click="handleAdd"
         >
-          <div>
-            <h3 class="card-title">角色列表</h3>
-            <p class="text-base-content/50 text-sm">
-              共 {{ roles.length }} 个角色
-            </p>
-          </div>
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div class="relative w-full sm:w-64">
-              <Search
-                class="text-base-content/50 absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
-              />
-              <input
-                v-model="search"
-                placeholder="搜索角色名称..."
-                class="input input-bordered input-sm w-full pl-8"
-              />
-            </div>
-            <button
-              v-if="auth.hasPermission('roles.create')"
-              class="btn btn-primary btn-sm"
-              @click="handleAdd"
-            >
-              <Plus class="size-4" />
-              新增角色
-            </button>
-          </div>
+          <Plus data-icon="inline-start" />
+          新增角色
+        </Button>
+      </template>
+
+      <template #footer>
+        <TablePagination
+          v-if="hasRoles"
+          :page="currentPage"
+          :total-pages="totalPages"
+          :total="total"
+          item-label="个角色"
+          @page-change="setListPage"
+        />
+      </template>
+
+      <InlineError
+        v-if="listError && hasRoles"
+        :message="listError"
+        :on-retry="refreshList"
+      />
+
+      <TableSkeletonRow v-if="listLoading && !hasRoles" :col-span="5" />
+      <ErrorState
+        v-else-if="listError && !hasRoles"
+        :message="listError"
+        :on-retry="refreshList"
+      />
+      <EmptyState
+        v-else-if="showEmpty"
+        :icon="ShieldCheck"
+        :title="debouncedSearch ? '没有匹配的角色' : '还没有角色'"
+        :description="
+          debouncedSearch
+            ? '换个关键词，或清空搜索条件后再试。'
+            : '创建角色并分配权限，再把角色授予用户。'
+        "
+      >
+        <template #action>
+          <Button
+            v-if="debouncedSearch"
+            variant="outline"
+            @click="setSearch('')"
+          >
+            清空搜索
+          </Button>
+          <Button
+            v-else-if="auth.hasPermission('roles.create')"
+            @click="handleAdd"
+          >
+            <Plus data-icon="inline-start" />
+            新增角色
+          </Button>
+        </template>
+      </EmptyState>
+
+      <template v-else>
+        <div class="flex flex-col gap-2 md:hidden">
+          <RecordCard
+            v-for="role in roles"
+            :key="role.id"
+            :title="role.name"
+            :subtitle="role.description || '暂无描述'"
+          >
+            <template #badges>
+              <Badge v-if="role.isPreset" variant="outline">预设</Badge>
+              <Badge v-else variant="secondary">自定义</Badge>
+              <Badge variant="secondary"
+                >{{ role.permissions.length }} 项权限</Badge
+              >
+            </template>
+            <template #actions>
+              <RowActions :actions="buildRoleActions(role)" />
+            </template>
+          </RecordCard>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="table-zebra table">
-            <thead>
-              <tr>
-                <th>角色名称</th>
-                <th>描述</th>
-                <th>权限数</th>
-                <th>类型</th>
-                <th class="text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="role in roles" :key="role.id">
-                <td class="font-medium">{{ role.name }}</td>
-                <td class="text-base-content/50">{{ role.description }}</td>
-                <td>
-                  <span class="badge badge-secondary">{{
+        <div class="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>角色名称</TableHead>
+                <TableHead class="hidden md:table-cell">描述</TableHead>
+                <TableHead class="hidden lg:table-cell">权限数</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead class="sticky right-0 bg-card text-right">
+                  操作
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="role in roles" :key="role.id">
+                <TableCell class="font-medium">{{ role.name }}</TableCell>
+                <TableCell class="hidden text-muted-foreground md:table-cell">
+                  {{ role.description || "-" }}
+                </TableCell>
+                <TableCell class="hidden lg:table-cell">
+                  <Badge variant="secondary">{{
                     role.permissions.length
-                  }}</span>
-                </td>
-                <td>
-                  <span v-if="role.isPreset" class="badge badge-outline">
-                    <Lock class="size-3" />
+                  }}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge v-if="role.isPreset" variant="outline">
+                    <Lock />
                     预设
-                  </span>
-                  <span v-else class="badge badge-secondary">自定义</span>
-                </td>
-                <td class="text-right">
+                  </Badge>
+                  <Badge v-else variant="secondary">自定义</Badge>
+                </TableCell>
+                <TableCell class="sticky right-0 bg-inherit text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <button
+                    <Button
                       v-if="auth.hasPermission('roles.edit')"
-                      class="btn btn-ghost btn-xs"
+                      variant="ghost"
+                      size="icon-sm"
                       @click="handleEdit(role)"
                     >
-                      <Pencil class="size-3" />
-                    </button>
-                    <button
+                      <Pencil />
+                      <span class="sr-only">编辑 {{ role.name }}</span>
+                    </Button>
+                    <Button
                       v-if="
                         !role.isPreset && auth.hasPermission('roles.delete')
                       "
-                      class="btn btn-ghost btn-xs"
+                      variant="ghost"
+                      size="icon-sm"
                       @click="handleDelete(role)"
                     >
-                      <Trash2 class="size-3" />
-                    </button>
+                      <Trash2 />
+                      <span class="sr-only">删除 {{ role.name }}</span>
+                    </Button>
                   </div>
-                </td>
-              </tr>
-              <tr v-if="roles.length === 0">
-                <td colspan="5" class="text-base-content/50 text-center">
-                  暂无数据
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </template>
+    </ListShell>
+
+    <FormDialog
+      :open="editOpen"
+      :title="editingRole ? '编辑角色' : '新增角色'"
+      :description="
+        editingRole ? '修改角色信息和权限分配。' : '填写角色信息并分配权限。'
+      "
+      :submitting="editSubmitting"
+      class="sm:max-w-lg"
+      @update:open="editOpen = $event"
+      @submit="handleEditSubmit"
+    >
+      <FieldGroup>
+        <Field>
+          <FieldLabel for="role-name">角色名称</FieldLabel>
+          <Input
+            id="role-name"
+            v-model="editForm.name"
+            name="role-name"
+            autocomplete="off"
+            placeholder="请输入角色名称"
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel for="role-desc">描述</FieldLabel>
+          <Input
+            id="role-desc"
+            v-model="editForm.description"
+            name="role-desc"
+            autocomplete="off"
+            placeholder="请输入角色描述"
+          />
+        </Field>
+      </FieldGroup>
+
+      <FieldSet class="gap-3">
+        <FieldLegend variant="label" class="mb-0">权限分配</FieldLegend>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <FieldDescription>
+            勾选菜单权限时，会自动勾选该菜单下的所有操作权限。
+          </FieldDescription>
+          <div class="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              @click="selectAllPermissions"
+            >
+              全选
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              @click="clearPermissions"
+            >
+              清空
+            </Button>
+          </div>
         </div>
 
-        <Pagination
-          :page="page"
-          :total-pages="totalPages"
-          @update:page="page = $event"
-        />
-      </div>
-    </div>
-
-    <!-- Edit dialog -->
-    <dialog
-      :class="{ modal: true, 'modal-open': editOpen }"
-      @close="editOpen = false"
-    >
-      <div class="modal-box max-w-lg">
-        <h3 class="text-lg font-bold">
-          {{ editingRole ? "编辑角色" : "新增角色" }}
-        </h3>
-        <p class="text-base-content/50 text-sm">
-          {{
-            editingRole
-              ? "修改角色信息和权限分配。"
-              : "填写角色信息并分配权限。"
-          }}
-        </p>
-        <form @submit.prevent="handleEditSubmit">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">角色名称</legend>
-            <input
-              v-model="editForm.name"
-              placeholder="请输入角色名称"
-              class="input input-bordered w-full"
-              required
-            />
-          </fieldset>
-          <fieldset class="fieldset mt-2">
-            <legend class="fieldset-legend">描述</legend>
-            <input
-              v-model="editForm.description"
-              placeholder="请输入角色描述"
-              class="input input-bordered w-full"
-            />
-          </fieldset>
-
-          <div class="divider"></div>
-
+        <div
+          v-if="permissionsLoading"
+          class="py-6 text-center text-sm text-muted-foreground"
+        >
+          权限加载中…
+        </div>
+        <div
+          v-else-if="permissionsError"
+          class="flex flex-col items-start gap-2 rounded-md border p-3 text-sm"
+        >
+          <span class="text-destructive">{{ permissionsError }}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            @click="loadPermissions"
+          >
+            重试
+          </Button>
+        </div>
+        <div v-else class="h-[min(50vh,420px)] overflow-y-auto pr-3">
           <div class="flex flex-col gap-3">
-            <span class="text-sm font-medium">权限分配</span>
-            <div class="flex max-h-[50vh] flex-col gap-2 overflow-auto">
-              <span class="text-base-content/50 text-xs font-medium"
-                >菜单权限</span
-              >
+            <div
+              v-for="permission in menuPermissions"
+              :key="permission.code"
+              class="flex flex-col gap-2"
+            >
+              <label class="flex items-center gap-2 text-sm">
+                <Checkbox
+                  :model-value="menuCheckboxState(permission.code)"
+                  @update:model-value="toggleMenuPermission(permission.code)"
+                />
+                {{ permission.name }}
+              </label>
               <div
-                v-for="perm in menuPermissions"
-                :key="perm.code"
-                class="flex flex-col gap-1"
+                v-if="
+                  childPermissions(permission.code).length > 0 &&
+                  (isMenuChecked(permission.code) ||
+                    isMenuIndeterminate(permission.code))
+                "
+                class="ml-6 flex flex-wrap gap-x-4 gap-y-2"
               >
-                <label class="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-sm"
-                    :checked="
-                      isMenuChecked(perm.code) || isMenuIndeterminate(perm.code)
-                    "
-                    @change="toggleMenuPermission(perm.code)"
-                  />
-                  {{ perm.name }}
-                </label>
-                <div
-                  v-if="isMenuChecked(perm.code)"
-                  class="ml-6 flex flex-wrap gap-x-4 gap-y-1"
+                <label
+                  v-for="child in childPermissions(permission.code)"
+                  :key="child.code"
+                  class="flex items-center gap-2 text-sm text-muted-foreground"
                 >
-                  <label
-                    v-for="child in operationPermissions.filter(
-                      (op) => op.parent === perm.code
-                    )"
-                    :key="child.code"
-                    class="text-base-content/50 flex items-center gap-2 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      class="checkbox checkbox-sm"
-                      :checked="editPermissions.includes(child.code)"
-                      @change="togglePermission(child.code)"
-                    />
-                    {{ child.name }}
-                  </label>
-                </div>
+                  <Checkbox
+                    :model-value="editPermissions.includes(child.code)"
+                    @update:model-value="togglePermission(child.code)"
+                  />
+                  {{ child.name }}
+                </label>
               </div>
             </div>
-          </div>
-
-          <div class="modal-action">
-            <button type="button" class="btn" @click="editOpen = false">
-              取消
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              :disabled="editSubmitting"
+            <p
+              v-if="menuPermissions.length === 0"
+              class="py-6 text-center text-sm text-muted-foreground"
             >
-              <span
-                v-if="editSubmitting"
-                class="loading loading-spinner loading-sm"
-              ></span>
-              保存
-            </button>
+              暂无可分配的权限
+            </p>
           </div>
-        </form>
-      </div>
-      <form method="dialog" class="modal-backdrop"><button>close</button></form>
-    </dialog>
+        </div>
+      </FieldSet>
+    </FormDialog>
 
     <ConfirmDeleteDialog
       :open="deleteOpen"
-      :target-name="deleteTarget?.name || ''"
+      :target-name="deleteTarget?.name ?? ''"
       description="已分配该角色的用户将失去对应权限。"
       :loading="deleteSubmitting"
       @update:open="deleteOpen = $event"

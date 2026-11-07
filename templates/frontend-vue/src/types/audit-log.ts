@@ -1,3 +1,8 @@
+export type AuditFilterKey =
+  "userId" | "status" | "action" | "startTime" | "endTime"
+
+export type AuditFilters = Record<AuditFilterKey, string>
+
 export type AuditLog = {
   id: string
   userId: string

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Component } from "vue"
 import { MoreHorizontal } from "@lucide/vue"
+import type { RowAction } from "@/components/shared/row-action"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,15 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-export type RowAction = {
-  label: string
-  icon?: Component
-  onSelect: () => void
-  destructive?: boolean
-  disabled?: boolean
-  separatorBefore?: boolean
-}
 
 const props = withDefaults(
   defineProps<{

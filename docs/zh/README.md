@@ -6,7 +6,7 @@
 
 ## 功能
 
-- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA，站点名/描述/主题色自动适配) 或 Vue 3 (Vite + TypeScript + Tailwind CSS v4 + DaisyUI)
+- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA，站点名/描述/主题色自动适配) 或 Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI，含 PWA)
 - ⚙️ **后端可选**：Python (FastAPI) 或 Java (Spring Boot)
 - 🔐 **内置认证**：登录、注册、登出（Python 走 JWT，Java 走 Sa-Token）、维护模式与人工审核
 - 🧩 **完整模块**：用户、角色、权限、菜单、系统设置、AI 模型与预设、审计日志、数据管理、仪表盘
@@ -163,11 +163,11 @@ cd <生成的项目>/backend && 启动后端
 | 框架 | React 19 | Vue 3.5+ (Composition API) |
 | 构建 | Vite | Vite |
 | 语言 | TypeScript | TypeScript |
-| 样式 | Tailwind CSS v4 + shadcn/ui（含 PWA） | Tailwind CSS v4 + DaisyUI |
+| 样式 | Tailwind CSS v4 + shadcn/ui（含 PWA） | Tailwind CSS v4 + shadcn-vue + Reka UI（含 PWA） |
 | HTTP | 原生 fetch 封装（401 自动登出） | 原生 fetch 封装（401 自动登出） |
-| 路由 | react-router v7 | vue-router v4 |
+| 路由 | react-router v7 | vue-router v5 |
 | 状态 | React Context (lib/) | Pinia (stores/) |
-| 图标 | lucide-react | lucide-vue-next |
+| 图标 | lucide-react | @lucide/vue |
 
 | 组件 | Python 模板 | Java 模板 |
 |------|------------|----------|

@@ -430,7 +430,7 @@ function generateReadme(
 
 | 层级 | 技术 |
 |------|------|
-| 前端 | ${frontendName} + Vite + TypeScript + Tailwind CSS${frontend === 'vue' ? ' + DaisyUI' : ''} |
+| 前端 | ${frontendName} + Vite + TypeScript + Tailwind CSS${frontend === 'vue' ? ' + shadcn-vue (Reka UI) + PWA' : ' + shadcn/ui + PWA'} |
 | 后端 | ${backendName} |
 | 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite)' : 'SQLite 文件 (Flyway 迁移)'} |
 | 认证 | ${backend === 'python' ? 'JWT (PyJWT + bcrypt)' : 'Sa-Token + BCrypt'} |
@@ -449,7 +449,7 @@ function generateReadme(
 - ✅ 审计日志（写操作与权限拦截记录，支持筛选与分页）
 - ✅ 数据管理（AES 加密完整导出、同版本完整导入、全局会话失效）
 - ✅ 个人中心（修改资料、修改密码）
-- ✅ 访问适配：面向电脑与平板设计，手机访问会提示更换设备
+- ✅ 三端响应式：手机卡片列表 + 抽屉导航、平板图标栏、桌面完整侧边栏
 
 ## 快速开始
 

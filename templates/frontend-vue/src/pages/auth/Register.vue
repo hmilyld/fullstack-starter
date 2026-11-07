@@ -1,9 +1,28 @@
 <script setup lang="ts">
-import { ref } from "vue"
-import { useRouter, RouterLink } from "vue-router"
+import { computed, ref } from "vue"
+import { RouterLink, useRouter } from "vue-router"
+import AuthShell from "@/components/shared/AuthShell.vue"
+import LoadingButton from "@/components/shared/LoadingButton.vue"
+import PasswordInput from "@/components/shared/PasswordInput.vue"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { register } from "@/api/auth"
 import { useAuthStore } from "@/stores/auth"
 import { useSiteConfigStore } from "@/stores/site-config"
-import { register } from "@/api/auth"
 import { useToast } from "@/composables/use-toast"
 
 const router = useRouter()
@@ -14,74 +33,24 @@ const toast = useToast()
 const username = ref("")
 const email = ref("")
 const password = ref("")
+const passwordError = ref<string | null>(null)
 const submitting = ref(false)
-const errorMessage = ref("")
-const touched = ref({ username: false, email: false, password: false })
 
-const registrationDisabled =
-  siteConfig.config !== null && !siteConfig.config.openRegistration
-const manualReview = siteConfig.config?.manualReview && !registrationDisabled
-
-const usernameError = ref("")
-const emailError = ref("")
-const passwordError = ref("")
-
-function validateUsername() {
-  if (!username.value) {
-    usernameError.value = "请输入用户名"
-    return false
-  }
-  if (username.value.length < 3) {
-    usernameError.value = "用户名至少3个字符"
-    return false
-  }
-  usernameError.value = ""
-  return true
-}
-
-function validateEmail() {
-  if (!email.value) {
-    emailError.value = "请输入邮箱"
-    return false
-  }
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email.value)) {
-    emailError.value = "请输入有效的邮箱地址"
-    return false
-  }
-  emailError.value = ""
-  return true
-}
-
-function validatePassword() {
-  if (!password.value) {
-    passwordError.value = "请输入密码"
-    return false
-  }
-  if (password.value.length < 6) {
-    passwordError.value = "密码至少6个字符"
-    return false
-  }
-  passwordError.value = ""
-  return true
-}
-
-function handleBlur(field: "username" | "email" | "password") {
-  touched.value[field] = true
-  if (field === "username") validateUsername()
-  else if (field === "email") validateEmail()
-  else validatePassword()
-}
+const registrationDisabled = computed(
+  () => siteConfig.config !== null && !siteConfig.config.openRegistration
+)
+const manualReview = computed(
+  () => !!siteConfig.config?.manualReview && !registrationDisabled.value
+)
 
 async function handleSubmit() {
-  touched.value = { username: true, email: true, password: true }
-  const usernameValid = validateUsername()
-  const emailValid = validateEmail()
-  const passwordValid = validatePassword()
-  if (!usernameValid || !emailValid || !passwordValid) return
+  if (password.value.length < 6) {
+    passwordError.value = "密码至少 6 位"
+    return
+  }
 
+  passwordError.value = null
   submitting.value = true
-  errorMessage.value = ""
   const res = await register({
     username: username.value,
     email: email.value,
@@ -90,131 +59,104 @@ async function handleSubmit() {
   if (res.code === 0 && res.data?.token) {
     auth.login(res.data.token, res.data.user)
     toast.success("注册成功")
-    router.push("/dashboard")
-  } else if (res.code === 0) {
-    toast.success(res.message || "注册成功，请等待管理员审核")
-    router.push("/login")
-  } else {
-    errorMessage.value = res.message || "注册失败"
+    await router.replace("/dashboard")
+    return
   }
+  if (res.code === 0) {
+    toast.success(res.message || "注册成功，请等待管理员审核")
+    await router.replace("/login")
+    return
+  }
+
+  toast.error(res.message || "注册失败")
   submitting.value = false
 }
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center p-6">
-    <div class="w-full max-w-sm">
-      <div
-        v-if="registrationDisabled"
-        role="alert"
-        class="mb-4 rounded-lg border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning"
-      >
-        <div class="font-medium">注册功能已关闭</div>
-        <div class="mt-1 text-xs opacity-80">请联系管理员开通注册。</div>
-      </div>
+  <AuthShell>
+    <div class="flex flex-col gap-4">
+      <Alert v-if="registrationDisabled">
+        <AlertTitle>注册功能已关闭</AlertTitle>
+        <AlertDescription>请联系管理员开通注册。</AlertDescription>
+      </Alert>
+      <Alert v-if="manualReview">
+        <AlertDescription>注册后需管理员审核通过才能登录</AlertDescription>
+      </Alert>
 
-      <div
-        v-if="manualReview"
-        role="alert"
-        class="border-info/20 bg-info/10 text-info mb-4 rounded-lg border px-4 py-3 text-sm"
-      >
-        <div class="text-xs">注册后需管理员审核通过才能登录</div>
-      </div>
-
-      <div class="card border-base-content/10 rounded-xl border">
-        <div class="card-body">
-          <h2 class="card-title justify-center text-lg">创建账号</h2>
-          <p class="text-base-content/50 text-center text-xs">
-            填写以下信息完成注册
-          </p>
-
-          <div
-            v-if="errorMessage"
-            role="alert"
-            class="border-error/20 bg-error/10 text-error mb-2 rounded-lg border px-4 py-3 text-sm"
-          >
-            {{ errorMessage }}
-          </div>
-
+      <Card>
+        <CardHeader class="text-center">
+          <CardTitle class="text-xl">创建账号</CardTitle>
+          <CardDescription>填写以下信息完成注册</CardDescription>
+        </CardHeader>
+        <CardContent>
           <form @submit.prevent="handleSubmit">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend text-xs">用户名</legend>
-              <input
-                v-model="username"
-                type="text"
-                placeholder="请输入用户名"
-                class="input input-bordered input-sm w-full"
-                :class="{ 'input-error': touched.username && usernameError }"
-                required
-                :disabled="registrationDisabled"
-                @blur="handleBlur('username')"
-              />
-              <span
-                v-if="touched.username && usernameError"
-                class="text-error mt-1 text-xs"
-                >{{ usernameError }}</span
-              >
-            </fieldset>
-
-            <fieldset class="fieldset mt-1">
-              <legend class="fieldset-legend text-xs">邮箱</legend>
-              <input
-                v-model="email"
-                type="email"
-                placeholder="请输入邮箱"
-                class="input input-bordered input-sm w-full"
-                :class="{ 'input-error': touched.email && emailError }"
-                required
-                :disabled="registrationDisabled"
-                @blur="handleBlur('email')"
-              />
-              <span
-                v-if="touched.email && emailError"
-                class="text-error mt-1 text-xs"
-                >{{ emailError }}</span
-              >
-            </fieldset>
-
-            <fieldset class="fieldset mt-1">
-              <legend class="fieldset-legend text-xs">密码</legend>
-              <input
-                v-model="password"
-                type="password"
-                placeholder="请输入密码"
-                class="input input-bordered input-sm w-full"
-                :class="{ 'input-error': touched.password && passwordError }"
-                required
-                :disabled="registrationDisabled"
-                @blur="handleBlur('password')"
-              />
-              <span
-                v-if="touched.password && passwordError"
-                class="text-error mt-1 text-xs"
-                >{{ passwordError }}</span
-              >
-            </fieldset>
-
-            <button
-              type="submit"
-              class="btn btn-primary btn-sm mt-3 w-full"
-              :disabled="submitting || registrationDisabled"
-            >
-              <span
-                v-if="submitting"
-                class="loading loading-spinner loading-xs"
-              ></span>
-              注册
-            </button>
-
-            <p class="text-base-content/50 mt-3 text-center text-xs">
-              已有账号？
-              <RouterLink to="/login" class="link link-primary"
-                >立即登录</RouterLink
-              >
-            </p>
+            <FieldGroup>
+              <Field>
+                <FieldLabel for="username">用户名</FieldLabel>
+                <Input
+                  id="username"
+                  v-model="username"
+                  name="username"
+                  placeholder="请输入用户名"
+                  autocomplete="username"
+                  :spellcheck="false"
+                  required
+                  :disabled="registrationDisabled"
+                />
+              </Field>
+              <Field>
+                <FieldLabel for="email">邮箱</FieldLabel>
+                <Input
+                  id="email"
+                  v-model="email"
+                  name="email"
+                  type="email"
+                  placeholder="请输入邮箱"
+                  autocomplete="email"
+                  :spellcheck="false"
+                  required
+                  :disabled="registrationDisabled"
+                />
+              </Field>
+              <Field :data-invalid="!!passwordError">
+                <FieldLabel for="password">密码</FieldLabel>
+                <PasswordInput
+                  id="password"
+                  v-model="password"
+                  name="password"
+                  placeholder="至少 6 位"
+                  autocomplete="new-password"
+                  :aria-invalid="!!passwordError"
+                  required
+                  :disabled="registrationDisabled"
+                  @update:model-value="passwordError = null"
+                />
+                <FieldError>{{ passwordError }}</FieldError>
+              </Field>
+              <Field>
+                <LoadingButton
+                  type="submit"
+                  class="w-full"
+                  :loading="submitting"
+                  :disabled="registrationDisabled"
+                >
+                  注册
+                </LoadingButton>
+                <FieldDescription class="text-center">
+                  已有账号？
+                  <RouterLink
+                    to="/login"
+                    class="underline-offset-4 hover:underline"
+                  >
+                    立即登录
+                  </RouterLink>
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
-  </div>
+  </AuthShell>
 </template>

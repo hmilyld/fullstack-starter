@@ -1,8 +1,15 @@
-import { onScopeDispose, ref, toValue, watch, type MaybeRefOrGetter } from "vue"
+import {
+  onScopeDispose,
+  ref,
+  toValue,
+  watch,
+  type MaybeRefOrGetter,
+  type Ref,
+} from "vue"
 
 /** 输入停止 delay 毫秒后才返回新值，用于搜索框等高频输入 */
 export function useDebouncedValue<T>(source: MaybeRefOrGetter<T>, delay = 300) {
-  const debounced = ref(toValue(source)) as ReturnType<typeof ref<T>>
+  const debounced = ref(toValue(source)) as Ref<T>
   let timer: ReturnType<typeof setTimeout> | undefined
 
   watch(
