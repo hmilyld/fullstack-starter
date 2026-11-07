@@ -87,3 +87,11 @@
 - [ ] 弹窗有 Title、取消/提交、内部滚动
 - [ ] 图标按钮有 `aria-label`
 - [ ] 在 390 / 768 / 1440 三个宽度检查无横向页面滚动
+
+## 7. PWA 与测试
+
+- PWA manifest 由 `src/lib/pwa.ts` 在运行时根据「站点名称 / 描述 + 当前主题」生成，`PwaManifest` 挂载在 `SiteConfigProvider` 内。
+- 站点信息保存后调用 `useSiteConfig().refresh()`，侧边栏、页面标题、`theme-color`、`application-name` 与 manifest 同步更新。
+- 静态 `manifest.webmanifest` 只作为首屏回退；运行时使用 Blob URL 覆盖。
+- 测试使用 Vitest + React Testing Library：`npm test`（单次）、`npm run test:watch`、`npm run test:coverage`。
+- 新增共享组件或纯函数必须补单元测试；列表页/表单页至少补一个渲染或交互 smoke test。

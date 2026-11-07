@@ -86,7 +86,15 @@ Generated projects use a **single Docker image** containing Nginx + backend:
 
 ## Testing
 
-No automated test framework. Manual verification:
+The scaffolding CLI has no automated tests; the generated React frontend template includes Vitest + React Testing Library:
+
+```bash
+cd templates/frontend-react
+npm test
+npm run test:coverage
+```
+
+Manual verification for the CLI:
 
 ```bash
 npm run dev                                    # Generate test project

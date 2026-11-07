@@ -6,7 +6,7 @@
 
 ## 功能
 
-- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA 支持) 或 Vue 3 (Vite + TypeScript + Tailwind CSS v4 + DaisyUI)
+- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA，站点名/描述/主题色自动适配) 或 Vue 3 (Vite + TypeScript + Tailwind CSS v4 + DaisyUI)
 - ⚙️ **后端可选**：Python (FastAPI) 或 Java (Spring Boot)
 - 🔐 **内置认证**：登录、注册、登出（Python 走 JWT，Java 走 Sa-Token）、维护模式与人工审核
 - 🧩 **完整模块**：用户、角色、权限、菜单、系统设置、AI 模型与预设、审计日志、数据管理、仪表盘
