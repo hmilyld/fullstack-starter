@@ -126,3 +126,21 @@ test("drags a menu row to reorder", async ({ page }) => {
   const menusIndex = rows.findIndex((text) => text.includes("菜单与权限"))
   expect(usersIndex).toBeGreaterThan(menusIndex)
 })
+
+test("collapses and expands a group", async ({ page }) => {
+  await mockApi(page)
+  await seedAuth(page)
+
+  await page.goto("/settings/menu")
+  await expect(page.getByText("/settings/user")).toBeVisible()
+
+  await page
+    .getByRole("button", { name: "收起 管理 分组", exact: true })
+    .click()
+  await expect(page.getByText("/settings/user")).not.toBeVisible()
+
+  await page
+    .getByRole("button", { name: "展开 管理 分组", exact: true })
+    .click()
+  await expect(page.getByText("/settings/user")).toBeVisible()
+})
