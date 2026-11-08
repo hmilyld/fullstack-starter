@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.audit.models import AuditLog
 from app.audit.schemas import AuditLogOut
 from app.core.database import async_session
+from app.core.pagination import Pagination
 from app.user.models import User
 
 
@@ -22,8 +23,7 @@ async def get_audit_logs(
     action: str = "",
     start_time: datetime | None = None,
     end_time: datetime | None = None,
-    page: int = 1,
-    page_size: int = 10,
+    pagination: Pagination,
 ) -> tuple[list[AuditLog], int]:
     query = select(AuditLog)
     if user_id is not None:
@@ -40,8 +40,8 @@ async def get_audit_logs(
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
     query = (
         query.order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
+        .offset(pagination.offset)
+        .limit(pagination.limit)
     )
     return list((await db.execute(query)).scalars().all()), total
 
@@ -54,8 +54,7 @@ async def list_logs(
     action: str,
     start_time: datetime | None,
     end_time: datetime | None,
-    page: int,
-    page_size: int,
+    pagination: Pagination,
 ) -> tuple[list[AuditLogOut], int]:
     items, total = await get_audit_logs(
         db,
@@ -64,8 +63,7 @@ async def list_logs(
         action=action,
         start_time=start_time,
         end_time=end_time,
-        page=page,
-        page_size=page_size,
+        pagination=pagination,
     )
 
     # 关联 users 表补全操作者用户名（查询不到时前端显示"未知"）

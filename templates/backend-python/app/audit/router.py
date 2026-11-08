@@ -46,8 +46,7 @@ async def get_audit_logs(
         action=action,
         start_time=_parse_time(startTime),
         end_time=_parse_time(endTime),
-        page=pagination.page,
-        page_size=pagination.page_size,
+        pagination=pagination,
     )
     return ApiResponse(
         data=PaginatedData[AuditLogOut](

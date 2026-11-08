@@ -225,6 +225,55 @@ async def test_public_config_needs_no_auth(client) -> None:
     assert payload["code"] == 0
 
 
+async def test_create_user_with_non_default_role(client, admin_headers) -> None:
+    """创建非默认角色用户需要 users.assign_role；admin 具备该权限，应成功。
+
+    这条用例覆盖 service 层对权限集合的判定路径——此前只测了空 body 的 422，
+    导致 `actor.permissions` 这类属性名错误没有暴露。
+    """
+    username = _unique("newrole")
+    response = await client.post(
+        "/api/users",
+        headers=admin_headers,
+        json={
+            "username": username,
+            "name": "新角色用户",
+            "email": f"{username}@example.com",
+            "roleId": "pending_review",
+            "password": "123456",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0, payload
+    assert payload["data"]["roleId"] == "pending_review"
+
+
+async def test_update_user_role(client, admin_headers) -> None:
+    """变更用户角色走 users.assign_role 判定，admin 应能成功。"""
+    username = _unique("rolex")
+    created = await client.post(
+        "/api/users",
+        headers=admin_headers,
+        json={
+            "username": username,
+            "name": "待改角色",
+            "email": f"{username}@example.com",
+            "roleId": "user",
+            "password": "123456",
+        },
+    )
+    user_id = created.json()["data"]["id"]
+
+    response = await client.put(
+        f"/api/users/{user_id}", headers=admin_headers, json={"roleId": "pending_review"}
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0, payload
+    assert payload["data"]["roleId"] == "pending_review"
+
+
 # ---------------------------------------------------------------- 资源形状
 
 

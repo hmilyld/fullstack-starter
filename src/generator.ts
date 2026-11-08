@@ -71,6 +71,9 @@ async function copyTemplate(templateName: string, destination: string): Promise<
       ]);
       if (segments.some((segment) => ignored.has(segment))) return false;
       if (src.endsWith('.pyc')) return false;
+      // 本地运行模板产生的构建/调试产物，绝不能进入用户项目
+      if (segments.some((segment) => segment.endsWith('.egg-info'))) return false;
+      if (/(^|\/)(probe|app)\.db$/.test(relative)) return false;
       if (segments[0] === 'data') {
         // Keep only the placeholder so the runtime directory exists in new projects.
         return segments.length === 1 || relative === path.join('data', '.gitkeep');

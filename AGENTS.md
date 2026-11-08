@@ -148,7 +148,7 @@ The Python backend template carries the executable API contract:
 cd templates/backend-python
 uv sync --extra dev
 uv run ruff check .
-uv run pytest -q        # 30 contract assertions in tests/test_contract.py
+uv run pytest -q        # 32 contract assertions in tests/test_contract.py
 ```
 
 `tests/test_contract.py` is the contract oracle: it asserts the exact endpoint set, response envelope, resource shapes and semantics from `docs/contract/api.md`. The Java backend runs the same assertions in `src/test/java/com/hmilyld/fullstack/ContractTest.java`; both must pass.

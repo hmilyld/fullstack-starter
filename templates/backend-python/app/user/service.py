@@ -14,6 +14,7 @@ from app.core.exceptions import (
     InvalidOperationError,
     NotFoundError,
 )
+from app.core.pagination import Pagination
 from app.core.security import hash_password, verify_password
 from app.user.models import User
 from app.user.schemas import (
@@ -39,9 +40,8 @@ _UPDATABLE_USER_FIELDS = {"username", "name", "email", "role_id", "avatar"}
 
 async def get_users(
     db: AsyncSession,
-    search: str = "",
-    page: int = 1,
-    page_size: int = 10,
+    search: str,
+    pagination: Pagination,
 ) -> tuple[list[User], int]:
     query = select(User)
     if search:
@@ -54,7 +54,7 @@ async def get_users(
         )
 
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
-    query = query.order_by(User.id).offset((page - 1) * page_size).limit(page_size)
+    query = query.order_by(User.id).offset(pagination.offset).limit(pagination.limit)
     users = list((await db.execute(query)).scalars().all())
     return users, total
 
@@ -131,9 +131,9 @@ async def change_password(db: AsyncSession, user: User, new_password: str) -> No
 
 
 async def list_users(
-    db: AsyncSession, search: str, page: int, page_size: int
+    db: AsyncSession, search: str, pagination: Pagination
 ) -> tuple[list[UserOut], int]:
-    users, total = await get_users(db, search, page, page_size)
+    users, total = await get_users(db, search, pagination)
     return [UserOut.from_orm_model(user) for user in users], total
 
 
@@ -150,7 +150,7 @@ async def create_user_out(db: AsyncSession, data: UserCreate, actor: PermissionS
     if await get_user_by_email(db, data.email):
         raise ConflictError("邮箱已被注册")
     # 创建非默认角色的用户需要角色维护权限，避免 users.create 单独提权
-    if data.roleId != DEFAULT_ROLE_ID and "users.assign_role" not in actor.permissions:
+    if data.roleId != DEFAULT_ROLE_ID and "users.assign_role" not in actor:
         raise ForbiddenError()
     user = await create_user(
         db,
@@ -185,7 +185,7 @@ async def update_user_out(
                 raise InvalidOperationError("不能降级自己的管理员角色")
             raise InvalidOperationError("不能修改自己的角色")
         # 角色变更必须拥有独立的 assign_role 权限
-        if "users.assign_role" not in actor_permissions.permissions:
+        if "users.assign_role" not in actor_permissions:
             raise ForbiddenError()
     if "roleId" in changes:
         changes["role_id"] = changes.pop("roleId")

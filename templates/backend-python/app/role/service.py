@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import InvalidOperationError, NotFoundError
+from app.core.pagination import Pagination
 from app.role.models import Role, RolePermission
 from app.role.schemas import RoleCreate, RoleOut, RoleUpdate
 
@@ -22,7 +23,7 @@ def _to_out(role: Role) -> RoleOut:
 
 
 async def list_roles(
-    db: AsyncSession, search: str, page: int, page_size: int
+    db: AsyncSession, search: str, pagination: Pagination
 ) -> tuple[list[RoleOut], int]:
     query = select(Role).options(selectinload(Role.permissions))
     if search:
@@ -34,7 +35,7 @@ async def list_roles(
         )
 
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
-    query = query.order_by(Role.id).offset((page - 1) * page_size).limit(page_size)
+    query = query.order_by(Role.id).offset(pagination.offset).limit(pagination.limit)
     roles = list((await db.execute(query)).scalars().unique().all())
     return [_to_out(role) for role in roles], total
 

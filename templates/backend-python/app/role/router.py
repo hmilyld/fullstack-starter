@@ -24,7 +24,7 @@ async def get_roles(
     pagination: PaginationDep,
     search: str = "",
 ) -> ApiResponse[PaginatedData[RoleOut]]:
-    roles, total = await service.list_roles(db, search, pagination.page, pagination.page_size)
+    roles, total = await service.list_roles(db, search, pagination)
     return ApiResponse(
         data=PaginatedData[RoleOut](
             list=roles,

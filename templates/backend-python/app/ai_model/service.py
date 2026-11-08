@@ -24,6 +24,7 @@ from app.ai_model.schemas import (
     assert_not_private_host,
 )
 from app.core.exceptions import ConflictError, NotFoundError
+from app.core.pagination import Pagination
 
 TEST_TIMEOUT_SECONDS = 30.0
 
@@ -34,7 +35,7 @@ TEST_TIMEOUT_SECONDS = 30.0
 
 
 async def list_models(
-    db: AsyncSession, search: str, page: int, page_size: int
+    db: AsyncSession, search: str, pagination: Pagination
 ) -> tuple[list[AiModelOut], int]:
     query = select(AiModel)
     if search:
@@ -45,7 +46,7 @@ async def list_models(
             )
         )
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
-    query = query.order_by(AiModel.id).offset((page - 1) * page_size).limit(page_size)
+    query = query.order_by(AiModel.id).offset(pagination.offset).limit(pagination.limit)
     items = list((await db.execute(query)).scalars().all())
     return [AiModelOut.from_orm_model(item) for item in items], total
 

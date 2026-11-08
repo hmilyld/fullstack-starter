@@ -70,7 +70,7 @@ async def get_users(
     pagination: PaginationDep,
     search: str = "",
 ) -> ApiResponse[PaginatedData[UserOut]]:
-    users, total = await service.list_users(db, search, pagination.page, pagination.page_size)
+    users, total = await service.list_users(db, search, pagination)
     return ApiResponse(
         data=PaginatedData[UserOut](
             list=users,

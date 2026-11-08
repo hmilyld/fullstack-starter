@@ -115,7 +115,7 @@ async def get_ai_models(
     pagination: PaginationDep,
     search: str = "",
 ) -> ApiResponse[PaginatedData[AiModelOut]]:
-    items, total = await service.list_models(db, search, pagination.page, pagination.page_size)
+    items, total = await service.list_models(db, search, pagination)
     return ApiResponse(
         data=PaginatedData[AiModelOut](
             list=items, total=total, page=pagination.page, pageSize=pagination.page_size

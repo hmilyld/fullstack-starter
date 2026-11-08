@@ -1,7 +1,6 @@
 package com.hmilyld.fullstack.service;
 
 import com.hmilyld.fullstack.common.ApiResponse;
-import com.hmilyld.fullstack.common.NotFoundException;
 import com.hmilyld.fullstack.common.PageResult;
 import com.hmilyld.fullstack.dto.AuditLogResponse;
 import com.hmilyld.fullstack.entity.AuditLog;
@@ -99,10 +98,5 @@ public class AuditLogService {
         log.getStatus(),
         log.getDetail() != null ? log.getDetail() : "",
         log.getCreatedAt() != null ? log.getCreatedAt().toString() : "");
-  }
-
-  /** 供 controller 校验用：确保日志存在。 */
-  public AuditLog require(Long id) {
-    return auditLogRepository.findById(id).orElseThrow(() -> new NotFoundException("日志不存在"));
   }
 }
