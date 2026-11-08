@@ -96,7 +96,7 @@ The generated project appears in the current directory.
 my-project/
 ├── frontend/                # Frontend project
 │   ├── src/
-│   │   ├── api/             # API layer (fetch wrapper + split by domain)
+│   │   ├── api/             # API layer (http.ts infrastructure + client.ts + per-domain call files)
 │   │   ├── types/           # Type definitions (split by domain)
 │   │   ├── pages/           # auth, dashboard, settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
 │   │   ├── components/      # Shared components (shared/; React also has ui/)

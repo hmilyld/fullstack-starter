@@ -94,7 +94,7 @@ node dist/index.js
 my-project/
 ├── frontend/                # 前端项目
 │   ├── src/
-│   │   ├── api/             # API 调用层（fetch 封装 + 按业务域拆分）
+│   │   ├── api/             # API 调用层（http.ts 基础设施 + client.ts + 按业务域拆分的调用文件）
 │   │   ├── types/           # 类型定义（按业务域拆分）
 │   │   ├── pages/           # auth、dashboard、settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
 │   │   ├── components/      # 共享组件（shared/，React 另含 ui/ 组件库）

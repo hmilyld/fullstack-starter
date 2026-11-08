@@ -39,7 +39,7 @@ node dist/index.js    # Run compiled CLI
 - **AuthZ is permission-based (RBAC), not role-name checks** — endpoints gate on permission codes (`users`, `users.create`, `roles.edit`, ...): Python uses `require_permission(...)` deps, Java uses `@SaCheckPermission`. Never hardcode `if role == admin` for API access control.
 - Default roles from seed: `admin` (all permissions), `user` (menu view perms only: `dashboard`, `users`, `settings`), `pending_review` (none). Registration assigns `pending_review` or `user` based on the manual-review system setting.
 - Both backends implement login/register rate limiting per IP and maintenance-mode blocking of non-admin logins.
-- Frontend HTTP layer is a thin `fetch` wrapper (`api/client.ts`) with automatic logout on 401 — do NOT introduce axios.
+- Frontend HTTP layer is a thin `fetch` wrapper (`api/client.ts` over `api/http.ts`) with automatic logout on 401 — do NOT introduce axios.
 - Python backend rejects startup on weak/default `JWT_SECRET_KEY`; Java stack needs no secret key.
 - Menu presentation is stored separately from permissions. `permissions` remains the authorization source; `menu_groups` and `menu_items` own grouping, route, icon, order, and sidebar visibility (`menu_items.hidden`). Built-in menu items cannot be deleted, and menus must be created, edited and deleted through the menu-management API/page (the permission API rejects `menu`-type mutations). Operation permissions are maintained inside the menu page; the standalone permission page is a read-only overview.
 - `hidden` controls sidebar visibility only — it never revokes authorization. Hidden menus remain assignable in roles and remain reachable by direct route for users who hold the permission. Java upgrades add the column via `V3__menu_hidden.sql`; Python uses `Base.metadata.create_all`, so existing Python databases need a manual `ALTER TABLE menu_items ADD COLUMN hidden BOOLEAN NOT NULL DEFAULT 0;` and `UPDATE menu_items SET hidden = 1 WHERE permission_code = 'permissions';`.
@@ -55,6 +55,16 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - **backend-python/** — domain modules: `app/core/` (infrastructure: config, runtime state, database, security, deps, audit middleware, seed, permission/menu catalogs) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `menu/`, `system/`, `ai_model/`, `audit/`, `data_management/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`.
 - **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`.
 - **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx` (React) or `index.vue` (Vue), API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
+
+### API layer rules (frontend-react / frontend-vue)
+
+- `api/http.ts` is infrastructure only (`BASE_URL`, query string, auth headers, `Content-Disposition` filename parsing, JSON/raw request). Only `api/client.ts` imports it; pages and domain files never do.
+- `api/client.ts` exposes `apiClient` (`get` / `post` / `put` / `delete` / `download` / `upload` / `getWithHeaders`). The `get`/`post`/`put`/`delete` family returns `{ code, message, data }` and does not throw on network or HTTP errors; the raw family throws and keeps response headers.
+- Domain files under `api/` export call functions only — no formatting, DOM work, toasts, or business orchestration. Non-request helpers go in `lib/` (e.g. `saveBlob` in `lib/download.ts`).
+- Request/response/query-parameter types live in `types/<domain>.ts`; `api/` imports them with `import type`. Never declare a payload type inside `api/`.
+- Domain files must not import each other; shared behaviour belongs in `lib/`, `hooks/` (React) or `composables/` (Vue).
+- Keep `api/` flat by default. Only when one domain exceeds ~150 lines or needs a second file, promote `api/<domain>.ts` to `api/<domain>/index.ts` plus siblings. Do not nest ahead of need.
+- React and Vue share byte-identical `src/api/` and `src/types/`; keep them in sync when changing either.
 
 ## Frontend Responsive Rules (frontend-react / frontend-vue)
 
