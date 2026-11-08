@@ -367,37 +367,39 @@ export function RolesPage() {
         className="sm:w-[calc(100%_-_2rem)] sm:max-w-4xl"
         onSubmit={handleEditSubmit}
       >
-        <FieldGroup className="sm:grid sm:grid-cols-2 sm:items-start sm:gap-4">
-          <Field>
-            <FieldLabel htmlFor="role-name">角色名称</FieldLabel>
-            <Input
-              name="role-name"
-              autoComplete="off"
-              id="role-name"
-              placeholder="请输入角色名称"
-              value={editForm.name}
-              onChange={(event) =>
-                setEditForm((form) => ({ ...form, name: event.target.value }))
-              }
-              required
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="role-desc">描述</FieldLabel>
-            <Input
-              name="role-desc"
-              autoComplete="off"
-              id="role-desc"
-              placeholder="请输入角色描述"
-              value={editForm.description}
-              onChange={(event) =>
-                setEditForm((form) => ({
-                  ...form,
-                  description: event.target.value,
-                }))
-              }
-            />
-          </Field>
+        <FieldGroup>
+          <div className="@md/field-group:grid @md/field-group:grid-cols-2 @md/field-group:items-start @md/field-group:gap-4">
+            <Field>
+              <FieldLabel htmlFor="role-name">角色名称</FieldLabel>
+              <Input
+                name="role-name"
+                autoComplete="off"
+                id="role-name"
+                placeholder="请输入角色名称"
+                value={editForm.name}
+                onChange={(event) =>
+                  setEditForm((form) => ({ ...form, name: event.target.value }))
+                }
+                required
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="role-desc">描述</FieldLabel>
+              <Input
+                name="role-desc"
+                autoComplete="off"
+                id="role-desc"
+                placeholder="请输入角色描述"
+                value={editForm.description}
+                onChange={(event) =>
+                  setEditForm((form) => ({
+                    ...form,
+                    description: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
         </FieldGroup>
 
         <FieldSet className="mt-6 gap-3">

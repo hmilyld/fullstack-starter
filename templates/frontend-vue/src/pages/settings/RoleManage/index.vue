@@ -365,28 +365,32 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
       @update:open="editOpen = $event"
       @submit="handleEditSubmit"
     >
-      <FieldGroup class="sm:grid sm:grid-cols-2 sm:items-start sm:gap-4">
-        <Field>
-          <FieldLabel for="role-name">角色名称</FieldLabel>
-          <Input
-            id="role-name"
-            v-model="editForm.name"
-            name="role-name"
-            autocomplete="off"
-            placeholder="请输入角色名称"
-            required
-          />
-        </Field>
-        <Field>
-          <FieldLabel for="role-desc">描述</FieldLabel>
-          <Input
-            id="role-desc"
-            v-model="editForm.description"
-            name="role-desc"
-            autocomplete="off"
-            placeholder="请输入角色描述"
-          />
-        </Field>
+      <FieldGroup>
+        <div
+          class="@md/field-group:grid @md/field-group:grid-cols-2 @md/field-group:items-start @md/field-group:gap-4"
+        >
+          <Field>
+            <FieldLabel for="role-name">角色名称</FieldLabel>
+            <Input
+              id="role-name"
+              v-model="editForm.name"
+              name="role-name"
+              autocomplete="off"
+              placeholder="请输入角色名称"
+              required
+            />
+          </Field>
+          <Field>
+            <FieldLabel for="role-desc">描述</FieldLabel>
+            <Input
+              id="role-desc"
+              v-model="editForm.description"
+              name="role-desc"
+              autocomplete="off"
+              placeholder="请输入角色描述"
+            />
+          </Field>
+        </div>
       </FieldGroup>
 
       <FieldSet class="mt-6 gap-3">
