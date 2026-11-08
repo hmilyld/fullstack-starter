@@ -12,27 +12,27 @@ import org.springframework.stereotype.Component;
 @Component
 public class StpInterfaceImpl implements StpInterface {
 
-@Autowired private UserRepository userRepository;
-@Autowired private RolePermissionRepository rolePermissionRepository;
+  @Autowired private UserRepository userRepository;
+  @Autowired private RolePermissionRepository rolePermissionRepository;
 
-@Override
-public List<String> getPermissionList(Object loginId, String loginType) {
-	Long userId = Long.parseLong(loginId.toString());
-	User user = userRepository.findById(userId).orElse(null);
-	if (user == null) return Collections.emptyList();
+  @Override
+  public List<String> getPermissionList(Object loginId, String loginType) {
+    Long userId = Long.parseLong(loginId.toString());
+    User user = userRepository.findById(userId).orElse(null);
+    if (user == null) return Collections.emptyList();
 
-	if ("admin".equals(user.getRoleId())) {
-	return rolePermissionRepository.findAllPermissionCodes();
-	}
+    if ("admin".equals(user.getRoleId())) {
+      return rolePermissionRepository.findAllPermissionCodes();
+    }
 
-	return rolePermissionRepository.findPermissionCodesByRoleId(user.getRoleId());
-}
+    return rolePermissionRepository.findPermissionCodesByRoleId(user.getRoleId());
+  }
 
-@Override
-public List<String> getRoleList(Object loginId, String loginType) {
-	Long userId = Long.parseLong(loginId.toString());
-	User user = userRepository.findById(userId).orElse(null);
-	if (user == null) return Collections.emptyList();
-	return List.of(user.getRoleId());
-}
+  @Override
+  public List<String> getRoleList(Object loginId, String loginType) {
+    Long userId = Long.parseLong(loginId.toString());
+    User user = userRepository.findById(userId).orElse(null);
+    if (user == null) return Collections.emptyList();
+    return List.of(user.getRoleId());
+  }
 }

@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MenuGroupRepository extends JpaRepository<MenuGroup, String> {
-List<MenuGroup> findAllByOrderBySortOrderAscIdAsc();
+  List<MenuGroup> findAllByOrderBySortOrderAscIdAsc();
 }

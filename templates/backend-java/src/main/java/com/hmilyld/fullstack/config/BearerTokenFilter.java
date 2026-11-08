@@ -17,47 +17,47 @@ import org.springframework.stereotype.Component;
 @Order(-100) // 确保在 Sa-Token Filter 之前执行
 public class BearerTokenFilter implements Filter {
 
-@Override
-public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-	throws IOException, ServletException {
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
 
-	HttpServletRequest httpRequest = (HttpServletRequest) request;
-	String authHeader = httpRequest.getHeader("Authorization");
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    String authHeader = httpRequest.getHeader("Authorization");
 
-	if (authHeader != null && authHeader.startsWith("Bearer ")) {
-	String token = authHeader.substring(7).trim();
-	if (!token.isEmpty()) {
-		// 包装请求，添加 satoken header，使 Sa-Token 能读取到 token
-		HttpServletRequest wrappedRequest =
-			new HttpServletRequestWrapper(httpRequest) {
-			private final Map<String, String> extraHeaders =
-				new TreeMap<>(String.CASE_INSENSITIVE_ORDER) {
-					{
-					put("satoken", token);
-					}
-				};
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+      String token = authHeader.substring(7).trim();
+      if (!token.isEmpty()) {
+        // 包装请求，添加 satoken header，使 Sa-Token 能读取到 token
+        HttpServletRequest wrappedRequest =
+            new HttpServletRequestWrapper(httpRequest) {
+              private final Map<String, String> extraHeaders =
+                  new TreeMap<>(String.CASE_INSENSITIVE_ORDER) {
+                    {
+                      put("satoken", token);
+                    }
+                  };
 
-			@Override
-			public String getHeader(String name) {
-				String value = extraHeaders.get(name);
-				if (value != null) {
-				return value;
-				}
-				return super.getHeader(name);
-			}
+              @Override
+              public String getHeader(String name) {
+                String value = extraHeaders.get(name);
+                if (value != null) {
+                  return value;
+                }
+                return super.getHeader(name);
+              }
 
-			@Override
-			public Enumeration<String> getHeaderNames() {
-				List<String> names = Collections.list(super.getHeaderNames());
-				names.add("satoken");
-				return Collections.enumeration(names);
-			}
-			};
-		chain.doFilter(wrappedRequest, response);
-		return;
-	}
-	}
+              @Override
+              public Enumeration<String> getHeaderNames() {
+                List<String> names = Collections.list(super.getHeaderNames());
+                names.add("satoken");
+                return Collections.enumeration(names);
+              }
+            };
+        chain.doFilter(wrappedRequest, response);
+        return;
+      }
+    }
 
-	chain.doFilter(request, response);
-}
+    chain.doFilter(request, response);
+  }
 }

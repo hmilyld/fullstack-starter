@@ -11,13 +11,13 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AiModelRepository extends JpaRepository<AiModel, Long> {
-Optional<AiModel> findByAlias(String alias);
+  Optional<AiModel> findByAlias(String alias);
 
-Optional<AiModel> findByDefaultModelTrue();
+  Optional<AiModel> findByDefaultModelTrue();
 
-@Query(
-	"SELECT a FROM AiModel a WHERE "
-		+ "(:search = '' OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :search, '%')) "
-		+ "OR LOWER(a.modelName) LIKE LOWER(CONCAT('%', :search, '%')))")
-Page<AiModel> search(@Param("search") String search, Pageable pageable);
+  @Query(
+      "SELECT a FROM AiModel a WHERE "
+          + "(:search = '' OR LOWER(a.alias) LIKE LOWER(CONCAT('%', :search, '%')) "
+          + "OR LOWER(a.modelName) LIKE LOWER(CONCAT('%', :search, '%')))")
+  Page<AiModel> search(@Param("search") String search, Pageable pageable);
 }

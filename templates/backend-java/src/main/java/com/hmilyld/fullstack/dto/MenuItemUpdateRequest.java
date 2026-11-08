@@ -6,17 +6,17 @@ import lombok.Data;
 
 @Data
 public class MenuItemUpdateRequest {
-@Size(min = 1, max = 100)
-private String name;
+  @Size(min = 1, max = 100)
+  private String name;
 
-private String groupId;
+  private String groupId;
 
-@Size(max = 255)
-@Pattern(regexp = "^/(?!/).*", message = "路由必须以单个 / 开头")
-private String route;
+  @Size(max = 255)
+  @Pattern(regexp = "^/(?!/).*", message = "路由必须以单个 / 开头")
+  private String route;
 
-@Size(max = 50)
-private String icon;
+  @Size(max = 50)
+  private String icon;
 
-private Boolean hidden;
+  private Boolean hidden;
 }

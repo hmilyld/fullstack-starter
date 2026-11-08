@@ -15,40 +15,40 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-@ExceptionHandler(NotLoginException.class)
-public ResponseEntity<ApiResponse<?>> handleNotLogin(NotLoginException e) {
-	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("未登录或登录已过期"));
-}
+  @ExceptionHandler(NotLoginException.class)
+  public ResponseEntity<ApiResponse<?>> handleNotLogin(NotLoginException e) {
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("未登录或登录已过期"));
+  }
 
-@ExceptionHandler(NotPermissionException.class)
-public ResponseEntity<ApiResponse<?>> handleNotPermission(NotPermissionException e) {
-	return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("权限不足"));
-}
+  @ExceptionHandler(NotPermissionException.class)
+  public ResponseEntity<ApiResponse<?>> handleNotPermission(NotPermissionException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("权限不足"));
+  }
 
-@ExceptionHandler(NotRoleException.class)
-public ApiResponse<?> handleNotRole(NotRoleException e) {
-	return ApiResponse.error("角色权限不足");
-}
+  @ExceptionHandler(NotRoleException.class)
+  public ApiResponse<?> handleNotRole(NotRoleException e) {
+    return ApiResponse.error("角色权限不足");
+  }
 
-@ExceptionHandler(MethodArgumentNotValidException.class)
-public ApiResponse<?> handleValidation(MethodArgumentNotValidException e) {
-	String msg =
-		e.getBindingResult().getFieldErrors().stream()
-			.map(f -> f.getDefaultMessage() != null ? f.getDefaultMessage() : f.getField())
-			.collect(Collectors.joining("; "));
-	return ApiResponse.error(msg);
-}
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ApiResponse<?> handleValidation(MethodArgumentNotValidException e) {
+    String msg =
+        e.getBindingResult().getFieldErrors().stream()
+            .map(f -> f.getDefaultMessage() != null ? f.getDefaultMessage() : f.getField())
+            .collect(Collectors.joining("; "));
+    return ApiResponse.error(msg);
+  }
 
-@ExceptionHandler(IllegalArgumentException.class)
-public ApiResponse<?> handleIllegalArgument(IllegalArgumentException e) {
-	return ApiResponse.error(e.getMessage());
-}
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ApiResponse<?> handleIllegalArgument(IllegalArgumentException e) {
+    return ApiResponse.error(e.getMessage());
+  }
 
-@ExceptionHandler(Exception.class)
-public ApiResponse<?> handleException(Exception e) {
-	log.error("Unhandled exception", e);
-	return ApiResponse.error("服务器内部错误");
-}
+  @ExceptionHandler(Exception.class)
+  public ApiResponse<?> handleException(Exception e) {
+    log.error("Unhandled exception", e);
+    return ApiResponse.error("服务器内部错误");
+  }
 }

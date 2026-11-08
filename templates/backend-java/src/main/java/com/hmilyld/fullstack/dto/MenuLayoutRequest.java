@@ -9,23 +9,23 @@ import lombok.Data;
 
 @Data
 public class MenuLayoutRequest {
-@NotNull private Integer version;
+  @NotNull private Integer version;
 
-@Valid @NotEmpty private List<Group> groups = new ArrayList<>();
+  @Valid @NotEmpty private List<Group> groups = new ArrayList<>();
 
-@Data
-public static class Group {
-	@NotNull private String id;
+  @Data
+  public static class Group {
+    @NotNull private String id;
 
-	@NotNull private Integer sortOrder;
+    @NotNull private Integer sortOrder;
 
-	@Valid @NotNull private List<Item> items = new ArrayList<>();
-}
+    @Valid @NotNull private List<Item> items = new ArrayList<>();
+  }
 
-@Data
-public static class Item {
-	@NotNull private String permissionCode;
+  @Data
+  public static class Item {
+    @NotNull private String permissionCode;
 
-	@NotNull private Integer sortOrder;
-}
+    @NotNull private Integer sortOrder;
+  }
 }

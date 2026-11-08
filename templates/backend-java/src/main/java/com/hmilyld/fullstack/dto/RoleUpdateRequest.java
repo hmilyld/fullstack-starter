@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class RoleUpdateRequest {
-private String name;
-private String description;
-private List<String> permissions;
+  private String name;
+  private String description;
+  private List<String> permissions;
 }

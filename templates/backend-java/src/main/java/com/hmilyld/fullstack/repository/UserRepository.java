@@ -13,18 +13,18 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-Optional<User> findByUsername(String username);
+  Optional<User> findByUsername(String username);
 
-Optional<User> findByEmail(String email);
+  Optional<User> findByEmail(String email);
 
-long countByRoleId(String roleId);
+  long countByRoleId(String roleId);
 
-@Query(
-	"SELECT u FROM User u WHERE "
-		+ "(:search = '' OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) "
-		+ "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) "
-		+ "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
-Page<User> search(@Param("search") String search, Pageable pageable);
+  @Query(
+      "SELECT u FROM User u WHERE "
+          + "(:search = '' OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) "
+          + "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) "
+          + "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+  Page<User> search(@Param("search") String search, Pageable pageable);
 
-List<User> findByIdIn(Collection<Long> ids);
+  List<User> findByIdIn(Collection<Long> ids);
 }

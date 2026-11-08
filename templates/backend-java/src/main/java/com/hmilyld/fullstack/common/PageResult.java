@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PageResult<T> {
-private List<T> list;
-private long total;
-private int page;
-private int pageSize;
+  private List<T> list;
+  private long total;
+  private int page;
+  private int pageSize;
 }

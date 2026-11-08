@@ -104,9 +104,6 @@
                         </googleJavaFormat>
                         <removeUnusedImports/>
                         <toggleOffOn/>
-                        <indent>
-                            <tabs>true</tabs>
-                        </indent>
                     </java>
                 </configuration>
                 <dependencies>

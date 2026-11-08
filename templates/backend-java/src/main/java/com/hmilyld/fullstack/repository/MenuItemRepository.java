@@ -7,9 +7,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MenuItemRepository extends JpaRepository<MenuItem, String> {
-List<MenuItem> findAllByOrderBySortOrderAscPermissionCodeAsc();
+  List<MenuItem> findAllByOrderBySortOrderAscPermissionCodeAsc();
 
-long countByGroupId(String groupId);
+  long countByGroupId(String groupId);
 
-long countByGroupIdAndPermissionCodeNot(String groupId, String permissionCode);
+  long countByGroupIdAndPermissionCodeNot(String groupId, String permissionCode);
 }

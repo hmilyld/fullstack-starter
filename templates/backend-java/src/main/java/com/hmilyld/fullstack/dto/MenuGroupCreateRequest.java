@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class MenuGroupCreateRequest {
-@NotBlank
-@Size(max = 100)
-private String name;
+  @NotBlank
+  @Size(max = 100)
+  private String name;
 }

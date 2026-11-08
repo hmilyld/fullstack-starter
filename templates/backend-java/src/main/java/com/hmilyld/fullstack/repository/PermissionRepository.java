@@ -7,9 +7,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, String> {
-List<Permission> findByType(String type);
+  List<Permission> findByType(String type);
 
-List<Permission> findByParent(String parent);
+  List<Permission> findByParent(String parent);
 
-List<Permission> findByTypeAndParent(String type, String parent);
+  List<Permission> findByTypeAndParent(String type, String parent);
 }

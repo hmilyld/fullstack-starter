@@ -11,31 +11,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AppStateService {
 
-@Autowired private AppStateRepository appStateRepository;
+  @Autowired private AppStateRepository appStateRepository;
 
-private final SecureRandom secureRandom = new SecureRandom();
+  private final SecureRandom secureRandom = new SecureRandom();
 
-@Transactional
-public AppState getOrCreate() {
-	return appStateRepository
-		.findById(1L)
-		.orElseGet(
-			() -> {
-			AppState state = new AppState();
-			state.setId(1L);
-			state.setSessionEpoch(newEpoch());
-			state.setMenuLayoutVersion(1);
-			return appStateRepository.save(state);
-			});
-}
+  @Transactional
+  public AppState getOrCreate() {
+    return appStateRepository
+        .findById(1L)
+        .orElseGet(
+            () -> {
+              AppState state = new AppState();
+              state.setId(1L);
+              state.setSessionEpoch(newEpoch());
+              state.setMenuLayoutVersion(1);
+              return appStateRepository.save(state);
+            });
+  }
 
-public String getSessionEpoch() {
-	return getOrCreate().getSessionEpoch();
-}
+  public String getSessionEpoch() {
+    return getOrCreate().getSessionEpoch();
+  }
 
-public String newEpoch() {
-	byte[] bytes = new byte[32];
-	secureRandom.nextBytes(bytes);
-	return HexFormat.of().formatHex(bytes);
-}
+  public String newEpoch() {
+    byte[] bytes = new byte[32];
+    secureRandom.nextBytes(bytes);
+    return HexFormat.of().formatHex(bytes);
+  }
 }

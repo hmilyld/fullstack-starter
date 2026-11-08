@@ -10,17 +10,17 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RolePermissionRepository extends JpaRepository<RolePermission, Long> {
-List<RolePermission> findByRoleId(String roleId);
+  List<RolePermission> findByRoleId(String roleId);
 
-void deleteByRoleId(String roleId);
+  void deleteByRoleId(String roleId);
 
-void deleteByPermissionCode(String permissionCode);
+  void deleteByPermissionCode(String permissionCode);
 
-void deleteByPermissionCodeIn(Collection<String> permissionCodes);
+  void deleteByPermissionCodeIn(Collection<String> permissionCodes);
 
-@Query("SELECT rp.permissionCode FROM RolePermission rp WHERE rp.roleId = :roleId")
-List<String> findPermissionCodesByRoleId(@Param("roleId") String roleId);
+  @Query("SELECT rp.permissionCode FROM RolePermission rp WHERE rp.roleId = :roleId")
+  List<String> findPermissionCodesByRoleId(@Param("roleId") String roleId);
 
-@Query("SELECT DISTINCT rp.permissionCode FROM RolePermission rp")
-List<String> findAllPermissionCodes();
+  @Query("SELECT DISTINCT rp.permissionCode FROM RolePermission rp")
+  List<String> findAllPermissionCodes();
 }

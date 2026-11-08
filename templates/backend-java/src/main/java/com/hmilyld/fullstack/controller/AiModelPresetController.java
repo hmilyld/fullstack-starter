@@ -14,55 +14,55 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/ai-models/presets")
 public class AiModelPresetController {
 
-@Autowired private AiModelPresetService presetService;
+  @Autowired private AiModelPresetService presetService;
 
-@GetMapping("")
-@SaCheckPermission("ai_models")
-public ApiResponse<?> getPresets(
-	@RequestParam(defaultValue = "") String search,
-	@RequestParam(defaultValue = "") String group) {
-	return presetService.getPresets(search, group);
-}
+  @GetMapping("")
+  @SaCheckPermission("ai_models")
+  public ApiResponse<?> getPresets(
+      @RequestParam(defaultValue = "") String search,
+      @RequestParam(defaultValue = "") String group) {
+    return presetService.getPresets(search, group);
+  }
 
-@GetMapping("/groups")
-@SaCheckPermission("ai_models")
-public ApiResponse<?> getGroups() {
-	return presetService.getGroups();
-}
+  @GetMapping("/groups")
+  @SaCheckPermission("ai_models")
+  public ApiResponse<?> getGroups() {
+    return presetService.getGroups();
+  }
 
-@GetMapping("/active")
-public ApiResponse<?> getActivePresets() {
-	return presetService.getActivePresets();
-}
+  @GetMapping("/active")
+  public ApiResponse<?> getActivePresets() {
+    return presetService.getActivePresets();
+  }
 
-@GetMapping("/{id}")
-@SaCheckPermission("ai_models")
-public ApiResponse<?> getPreset(@PathVariable Long id) {
-	return presetService.getPreset(id);
-}
+  @GetMapping("/{id}")
+  @SaCheckPermission("ai_models")
+  public ApiResponse<?> getPreset(@PathVariable Long id) {
+    return presetService.getPreset(id);
+  }
 
-@PostMapping("")
-@SaCheckPermission(
-	value = {"ai_models.create", "ai_models.presets.create"},
-	mode = SaMode.OR)
-public ApiResponse<?> createPreset(@RequestBody @Valid AiModelPresetCreateRequest req) {
-	return presetService.createPreset(req);
-}
+  @PostMapping("")
+  @SaCheckPermission(
+      value = {"ai_models.create", "ai_models.presets.create"},
+      mode = SaMode.OR)
+  public ApiResponse<?> createPreset(@RequestBody @Valid AiModelPresetCreateRequest req) {
+    return presetService.createPreset(req);
+  }
 
-@PutMapping("/{id}")
-@SaCheckPermission(
-	value = {"ai_models.edit", "ai_models.presets.edit"},
-	mode = SaMode.OR)
-public ApiResponse<?> updatePreset(
-	@PathVariable Long id, @RequestBody AiModelPresetUpdateRequest req) {
-	return presetService.updatePreset(id, req);
-}
+  @PutMapping("/{id}")
+  @SaCheckPermission(
+      value = {"ai_models.edit", "ai_models.presets.edit"},
+      mode = SaMode.OR)
+  public ApiResponse<?> updatePreset(
+      @PathVariable Long id, @RequestBody AiModelPresetUpdateRequest req) {
+    return presetService.updatePreset(id, req);
+  }
 
-@DeleteMapping("/{id}")
-@SaCheckPermission(
-	value = {"ai_models.delete", "ai_models.presets.delete"},
-	mode = SaMode.OR)
-public ApiResponse<?> deletePreset(@PathVariable Long id) {
-	return presetService.deletePreset(id);
-}
+  @DeleteMapping("/{id}")
+  @SaCheckPermission(
+      value = {"ai_models.delete", "ai_models.presets.delete"},
+      mode = SaMode.OR)
+  public ApiResponse<?> deletePreset(@PathVariable Long id) {
+    return presetService.deletePreset(id);
+  }
 }

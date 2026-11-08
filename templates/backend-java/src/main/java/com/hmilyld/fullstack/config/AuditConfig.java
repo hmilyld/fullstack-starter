@@ -8,10 +8,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class AuditConfig implements WebMvcConfigurer {
 
-@Autowired private AuditInterceptor auditInterceptor;
+  @Autowired private AuditInterceptor auditInterceptor;
 
-@Override
-public void addInterceptors(InterceptorRegistry registry) {
-	registry.addInterceptor(auditInterceptor).addPathPatterns("/api/**");
-}
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(auditInterceptor).addPathPatterns("/api/**");
+  }
 }

@@ -9,20 +9,20 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AiModelPresetRepository extends JpaRepository<AiModelPreset, Long> {
-List<AiModelPreset> findByActiveTrueOrderBySortOrderAscIdAsc();
+  List<AiModelPreset> findByActiveTrueOrderBySortOrderAscIdAsc();
 
-@Query("SELECT DISTINCT p.groupName FROM AiModelPreset p ORDER BY p.groupName")
-List<String> findDistinctGroups();
+  @Query("SELECT DISTINCT p.groupName FROM AiModelPreset p ORDER BY p.groupName")
+  List<String> findDistinctGroups();
 
-@Query(
-	"SELECT p FROM AiModelPreset p WHERE "
-		+ "(:search = '' OR LOWER(p.alias) LIKE LOWER(CONCAT('%', :search, '%')) "
-		+ "OR LOWER(p.modelName) LIKE LOWER(CONCAT('%', :search, '%'))) "
-		+ "AND (:groupName = '' OR p.groupName = :groupName) "
-		+ "AND (:isActive IS NULL OR p.active = :isActive) "
-		+ "ORDER BY p.sortOrder ASC, p.id ASC")
-List<AiModelPreset> searchWithFilters(
-	@Param("search") String search,
-	@Param("groupName") String groupName,
-	@Param("isActive") Boolean isActive);
+  @Query(
+      "SELECT p FROM AiModelPreset p WHERE "
+          + "(:search = '' OR LOWER(p.alias) LIKE LOWER(CONCAT('%', :search, '%')) "
+          + "OR LOWER(p.modelName) LIKE LOWER(CONCAT('%', :search, '%'))) "
+          + "AND (:groupName = '' OR p.groupName = :groupName) "
+          + "AND (:isActive IS NULL OR p.active = :isActive) "
+          + "ORDER BY p.sortOrder ASC, p.id ASC")
+  List<AiModelPreset> searchWithFilters(
+      @Param("search") String search,
+      @Param("groupName") String groupName,
+      @Param("isActive") Boolean isActive);
 }

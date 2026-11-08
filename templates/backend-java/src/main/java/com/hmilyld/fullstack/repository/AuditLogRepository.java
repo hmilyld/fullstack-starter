@@ -12,18 +12,18 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
-@Query(
-	"SELECT a FROM AuditLog a WHERE "
-		+ "(:userId IS NULL OR a.userId = :userId) "
-		+ "AND (:status = '' OR a.status = :status) "
-		+ "AND (:action = '' OR LOWER(a.action) LIKE LOWER(CONCAT('%', :action, '%'))) "
-		+ "AND (:startTime IS NULL OR a.createdAt >= :startTime) "
-		+ "AND (:endTime IS NULL OR a.createdAt <= :endTime)")
-Page<AuditLog> search(
-	@Param("userId") Long userId,
-	@Param("status") String status,
-	@Param("action") String action,
-	@Param("startTime") LocalDateTime startTime,
-	@Param("endTime") LocalDateTime endTime,
-	Pageable pageable);
+  @Query(
+      "SELECT a FROM AuditLog a WHERE "
+          + "(:userId IS NULL OR a.userId = :userId) "
+          + "AND (:status = '' OR a.status = :status) "
+          + "AND (:action = '' OR LOWER(a.action) LIKE LOWER(CONCAT('%', :action, '%'))) "
+          + "AND (:startTime IS NULL OR a.createdAt >= :startTime) "
+          + "AND (:endTime IS NULL OR a.createdAt <= :endTime)")
+  Page<AuditLog> search(
+      @Param("userId") Long userId,
+      @Param("status") String status,
+      @Param("action") String action,
+      @Param("startTime") LocalDateTime startTime,
+      @Param("endTime") LocalDateTime endTime,
+      Pageable pageable);
 }

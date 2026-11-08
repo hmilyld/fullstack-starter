@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
 @Order(2)
 public class MenuSyncRunner implements ApplicationRunner {
 
-@Autowired private MenuService menuService;
+  @Autowired private MenuService menuService;
 
-@Override
-public void run(ApplicationArguments args) {
-	menuService.syncCatalog();
-}
+  @Override
+  public void run(ApplicationArguments args) {
+    menuService.syncCatalog();
+  }
 }

@@ -18,23 +18,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class DataFreezeFilter extends OncePerRequestFilter {
 
-private static final Pattern IMPORT_STATUS_PATH = Pattern.compile("^/api/data/import/[^/]+$");
+  private static final Pattern IMPORT_STATUS_PATH = Pattern.compile("^/api/data/import/[^/]+$");
 
-@Autowired private DataOperationState state;
+  @Autowired private DataOperationState state;
 
-@Override
-protected void doFilterInternal(
-	HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-	throws ServletException, IOException {
-	if (state.isFrozen()
-		&& !"OPTIONS".equalsIgnoreCase(request.getMethod())
-		&& !IMPORT_STATUS_PATH.matcher(request.getRequestURI()).matches()) {
-	response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-	response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-	response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-	response.getWriter().write("{\"code\":-1,\"message\":\"系统正在导入数据，请稍后重试\",\"data\":null}");
-	return;
-	}
-	filterChain.doFilter(request, response);
-}
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+      throws ServletException, IOException {
+    if (state.isFrozen()
+        && !"OPTIONS".equalsIgnoreCase(request.getMethod())
+        && !IMPORT_STATUS_PATH.matcher(request.getRequestURI()).matches()) {
+      response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+      response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+      response.getWriter().write("{\"code\":-1,\"message\":\"系统正在导入数据，请稍后重试\",\"data\":null}");
+      return;
+    }
+    filterChain.doFilter(request, response);
+  }
 }

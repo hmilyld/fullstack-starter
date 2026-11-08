@@ -9,16 +9,16 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class MenuGroup {
-@Id
-@Column(length = 50)
-private String id;
+  @Id
+  @Column(length = 50)
+  private String id;
 
-@Column(nullable = false, length = 100)
-private String name;
+  @Column(nullable = false, length = 100)
+  private String name;
 
-@Column(name = "sort_order", nullable = false)
-private Integer sortOrder = 0;
+  @Column(name = "sort_order", nullable = false)
+  private Integer sortOrder = 0;
 
-@Column(name = "is_system", nullable = false)
-private Boolean system = false;
+  @Column(name = "is_system", nullable = false)
+  private Boolean system = false;
 }
