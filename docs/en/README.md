@@ -20,7 +20,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | Authentication | Token login, registration, logout, login/registration rate limiting, automatic logout on 401 |
 | Dashboard | Stat cards + recent activity |
 | User management | List + pagination + search + detail + create/edit + delete + reset password + batch role assignment |
-| Role management | List + pagination + search + create/edit + delete (preset roles cannot be deleted) |
+| Role management | List + pagination + search + create/edit (wide dialog with a permission tree) + delete (preset roles cannot be deleted) |
 | Permission overview | Read-only view of menu permissions + operation permissions; operation permissions are maintained in Menu & Permissions; auto-synced with the permission catalog at startup |
 | Menu & permissions | Tree table for groups and menus, show/hide, cross-group dragging, save-on-drop ordering, operation permissions per menu, permission-filtered dynamic sidebar |
 | System settings | Read/write site configuration, email test, maintenance mode (blocks non-admin logins), open registration, manual review |

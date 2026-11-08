@@ -14,6 +14,9 @@ export const authUser = {
     "users.delete",
     "users.assign_role",
     "roles",
+    "roles.create",
+    "roles.edit",
+    "roles.delete",
     "permissions",
     "permissions.create",
     "permissions.edit",
@@ -148,6 +151,39 @@ export async function mockApi(page: Page) {
           return ok({ list: [user], total: 1, page: 1, pageSize: 8 })
         case "/api/roles":
           return ok({ list: [role], total: 1, page: 1, pageSize: 100 })
+        case "/api/permissions": {
+          const type = new URL(route.request().url()).searchParams.get("type")
+          return ok(
+            type === "menu"
+              ? [
+                  { code: "dashboard", name: "仪表盘", type: "menu" },
+                  { code: "users", name: "用户管理", type: "menu" },
+                  { code: "roles", name: "角色管理", type: "menu" },
+                ]
+              : [
+                  {
+                    code: "users.view",
+                    name: "查看用户",
+                    type: "operation",
+                    parent: "users",
+                  },
+                  {
+                    code: "users.create",
+                    name: "新增用户",
+                    type: "operation",
+                    parent: "users",
+                  },
+                  {
+                    code: "roles.view",
+                    name: "查看角色",
+                    type: "operation",
+                    parent: "roles",
+                  },
+                ]
+          )
+        }
+        case "/api/roles/user":
+          return ok(role)
         case "/api/audit-logs":
           return ok({
             list: [

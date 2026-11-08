@@ -15,10 +15,8 @@ import TablePagination from "@/components/shared/TablePagination.vue"
 import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -50,6 +48,7 @@ import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlListState } from "@/composables/use-url-list-state"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
+import RolePermissionPicker from "@/pages/settings/RoleManage/RolePermissionPicker.vue"
 import type { Permission } from "@/types/permission"
 import type { Role } from "@/types/role"
 
@@ -143,72 +142,6 @@ async function handleEditSubmit() {
   toast.success(editingRole.value ? "保存成功" : "创建成功")
   editOpen.value = false
   refreshList()
-}
-
-function togglePermission(code: string) {
-  editPermissions.value = editPermissions.value.includes(code)
-    ? editPermissions.value.filter((item) => item !== code)
-    : [...editPermissions.value, code]
-}
-
-function toggleMenuPermission(code: string) {
-  const has = editPermissions.value.includes(code)
-  if (has) {
-    editPermissions.value = editPermissions.value.filter(
-      (item) =>
-        item !== code &&
-        !operationPermissions.value.some(
-          (operation) => operation.code === item && operation.parent === code
-        )
-    )
-    return
-  }
-  const childOperations = operationPermissions.value
-    .filter((operation) => operation.parent === code)
-    .map((operation) => operation.code)
-  editPermissions.value = [
-    ...editPermissions.value,
-    code,
-    ...childOperations.filter((item) => !editPermissions.value.includes(item)),
-  ]
-}
-
-function isMenuChecked(code: string) {
-  return editPermissions.value.includes(code)
-}
-
-function isMenuIndeterminate(code: string) {
-  const children = operationPermissions.value.filter(
-    (operation) => operation.parent === code
-  )
-  if (children.length === 0) return false
-  const checked = children.filter((operation) =>
-    editPermissions.value.includes(operation.code)
-  ).length
-  return checked > 0
-}
-
-function menuCheckboxState(code: string) {
-  if (isMenuChecked(code)) return true
-  if (isMenuIndeterminate(code)) return "indeterminate"
-  return false
-}
-
-function childPermissions(code: string) {
-  return operationPermissions.value.filter(
-    (operation) => operation.parent === code
-  )
-}
-
-function selectAllPermissions() {
-  editPermissions.value = [
-    ...menuPermissions.value.map((permission) => permission.code),
-    ...operationPermissions.value.map((permission) => permission.code),
-  ]
-}
-
-function clearPermissions() {
-  editPermissions.value = []
 }
 
 function handleDelete(role: Role) {
@@ -428,11 +361,11 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
         editingRole ? '修改角色信息和权限分配。' : '填写角色信息并分配权限。'
       "
       :submitting="editSubmitting"
-      class="sm:max-w-lg"
+      class="sm:w-[calc(100%_-_2rem)] sm:max-w-4xl"
       @update:open="editOpen = $event"
       @submit="handleEditSubmit"
     >
-      <FieldGroup>
+      <FieldGroup class="sm:grid sm:grid-cols-2 sm:items-start sm:gap-4">
         <Field>
           <FieldLabel for="role-name">角色名称</FieldLabel>
           <Input
@@ -456,95 +389,16 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
         </Field>
       </FieldGroup>
 
-      <FieldSet class="gap-3">
+      <FieldSet class="mt-6 gap-3">
         <FieldLegend variant="label" class="mb-0">权限分配</FieldLegend>
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <FieldDescription>
-            勾选菜单权限时，会自动勾选该菜单下的所有操作权限。
-          </FieldDescription>
-          <div class="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              @click="selectAllPermissions"
-            >
-              全选
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              @click="clearPermissions"
-            >
-              清空
-            </Button>
-          </div>
-        </div>
-
-        <div
-          v-if="permissionsLoading"
-          class="py-6 text-center text-sm text-muted-foreground"
-        >
-          权限加载中…
-        </div>
-        <div
-          v-else-if="permissionsError"
-          class="flex flex-col items-start gap-2 rounded-md border p-3 text-sm"
-        >
-          <span class="text-destructive">{{ permissionsError }}</span>
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            @click="loadPermissions"
-          >
-            重试
-          </Button>
-        </div>
-        <div v-else class="h-[min(50vh,420px)] overflow-y-auto pr-3">
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="permission in menuPermissions"
-              :key="permission.code"
-              class="flex flex-col gap-2"
-            >
-              <label class="flex items-center gap-2 text-sm">
-                <Checkbox
-                  :model-value="menuCheckboxState(permission.code)"
-                  @update:model-value="toggleMenuPermission(permission.code)"
-                />
-                {{ permission.name }}
-              </label>
-              <div
-                v-if="
-                  childPermissions(permission.code).length > 0 &&
-                  (isMenuChecked(permission.code) ||
-                    isMenuIndeterminate(permission.code))
-                "
-                class="ml-6 flex flex-wrap gap-x-4 gap-y-2"
-              >
-                <label
-                  v-for="child in childPermissions(permission.code)"
-                  :key="child.code"
-                  class="flex items-center gap-2 text-sm text-muted-foreground"
-                >
-                  <Checkbox
-                    :model-value="editPermissions.includes(child.code)"
-                    @update:model-value="togglePermission(child.code)"
-                  />
-                  {{ child.name }}
-                </label>
-              </div>
-            </div>
-            <p
-              v-if="menuPermissions.length === 0"
-              class="py-6 text-center text-sm text-muted-foreground"
-            >
-              暂无可分配的权限
-            </p>
-          </div>
-        </div>
+        <RolePermissionPicker
+          v-model="editPermissions"
+          :menu-permissions="menuPermissions"
+          :operation-permissions="operationPermissions"
+          :loading="permissionsLoading"
+          :error="permissionsError"
+          @retry="loadPermissions"
+        />
       </FieldSet>
     </FormDialog>
 

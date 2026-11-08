@@ -21,10 +21,8 @@ import { TablePagination } from "@/components/shared/table-pagination"
 import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -36,7 +34,6 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Table,
   TableBody,
@@ -57,6 +54,7 @@ import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
 import { appToast } from "@/lib/toast"
+import { RolePermissionPicker } from "@/pages/settings/role/RolePermissionPicker"
 import type { Permission } from "@/types/permission"
 import type { Role } from "@/types/role"
 
@@ -146,66 +144,6 @@ export function RolesPage() {
     appToast.success(editingRole ? "保存成功" : "创建成功")
     setEditOpen(false)
     list.refresh()
-  }
-
-  function togglePermission(code: string) {
-    setEditPermissions((previous) =>
-      previous.includes(code)
-        ? previous.filter((item) => item !== code)
-        : [...previous, code]
-    )
-  }
-
-  function toggleMenuPermission(code: string) {
-    setEditPermissions((previous) => {
-      const has = previous.includes(code)
-      if (has) {
-        // 取消菜单权限时，同时移除其下所有操作权限
-        return previous.filter(
-          (item) =>
-            item !== code &&
-            !operationPermissions.some(
-              (operation) =>
-                operation.code === item && operation.parent === code
-            )
-        )
-      }
-      // 勾选菜单权限时，同时勾选其下所有操作权限
-      const childOperations = operationPermissions
-        .filter((operation) => operation.parent === code)
-        .map((operation) => operation.code)
-      return [
-        ...previous,
-        code,
-        ...childOperations.filter((c) => !previous.includes(c)),
-      ]
-    })
-  }
-
-  function isMenuChecked(code: string) {
-    return editPermissions.includes(code)
-  }
-
-  function isMenuIndeterminate(code: string) {
-    const children = operationPermissions.filter(
-      (operation) => operation.parent === code
-    )
-    if (children.length === 0) return false
-    const checked = children.filter((operation) =>
-      editPermissions.includes(operation.code)
-    ).length
-    return checked > 0
-  }
-
-  function selectAllPermissions() {
-    setEditPermissions([
-      ...menuPermissions.map((permission) => permission.code),
-      ...operationPermissions.map((permission) => permission.code),
-    ])
-  }
-
-  function clearPermissions() {
-    setEditPermissions([])
   }
 
   function handleDelete(role: Role) {
@@ -426,10 +364,10 @@ export function RolesPage() {
           editingRole ? "修改角色信息和权限分配。" : "填写角色信息并分配权限。"
         }
         submitting={editSubmitting}
-        className="sm:max-w-lg"
+        className="sm:w-[calc(100%_-_2rem)] sm:max-w-4xl"
         onSubmit={handleEditSubmit}
       >
-        <FieldGroup>
+        <FieldGroup className="sm:grid sm:grid-cols-2 sm:items-start sm:gap-4">
           <Field>
             <FieldLabel htmlFor="role-name">角色名称</FieldLabel>
             <Input
@@ -462,106 +400,19 @@ export function RolesPage() {
           </Field>
         </FieldGroup>
 
-        <FieldSet className="gap-3">
+        <FieldSet className="mt-6 gap-3">
           <FieldLegend variant="label" className="mb-0">
             权限分配
           </FieldLegend>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <FieldDescription>
-              勾选菜单权限时，会自动勾选该菜单下的所有操作权限。
-            </FieldDescription>
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={selectAllPermissions}
-              >
-                全选
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={clearPermissions}
-              >
-                清空
-              </Button>
-            </div>
-          </div>
-
-          {permissionsLoading ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              权限加载中…
-            </div>
-          ) : permissionsError ? (
-            <div className="flex flex-col items-start gap-2 rounded-md border p-3 text-sm">
-              <span className="text-destructive">{permissionsError}</span>
-              <Button
-                type="button"
-                variant="outline"
-                size="xs"
-                onClick={loadPermissions}
-              >
-                重试
-              </Button>
-            </div>
-          ) : (
-            <ScrollArea className="h-[min(50vh,420px)] pr-3">
-              <div className="flex flex-col gap-3">
-                {menuPermissions.map((permission) => {
-                  const children = operationPermissions.filter(
-                    (operation) => operation.parent === permission.code
-                  )
-                  const checked = isMenuChecked(permission.code)
-                  const indeterminate = isMenuIndeterminate(permission.code)
-
-                  return (
-                    <div key={permission.code} className="flex flex-col gap-2">
-                      <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          checked={
-                            checked
-                              ? true
-                              : indeterminate
-                                ? "indeterminate"
-                                : false
-                          }
-                          onCheckedChange={() =>
-                            toggleMenuPermission(permission.code)
-                          }
-                        />
-                        {permission.name}
-                      </label>
-                      {children.length > 0 && (checked || indeterminate) && (
-                        <div className="ml-6 flex flex-wrap gap-x-4 gap-y-2">
-                          {children.map((child) => (
-                            <label
-                              key={child.code}
-                              className="flex items-center gap-2 text-sm text-muted-foreground"
-                            >
-                              <Checkbox
-                                checked={editPermissions.includes(child.code)}
-                                onCheckedChange={() =>
-                                  togglePermission(child.code)
-                                }
-                              />
-                              {child.name}
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-                {menuPermissions.length === 0 && (
-                  <p className="py-6 text-center text-sm text-muted-foreground">
-                    暂无可分配的权限
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
-          )}
+          <RolePermissionPicker
+            menuPermissions={menuPermissions}
+            operationPermissions={operationPermissions}
+            value={editPermissions}
+            onChange={setEditPermissions}
+            loading={permissionsLoading}
+            error={permissionsError}
+            onRetry={loadPermissions}
+          />
         </FieldSet>
       </FormDialog>
 
