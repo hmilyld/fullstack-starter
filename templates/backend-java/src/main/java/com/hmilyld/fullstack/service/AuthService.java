@@ -2,6 +2,8 @@ package com.hmilyld.fullstack.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.AppException;
+import com.hmilyld.fullstack.common.ConflictException;
 import com.hmilyld.fullstack.dto.LoginResponse;
 import com.hmilyld.fullstack.entity.SystemConfig;
 import com.hmilyld.fullstack.entity.User;
@@ -14,14 +16,20 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 认证领域：登录、注册、登出。 */
 @Service
 public class AuthService {
+
+  private static final String PENDING_REVIEW_ROLE_ID = "pending_review";
+  private static final String ADMIN_ROLE_ID = "admin";
+  private static final String DEFAULT_ROLE_ID = "user";
 
   @Autowired private UserRepository userRepository;
   @Autowired private RolePermissionRepository rolePermissionRepository;
   @Autowired private SystemConfigRepository systemConfigRepository;
   @Autowired private AuditLogService auditLogService;
   @Autowired private AppStateService appStateService;
+  @Autowired private TokenVersionService tokenVersionService;
 
   private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -33,47 +41,33 @@ public class AuthService {
 
     if (user == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
       auditLogService.record(null, account, "login", clientIp, "fail", "账号或密码错误");
-      return ApiResponse.error("账号或密码错误");
+      throw new AppException("账号或密码错误");
     }
 
-    if ("pending_review".equals(user.getRoleId())) {
+    if (PENDING_REVIEW_ROLE_ID.equals(user.getRoleId())) {
       auditLogService.record(
           user.getId(), user.getUsername(), "login", clientIp, "fail", "账号正在审核中");
-      return ApiResponse.error("账号正在审核中，请等待管理员批准");
+      throw new AppException("账号正在审核中，请等待管理员批准");
     }
 
     SystemConfig config = systemConfigRepository.findById(1L).orElse(new SystemConfig());
-    if (Boolean.TRUE.equals(config.getMaintenanceEnabled()) && !"admin".equals(user.getRoleId())) {
-      auditLogService.record(user.getId(), user.getUsername(), "login", clientIp, "fail", "系统维护中");
-      return ApiResponse.error(
+    if (Boolean.TRUE.equals(config.getMaintenanceEnabled())
+        && !ADMIN_ROLE_ID.equals(user.getRoleId())) {
+      String message =
           config.getMaintenanceMessage() != null && !config.getMaintenanceMessage().isEmpty()
               ? config.getMaintenanceMessage()
-              : "系统维护中");
+              : "系统维护中";
+      auditLogService.record(user.getId(), user.getUsername(), "login", clientIp, "fail", message);
+      throw new AppException(message);
     }
 
     StpUtil.login(user.getId());
     StpUtil.getSession().set("authEpoch", appStateService.getSessionEpoch());
     String token = StpUtil.getTokenValue();
 
-    List<String> permissions;
-    if ("admin".equals(user.getRoleId())) {
-      permissions = rolePermissionRepository.findAllPermissionCodes();
-    } else {
-      permissions = rolePermissionRepository.findPermissionCodesByRoleId(user.getRoleId());
-    }
-
     auditLogService.record(user.getId(), user.getUsername(), "login", clientIp, "success", "");
 
-    LoginResponse.AuthUser authUser =
-        new LoginResponse.AuthUser(
-            String.valueOf(user.getId()),
-            user.getName(),
-            user.getEmail(),
-            user.getAvatar() != null ? user.getAvatar() : "",
-            user.getRoleId(),
-            permissions);
-
-    return ApiResponse.success(new LoginResponse(token, authUser));
+    return ApiResponse.success(new LoginResponse(token, buildAuthUser(user)));
   }
 
   @Transactional
@@ -81,19 +75,20 @@ public class AuthService {
     SystemConfig config = systemConfigRepository.findById(1L).orElse(new SystemConfig());
     if (!Boolean.TRUE.equals(config.getOpenRegistration())) {
       auditLogService.record(null, username, "register", clientIp, "fail", "注册已关闭");
-      return ApiResponse.error("注册已关闭");
+      throw new AppException("注册已关闭");
     }
 
     if (userRepository.findByUsername(username).isPresent()) {
       auditLogService.record(null, username, "register", clientIp, "fail", "用户名已存在");
-      return ApiResponse.error("用户名已存在");
+      throw new ConflictException("用户名已存在");
     }
     if (userRepository.findByEmail(email).isPresent()) {
       auditLogService.record(null, username, "register", clientIp, "fail", "邮箱已被注册");
-      return ApiResponse.error("邮箱已被注册");
+      throw new ConflictException("邮箱已被注册");
     }
 
-    String roleId = Boolean.TRUE.equals(config.getManualReview()) ? "pending_review" : "user";
+    String roleId =
+        Boolean.TRUE.equals(config.getManualReview()) ? PENDING_REVIEW_ROLE_ID : DEFAULT_ROLE_ID;
 
     User user = new User();
     user.setUsername(username);
@@ -106,29 +101,19 @@ public class AuthService {
 
     auditLogService.record(user.getId(), user.getUsername(), "register", clientIp, "success", "");
 
-    if ("pending_review".equals(roleId)) {
-      return ApiResponse.success("注册成功，请等待管理员审核");
+    if (PENDING_REVIEW_ROLE_ID.equals(roleId)) {
+      // 契约要求：待审核时 data 为 null，message 说明原因
+      return ApiResponse.success(null);
     }
 
     StpUtil.login(user.getId());
     StpUtil.getSession().set("authEpoch", appStateService.getSessionEpoch());
     String token = StpUtil.getTokenValue();
 
-    List<String> permissions =
-        rolePermissionRepository.findPermissionCodesByRoleId(user.getRoleId());
-
-    LoginResponse.AuthUser authUser =
-        new LoginResponse.AuthUser(
-            String.valueOf(user.getId()),
-            user.getName(),
-            user.getEmail(),
-            "",
-            user.getRoleId(),
-            permissions);
-
-    return ApiResponse.success(new LoginResponse(token, authUser));
+    return ApiResponse.success(new LoginResponse(token, buildAuthUser(user)));
   }
 
+  /** 登出：Sa-Token 会话立即失效，并记录审计。 */
   public void logout(Long userId, String clientIp) {
     try {
       if (userId != null) {
@@ -139,5 +124,19 @@ public class AuthService {
     } finally {
       StpUtil.logout();
     }
+  }
+
+  private LoginResponse.AuthUser buildAuthUser(User user) {
+    List<String> permissions =
+        ADMIN_ROLE_ID.equals(user.getRoleId())
+            ? rolePermissionRepository.findAllPermissionCodes()
+            : rolePermissionRepository.findPermissionCodesByRoleId(user.getRoleId());
+    return new LoginResponse.AuthUser(
+        String.valueOf(user.getId()),
+        user.getName(),
+        user.getEmail(),
+        user.getAvatar() != null ? user.getAvatar() : "",
+        user.getRoleId(),
+        permissions);
   }
 }

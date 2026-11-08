@@ -2,10 +2,18 @@ package com.hmilyld.fullstack.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.ConflictException;
+import com.hmilyld.fullstack.common.InvalidOperationException;
+import com.hmilyld.fullstack.common.NotFoundException;
 import com.hmilyld.fullstack.config.MenuCatalog;
+import com.hmilyld.fullstack.dto.MenuConfigResponse;
+import com.hmilyld.fullstack.dto.MenuGroupResult;
 import com.hmilyld.fullstack.dto.MenuItemCreateRequest;
+import com.hmilyld.fullstack.dto.MenuItemResult;
 import com.hmilyld.fullstack.dto.MenuItemUpdateRequest;
 import com.hmilyld.fullstack.dto.MenuLayoutRequest;
+import com.hmilyld.fullstack.dto.MenuLayoutResult;
+import com.hmilyld.fullstack.dto.NavigationGroupResponse;
 import com.hmilyld.fullstack.entity.AppState;
 import com.hmilyld.fullstack.entity.MenuGroup;
 import com.hmilyld.fullstack.entity.MenuItem;
@@ -18,7 +26,6 @@ import com.hmilyld.fullstack.repository.PermissionRepository;
 import com.hmilyld.fullstack.repository.RolePermissionRepository;
 import com.hmilyld.fullstack.repository.UserRepository;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,8 +36,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 菜单领域。
+ *
+ * <p>菜单展示（{@code menu_groups} / {@code menu_items}）与权限授权（{@code permissions}）分离： {@code
+ * permissions} 是授权唯一来源，菜单只负责分组、路由、图标、顺序与侧边栏可见性。
+ */
 @Service
 public class MenuService {
+
+  private static final String MENU_TYPE = "menu";
+  private static final String OPERATION_TYPE = "operation";
+  private static final String ADMIN_ROLE_ID = "admin";
 
   @Autowired private MenuGroupRepository menuGroupRepository;
   @Autowired private MenuItemRepository menuItemRepository;
@@ -39,6 +56,7 @@ public class MenuService {
   @Autowired private UserRepository userRepository;
   @Autowired private AppStateService appStateService;
 
+  /** 补齐内置分组与菜单，不覆盖已有的顺序调整。 */
   @Transactional
   public Map<String, Object> syncCatalog() {
     List<String> addedGroups = new ArrayList<>();
@@ -71,103 +89,111 @@ public class MenuService {
       }
     }
 
-    Map<String, Object> result = new HashMap<>();
+    Map<String, Object> result = new LinkedHashMap<>();
     result.put("groups", addedGroups);
     result.put("items", addedItems);
     return result;
   }
 
   public ApiResponse<?> getConfig() {
-    Map<String, List<Map<String, Object>>> operationsByParent = new LinkedHashMap<>();
-    List<Permission> operationPermissions = permissionRepository.findByType("operation");
+    Map<String, List<MenuConfigResponse.MenuOperationResponse>> operationsByParent =
+        new LinkedHashMap<>();
+    List<Permission> operationPermissions = permissionRepository.findByType(OPERATION_TYPE);
     operationPermissions.sort(java.util.Comparator.comparing(Permission::getCode));
     for (Permission permission : operationPermissions) {
       if (permission.getParent() == null) continue;
-      Map<String, Object> operation = new HashMap<>();
-      operation.put("code", permission.getCode());
-      operation.put("name", permission.getName());
       operationsByParent
           .computeIfAbsent(permission.getParent(), key -> new ArrayList<>())
-          .add(operation);
+          .add(
+              new MenuConfigResponse.MenuOperationResponse(
+                  permission.getCode(), permission.getName()));
     }
 
-    Map<String, List<Map<String, Object>>> itemsByGroup = new LinkedHashMap<>();
+    Map<String, List<MenuConfigResponse.MenuItemResponse>> itemsByGroup = new LinkedHashMap<>();
     for (MenuItem item : menuItemRepository.findAllByOrderBySortOrderAscPermissionCodeAsc()) {
       Permission permission = permissionRepository.findById(item.getPermissionCode()).orElse(null);
       if (permission == null) continue;
-      Map<String, Object> value = new HashMap<>();
-      value.put("permissionCode", item.getPermissionCode());
-      value.put("name", permission.getName());
-      value.put("groupId", item.getGroupId());
-      value.put("route", item.getRoute());
-      value.put("icon", item.getIcon());
-      value.put("sortOrder", item.getSortOrder());
-      value.put("isSystem", item.getSystem());
-      value.put("hidden", item.getHidden());
-      value.put("operations", operationsByParent.getOrDefault(item.getPermissionCode(), List.of()));
-      itemsByGroup.computeIfAbsent(item.getGroupId(), key -> new ArrayList<>()).add(value);
+      itemsByGroup
+          .computeIfAbsent(item.getGroupId(), key -> new ArrayList<>())
+          .add(
+              new MenuConfigResponse.MenuItemResponse(
+                  item.getPermissionCode(),
+                  permission.getName(),
+                  item.getGroupId(),
+                  item.getRoute(),
+                  item.getIcon(),
+                  item.getSortOrder() == null ? 0 : item.getSortOrder(),
+                  Boolean.TRUE.equals(item.getSystem()),
+                  Boolean.TRUE.equals(item.getHidden()),
+                  operationsByParent.getOrDefault(item.getPermissionCode(), List.of())));
     }
 
-    List<Map<String, Object>> groups = new ArrayList<>();
+    List<MenuConfigResponse.MenuGroupResponse> groups = new ArrayList<>();
     for (MenuGroup group : menuGroupRepository.findAllByOrderBySortOrderAscIdAsc()) {
-      Map<String, Object> value = new HashMap<>();
-      value.put("id", group.getId());
-      value.put("name", group.getName());
-      value.put("sortOrder", group.getSortOrder());
-      value.put("isSystem", group.getSystem());
-      value.put("items", itemsByGroup.getOrDefault(group.getId(), List.of()));
-      groups.add(value);
+      groups.add(
+          new MenuConfigResponse.MenuGroupResponse(
+              group.getId(),
+              group.getName(),
+              group.getSortOrder() == null ? 0 : group.getSortOrder(),
+              Boolean.TRUE.equals(group.getSystem()),
+              itemsByGroup.getOrDefault(group.getId(), List.of())));
     }
 
     AppState state = appStateService.getOrCreate();
-    Map<String, Object> result = new HashMap<>();
-    result.put("version", state.getMenuLayoutVersion());
-    result.put("groups", groups);
-    return ApiResponse.success(result);
+    return ApiResponse.success(new MenuConfigResponse(state.getMenuLayoutVersion(), groups));
   }
 
   public ApiResponse<?> getNavigation() {
     long userId = Long.parseLong(StpUtil.getLoginId().toString());
-    User user = userRepository.findById(userId).orElse(null);
-    if (user == null) return ApiResponse.error("用户不存在");
+    User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("用户不存在"));
 
-    List<String> permissions =
-        "admin".equals(user.getRoleId())
-            ? rolePermissionRepository.findAllPermissionCodes()
-            : rolePermissionRepository.findPermissionCodesByRoleId(user.getRoleId());
-    Set<String> allowed = new HashSet<>(permissions);
+    Set<String> allowed =
+        new HashSet<>(
+            ADMIN_ROLE_ID.equals(user.getRoleId())
+                ? rolePermissionRepository.findAllPermissionCodes()
+                : rolePermissionRepository.findPermissionCodesByRoleId(user.getRoleId()));
 
-    Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+    Map<String, List<NavigationGroupResponse.NavigationItemResponse>> itemsByGroup =
+        new LinkedHashMap<>();
+    Map<String, NavigationGroupResponse> groups = new LinkedHashMap<>();
+
     for (MenuItem item : menuItemRepository.findAllByOrderBySortOrderAscPermissionCodeAsc()) {
       if (Boolean.TRUE.equals(item.getHidden())) continue;
       if (!allowed.contains(item.getPermissionCode())) continue;
       MenuGroup group = menuGroupRepository.findById(item.getGroupId()).orElse(null);
       Permission permission = permissionRepository.findById(item.getPermissionCode()).orElse(null);
-      if (group == null || permission == null || !"menu".equals(permission.getType())) continue;
+      if (group == null || permission == null || !MENU_TYPE.equals(permission.getType())) continue;
 
-      Map<String, Object> groupValue =
-          groups.computeIfAbsent(
-              group.getId(),
-              key -> {
-                Map<String, Object> value = new HashMap<>();
-                value.put("id", group.getId());
-                value.put("name", group.getName());
-                value.put("sortOrder", group.getSortOrder());
-                value.put("items", new ArrayList<Map<String, Object>>());
-                return value;
-              });
-
-      @SuppressWarnings("unchecked")
-      List<Map<String, Object>> groupItems = (List<Map<String, Object>>) groupValue.get("items");
-      Map<String, Object> itemValue = new HashMap<>();
-      itemValue.put("permissionCode", item.getPermissionCode());
-      itemValue.put("name", permission.getName());
-      itemValue.put("route", item.getRoute());
-      itemValue.put("icon", item.getIcon());
-      itemValue.put("sortOrder", item.getSortOrder());
-      groupItems.add(itemValue);
+      groups.computeIfAbsent(
+          group.getId(),
+          key ->
+              new NavigationGroupResponse(
+                  group.getId(),
+                  group.getName(),
+                  group.getSortOrder() == null ? 0 : group.getSortOrder(),
+                  new ArrayList<>()));
+      itemsByGroup
+          .computeIfAbsent(group.getId(), key -> new ArrayList<>())
+          .add(
+              new NavigationGroupResponse.NavigationItemResponse(
+                  item.getPermissionCode(),
+                  permission.getName(),
+                  item.getRoute(),
+                  item.getIcon(),
+                  item.getSortOrder() == null ? 0 : item.getSortOrder()));
     }
-    return ApiResponse.success(new ArrayList<>(groups.values()));
+
+    List<NavigationGroupResponse> result =
+        groups.values().stream()
+            .map(
+                group ->
+                    new NavigationGroupResponse(
+                        group.id(),
+                        group.name(),
+                        group.sortOrder(),
+                        itemsByGroup.getOrDefault(group.id(), List.of())))
+            .toList();
+    return ApiResponse.success(result);
   }
 
   @Transactional
@@ -183,25 +209,28 @@ public class MenuService {
     group.setSortOrder(maxOrder + 1);
     group.setSystem(false);
     menuGroupRepository.save(group);
-    return ApiResponse.success(Map.of("id", group.getId(), "name", group.getName()));
+    return ApiResponse.success(
+        new MenuGroupResult(group.getId(), group.getName(), group.getSortOrder()));
   }
 
   @Transactional
   public ApiResponse<?> updateGroup(String groupId, String name) {
-    MenuGroup group = menuGroupRepository.findById(groupId).orElse(null);
-    if (group == null) return ApiResponse.error("菜单分组不存在");
+    MenuGroup group =
+        menuGroupRepository.findById(groupId).orElseThrow(() -> new NotFoundException("菜单分组不存在"));
     group.setName(name);
     menuGroupRepository.save(group);
-    return ApiResponse.success(Map.of("id", group.getId(), "name", group.getName()));
+    return ApiResponse.success(new MenuGroupResult(group.getId(), group.getName(), null));
   }
 
   @Transactional
   public ApiResponse<?> deleteGroup(String groupId) {
-    MenuGroup group = menuGroupRepository.findById(groupId).orElse(null);
-    if (group == null) return ApiResponse.error("菜单分组不存在");
-    if (Boolean.TRUE.equals(group.getSystem())) return ApiResponse.error("内置分组不能删除");
+    MenuGroup group =
+        menuGroupRepository.findById(groupId).orElseThrow(() -> new NotFoundException("菜单分组不存在"));
+    if (Boolean.TRUE.equals(group.getSystem())) {
+      throw new InvalidOperationException("内置分组不能删除");
+    }
     if (menuItemRepository.countByGroupId(groupId) > 0) {
-      return ApiResponse.error("请先移动或删除该分组下的菜单");
+      throw new InvalidOperationException("请先移动或删除该分组下的菜单");
     }
     menuGroupRepository.delete(group);
     return ApiResponse.success();
@@ -210,10 +239,10 @@ public class MenuService {
   @Transactional
   public ApiResponse<?> createItem(MenuItemCreateRequest request) {
     if (menuGroupRepository.findById(request.getGroupId()).isEmpty()) {
-      return ApiResponse.error("菜单分组不存在");
+      throw new NotFoundException("菜单分组不存在");
     }
     if (permissionRepository.findById(request.getPermissionCode()).isPresent()) {
-      return ApiResponse.error("权限编码已存在");
+      throw new ConflictException("权限编码已存在");
     }
 
     int maxOrder =
@@ -226,7 +255,7 @@ public class MenuService {
     Permission permission = new Permission();
     permission.setCode(request.getPermissionCode());
     permission.setName(request.getName());
-    permission.setType("menu");
+    permission.setType(MENU_TYPE);
     permission.setParent(null);
     permissionRepository.save(permission);
 
@@ -242,21 +271,23 @@ public class MenuService {
     menuItemRepository.save(item);
 
     RolePermission adminGrant = new RolePermission();
-    adminGrant.setRoleId("admin");
+    adminGrant.setRoleId(ADMIN_ROLE_ID);
     adminGrant.setPermissionCode(permission.getCode());
     rolePermissionRepository.save(adminGrant);
 
-    return ApiResponse.success(Map.of("permissionCode", item.getPermissionCode()));
+    return ApiResponse.success(new MenuItemResult(item.getPermissionCode()));
   }
 
   @Transactional
   public ApiResponse<?> updateItem(String permissionCode, MenuItemUpdateRequest request) {
-    MenuItem item = menuItemRepository.findById(permissionCode).orElse(null);
-    if (item == null) return ApiResponse.error("菜单不存在");
+    MenuItem item =
+        menuItemRepository
+            .findById(permissionCode)
+            .orElseThrow(() -> new NotFoundException("菜单不存在"));
 
     if (request.getGroupId() != null && !request.getGroupId().equals(item.getGroupId())) {
       if (menuGroupRepository.findById(request.getGroupId()).isEmpty()) {
-        return ApiResponse.error("菜单分组不存在");
+        throw new NotFoundException("菜单分组不存在");
       }
       int maxOrder =
           menuItemRepository.findAll().stream()
@@ -273,13 +304,11 @@ public class MenuService {
     }
     if (request.getHidden() != null) item.setHidden(request.getHidden());
     if (request.getName() != null) {
-      permissionRepository
-          .findById(permissionCode)
-          .ifPresent(
-              permission -> {
-                permission.setName(request.getName());
-                permissionRepository.save(permission);
-              });
+      Permission permission = permissionRepository.findById(permissionCode).orElse(null);
+      if (permission != null) {
+        permission.setName(request.getName());
+        permissionRepository.save(permission);
+      }
     }
     menuItemRepository.save(item);
     return ApiResponse.success();
@@ -287,9 +316,13 @@ public class MenuService {
 
   @Transactional
   public ApiResponse<?> deleteItem(String permissionCode) {
-    MenuItem item = menuItemRepository.findById(permissionCode).orElse(null);
-    if (item == null) return ApiResponse.error("菜单不存在");
-    if (Boolean.TRUE.equals(item.getSystem())) return ApiResponse.error("内置菜单不能删除");
+    MenuItem item =
+        menuItemRepository
+            .findById(permissionCode)
+            .orElseThrow(() -> new NotFoundException("菜单不存在"));
+    if (Boolean.TRUE.equals(item.getSystem())) {
+      throw new InvalidOperationException("内置菜单不能删除");
+    }
 
     List<Permission> children = permissionRepository.findByParent(permissionCode);
     List<String> childCodes = children.stream().map(Permission::getCode).toList();
@@ -307,7 +340,7 @@ public class MenuService {
   public ApiResponse<?> saveLayout(MenuLayoutRequest request) {
     AppState state = appStateService.getOrCreate();
     if (!state.getMenuLayoutVersion().equals(request.getVersion())) {
-      return ApiResponse.error("菜单顺序已被其他管理员修改，请刷新后重试");
+      throw new ConflictException("菜单顺序已被其他管理员修改，请刷新后重试");
     }
 
     Map<String, MenuItem> items =
@@ -319,22 +352,28 @@ public class MenuService {
     Map<String, MenuItem> itemUpdates = new LinkedHashMap<>();
     Map<String, String> itemGroups = new LinkedHashMap<>();
     Map<String, Integer> itemOrders = new LinkedHashMap<>();
+
     for (MenuLayoutRequest.Group groupRequest : request.getGroups()) {
-      MenuGroup group = menuGroupRepository.findById(groupRequest.getId()).orElse(null);
-      if (group == null) return ApiResponse.error("菜单分组不存在");
+      MenuGroup group =
+          menuGroupRepository
+              .findById(groupRequest.getId())
+              .orElseThrow(() -> new NotFoundException("菜单分组不存在"));
       groupUpdates.put(group.getId(), group);
       groupOrders.put(group.getId(), groupRequest.getSortOrder());
       for (MenuLayoutRequest.Item itemRequest : groupRequest.getItems()) {
         MenuItem item = items.get(itemRequest.getPermissionCode());
         if (item == null || !seen.add(itemRequest.getPermissionCode())) {
-          return ApiResponse.error("菜单布局包含重复或无效菜单");
+          throw new InvalidOperationException("菜单布局包含重复或无效菜单");
         }
         itemUpdates.put(item.getPermissionCode(), item);
         itemGroups.put(item.getPermissionCode(), group.getId());
         itemOrders.put(item.getPermissionCode(), itemRequest.getSortOrder());
       }
     }
-    if (!seen.equals(items.keySet())) return ApiResponse.error("菜单布局必须包含全部菜单");
+    if (!seen.equals(items.keySet())) {
+      throw new InvalidOperationException("菜单布局必须包含全部菜单");
+    }
+
     groupUpdates.forEach(
         (id, group) -> {
           group.setSortOrder(groupOrders.get(id));
@@ -347,6 +386,6 @@ public class MenuService {
           menuItemRepository.save(item);
         });
     state.setMenuLayoutVersion(state.getMenuLayoutVersion() + 1);
-    return ApiResponse.success(Map.of("version", state.getMenuLayoutVersion()));
+    return ApiResponse.success(new MenuLayoutResult(state.getMenuLayoutVersion()));
   }
 }

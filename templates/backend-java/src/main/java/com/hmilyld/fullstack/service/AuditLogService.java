@@ -1,7 +1,9 @@
 package com.hmilyld.fullstack.service;
 
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.NotFoundException;
 import com.hmilyld.fullstack.common.PageResult;
+import com.hmilyld.fullstack.dto.AuditLogResponse;
 import com.hmilyld.fullstack.entity.AuditLog;
 import com.hmilyld.fullstack.entity.User;
 import com.hmilyld.fullstack.repository.AuditLogRepository;
@@ -19,13 +21,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 审计日志领域。 */
 @Service
 public class AuditLogService {
 
   @Autowired private AuditLogRepository auditLogRepository;
   @Autowired private UserRepository userRepository;
 
-  /** 记录一条审计日志，失败时静默，不影响业务 */
+  /** 记录一条审计日志，失败时静默，不影响业务。 */
   public void record(
       Long userId, String username, String action, String ip, String status, String detail) {
     try {
@@ -78,24 +81,28 @@ public class AuditLogService {
       }
     }
 
-    List<Map<String, Object>> list = items.stream().map(log -> toOutMap(log, usernameMap)).toList();
+    List<AuditLogResponse> list = items.stream().map(log -> toResponse(log, usernameMap)).toList();
     return ApiResponse.success(new PageResult<>(list, logPage.getTotalElements(), page, pageSize));
   }
 
-  private Map<String, Object> toOutMap(AuditLog log, Map<Long, String> usernameMap) {
-    Map<String, Object> map = new HashMap<>();
-    map.put("id", String.valueOf(log.getId()));
-    map.put("userId", log.getUserId() != null ? String.valueOf(log.getUserId()) : "");
+  private AuditLogResponse toResponse(AuditLog log, Map<Long, String> usernameMap) {
     String username =
         log.getUsername() != null && !log.getUsername().isEmpty()
             ? log.getUsername()
             : (log.getUserId() != null ? usernameMap.getOrDefault(log.getUserId(), "") : "");
-    map.put("username", username);
-    map.put("action", log.getAction());
-    map.put("ip", log.getIp());
-    map.put("status", log.getStatus());
-    map.put("detail", log.getDetail() != null ? log.getDetail() : "");
-    map.put("createdAt", log.getCreatedAt() != null ? log.getCreatedAt().toString() : "");
-    return map;
+    return new AuditLogResponse(
+        String.valueOf(log.getId()),
+        log.getUserId() != null ? String.valueOf(log.getUserId()) : "",
+        username,
+        log.getAction(),
+        log.getIp(),
+        log.getStatus(),
+        log.getDetail() != null ? log.getDetail() : "",
+        log.getCreatedAt() != null ? log.getCreatedAt().toString() : "");
+  }
+
+  /** 供 controller 校验用：确保日志存在。 */
+  public AuditLog require(Long id) {
+    return auditLogRepository.findById(id).orElseThrow(() -> new NotFoundException("日志不存在"));
   }
 }

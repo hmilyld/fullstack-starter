@@ -41,6 +41,18 @@ These are enforced by `ruff` and the contract suite, not just prose:
 7. **Schema changes go through Alembic.** Never `Base.metadata.create_all`; never hand-edit a database. `alembic revision --autogenerate` then review.
 8. **Role names are not authorization.** Only `admin` (all permissions) and the "non-admin may not touch an admin account" rule may check a role name, each in exactly one place.
 
+## Backend Coding Rules (templates/backend-java)
+
+The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`:
+
+1. **Failures throw.** Never write and then `return ApiResponse.error(...)` inside `@Transactional`. Throw `AppException` / `NotFoundException` / `ConflictException` / `InvalidOperationException` / `ForbiddenException`.
+2. **Controllers map HTTP only.** No business rules, no multi-step writes.
+3. **Every response is a `dto/*Response` record.** No `Map<String, Object>` in a controller or service return path.
+4. **Pagination is clamped, not rejected.** `page`/`pageSize` are clamped in the service, never validated with `@Min`/`@Max`.
+5. **Schema changes go through Flyway.** Never edit a migration that has already run.
+6. **Formatting is not optional.** Run `mvn spotless:apply` after editing Java; `spotless:check` fails the build on drift.
+7. **`data` is never omitted.** `ApiResponse` is annotated `@JsonInclude(ALWAYS)` and the global `default-property-inclusion` is `always`; null values must appear.
+
 ## Coding Style
 
 - **Language**: TypeScript (ESM, `"type": "module"`)
@@ -68,7 +80,7 @@ These are enforced by `ruff` and the contract suite, not just prose:
 Each stack follows its own idiomatic organization (do NOT unify them):
 
 - **backend-python/** — domain modules: `app/core/` (infrastructure: config, runtime state, database, security, deps, pagination, exceptions, audit middleware, seed, permission/menu catalogs) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `menu/`, `system/`, `ai_model/`, `audit/`, `data_management/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `service.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`. Routers do HTTP mapping only; business rules and transaction boundaries live in `service.py`. Schema changes go through Alembic (`migrations/`), never `create_all`.
-- **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`.
+- **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus `common/`, `config/`, `security/`. Responses are typed records in `dto/` (`*Response`), never `Map<String, Object>`. Business failures throw `AppException` / `NotFoundException` / `ConflictException` / `InvalidOperationException` / `ForbiddenException`; `GlobalExceptionHandler` maps them to the envelope, so `@Transactional` rolls back. Schema changes go through Flyway (`db/migration`).
 - **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx` (React) or `index.vue` (Vue), API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
 
 ### API layer rules (frontend-react / frontend-vue)
@@ -137,7 +149,13 @@ uv run ruff check .
 uv run pytest -q        # 26 contract assertions in tests/test_contract.py
 ```
 
-`tests/test_contract.py` is the contract oracle: it asserts the exact endpoint set, response envelope, resource shapes and semantics from `docs/contract/api.md`. The Java backend must be refactored until the same assertions pass against it.
+`tests/test_contract.py` is the contract oracle: it asserts the exact endpoint set, response envelope, resource shapes and semantics from `docs/contract/api.md`. The Java backend runs the same assertions in `src/test/java/com/hmilyld/fullstack/ContractTest.java`; both must pass.
+
+```bash
+cd templates/backend-java
+mvn spotless:apply      # format before committing
+mvn test                # 24 contract assertions
+```
 
 Manual verification for the CLI:
 

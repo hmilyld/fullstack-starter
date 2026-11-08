@@ -1,24 +1,33 @@
 package com.hmilyld.fullstack.service;
 
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.ConflictException;
+import com.hmilyld.fullstack.common.InvalidOperationException;
+import com.hmilyld.fullstack.common.NotFoundException;
 import com.hmilyld.fullstack.config.PermissionCatalog;
 import com.hmilyld.fullstack.dto.PermissionCreateRequest;
+import com.hmilyld.fullstack.dto.PermissionResponse;
+import com.hmilyld.fullstack.dto.PermissionSyncResponse;
 import com.hmilyld.fullstack.dto.PermissionUpdateRequest;
 import com.hmilyld.fullstack.entity.Permission;
-import com.hmilyld.fullstack.entity.RolePermission;
 import com.hmilyld.fullstack.repository.PermissionRepository;
 import com.hmilyld.fullstack.repository.RolePermissionRepository;
 import com.hmilyld.fullstack.repository.RoleRepository;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 权限领域。
+ *
+ * <p>{@code menu} 类型权限的增删改一律拒绝：它们由菜单管理维护， 以保证 {@code menu_items} 与 {@code permissions} 不会脱节。
+ */
 @Service
 public class PermissionService {
+
+  private static final String MENU_TYPE = "menu";
 
   @Autowired private PermissionRepository permissionRepository;
   @Autowired private RolePermissionRepository rolePermissionRepository;
@@ -36,35 +45,24 @@ public class PermissionService {
       permissions = permissionRepository.findAll();
     }
 
-    List<Map<String, Object>> list =
+    List<PermissionResponse> list =
         permissions.stream()
-            .map(
-                p -> {
-                  Map<String, Object> map = new HashMap<>();
-                  map.put("code", p.getCode());
-                  map.put("name", p.getName());
-                  map.put("type", p.getType());
-                  map.put("parent", p.getParent());
-                  return map;
-                })
+            .sorted(java.util.Comparator.comparing(Permission::getCode))
+            .map(p -> new PermissionResponse(p.getCode(), p.getName(), p.getType(), p.getParent()))
             .toList();
-
     return ApiResponse.success(list);
   }
 
   @Transactional
   public ApiResponse<?> createPermission(PermissionCreateRequest req) {
-    if ("menu".equals(req.getType())) {
-      return ApiResponse.error("请通过菜单管理创建菜单");
+    if (MENU_TYPE.equals(req.getType())) {
+      throw new InvalidOperationException("请通过菜单管理创建菜单");
     }
     if (permissionRepository.findById(req.getCode()).isPresent()) {
-      return ApiResponse.error("权限编码已存在");
+      throw new ConflictException("权限编码已存在");
     }
     if (req.getParent() != null) {
-      Permission parent = permissionRepository.findById(req.getParent()).orElse(null);
-      if (parent == null || !"menu".equals(parent.getType())) {
-        return ApiResponse.error("所属菜单不存在");
-      }
+      assertParentIsMenu(req.getParent());
     }
 
     Permission perm = new Permission();
@@ -74,64 +72,44 @@ public class PermissionService {
     perm.setParent(req.getParent());
     permissionRepository.save(perm);
 
-    Map<String, Object> out = new HashMap<>();
-    out.put("code", perm.getCode());
-    out.put("name", perm.getName());
-    out.put("type", perm.getType());
-    out.put("parent", perm.getParent());
-    return ApiResponse.success(out);
+    return ApiResponse.success(
+        new PermissionResponse(perm.getCode(), perm.getName(), perm.getType(), perm.getParent()));
   }
 
   @Transactional
   public ApiResponse<?> updatePermission(String code, PermissionUpdateRequest req) {
-    return permissionRepository
-        .findById(code)
-        .map(
-            perm -> {
-              if ("menu".equals(perm.getType())) {
-                return ApiResponse.error("请通过菜单管理编辑菜单");
-              }
-              if (req.getParent() != null) {
-                Permission parent = permissionRepository.findById(req.getParent()).orElse(null);
-                if (parent == null || !"menu".equals(parent.getType())) {
-                  return ApiResponse.error("所属菜单不存在");
-                }
-              }
-              if (req.getName() != null) perm.setName(req.getName());
-              if (req.getParent() != null) perm.setParent(req.getParent());
-              permissionRepository.save(perm);
+    Permission perm =
+        permissionRepository.findById(code).orElseThrow(() -> new NotFoundException("权限不存在"));
+    if (MENU_TYPE.equals(perm.getType())) {
+      throw new InvalidOperationException("请通过菜单管理编辑菜单");
+    }
+    if (req.getParent() != null) {
+      assertParentIsMenu(req.getParent());
+    }
+    if (req.getName() != null) perm.setName(req.getName());
+    if (req.getParent() != null) perm.setParent(req.getParent());
+    permissionRepository.save(perm);
 
-              Map<String, Object> out = new HashMap<>();
-              out.put("code", perm.getCode());
-              out.put("name", perm.getName());
-              out.put("type", perm.getType());
-              out.put("parent", perm.getParent());
-              return ApiResponse.success(out);
-            })
-        .orElse(ApiResponse.error("权限不存在"));
+    return ApiResponse.success(
+        new PermissionResponse(perm.getCode(), perm.getName(), perm.getType(), perm.getParent()));
   }
 
   @Transactional
   public ApiResponse<?> deletePermission(String code) {
-    return permissionRepository
-        .findById(code)
-        .map(
-            perm -> {
-              if ("menu".equals(perm.getType())) {
-                return ApiResponse.error("请通过菜单管理删除菜单");
-              }
-              rolePermissionRepository.deleteByPermissionCode(code);
-              permissionRepository.delete(perm);
-              return ApiResponse.success();
-            })
-        .orElse(ApiResponse.error("权限不存在"));
+    Permission perm =
+        permissionRepository.findById(code).orElseThrow(() -> new NotFoundException("权限不存在"));
+    if (MENU_TYPE.equals(perm.getType())) {
+      throw new InvalidOperationException("请通过菜单管理删除菜单");
+    }
+    rolePermissionRepository.deleteByPermissionCode(code);
+    permissionRepository.delete(perm);
+    return ApiResponse.success();
   }
 
   @Transactional
   public ApiResponse<?> syncPermissions() {
     List<String> added = new ArrayList<>();
     List<String> updated = new ArrayList<>();
-    List<String> granted = new ArrayList<>();
 
     for (PermissionCatalog.PermissionItem item : PermissionCatalog.ALL_PERMISSIONS) {
       Permission perm = permissionRepository.findById(item.code()).orElse(null);
@@ -143,18 +121,22 @@ public class PermissionService {
         p.setParent(item.parent());
         permissionRepository.save(p);
         added.add(item.code());
-      } else if (!item.name().equals(perm.getName())) {
+      } else if (!item.name().equals(perm.getName())
+          || !java.util.Objects.equals(item.parent(), perm.getParent())) {
         perm.setName(item.name());
+        perm.setParent(item.parent());
         permissionRepository.save(perm);
         updated.add(item.code());
       }
     }
 
+    List<String> granted = new ArrayList<>();
     if (roleRepository.findById("admin").isPresent()) {
       List<String> existing = rolePermissionRepository.findPermissionCodesByRoleId("admin");
       for (PermissionCatalog.PermissionItem item : PermissionCatalog.ALL_PERMISSIONS) {
         if (!existing.contains(item.code())) {
-          RolePermission rp = new RolePermission();
+          com.hmilyld.fullstack.entity.RolePermission rp =
+              new com.hmilyld.fullstack.entity.RolePermission();
           rp.setRoleId("admin");
           rp.setPermissionCode(item.code());
           rolePermissionRepository.save(rp);
@@ -163,10 +145,13 @@ public class PermissionService {
       }
     }
 
-    Map<String, Object> out = new HashMap<>();
-    out.put("added", added);
-    out.put("updated", updated);
-    out.put("granted", granted);
-    return ApiResponse.success(out);
+    return ApiResponse.success(new PermissionSyncResponse(added, updated, granted));
+  }
+
+  private void assertParentIsMenu(String parent) {
+    Permission record = permissionRepository.findById(parent).orElse(null);
+    if (record == null || !MENU_TYPE.equals(record.getType())) {
+      throw new InvalidOperationException("所属菜单不存在");
+    }
   }
 }

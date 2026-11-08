@@ -1,17 +1,20 @@
 package com.hmilyld.fullstack.service;
 
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.InvalidOperationException;
+import com.hmilyld.fullstack.dto.SystemConfigResponse;
 import com.hmilyld.fullstack.dto.SystemConfigUpdateRequest;
 import com.hmilyld.fullstack.entity.SystemConfig;
 import com.hmilyld.fullstack.repository.SystemConfigRepository;
-import java.util.HashMap;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 系统设置领域。 */
 @Service
 public class SystemConfigService {
+
+  private static final String MASK = "****";
 
   @Autowired private SystemConfigRepository systemConfigRepository;
 
@@ -27,8 +30,7 @@ public class SystemConfigService {
   }
 
   public ApiResponse<?> getConfigOut() {
-    SystemConfig config = getConfig();
-    return ApiResponse.success(toOutMap(config));
+    return ApiResponse.success(toResponse(getConfig()));
   }
 
   @Transactional
@@ -50,6 +52,7 @@ public class SystemConfigService {
     if (req.getSmtpHost() != null) config.setSmtpHost(req.getSmtpHost());
     if (req.getSmtpPort() != null) config.setSmtpPort(req.getSmtpPort());
     if (req.getSmtpUsername() != null) config.setSmtpUsername(req.getSmtpUsername());
+    // 脱敏掩码（"****"）不允许写回，避免覆盖真实 SMTP 密码；空字符串表示清除密码
     if (req.getSmtpPassword() != null && !req.getSmtpPassword().contains("*")) {
       config.setSmtpPassword(req.getSmtpPassword());
     }
@@ -58,32 +61,54 @@ public class SystemConfigService {
     if (req.getSmtpUseSsl() != null) config.setSmtpUseSsl(req.getSmtpUseSsl());
 
     systemConfigRepository.save(config);
-    return ApiResponse.success(toOutMap(config));
+    return ApiResponse.success(toResponse(config));
   }
 
-  private Map<String, Object> toOutMap(SystemConfig config) {
-    Map<String, Object> map = new HashMap<>();
-    map.put("siteName", config.getSiteName());
-    map.put("siteDescription", config.getSiteDescription());
-    map.put("keywords", config.getKeywords());
-    map.put("maintenanceEnabled", config.getMaintenanceEnabled());
-    map.put("maintenanceMessage", config.getMaintenanceMessage());
-    map.put("openRegistration", config.getOpenRegistration());
-    map.put("manualReview", config.getManualReview());
-    map.put("defaultRoleId", config.getDefaultRoleId());
-    map.put("welcomeMessage", config.getWelcomeMessage());
-    map.put("smtpEnabled", config.getSmtpEnabled());
-    map.put("smtpHost", config.getSmtpHost());
-    map.put("smtpPort", config.getSmtpPort());
-    map.put("smtpUsername", config.getSmtpUsername());
-    map.put("smtpPassword", maskPassword(config.getSmtpPassword()));
-    map.put("smtpFromName", config.getSmtpFromName());
-    map.put("smtpFromEmail", config.getSmtpFromEmail());
-    map.put("smtpUseSsl", config.getSmtpUseSsl());
-    return map;
+  /** 校验 SMTP 配置是否可用，不满足时抛业务异常。 */
+  public SystemConfig requireSmtpReady() {
+    SystemConfig config = getConfig();
+    if (!Boolean.TRUE.equals(config.getSmtpEnabled())) {
+      throw new InvalidOperationException("邮件服务未启用，请先开启SMTP配置");
+    }
+    if (config.getSmtpHost() == null || config.getSmtpHost().isEmpty()) {
+      throw new InvalidOperationException("SMTP服务器配置不完整");
+    }
+    if (config.getSmtpUsername() == null || config.getSmtpUsername().isEmpty()) {
+      throw new InvalidOperationException("SMTP用户名或密码未配置");
+    }
+    return config;
   }
 
-  private String maskPassword(String password) {
-    return "****";
+  public ApiResponse<?> publicConfig() {
+    SystemConfig config = getConfig();
+    return ApiResponse.success(
+        new com.hmilyld.fullstack.dto.PublicConfigResponse(
+            config.getSiteName(),
+            config.getSiteDescription(),
+            Boolean.TRUE.equals(config.getMaintenanceEnabled()),
+            config.getMaintenanceMessage(),
+            Boolean.TRUE.equals(config.getOpenRegistration()),
+            Boolean.TRUE.equals(config.getManualReview())));
+  }
+
+  public static SystemConfigResponse toResponse(SystemConfig config) {
+    return new SystemConfigResponse(
+        config.getSiteName(),
+        config.getSiteDescription(),
+        config.getKeywords(),
+        Boolean.TRUE.equals(config.getMaintenanceEnabled()),
+        config.getMaintenanceMessage(),
+        Boolean.TRUE.equals(config.getOpenRegistration()),
+        Boolean.TRUE.equals(config.getManualReview()),
+        config.getDefaultRoleId(),
+        config.getWelcomeMessage(),
+        Boolean.TRUE.equals(config.getSmtpEnabled()),
+        config.getSmtpHost(),
+        config.getSmtpPort() == null ? 0 : config.getSmtpPort(),
+        config.getSmtpUsername(),
+        MASK,
+        config.getSmtpFromName(),
+        config.getSmtpFromEmail(),
+        Boolean.TRUE.equals(config.getSmtpUseSsl()));
   }
 }

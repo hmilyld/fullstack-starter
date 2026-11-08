@@ -22,7 +22,9 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
   jackson:
-    default-property-inclusion: non_null
+    # 与 Python 侧对齐：契约要求 data / parent 等可空字段始终出现在 JSON 中。
+    # 因此不使用 non_null 过滤，null 值照常序列化。
+    default-property-inclusion: always
   servlet:
     multipart:
       max-file-size: 1GB
@@ -41,6 +43,10 @@ sa-token:
 
 app:
   cors-origins: http://localhost:5173
+  rate-limit:
+    # 登录/注册按 IP 的滑动窗口限流，与 Python 侧一致
+    max-attempts: 5
+    window-ms: 60000
   audit:
     exclude-paths:
       - /api/auth

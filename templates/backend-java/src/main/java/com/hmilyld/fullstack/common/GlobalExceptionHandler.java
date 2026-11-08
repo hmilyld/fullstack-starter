@@ -12,6 +12,15 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * 全局异常映射，与 Python 侧 {@code app/core/exceptions.py} 一一对应。
+ *
+ * <ul>
+ *   <li>业务失败 → HTTP 200 + {@code code: -1}
+ *   <li>未认证 → 401；无权限 → 403；参数校验 → 422
+ *   <li>未处理异常 → 500，不泄露堆栈
+ * </ul>
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -28,17 +37,29 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(NotRoleException.class)
-  public ApiResponse<?> handleNotRole(NotRoleException e) {
-    return ApiResponse.error("角色权限不足");
+  public ResponseEntity<ApiResponse<?>> handleNotRole(NotRoleException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("角色权限不足"));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ApiResponse<?> handleValidation(MethodArgumentNotValidException e) {
+  public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException e) {
     String msg =
         e.getBindingResult().getFieldErrors().stream()
             .map(f -> f.getDefaultMessage() != null ? f.getDefaultMessage() : f.getField())
             .collect(Collectors.joining("; "));
-    return ApiResponse.error(msg);
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ApiResponse.error(msg));
+  }
+
+  /** 业务失败：HTTP 200 + code -1，data 为 null。 */
+  @ExceptionHandler(AppException.class)
+  public ApiResponse<?> handleApp(AppException e) {
+    return ApiResponse.error(e.getMessage());
+  }
+
+  /** 无权限：HTTP 403。 */
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<ApiResponse<?>> handleForbidden(ForbiddenException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
@@ -47,8 +68,9 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(Exception.class)
-  public ApiResponse<?> handleException(Exception e) {
+  public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
     log.error("Unhandled exception", e);
-    return ApiResponse.error("服务器内部错误");
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(ApiResponse.error("服务器内部错误"));
   }
 }

@@ -190,7 +190,7 @@ function generateBuildSh(
   const backendCheck =
     backend === 'python'
       ? 'cd backend && uv run ruff check . && uv run pytest -q'
-      : 'cd backend && mvn spotless:check';
+      : 'cd backend && mvn spotless:check && mvn test';
 
   const content = `#!/bin/bash
 # 构建脚本

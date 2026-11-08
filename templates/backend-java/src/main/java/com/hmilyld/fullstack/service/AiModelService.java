@@ -1,8 +1,12 @@
 package com.hmilyld.fullstack.service;
 
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.ConflictException;
+import com.hmilyld.fullstack.common.NotFoundException;
 import com.hmilyld.fullstack.common.PageResult;
 import com.hmilyld.fullstack.dto.AiModelCreateRequest;
+import com.hmilyld.fullstack.dto.AiModelPublicResponse;
+import com.hmilyld.fullstack.dto.AiModelResponse;
 import com.hmilyld.fullstack.dto.AiModelTestRequest;
 import com.hmilyld.fullstack.dto.AiModelTestResult;
 import com.hmilyld.fullstack.dto.AiModelUpdateRequest;
@@ -10,14 +14,17 @@ import com.hmilyld.fullstack.entity.AiModel;
 import com.hmilyld.fullstack.repository.AiModelRepository;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/** AI 模型领域，含连接测试。 */
 @Service
 public class AiModelService {
 
@@ -25,15 +32,16 @@ public class AiModelService {
   @Autowired private WebClient webClient;
 
   public ApiResponse<?> getAiModels(String search, int page, int pageSize) {
-    // 防御性校验分页参数
     page = Math.max(1, page);
     pageSize = Math.min(100, Math.max(1, pageSize));
 
-    Page<AiModel> modelPage = aiModelRepository.search(search, PageRequest.of(page - 1, pageSize));
+    Page<AiModel> modelPage =
+        aiModelRepository.search(
+            search, PageRequest.of(page - 1, pageSize, Sort.by("id").ascending()));
 
-    PageResult<Map<String, Object>> result =
+    PageResult<AiModelResponse> result =
         new PageResult<>(
-            modelPage.getContent().stream().map(this::toOutMap).toList(),
+            modelPage.getContent().stream().map(AiModelService::toResponse).toList(),
             modelPage.getTotalElements(),
             page,
             pageSize);
@@ -41,23 +49,17 @@ public class AiModelService {
   }
 
   public ApiResponse<?> getAiModel(Long id) {
-    return aiModelRepository
-        .findById(id)
-        .map(model -> ApiResponse.success(toOutMap(model)))
-        .orElse(ApiResponse.error("模型不存在"));
+    AiModel model =
+        aiModelRepository.findById(id).orElseThrow(() -> new NotFoundException("模型不存在"));
+    return ApiResponse.success(toResponse(model));
   }
 
   @Transactional
   public ApiResponse<?> createAiModel(AiModelCreateRequest req) {
-    try {
-      assertSafeUrl(req.getApiUrl());
-    } catch (IllegalArgumentException e) {
-      return ApiResponse.error(e.getMessage());
-    }
+    assertSafeUrl(req.getApiUrl());
     if (aiModelRepository.findByAlias(req.getAlias()).isPresent()) {
-      return ApiResponse.error("别名已存在");
+      throw new ConflictException("别名已存在");
     }
-
     if (Boolean.TRUE.equals(req.getIsDefault())) {
       unsetDefaultModels();
     }
@@ -71,72 +73,60 @@ public class AiModelService {
     model.setDefaultModel(req.getIsDefault() != null ? req.getIsDefault() : false);
     aiModelRepository.save(model);
 
-    return ApiResponse.success(toOutMap(model));
+    return ApiResponse.success(toResponse(model));
   }
 
   @Transactional
   public ApiResponse<?> updateAiModel(Long id, AiModelUpdateRequest req) {
-    return aiModelRepository
-        .findById(id)
-        .map(
-            model -> {
-              if (req.getAlias() != null) {
-                if (!req.getAlias().equals(model.getAlias())
-                    && aiModelRepository.findByAlias(req.getAlias()).isPresent()) {
-                  return ApiResponse.<Object>error("别名已存在");
-                }
-                model.setAlias(req.getAlias());
-              }
-              if (req.getModelName() != null) model.setModelName(req.getModelName());
-              if (req.getApiUrl() != null) {
-                try {
-                  assertSafeUrl(req.getApiUrl());
-                } catch (IllegalArgumentException e) {
-                  return ApiResponse.<Object>error(e.getMessage());
-                }
-                model.setApiUrl(req.getApiUrl());
-              }
-              // 防止脱敏值被回写覆盖真实密钥
-              if (req.getApiKey() != null
-                  && !req.getApiKey().isBlank()
-                  && !req.getApiKey().contains("****")) {
-                model.setApiKey(req.getApiKey());
-              }
-              if (req.getDescription() != null) model.setDescription(req.getDescription());
-              if (req.getIsDefault() != null) {
-                if (req.getIsDefault()) unsetDefaultModels();
-                model.setDefaultModel(req.getIsDefault());
-              }
-              aiModelRepository.save(model);
-              return ApiResponse.success(toOutMap(model));
-            })
-        .orElse(ApiResponse.error("模型不存在"));
+    AiModel model =
+        aiModelRepository.findById(id).orElseThrow(() -> new NotFoundException("模型不存在"));
+
+    if (req.getAlias() != null && !req.getAlias().equals(model.getAlias())) {
+      if (aiModelRepository.findByAlias(req.getAlias()).isPresent()) {
+        throw new ConflictException("别名已存在");
+      }
+      model.setAlias(req.getAlias());
+    }
+    if (req.getModelName() != null) model.setModelName(req.getModelName());
+    if (req.getApiUrl() != null) {
+      assertSafeUrl(req.getApiUrl());
+      model.setApiUrl(req.getApiUrl());
+    }
+    // 防止脱敏值被回写覆盖真实密钥
+    if (req.getApiKey() != null
+        && !req.getApiKey().isBlank()
+        && !req.getApiKey().contains("****")) {
+      model.setApiKey(req.getApiKey());
+    }
+    if (req.getDescription() != null) model.setDescription(req.getDescription());
+    if (req.getIsDefault() != null) {
+      if (req.getIsDefault()) unsetDefaultModels();
+      model.setDefaultModel(req.getIsDefault());
+    }
+    aiModelRepository.save(model);
+    return ApiResponse.success(toResponse(model));
   }
 
   @Transactional
   public ApiResponse<?> deleteAiModel(Long id) {
-    return aiModelRepository
-        .findById(id)
-        .map(
-            model -> {
-              aiModelRepository.delete(model);
-              return ApiResponse.success();
-            })
-        .orElse(ApiResponse.error("模型不存在"));
+    AiModel model =
+        aiModelRepository.findById(id).orElseThrow(() -> new NotFoundException("模型不存在"));
+    aiModelRepository.delete(model);
+    return ApiResponse.success();
   }
 
   public ApiResponse<?> getDefaultModel() {
-    return aiModelRepository
-        .findByDefaultModelTrue()
-        .map(model -> ApiResponse.success(toPublicOutMap(model)))
-        .orElse(ApiResponse.error("未配置默认模型"));
+    AiModel model =
+        aiModelRepository
+            .findByDefaultModelTrue()
+            .orElseThrow(() -> new NotFoundException("未配置默认模型"));
+    return ApiResponse.success(toPublicResponse(model));
   }
 
   public ApiResponse<?> getModelByAlias(String alias) {
-    return aiModelRepository
-        .findByAlias(alias)
-        .map(model -> ApiResponse.success(toPublicOutMap(model)))
-        .orElse(ApiResponse.error("模型不存在"));
+    AiModel model =
+        aiModelRepository.findByAlias(alias).orElseThrow(() -> new NotFoundException("模型不存在"));
+    return ApiResponse.success(toPublicResponse(model));
   }
 
   public ApiResponse<?> testAiModel(AiModelTestRequest req) {
@@ -145,10 +135,10 @@ public class AiModelService {
     String modelName = req.getModelName();
 
     if (req.getModelId() != null) {
-      AiModel model = aiModelRepository.findById(req.getModelId()).orElse(null);
-      if (model == null) {
-        return ApiResponse.error("模型不存在");
-      }
+      AiModel model =
+          aiModelRepository
+              .findById(req.getModelId())
+              .orElseThrow(() -> new NotFoundException("模型不存在"));
       apiUrl = model.getApiUrl();
       apiKey = model.getApiKey();
       modelName = model.getModelName();
@@ -158,26 +148,22 @@ public class AiModelService {
         || apiKey.isBlank()
         || modelName == null
         || modelName.isBlank()) {
-      return ApiResponse.error("API地址、API Key 和模型名称不能为空");
+      throw new NotFoundException("API地址、API Key 和模型名称不能为空");
     }
 
-    try {
-      assertSafeUrl(apiUrl);
-    } catch (IllegalArgumentException e) {
-      return ApiResponse.error(e.getMessage());
-    }
+    assertSafeUrl(apiUrl);
     long startTime = System.currentTimeMillis();
 
     Map<String, Object> payload = new HashMap<>();
     payload.put("model", modelName);
     payload.put(
         "messages",
-        java.util.List.of(Map.of("role", "user", "content", "Hi, please reply with one word: OK")));
+        List.of(Map.of("role", "user", "content", "Hi, please reply with one word: OK")));
     payload.put("max_tokens", 10);
     payload.put("temperature", 0);
 
     try {
-      Map<String, Object> response =
+      Map<?, ?> response =
           webClient
               .post()
               .uri(apiUrl)
@@ -193,7 +179,8 @@ public class AiModelService {
         return ApiResponse.success(
             new AiModelTestResult(false, "服务器返回空响应", (double) responseTime, null));
       }
-      String actualModel = (String) response.getOrDefault("model", modelName);
+      Object actual = response.get("model");
+      String actualModel = actual instanceof String s ? s : modelName;
       return ApiResponse.success(
           new AiModelTestResult(
               true, "连接成功，响应时间: " + responseTime + "ms", (double) responseTime, actualModel));
@@ -222,28 +209,41 @@ public class AiModelService {
             });
   }
 
-  private Map<String, Object> toOutMap(AiModel model) {
-    Map<String, Object> map = new HashMap<>();
-    map.put("id", String.valueOf(model.getId()));
-    map.put("alias", model.getAlias());
-    map.put("modelName", model.getModelName());
-    map.put("apiUrl", model.getApiUrl());
-    map.put("apiKey", maskApiKey(model.getApiKey()));
-    map.put("description", model.getDescription() != null ? model.getDescription() : "");
-    map.put("isDefault", model.getDefaultModel());
-    return map;
+  public static AiModelResponse toResponse(AiModel model) {
+    return new AiModelResponse(
+        String.valueOf(model.getId()),
+        model.getAlias(),
+        model.getModelName(),
+        model.getApiUrl(),
+        maskApiKey(model.getApiKey()),
+        model.getDescription() != null ? model.getDescription() : "",
+        Boolean.TRUE.equals(model.getDefaultModel()));
   }
 
-  /** 脱敏 API Key，短于12位完全隐藏，否则只显示前2位和后2位 */
-  private String maskApiKey(String apiKey) {
+  public static AiModelPublicResponse toPublicResponse(AiModel model) {
+    return new AiModelPublicResponse(
+        String.valueOf(model.getId()),
+        model.getAlias(),
+        model.getModelName(),
+        model.getApiUrl(),
+        model.getDescription() != null ? model.getDescription() : "",
+        Boolean.TRUE.equals(model.getDefaultModel()));
+  }
+
+  /** 脱敏 API Key，短于12位完全隐藏，否则只显示前2位和后2位。 */
+  static String maskApiKey(String apiKey) {
     if (apiKey == null || apiKey.length() < 12) {
       return "****";
     }
     return apiKey.substring(0, 2) + "****" + apiKey.substring(apiKey.length() - 2);
   }
 
-  /** SSRF 防护：拒绝非 http/https、私有/回环/链路本地地址及云元数据端点。 */
-  private void assertSafeUrl(String url) {
+  /**
+   * SSRF 防护：拒绝非 http/https、私有/回环/链路本地地址及云元数据端点。
+   *
+   * <p>域名必须先解析再判定——{@code 127.0.0.1.nip.io} 这类域名会解析到内网。
+   */
+  static void assertSafeUrl(String url) {
     if (url == null || url.isBlank()) {
       throw new IllegalArgumentException("API 地址不能为空");
     }
@@ -262,32 +262,44 @@ public class AiModelService {
       throw new IllegalArgumentException("API 地址格式无效");
     }
     String lower = host.toLowerCase();
-    if (lower.equals("localhost")
-        || lower.equals("127.0.0.1")
-        || lower.equals("::1")
-        || lower.equals("169.254.169.254")
+    if (lower.equals("169.254.169.254")
         || lower.equals("metadata.google.internal")
         || lower.contains("metadata")) {
-      throw new IllegalArgumentException("禁止访问该地址");
+      throw new IllegalArgumentException("禁止访问元数据端点");
     }
+
+    // IP 字面量直接判定
+    java.net.InetAddress literal = parseLiteral(lower);
+    if (literal != null) {
+      assertPublicAddress(literal, lower);
+      return;
+    }
+
+    // 域名：解析后逐条判定；无法解析时放行（与 Python 侧一致）
     try {
-      java.net.InetAddress addr = java.net.InetAddress.getByName(host);
-      if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
-        throw new IllegalArgumentException("禁止访问内网地址");
+      for (java.net.InetAddress addr : java.net.InetAddress.getAllByName(host)) {
+        assertPublicAddress(addr, host);
       }
     } catch (java.net.UnknownHostException ignored) {
-      // 无法解析时交由下游处理，元数据地址已在上面拦截
+      // 离线或内网 DNS，无法静态判定，交由请求层防护
     }
   }
 
-  private Map<String, Object> toPublicOutMap(AiModel model) {
-    Map<String, Object> map = new HashMap<>();
-    map.put("id", String.valueOf(model.getId()));
-    map.put("alias", model.getAlias());
-    map.put("modelName", model.getModelName());
-    map.put("apiUrl", model.getApiUrl());
-    map.put("description", model.getDescription() != null ? model.getDescription() : "");
-    map.put("isDefault", model.getDefaultModel());
-    return map;
+  private static java.net.InetAddress parseLiteral(String host) {
+    try {
+      return java.net.InetAddress.getByName(host);
+    } catch (java.net.UnknownHostException e) {
+      return null;
+    }
+  }
+
+  private static void assertPublicAddress(java.net.InetAddress addr, String host) {
+    if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
+      throw new IllegalArgumentException(
+          "禁止访问内网地址（" + host + " 解析为 " + addr.getHostAddress() + "）");
+    }
+    if (addr.isAnyLocalAddress() || addr.isMulticastAddress()) {
+      throw new IllegalArgumentException("禁止访问该地址");
+    }
   }
 }
