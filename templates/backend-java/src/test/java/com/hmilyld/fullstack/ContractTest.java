@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hmilyld.fullstack.config.PermissionCatalog;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -409,6 +410,44 @@ class ContractTest {
     MvcResult result = call(get("/api/permissions"), adminToken());
     JsonNode first = json(result).get("data").get(0);
     assertThat(fieldNames(first)).containsExactlyInAnyOrder("code", "name", "type", "parent");
+  }
+
+  @Test
+  @Order(16)
+  void permissionsMatchCatalog() throws Exception {
+    // 权限的唯一来源是 PermissionCatalog；启动同步据此补齐。
+    // 这条断言让「目录改了但没生效」或「数据库残留已删除权限」立即暴露。
+    MvcResult result = call(get("/api/permissions"), adminToken());
+    Set<String> actual = new LinkedHashSet<>();
+    json(result).get("data").forEach(item -> actual.add(item.get("code").asText()));
+
+    Set<String> expected = new LinkedHashSet<>();
+    PermissionCatalog.ALL_PERMISSIONS.forEach(item -> expected.add(item.code()));
+
+    assertThat(actual)
+        .as("多出: %s\n缺失: %s", minus(actual, expected), minus(expected, actual))
+        .isEqualTo(expected);
+  }
+
+  @Test
+  @Order(17)
+  void adminHoldsEveryCatalogPermission() throws Exception {
+    MvcResult result = call(get("/api/roles?pageSize=100"), adminToken());
+    Set<String> adminPermissions = new LinkedHashSet<>();
+    json(result)
+        .get("data")
+        .get("list")
+        .forEach(
+            role -> {
+              if ("admin".equals(role.get("id").asText())) {
+                role.get("permissions").forEach(p -> adminPermissions.add(p.asText()));
+              }
+            });
+
+    Set<String> expected = new LinkedHashSet<>();
+    PermissionCatalog.ALL_PERMISSIONS.forEach(item -> expected.add(item.code()));
+
+    assertThat(adminPermissions).isEqualTo(expected);
   }
 
   @Test

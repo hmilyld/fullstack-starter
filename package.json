@@ -13,6 +13,9 @@
     "lint": "eslint src scripts",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\"",
+    "sync:permissions": "tsx scripts/sync-permission-docs.ts",
+    "sync:permissions:check": "tsx scripts/sync-permission-docs.ts --check",
+    "sync:permissions:catalog": "tsx scripts/sync-permission-docs.ts --catalog-only",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

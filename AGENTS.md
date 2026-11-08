@@ -40,7 +40,7 @@ These are enforced by `ruff` and the contract suite, not just prose:
 6. **Dependencies use `Annotated`.** `db: DbSession`, `current_user: CurrentUser`, and similar aliases per router.
 7. **Schema changes go through Alembic.** Never `Base.metadata.create_all`; never hand-edit a database. `alembic revision --autogenerate` then review.
 8. **Role names are not authorization.** Only `admin` (all permissions) and the "non-admin may not touch an admin account" rule may check a role name, each in exactly one place.
-9. **Catalogs are the single source.** Permission codes and built-in menus live in `app/catalogs/` (`permissions.py`, `menus.py`). Never hardcode a permission list elsewhere; startup sync reads these modules.
+9. **Catalogs are the single source.** Permission codes and built-in menus live in `app/catalogs/` (`permissions.py`, `menus.py`). Never hardcode a permission list elsewhere; startup sync reads these modules. Adding a permission means editing this module **and** `config/PermissionCatalog.java` — `npm run sync:permissions:check` fails if the two drift, and the docs table is generated from them.
 
 ## Backend Coding Rules (templates/backend-java)
 
@@ -50,7 +50,7 @@ The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`
 2. **Controllers map HTTP only.** No business rules, no multi-step writes.
 3. **Every response is a `dto/*Response` record and every controller method declares `ApiResponse<T>`.** No `Map<String, Object>` in a controller or service return path, and never `ApiResponse<?>` — a wildcard degrades the schema to `ApiResponseObject` (arbitrary JSON) and fails `successEnvelopesAreTyped`. Only `GlobalExceptionHandler` may use the wildcard, since its `data` is always `null`.
 4. **Pagination is clamped, not rejected.** `page`/`pageSize` are clamped in the service, never validated with `@Min`/`@Max`.
-5. **Schema changes go through Flyway.** Never edit a migration that has already run.
+5. **Schema changes go through Flyway.** Never edit a migration that has already run. Seed **data** is different: permissions and built-in menus come from the catalogs (`PermissionCatalog`, `MenuCatalog`) via the startup sync runners, not from migrations. `V5__remove_seed_permissions.sql` cleared the last hand-written permission seed; do not add new ones.
 6. **Formatting is not optional.** Run `mvn spotless:apply` after editing Java; `spotless:check` fails the build on drift.
 7. **`data` is never omitted.** `ApiResponse` is annotated `@JsonInclude(ALWAYS)` and the global `default-property-inclusion` is `always`; null values must appear.
 
@@ -64,6 +64,7 @@ The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`
 
 - **AuthZ is permission-based (RBAC), not role-name checks** — endpoints gate on permission codes (`users`, `users.create`, `roles.edit`, ...): Python uses `require_permission(...)` deps, Java uses `@SaCheckPermission`. Never hardcode `if role == admin` for API access control. Two role-name checks are deliberate and must stay in one place each: `admin` resolves to all permissions (Python `app/core/deps.py:load_permissions`, Java `StpInterfaceImpl`), and "a non-admin may not modify or delete an admin account" (Python `app/user/service.py`). Any new role-name check needs the same kind of justification.
 - Default roles from seed: `admin` (all permissions), `user` (menu view perms only: `dashboard`, `users`, `settings`), `pending_review` (none). Registration assigns `pending_review` or `user` based on the manual-review system setting.
+- **Permissions and built-in menus are seeded from code catalogs, not SQL.** Python `app/catalogs/{permissions,menus}.py`, Java `config/{PermissionCatalog,MenuCatalog}.java`, applied by startup sync. The two catalogs must stay identical; `npm run sync:permissions:check` enforces it and regenerates `reference/permissions.md` in the docs site. Never add permission rows to a migration.
 - Both backends implement login/register rate limiting per IP and maintenance-mode blocking of non-admin logins.
 - Frontend HTTP layer is a thin `fetch` wrapper (`api/client.ts` over `api/http.ts`) with automatic logout on 401 — do NOT introduce axios.
 - Python backend rejects startup on weak/default `JWT_SECRET_KEY`; Java stack needs no secret key.
@@ -147,15 +148,23 @@ The Python backend template carries the executable API contract:
 cd templates/backend-python
 uv sync --extra dev
 uv run ruff check .
-uv run pytest -q        # 28 contract assertions in tests/test_contract.py
+uv run pytest -q        # 30 contract assertions in tests/test_contract.py
 ```
 
 `tests/test_contract.py` is the contract oracle: it asserts the exact endpoint set, response envelope, resource shapes and semantics from `docs/contract/api.md`. The Java backend runs the same assertions in `src/test/java/com/hmilyld/fullstack/ContractTest.java`; both must pass.
 
+The permission docs table is generated, not hand-written:
+
+```bash
+npm run sync:permissions        # regenerate reference/permissions.md (zh + en)
+npm run sync:permissions:check  # CI: fail if catalogs drift or docs are stale
+npm run sync:permissions:catalog # CI without the docs repo: catalogs only
+```
+
 ```bash
 cd templates/backend-java
 mvn spotless:apply      # format before committing
-mvn test                # 26 contract assertions
+mvn test                # 28 contract assertions
 ```
 
 Manual verification for the CLI:

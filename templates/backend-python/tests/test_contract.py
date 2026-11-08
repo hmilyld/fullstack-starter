@@ -277,6 +277,32 @@ async def test_permission_shape(client, admin_headers) -> None:
     assert set(data[0]) == {"code", "name", "type", "parent"}
 
 
+async def test_permissions_match_catalog(client, admin_headers) -> None:
+    """数据库里的权限必须与目录完全一致。
+
+    权限的唯一来源是 ``app/catalogs/permissions.py``；启动同步据此补齐。
+    这条断言保证「目录改了但没生效」或「数据库残留了已删除的权限」都会暴露。
+    """
+    from app.catalogs.permissions import ALL_PERMISSIONS
+
+    response = await client.get("/api/permissions", headers=admin_headers)
+    actual = {(item["code"], item["name"], item["type"]) for item in response.json()["data"]}
+    expected = {(item["code"], item["name"], item["type"]) for item in ALL_PERMISSIONS}
+    assert actual == expected, (
+        f"数据库多出: {sorted(actual - expected)}\n"
+        f"数据库缺失: {sorted(expected - actual)}"
+    )
+
+
+async def test_admin_holds_every_catalog_permission(client, admin_headers) -> None:
+    """admin 角色必须拥有目录里的全部权限。"""
+    from app.catalogs.permissions import ALL_PERMISSIONS
+
+    response = await client.get("/api/roles?pageSize=100", headers=admin_headers)
+    roles = {role["id"]: role for role in response.json()["data"]["list"]}
+    assert set(roles["admin"]["permissions"]) == {item["code"] for item in ALL_PERMISSIONS}
+
+
 async def test_menu_config_shape(client, admin_headers) -> None:
     response = await client.get("/api/menus", headers=admin_headers)
     data = response.json()["data"]
