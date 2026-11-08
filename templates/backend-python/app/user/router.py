@@ -10,6 +10,7 @@ from app.core.schemas import ApiResponse, PaginatedData
 from app.user import service
 from app.user.models import User
 from app.user.schemas import (
+    BatchRoleResult,
     BatchRoleUpdateRequest,
     ChangePasswordRequest,
     ResetPasswordRequest,
@@ -33,16 +34,17 @@ PrincipalDep = Annotated[Principal, Depends(get_principal)]
 
 
 @router.put("/me")
-async def update_me(data: UpdateMeRequest, current_user: CurrentUser, db: DbSession) -> ApiResponse:
-    updated = await service.update_me(db, data, current_user)
-    return ApiResponse(data=UserOut.from_orm_model(updated).model_dump())
+async def update_me(
+    data: UpdateMeRequest, current_user: CurrentUser, db: DbSession
+) -> ApiResponse[UserOut]:
+    return ApiResponse(data=await service.update_me(db, data, current_user))
 
 
 @router.put("/me/password")
 async def change_password(
     data: ChangePasswordRequest, current_user: CurrentUser, db: DbSession
-) -> ApiResponse:
-    await service.change_password(db, data, current_user)
+) -> ApiResponse[None]:
+    await service.change_own_password(db, data, current_user)
     return ApiResponse()
 
 
@@ -51,9 +53,9 @@ async def batch_update_role(
     data: BatchRoleUpdateRequest,
     current_user: Annotated[User, Depends(require_permission("users.edit", "users.assign_role"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[BatchRoleResult]:
     applied = await service.batch_update_role(db, data, current_user)
-    return ApiResponse(data={"applied": applied})
+    return ApiResponse(data=BatchRoleResult(applied=applied))
 
 
 # ============================================================
@@ -67,15 +69,15 @@ async def get_users(
     db: DbSession,
     pagination: PaginationDep,
     search: str = "",
-) -> ApiResponse:
+) -> ApiResponse[PaginatedData[UserOut]]:
     users, total = await service.list_users(db, search, pagination.page, pagination.page_size)
     return ApiResponse(
-        data=PaginatedData(
-            list=[UserOut.from_orm_model(u).model_dump() for u in users],
+        data=PaginatedData[UserOut](
+            list=users,
             total=total,
             page=pagination.page,
             pageSize=pagination.page_size,
-        ).model_dump()
+        )
     )
 
 
@@ -85,9 +87,8 @@ async def create_user(
     principal: PrincipalDep,
     current_user: Annotated[User, Depends(require_permission("users.create"))],
     db: DbSession,
-) -> ApiResponse:
-    user = await service.create_user(db, data, principal.permissions)
-    return ApiResponse(data=UserOut.from_orm_model(user).model_dump())
+) -> ApiResponse[UserOut]:
+    return ApiResponse(data=await service.create_user_out(db, data, principal.permissions))
 
 
 # ============================================================
@@ -100,9 +101,8 @@ async def get_user(
     user_id: int,
     current_user: Annotated[User, Depends(require_permission("users"))],
     db: DbSession,
-) -> ApiResponse:
-    user = await service.get_user(db, user_id)
-    return ApiResponse(data=UserOut.from_orm_model(user).model_dump())
+) -> ApiResponse[UserOut]:
+    return ApiResponse(data=await service.get_user_out(db, user_id))
 
 
 @router.put("/{user_id}")
@@ -112,9 +112,10 @@ async def update_user(
     principal: PrincipalDep,
     current_user: Annotated[User, Depends(require_permission("users.edit", "users.assign_role"))],
     db: DbSession,
-) -> ApiResponse:
-    updated = await service.update_user(db, user_id, data, current_user, principal.permissions)
-    return ApiResponse(data=UserOut.from_orm_model(updated).model_dump())
+) -> ApiResponse[UserOut]:
+    return ApiResponse(
+        data=await service.update_user_out(db, user_id, data, current_user, principal.permissions)
+    )
 
 
 @router.delete("/{user_id}")
@@ -122,8 +123,8 @@ async def delete_user(
     user_id: int,
     current_user: Annotated[User, Depends(require_permission("users.delete"))],
     db: DbSession,
-) -> ApiResponse:
-    await service.delete_user(db, user_id, current_user)
+) -> ApiResponse[None]:
+    await service.delete_user_by_id(db, user_id, current_user)
     return ApiResponse()
 
 
@@ -133,6 +134,6 @@ async def reset_password(
     data: ResetPasswordRequest,
     current_user: Annotated[User, Depends(require_permission("users.edit"))],
     db: DbSession,
-) -> ApiResponse:
-    await service.reset_password(db, user_id, data, current_user)
+) -> ApiResponse[None]:
+    await service.reset_user_password(db, user_id, data, current_user)
     return ApiResponse()

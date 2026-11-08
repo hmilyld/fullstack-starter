@@ -20,3 +20,9 @@ class PermissionOut(BaseModel):
     parent: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class PermissionSyncResult(BaseModel):
+    added: list[str]
+    updated: list[str]
+    granted: list[str]

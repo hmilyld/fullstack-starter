@@ -112,6 +112,53 @@ def test_openapi_matches_contract_endpoint_set(client) -> None:
     )
 
 
+def test_every_endpoint_declares_response_schema(client) -> None:
+    """每个端点都必须有真实的结构化响应 schema。
+
+    这是「契约机器可读」的实际含义：如果某个端点没有声明返回类型，
+    OpenAPI 里它的响应要么是空的，要么退化成 `additionalProperties: true`
+    的自由对象，客户端无法据此生成类型。
+    """
+    spec = client._transport.app.openapi()  # type: ignore[attr-defined]
+    problems: list[str] = []
+
+    for path, operations in spec["paths"].items():
+        for method, operation in operations.items():
+            if method not in HTTP_METHODS:
+                continue
+            responses = operation.get("responses", {})
+            code = "202" if "202" in responses else "200"
+            content = responses.get(code, {}).get("content", {})
+            if not content:
+                problems.append(f"{method.upper()} {path}: 无响应内容")
+                continue
+            schema = next(iter(content.values())).get("schema", {})
+            if schema.get("additionalProperties") is True:
+                problems.append(f"{method.upper()} {path}: 退化为自由 dict")
+
+    assert not problems, f"响应 schema 不合格: {problems}"
+
+
+def test_success_schemas_reference_api_response(client) -> None:
+    """除文件下载外，成功响应都必须指向 ApiResponse[...] 泛型。"""
+    spec = client._transport.app.openapi()  # type: ignore[attr-defined]
+    non_envelope: list[str] = []
+    for path, operations in spec["paths"].items():
+        if path == "/api/data/export":
+            continue  # 文件下载，不是信封
+        for method, operation in operations.items():
+            if method not in HTTP_METHODS:
+                continue
+            responses = operation.get("responses", {})
+            code = "202" if "202" in responses else "200"
+            content = responses.get(code, {}).get("content", {})
+            schema = content.get("application/json", {}).get("schema", {})
+            ref = schema.get("$ref", "")
+            if "ApiResponse" not in ref:
+                non_envelope.append(f"{method.upper()} {path} -> {ref or schema}")
+    assert not non_envelope, f"未使用 ApiResponse 信封: {non_envelope}"
+
+
 # ---------------------------------------------------------------- 响应信封
 
 

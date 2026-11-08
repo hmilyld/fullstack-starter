@@ -7,28 +7,33 @@
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.catalogs.permissions import ALL_PERMISSIONS
 from app.core.exceptions import ConflictError, InvalidOperationError, NotFoundError
-from app.core.permissions_catalog import ALL_PERMISSIONS
 from app.permission.models import Permission
-from app.permission.schemas import PermissionCreate, PermissionOut, PermissionUpdate
+from app.permission.schemas import (
+    PermissionCreate,
+    PermissionOut,
+    PermissionSyncResult,
+    PermissionUpdate,
+)
 from app.role.models import Role, RolePermission
 
 MENU_TYPE = "menu"
 OPERATION_TYPE = "operation"
 
 
-def _to_out(permission: Permission) -> dict:
+def _to_out(permission: Permission) -> PermissionOut:
     return PermissionOut(
         code=permission.code,
         name=permission.name,
         type=permission.type,
         parent=permission.parent,
-    ).model_dump()
+    )
 
 
 async def list_permissions(
     db: AsyncSession, type: str | None = None, parent: str | None = None
-) -> list[dict]:
+) -> list[PermissionOut]:
     query = select(Permission)
     if type:
         query = query.where(Permission.type == type)
@@ -55,7 +60,7 @@ async def _assert_parent_is_menu(db: AsyncSession, parent: str) -> None:
         raise InvalidOperationError("所属菜单不存在")
 
 
-async def create_permission(db: AsyncSession, data: PermissionCreate) -> dict:
+async def create_permission(db: AsyncSession, data: PermissionCreate) -> PermissionOut:
     if data.type == MENU_TYPE:
         raise InvalidOperationError("请通过菜单管理创建菜单")
     existing = (
@@ -74,7 +79,7 @@ async def create_permission(db: AsyncSession, data: PermissionCreate) -> dict:
     return _to_out(permission)
 
 
-async def update_permission(db: AsyncSession, code: str, data: PermissionUpdate) -> dict:
+async def update_permission(db: AsyncSession, code: str, data: PermissionUpdate) -> PermissionOut:
     permission = await get_permission(db, code)
     if permission.type == MENU_TYPE:
         raise InvalidOperationError("请通过菜单管理编辑菜单")
@@ -100,7 +105,7 @@ async def delete_permission(db: AsyncSession, code: str) -> None:
     await db.flush()
 
 
-async def sync_catalog(db: AsyncSession) -> dict:
+async def sync_catalog(db: AsyncSession) -> PermissionSyncResult:
     """把权限目录同步进数据库，并补齐 admin 角色缺失的授权。"""
     existing = {
         permission.code: permission
@@ -140,4 +145,4 @@ async def sync_catalog(db: AsyncSession) -> dict:
                 granted.append(item["code"])
 
     await db.flush()
-    return {"added": added, "updated": updated, "granted": granted}
+    return PermissionSyncResult(added=added, updated=updated, granted=granted)

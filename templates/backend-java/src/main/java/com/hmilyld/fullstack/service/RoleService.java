@@ -28,7 +28,7 @@ public class RoleService {
   @Autowired private RoleRepository roleRepository;
   @Autowired private RolePermissionRepository rolePermissionRepository;
 
-  public ApiResponse<?> getRoles(String search, int page, int pageSize) {
+  public ApiResponse<PageResult<RoleResponse>> getRoles(String search, int page, int pageSize) {
     page = Math.max(1, page);
     pageSize = Math.min(100, Math.max(1, pageSize));
 
@@ -52,7 +52,7 @@ public class RoleService {
   }
 
   @Transactional
-  public ApiResponse<?> createRole(RoleCreateRequest req) {
+  public ApiResponse<RoleResponse> createRole(RoleCreateRequest req) {
     Role role = new Role();
     role.setId(UUID.randomUUID().toString().substring(0, 8));
     role.setName(req.getName());
@@ -78,7 +78,7 @@ public class RoleService {
   }
 
   @Transactional
-  public ApiResponse<?> updateRole(String id, RoleUpdateRequest req) {
+  public ApiResponse<RoleResponse> updateRole(String id, RoleUpdateRequest req) {
     Role role = roleRepository.findById(id).orElseThrow(() -> new NotFoundException("角色不存在"));
 
     if (req.getName() != null) role.setName(req.getName());
@@ -105,7 +105,7 @@ public class RoleService {
   }
 
   @Transactional
-  public ApiResponse<?> deleteRole(String id) {
+  public ApiResponse<Void> deleteRole(String id) {
     Role role = roleRepository.findById(id).orElseThrow(() -> new NotFoundException("角色不存在"));
     if (Boolean.TRUE.equals(role.getPreset())) {
       throw new InvalidOperationException("预设角色不可删除");

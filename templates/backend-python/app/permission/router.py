@@ -7,7 +7,12 @@ from app.core.database import get_db
 from app.core.deps import require_permission
 from app.core.schemas import ApiResponse
 from app.permission import service
-from app.permission.schemas import PermissionCreate, PermissionUpdate
+from app.permission.schemas import (
+    PermissionCreate,
+    PermissionOut,
+    PermissionSyncResult,
+    PermissionUpdate,
+)
 from app.user.models import User
 
 router = APIRouter(prefix="/permissions", tags=["权限"])
@@ -21,7 +26,7 @@ async def get_permissions(
     db: DbSession,
     type: str | None = None,
     parent: str | None = None,
-) -> ApiResponse:
+) -> ApiResponse[list[PermissionOut]]:
     return ApiResponse(data=await service.list_permissions(db, type, parent))
 
 
@@ -30,7 +35,7 @@ async def create_permission(
     data: PermissionCreate,
     current_user: Annotated[User, Depends(require_permission("permissions.create"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[PermissionOut]:
     return ApiResponse(data=await service.create_permission(db, data))
 
 
@@ -38,7 +43,7 @@ async def create_permission(
 async def sync_permissions_route(
     current_user: Annotated[User, Depends(require_permission("permissions.create"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[PermissionSyncResult]:
     return ApiResponse(data=await service.sync_catalog(db), message="权限同步完成")
 
 
@@ -48,7 +53,7 @@ async def update_permission(
     data: PermissionUpdate,
     current_user: Annotated[User, Depends(require_permission("permissions.edit"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[PermissionOut]:
     return ApiResponse(data=await service.update_permission(db, code, data))
 
 
@@ -57,6 +62,6 @@ async def delete_permission(
     code: str,
     current_user: Annotated[User, Depends(require_permission("permissions.delete"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[None]:
     await service.delete_permission(db, code)
     return ApiResponse()

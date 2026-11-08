@@ -169,6 +169,13 @@
 
 以下为成功响应的 `data` 形状，字段集合必须**完全一致**（不多不少）。
 
+两栈都必须让这些形状出现在机器可读的 OpenAPI 中：
+
+- Python：每个端点声明 `ApiResponse[T]` 返回类型，FastAPI 据此生成 `ApiResponse_T_` schema。
+- Java：每个 controller 方法声明 `ApiResponse<T>`（禁止 `ApiResponse<?>`，它会退化成 `ApiResponseObject`），springdoc 据此生成 `ApiResponseT` schema。
+
+两端都有契约测试断言「每个端点都有结构化响应、且不是自由对象」。
+
 ```jsonc
 // AuthUser
 { "id": "1", "name": "管理员", "email": "a@b.com", "avatar": "", "role": "admin", "permissions": ["dashboard"] }

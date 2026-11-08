@@ -2,6 +2,7 @@ package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.dto.SystemConfigResponse;
 import com.hmilyld.fullstack.dto.SystemConfigUpdateRequest;
 import com.hmilyld.fullstack.dto.TestEmailRequest;
 import com.hmilyld.fullstack.entity.SystemConfig;
@@ -22,19 +23,20 @@ public class SystemConfigController {
 
   @GetMapping("/config")
   @SaCheckPermission("settings")
-  public ApiResponse<?> getConfig() {
+  public ApiResponse<SystemConfigResponse> getConfig() {
     return systemConfigService.getConfigOut();
   }
 
   @PutMapping("/config")
   @SaCheckPermission("settings.edit")
-  public ApiResponse<?> updateConfig(@RequestBody SystemConfigUpdateRequest req) {
+  public ApiResponse<SystemConfigResponse> updateConfig(
+      @RequestBody SystemConfigUpdateRequest req) {
     return systemConfigService.updateConfig(req);
   }
 
   @PostMapping("/test-email")
   @SaCheckPermission("settings.edit")
-  public ApiResponse<?> testEmail(@RequestBody @Valid TestEmailRequest req) {
+  public ApiResponse<Void> testEmail(@RequestBody @Valid TestEmailRequest req) {
     SystemConfig config = systemConfigService.requireSmtpReady();
     try {
       JavaMailSender mailSender = createMailSender(config);
@@ -45,7 +47,7 @@ public class SystemConfigController {
       helper.setTo(req.getEmail());
       helper.setText("这是一封测试邮件，说明您的邮件配置已成功生效。");
       mailSender.send(message);
-      return ApiResponse.success("测试邮件发送成功");
+      return new ApiResponse<>(0, "测试邮件发送成功", null);
     } catch (Exception e) {
       throw mapMailError(e);
     }

@@ -47,7 +47,7 @@ public class AuditLogService {
   }
 
   @Transactional(readOnly = true)
-  public ApiResponse<?> getLogs(
+  public ApiResponse<PageResult<AuditLogResponse>> getLogs(
       Long userId,
       String status,
       String action,

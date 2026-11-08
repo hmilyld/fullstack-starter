@@ -13,6 +13,7 @@ from fastapi import UploadFile
 from app.core.config import get_settings
 from app.core.exceptions import AppError, ServiceUnavailableError
 from app.data_management import service
+from app.data_management.schemas import ImportJobHandle, ImportStatusOut
 from app.data_management.state import ImportJob, data_operation_state
 
 CHUNK_SIZE = 1024 * 1024
@@ -59,7 +60,7 @@ async def _restore(job: ImportJob, upload_path: Path, password: str) -> None:
         await asyncio.to_thread(upload_path.unlink, True)
 
 
-async def start_import(file: UploadFile, password: str, owner_id: int) -> dict:
+async def start_import(file: UploadFile, password: str, owner_id: int) -> ImportJobHandle:
     settings = get_settings()
     temp_dir = Path(settings.data_tmp_dir)
     await asyncio.to_thread(temp_dir.mkdir, True, True)
@@ -77,11 +78,13 @@ async def start_import(file: UploadFile, password: str, owner_id: int) -> dict:
         raise AppError(str(exc)) from exc
 
     data_operation_state.add_task(asyncio.create_task(_restore(job, upload_path, password)))
-    return {"jobId": job.id, "jobToken": job.token, "status": job.status}
+    return ImportJobHandle(jobId=job.id, jobToken=job.token, status=job.status)
 
 
-def get_import_status(job_id: str, token: str) -> dict:
+def get_import_status(job_id: str, token: str) -> ImportStatusOut:
     job = data_operation_state.get_job(job_id, token)
     if job is None:
         raise AppError("导入任务不存在")
-    return job.public()
+    return ImportStatusOut(
+        id=job.id, status=job.status, message=job.message, progress=job.progress
+    )

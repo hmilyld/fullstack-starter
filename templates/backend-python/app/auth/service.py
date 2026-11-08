@@ -11,8 +11,13 @@ from app.core.deps import PermissionSet, load_permissions
 from app.core.exceptions import AppError
 from app.core.security import create_access_token
 from app.system.service import get_config
-from app.user.crud import authenticate_user, create_user, get_user_by_email, get_user_by_username
 from app.user.models import User
+from app.user.service import (
+    authenticate_user,
+    create_user,
+    get_user_by_email,
+    get_user_by_username,
+)
 from app.user.tokens import bump_token_version
 
 PENDING_REVIEW_ROLE_ID = "pending_review"
@@ -37,7 +42,7 @@ def is_rate_limited(key: str) -> bool:
     return False
 
 
-def build_login_response(user: User, permissions: PermissionSet, token: str) -> dict:
+def build_login_response(user: User, permissions: PermissionSet, token: str) -> LoginResponse:
     return LoginResponse(
         token=token,
         user=AuthUser(
@@ -48,10 +53,10 @@ def build_login_response(user: User, permissions: PermissionSet, token: str) -> 
             role=user.role_id,
             permissions=sorted(permissions.codes),
         ),
-    ).model_dump()
+    )
 
 
-async def _issue_token(db: AsyncSession, user: User) -> dict:
+async def _issue_token(db: AsyncSession, user: User) -> LoginResponse:
     state = await get_app_state(db)
     token = create_access_token(
         data={
@@ -64,7 +69,7 @@ async def _issue_token(db: AsyncSession, user: User) -> dict:
     return build_login_response(user, permissions, token)
 
 
-async def login(db: AsyncSession, request: LoginRequest, client_ip: str) -> dict:
+async def login(db: AsyncSession, request: LoginRequest, client_ip: str) -> LoginResponse:
     if is_rate_limited(f"login:{client_ip}"):
         raise AppError("登录尝试过于频繁，请稍后再试")
 
@@ -113,7 +118,9 @@ async def login(db: AsyncSession, request: LoginRequest, client_ip: str) -> dict
     return payload
 
 
-async def register(db: AsyncSession, request: RegisterRequest, client_ip: str) -> dict | None:
+async def register(
+    db: AsyncSession, request: RegisterRequest, client_ip: str
+) -> LoginResponse | None:
     """注册成功且无需审核时返回登录载荷，需要审核时返回 None。"""
     if is_rate_limited(f"register:{client_ip}"):
         raise AppError("注册尝试过于频繁，请稍后再试")

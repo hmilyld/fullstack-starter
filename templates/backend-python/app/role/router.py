@@ -8,7 +8,7 @@ from app.core.deps import require_permission
 from app.core.pagination import Pagination, pagination_params
 from app.core.schemas import ApiResponse, PaginatedData
 from app.role import service
-from app.role.schemas import RoleCreate, RoleUpdate
+from app.role.schemas import RoleCreate, RoleOut, RoleUpdate
 from app.user.models import User
 
 router = APIRouter(prefix="/roles", tags=["角色"])
@@ -23,12 +23,15 @@ async def get_roles(
     db: DbSession,
     pagination: PaginationDep,
     search: str = "",
-) -> ApiResponse:
+) -> ApiResponse[PaginatedData[RoleOut]]:
     roles, total = await service.list_roles(db, search, pagination.page, pagination.page_size)
     return ApiResponse(
-        data=PaginatedData(
-            list=roles, total=total, page=pagination.page, pageSize=pagination.page_size
-        ).model_dump()
+        data=PaginatedData[RoleOut](
+            list=roles,
+            total=total,
+            page=pagination.page,
+            pageSize=pagination.page_size,
+        )
     )
 
 
@@ -37,7 +40,7 @@ async def create_role(
     data: RoleCreate,
     current_user: Annotated[User, Depends(require_permission("roles.create"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[RoleOut]:
     return ApiResponse(data=await service.create_role(db, data))
 
 
@@ -47,7 +50,7 @@ async def update_role(
     data: RoleUpdate,
     current_user: Annotated[User, Depends(require_permission("roles.edit"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[RoleOut]:
     return ApiResponse(data=await service.update_role(db, role_id, data))
 
 
@@ -56,6 +59,6 @@ async def delete_role(
     role_id: str,
     current_user: Annotated[User, Depends(require_permission("roles.delete"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[None]:
     await service.delete_role(db, role_id)
     return ApiResponse()

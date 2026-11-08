@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions_catalog import MENU_PERMISSIONS, OPERATION_PERMISSIONS
+from app.catalogs.permissions import MENU_PERMISSIONS, OPERATION_PERMISSIONS
 from app.core.security import hash_password
 from app.permission.models import Permission
 from app.role.models import Role, RolePermission
@@ -18,7 +18,7 @@ async def seed_data(db: AsyncSession) -> None:
     if perm_result.scalar_one_or_none() is not None:
         return
 
-    # 权限列表来自 app.core.permissions_catalog 统一目录
+    # 权限列表来自 app.catalogs.permissions 统一目录
     for perm in MENU_PERMISSIONS + OPERATION_PERMISSIONS:
         db.add(Permission(**perm))
 

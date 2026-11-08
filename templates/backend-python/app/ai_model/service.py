@@ -35,7 +35,7 @@ TEST_TIMEOUT_SECONDS = 30.0
 
 async def list_models(
     db: AsyncSession, search: str, page: int, page_size: int
-) -> tuple[list[dict], int]:
+) -> tuple[list[AiModelOut], int]:
     query = select(AiModel)
     if search:
         query = query.where(
@@ -47,7 +47,7 @@ async def list_models(
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
     query = query.order_by(AiModel.id).offset((page - 1) * page_size).limit(page_size)
     items = list((await db.execute(query)).scalars().all())
-    return [AiModelOut.from_orm_model(item).model_dump() for item in items], total
+    return [AiModelOut.from_orm_model(item) for item in items], total
 
 
 async def get_model(db: AsyncSession, model_id: int) -> AiModel:
@@ -81,7 +81,7 @@ async def _unset_defaults(db: AsyncSession) -> None:
     await db.flush()
 
 
-async def create_model(db: AsyncSession, data: AiModelCreate) -> dict:
+async def create_model(db: AsyncSession, data: AiModelCreate) -> AiModelOut:
     if await db.execute(select(AiModel).where(AiModel.alias == data.alias)):
         existing = (
             await db.execute(select(AiModel).where(AiModel.alias == data.alias))
@@ -102,10 +102,10 @@ async def create_model(db: AsyncSession, data: AiModelCreate) -> dict:
     )
     db.add(model)
     await db.flush()
-    return AiModelOut.from_orm_model(model).model_dump()
+    return AiModelOut.from_orm_model(model)
 
 
-async def update_model(db: AsyncSession, model_id: int, data: AiModelUpdate) -> dict:
+async def update_model(db: AsyncSession, model_id: int, data: AiModelUpdate) -> AiModelOut:
     model = await get_model(db, model_id)
 
     if data.alias and data.alias != model.alias:
@@ -133,7 +133,7 @@ async def update_model(db: AsyncSession, model_id: int, data: AiModelUpdate) -> 
         model.is_default = data.isDefault
 
     await db.flush()
-    return AiModelOut.from_orm_model(model).model_dump()
+    return AiModelOut.from_orm_model(model)
 
 
 async def delete_model(db: AsyncSession, model_id: int) -> None:
@@ -142,7 +142,7 @@ async def delete_model(db: AsyncSession, model_id: int) -> None:
     await db.flush()
 
 
-async def test_model(db: AsyncSession, data: AiModelTestRequest) -> dict:
+async def test_model(db: AsyncSession, data: AiModelTestRequest) -> AiModelTestResult:
     """测试模型连通性。已保存模型使用库中的真实密钥，未保存的用请求体。"""
     start = time.time()
 
@@ -162,11 +162,11 @@ async def test_model(db: AsyncSession, data: AiModelTestRequest) -> dict:
     }
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
-    def result(success: bool, message: str, model: str | None = None) -> dict:
+    def result(success: bool, message: str, model: str | None = None) -> AiModelTestResult:
         elapsed = round((time.time() - start) * 1000, 2)
         return AiModelTestResult(
             success=success, message=message, responseTime=elapsed, model=model
-        ).model_dump()
+        )
 
     try:
         assert_not_private_host(api_url)
@@ -181,7 +181,7 @@ async def test_model(db: AsyncSession, data: AiModelTestRequest) -> dict:
                 message=f"连接成功，响应时间: {elapsed}ms",
                 responseTime=elapsed,
                 model=returned,
-            ).model_dump()
+            )
         if response.status_code == 401:
             return result(False, "API Key 无效或已过期")
         if response.status_code == 404:
@@ -196,9 +196,9 @@ async def test_model(db: AsyncSession, data: AiModelTestRequest) -> dict:
         return result(False, f"测试失败: {exc}")
 
 
-def public_out(model: AiModel) -> dict:
+def public_out(model: AiModel) -> AiModelPublicOut:
     """不含 API Key 的输出，用于按别名/默认模型查询。"""
-    return AiModelPublicOut.from_orm_model(model).model_dump()
+    return AiModelPublicOut.from_orm_model(model)
 
 
 # ============================================================
@@ -208,7 +208,7 @@ def public_out(model: AiModel) -> dict:
 
 async def list_presets(
     db: AsyncSession, search: str = "", group: str = "", is_active: bool | None = None
-) -> list[dict]:
+) -> list[AiModelPresetOut]:
     query = select(AiModelPreset)
     if search:
         query = query.where(
@@ -223,7 +223,7 @@ async def list_presets(
         query = query.where(AiModelPreset.is_active == is_active)
     query = query.order_by(AiModelPreset.sort_order, AiModelPreset.id)
     items = (await db.execute(query)).scalars().all()
-    return [AiModelPresetOut.from_orm_model(item).model_dump() for item in items]
+    return [AiModelPresetOut.from_orm_model(item) for item in items]
 
 
 async def list_preset_groups(db: AsyncSession) -> list[str]:
@@ -240,7 +240,7 @@ async def get_preset(db: AsyncSession, preset_id: int) -> AiModelPreset:
     return preset
 
 
-async def create_preset(db: AsyncSession, data: AiModelPresetCreate) -> dict:
+async def create_preset(db: AsyncSession, data: AiModelPresetCreate) -> AiModelPresetOut:
     duplicate = (
         await db.execute(select(AiModelPreset).where(AiModelPreset.alias == data.alias))
     ).scalar_one_or_none()
@@ -258,10 +258,12 @@ async def create_preset(db: AsyncSession, data: AiModelPresetCreate) -> dict:
     )
     db.add(preset)
     await db.flush()
-    return AiModelPresetOut.from_orm_model(preset).model_dump()
+    return AiModelPresetOut.from_orm_model(preset)
 
 
-async def update_preset(db: AsyncSession, preset_id: int, data: AiModelPresetUpdate) -> dict:
+async def update_preset(
+    db: AsyncSession, preset_id: int, data: AiModelPresetUpdate
+) -> AiModelPresetOut:
     preset = await get_preset(db, preset_id)
 
     if data.alias and data.alias != preset.alias:
@@ -287,7 +289,7 @@ async def update_preset(db: AsyncSession, preset_id: int, data: AiModelPresetUpd
         preset.sort_order = data.sortOrder
 
     await db.flush()
-    return AiModelPresetOut.from_orm_model(preset).model_dump()
+    return AiModelPresetOut.from_orm_model(preset)
 
 
 async def delete_preset(db: AsyncSession, preset_id: int) -> None:

@@ -19,30 +19,30 @@ public class AiModelPresetService {
 
   @Autowired private AiModelPresetRepository presetRepository;
 
-  public ApiResponse<?> getPresets(String search, String group) {
+  public ApiResponse<List<AiModelPresetResponse>> getPresets(String search, String group) {
     List<AiModelPreset> presets =
         presetRepository.searchWithFilters(
             search != null ? search : "", group != null ? group : "", null);
     return ApiResponse.success(presets.stream().map(AiModelPresetService::toResponse).toList());
   }
 
-  public ApiResponse<?> getGroups() {
+  public ApiResponse<List<String>> getGroups() {
     return ApiResponse.success(presetRepository.findDistinctGroups());
   }
 
-  public ApiResponse<?> getActivePresets() {
+  public ApiResponse<List<AiModelPresetResponse>> getActivePresets() {
     List<AiModelPreset> presets = presetRepository.findByActiveTrueOrderBySortOrderAscIdAsc();
     return ApiResponse.success(presets.stream().map(AiModelPresetService::toResponse).toList());
   }
 
-  public ApiResponse<?> getPreset(Long id) {
+  public ApiResponse<AiModelPresetResponse> getPreset(Long id) {
     AiModelPreset preset =
         presetRepository.findById(id).orElseThrow(() -> new NotFoundException("预设模型不存在"));
     return ApiResponse.success(toResponse(preset));
   }
 
   @Transactional
-  public ApiResponse<?> createPreset(AiModelPresetCreateRequest req) {
+  public ApiResponse<AiModelPresetResponse> createPreset(AiModelPresetCreateRequest req) {
     if (presetRepository.findByAlias(req.getAlias()).isPresent()) {
       throw new ConflictException("预设模型别名已存在");
     }
@@ -60,7 +60,7 @@ public class AiModelPresetService {
   }
 
   @Transactional
-  public ApiResponse<?> updatePreset(Long id, AiModelPresetUpdateRequest req) {
+  public ApiResponse<AiModelPresetResponse> updatePreset(Long id, AiModelPresetUpdateRequest req) {
     AiModelPreset preset =
         presetRepository.findById(id).orElseThrow(() -> new NotFoundException("预设模型不存在"));
 
@@ -82,7 +82,7 @@ public class AiModelPresetService {
   }
 
   @Transactional
-  public ApiResponse<?> deletePreset(Long id) {
+  public ApiResponse<Void> deletePreset(Long id) {
     AiModelPreset preset =
         presetRepository.findById(id).orElseThrow(() -> new NotFoundException("预设模型不存在"));
     presetRepository.delete(preset);

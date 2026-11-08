@@ -20,14 +20,6 @@ class ImportJob:
     progress: int = 0
     finished_at: float = 0.0
 
-    def public(self) -> dict:
-        return {
-            "id": self.id,
-            "status": self.status,
-            "message": self.message,
-            "progress": self.progress,
-        }
-
 
 class DataOperationState:
     def __init__(self) -> None:

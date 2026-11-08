@@ -9,10 +9,21 @@ import uuid
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.catalogs.menus import MENU_GROUPS, MENU_ITEMS
 from app.core.app_state import get_app_state
 from app.core.exceptions import ConflictError, InvalidOperationError, NotFoundError
-from app.core.menu_catalog import MENU_GROUPS, MENU_ITEMS
 from app.menu.models import MenuGroup, MenuItem
+from app.menu.outputs import (
+    MenuCatalogSyncResult,
+    MenuConfigOut,
+    MenuGroupOut,
+    MenuGroupResult,
+    MenuItemOut,
+    MenuItemResult,
+    MenuOperationOut,
+    NavigationGroupOut,
+    NavigationItemOut,
+)
 from app.menu.schemas import MenuGroupCreate, MenuItemCreate, MenuItemUpdate, MenuLayoutUpdate
 from app.permission.models import Permission
 from app.role.models import RolePermission
@@ -22,7 +33,7 @@ OPERATION_TYPE = "operation"
 ADMIN_ROLE_ID = "admin"
 
 
-async def sync_menu_catalog(db: AsyncSession) -> dict:
+async def sync_menu_catalog(db: AsyncSession) -> MenuCatalogSyncResult:
     """补齐内置分组与菜单，不覆盖已有的顺序调整。"""
     existing_groups = {
         group.id for group in (await db.execute(select(MenuGroup))).scalars().all()
@@ -44,10 +55,10 @@ async def sync_menu_catalog(db: AsyncSession) -> dict:
             added_items.append(item["permission_code"])
 
     await db.flush()
-    return {"groups": added_groups, "items": added_items}
+    return MenuCatalogSyncResult(groups=added_groups, items=added_items)
 
 
-async def get_menu_config(db: AsyncSession) -> dict:
+async def get_menu_config(db: AsyncSession) -> MenuConfigOut:
     state = await get_app_state(db)
     groups = (
         await db.execute(select(MenuGroup).order_by(MenuGroup.sort_order, MenuGroup.id))
@@ -65,46 +76,48 @@ async def get_menu_config(db: AsyncSession) -> dict:
         )
     ).scalars().all()
 
-    operations_by_parent: dict[str, list[dict]] = {}
+    operations_by_parent: dict[str, list[MenuOperationOut]] = {}
     for operation in operations:
         if not operation.parent:
             continue
         operations_by_parent.setdefault(operation.parent, []).append(
-            {"code": operation.code, "name": operation.name}
+            MenuOperationOut(code=operation.code, name=operation.name)
         )
 
-    items_by_group: dict[str, list[dict]] = {}
+    items_by_group: dict[str, list[MenuItemOut]] = {}
     for item, name in rows:
         items_by_group.setdefault(item.group_id, []).append(
-            {
-                "permissionCode": item.permission_code,
-                "name": name,
-                "groupId": item.group_id,
-                "route": item.route,
-                "icon": item.icon,
-                "sortOrder": item.sort_order,
-                "isSystem": bool(item.is_system),
-                "hidden": bool(item.hidden),
-                "operations": operations_by_parent.get(item.permission_code, []),
-            }
+            MenuItemOut(
+                permissionCode=item.permission_code,
+                name=name,
+                groupId=item.group_id,
+                route=item.route,
+                icon=item.icon,
+                sortOrder=item.sort_order,
+                isSystem=bool(item.is_system),
+                hidden=bool(item.hidden),
+                operations=operations_by_parent.get(item.permission_code, []),
+            )
         )
 
-    return {
-        "version": state.menu_layout_version,
-        "groups": [
-            {
-                "id": group.id,
-                "name": group.name,
-                "sortOrder": group.sort_order,
-                "isSystem": bool(group.is_system),
-                "items": items_by_group.get(group.id, []),
-            }
+    return MenuConfigOut(
+        version=state.menu_layout_version,
+        groups=[
+            MenuGroupOut(
+                id=group.id,
+                name=group.name,
+                sortOrder=group.sort_order,
+                isSystem=bool(group.is_system),
+                items=items_by_group.get(group.id, []),
+            )
             for group in groups
         ],
-    }
+    )
 
 
-async def get_navigation(db: AsyncSession, permissions: set[str] | frozenset[str]) -> list[dict]:
+async def get_navigation(
+    db: AsyncSession, permissions: set[str] | frozenset[str]
+) -> list[NavigationGroupOut]:
     """按权限过滤的侧边栏。``hidden`` 只影响展示，不撤销授权。"""
     rows = (
         await db.execute(
@@ -122,27 +135,27 @@ async def get_navigation(db: AsyncSession, permissions: set[str] | frozenset[str
         )
     ).all()
 
-    groups: dict[str, dict] = {}
+    groups: dict[str, NavigationGroupOut] = {}
     for group, item, name in rows:
         if item.permission_code not in permissions:
             continue
         entry = groups.setdefault(
             group.id,
-            {
-                "id": group.id,
-                "name": group.name,
-                "sortOrder": group.sort_order,
-                "items": [],
-            },
+            NavigationGroupOut(
+                id=group.id,
+                name=group.name,
+                sortOrder=group.sort_order,
+                items=[],
+            ),
         )
-        entry["items"].append(
-            {
-                "permissionCode": item.permission_code,
-                "name": name,
-                "route": item.route,
-                "icon": item.icon,
-                "sortOrder": item.sort_order,
-            }
+        entry.items.append(
+            NavigationItemOut(
+                permissionCode=item.permission_code,
+                name=name,
+                route=item.route,
+                icon=item.icon,
+                sortOrder=item.sort_order,
+            )
         )
     return list(groups.values())
 
@@ -161,7 +174,7 @@ async def get_item(db: AsyncSession, permission_code: str) -> MenuItem:
     return item
 
 
-async def create_group(db: AsyncSession, data: MenuGroupCreate) -> dict:
+async def create_group(db: AsyncSession, data: MenuGroupCreate) -> MenuGroupResult:
     max_order = (await db.execute(select(func.max(MenuGroup.sort_order)))).scalar() or 0
     group = MenuGroup(
         id=uuid.uuid4().hex[:12],
@@ -171,14 +184,14 @@ async def create_group(db: AsyncSession, data: MenuGroupCreate) -> dict:
     )
     db.add(group)
     await db.flush()
-    return {"id": group.id, "name": group.name, "sortOrder": group.sort_order}
+    return MenuGroupResult(id=group.id, name=group.name, sortOrder=group.sort_order)
 
 
-async def update_group(db: AsyncSession, group_id: str, name: str) -> dict:
+async def update_group(db: AsyncSession, group_id: str, name: str) -> MenuGroupResult:
     group = await get_group(db, group_id)
     group.name = name
     await db.flush()
-    return {"id": group.id, "name": group.name}
+    return MenuGroupResult(id=group.id, name=group.name)
 
 
 async def delete_group(db: AsyncSession, group_id: str) -> None:
@@ -196,7 +209,7 @@ async def delete_group(db: AsyncSession, group_id: str) -> None:
     await db.flush()
 
 
-async def create_item(db: AsyncSession, data: MenuItemCreate) -> dict:
+async def create_item(db: AsyncSession, data: MenuItemCreate) -> MenuItemResult:
     if await db.get(MenuGroup, data.group_id) is None:
         raise NotFoundError("菜单分组不存在")
     if await db.get(Permission, data.permission_code) is not None:
@@ -221,7 +234,7 @@ async def create_item(db: AsyncSession, data: MenuItemCreate) -> dict:
     )
     db.add(item)
     await db.flush()
-    return {"permissionCode": item.permission_code}
+    return MenuItemResult(permissionCode=item.permission_code)
 
 
 async def update_item(

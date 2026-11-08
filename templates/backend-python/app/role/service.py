@@ -11,19 +11,19 @@ from app.role.models import Role, RolePermission
 from app.role.schemas import RoleCreate, RoleOut, RoleUpdate
 
 
-def _to_out(role: Role) -> dict:
+def _to_out(role: Role) -> RoleOut:
     return RoleOut(
         id=role.id,
         name=role.name,
         description=role.description or "",
         permissions=sorted(rp.permission_code for rp in role.permissions),
         isPreset=bool(role.is_preset),
-    ).model_dump()
+    )
 
 
 async def list_roles(
     db: AsyncSession, search: str, page: int, page_size: int
-) -> tuple[list[dict], int]:
+) -> tuple[list[RoleOut], int]:
     query = select(Role).options(selectinload(Role.permissions))
     if search:
         query = query.where(
@@ -56,7 +56,7 @@ async def _replace_permissions(db: AsyncSession, role: Role, codes: list[str]) -
         db.add(RolePermission(role_id=role.id, permission_code=code))
 
 
-async def create_role(db: AsyncSession, data: RoleCreate) -> dict:
+async def create_role(db: AsyncSession, data: RoleCreate) -> RoleOut:
     role = Role(
         id=uuid.uuid4().hex[:8],
         name=data.name,
@@ -72,7 +72,7 @@ async def create_role(db: AsyncSession, data: RoleCreate) -> dict:
     return _to_out(role)
 
 
-async def update_role(db: AsyncSession, role_id: str, data: RoleUpdate) -> dict:
+async def update_role(db: AsyncSession, role_id: str, data: RoleUpdate) -> RoleOut:
     role = await get_role(db, role_id)
     if data.name is not None:
         role.name = data.name

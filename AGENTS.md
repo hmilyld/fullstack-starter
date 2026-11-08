@@ -34,12 +34,13 @@ These are enforced by `ruff` and the contract suite, not just prose:
 
 1. **Failures throw.** Never write to the database and then `return ApiResponse(code=-1)`. Raise `AppError` / `NotFoundError` / `ConflictError` / `InvalidOperationError` / `ForbiddenError`; `app/core/exceptions.py` maps them to the envelope. `get_db` commits only on normal return and rolls back on any exception.
 2. **Routers do HTTP mapping only.** Parsing, dependency wiring and returning the envelope. Business rules and multi-step writes belong in `service.py`.
-3. **Every response is typed.** No bare `dict` literals in a router body — build a schema (`schemas.py`) and `model_dump()` it.
+3. **Every endpoint declares `ApiResponse[T]`.** FastAPI derives the `response_model` from the return annotation, so this is what makes the OpenAPI response schema real. Returning a bare `dict` or `-> ApiResponse` produces a free-form object and fails `test_every_endpoint_declares_response_schema`.
 4. **Pagination is clamped, not rejected.** Use `app.core.pagination.pagination_params`; `page`/`pageSize` out of range are clamped (contract requirement), so `Query(ge=..., le=...)` on those two is forbidden.
 5. **ORM uses SQLAlchemy 2.0 style.** `Mapped` / `mapped_column`, never legacy `Column(...)`.
 6. **Dependencies use `Annotated`.** `db: DbSession`, `current_user: CurrentUser`, and similar aliases per router.
 7. **Schema changes go through Alembic.** Never `Base.metadata.create_all`; never hand-edit a database. `alembic revision --autogenerate` then review.
 8. **Role names are not authorization.** Only `admin` (all permissions) and the "non-admin may not touch an admin account" rule may check a role name, each in exactly one place.
+9. **Catalogs are the single source.** Permission codes and built-in menus live in `app/catalogs/` (`permissions.py`, `menus.py`). Never hardcode a permission list elsewhere; startup sync reads these modules.
 
 ## Backend Coding Rules (templates/backend-java)
 
@@ -47,7 +48,7 @@ The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`
 
 1. **Failures throw.** Never write and then `return ApiResponse.error(...)` inside `@Transactional`. Throw `AppException` / `NotFoundException` / `ConflictException` / `InvalidOperationException` / `ForbiddenException`.
 2. **Controllers map HTTP only.** No business rules, no multi-step writes.
-3. **Every response is a `dto/*Response` record.** No `Map<String, Object>` in a controller or service return path.
+3. **Every response is a `dto/*Response` record and every controller method declares `ApiResponse<T>`.** No `Map<String, Object>` in a controller or service return path, and never `ApiResponse<?>` — a wildcard degrades the schema to `ApiResponseObject` (arbitrary JSON) and fails `successEnvelopesAreTyped`. Only `GlobalExceptionHandler` may use the wildcard, since its `data` is always `null`.
 4. **Pagination is clamped, not rejected.** `page`/`pageSize` are clamped in the service, never validated with `@Min`/`@Max`.
 5. **Schema changes go through Flyway.** Never edit a migration that has already run.
 6. **Formatting is not optional.** Run `mvn spotless:apply` after editing Java; `spotless:check` fails the build on drift.
@@ -146,7 +147,7 @@ The Python backend template carries the executable API contract:
 cd templates/backend-python
 uv sync --extra dev
 uv run ruff check .
-uv run pytest -q        # 26 contract assertions in tests/test_contract.py
+uv run pytest -q        # 28 contract assertions in tests/test_contract.py
 ```
 
 `tests/test_contract.py` is the contract oracle: it asserts the exact endpoint set, response envelope, resource shapes and semantics from `docs/contract/api.md`. The Java backend runs the same assertions in `src/test/java/com/hmilyld/fullstack/ContractTest.java`; both must pass.
@@ -154,7 +155,7 @@ uv run pytest -q        # 26 contract assertions in tests/test_contract.py
 ```bash
 cd templates/backend-java
 mvn spotless:apply      # format before committing
-mvn test                # 24 contract assertions
+mvn test                # 26 contract assertions
 ```
 
 Manual verification for the CLI:

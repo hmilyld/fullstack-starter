@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit import service
+from app.audit.schemas import AuditLogOut
 from app.core.database import get_db
 from app.core.deps import require_permission
 from app.core.pagination import Pagination, pagination_params
@@ -36,7 +37,7 @@ async def get_audit_logs(
     action: str = "",
     startTime: str = "",
     endTime: str = "",
-) -> ApiResponse:
+) -> ApiResponse[PaginatedData[AuditLogOut]]:
     user_id = int(userId.strip()) if userId.strip().isdigit() else None
     items, total = await service.list_logs(
         db,
@@ -49,7 +50,10 @@ async def get_audit_logs(
         page_size=pagination.page_size,
     )
     return ApiResponse(
-        data=PaginatedData(
-            list=items, total=total, page=pagination.page, pageSize=pagination.page_size
-        ).model_dump()
+        data=PaginatedData[AuditLogOut](
+            list=items,
+            total=total,
+            page=pagination.page,
+            pageSize=pagination.page_size,
+        )
     )

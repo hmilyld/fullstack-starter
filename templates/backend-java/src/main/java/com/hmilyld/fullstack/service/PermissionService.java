@@ -33,7 +33,7 @@ public class PermissionService {
   @Autowired private RolePermissionRepository rolePermissionRepository;
   @Autowired private RoleRepository roleRepository;
 
-  public ApiResponse<?> getPermissions(String type, String parent) {
+  public ApiResponse<List<PermissionResponse>> getPermissions(String type, String parent) {
     List<Permission> permissions;
     if (type != null && parent != null) {
       permissions = permissionRepository.findByTypeAndParent(type, parent);
@@ -54,7 +54,7 @@ public class PermissionService {
   }
 
   @Transactional
-  public ApiResponse<?> createPermission(PermissionCreateRequest req) {
+  public ApiResponse<PermissionResponse> createPermission(PermissionCreateRequest req) {
     if (MENU_TYPE.equals(req.getType())) {
       throw new InvalidOperationException("请通过菜单管理创建菜单");
     }
@@ -77,7 +77,8 @@ public class PermissionService {
   }
 
   @Transactional
-  public ApiResponse<?> updatePermission(String code, PermissionUpdateRequest req) {
+  public ApiResponse<PermissionResponse> updatePermission(
+      String code, PermissionUpdateRequest req) {
     Permission perm =
         permissionRepository.findById(code).orElseThrow(() -> new NotFoundException("权限不存在"));
     if (MENU_TYPE.equals(perm.getType())) {
@@ -95,7 +96,7 @@ public class PermissionService {
   }
 
   @Transactional
-  public ApiResponse<?> deletePermission(String code) {
+  public ApiResponse<Void> deletePermission(String code) {
     Permission perm =
         permissionRepository.findById(code).orElseThrow(() -> new NotFoundException("权限不存在"));
     if (MENU_TYPE.equals(perm.getType())) {
@@ -107,7 +108,7 @@ public class PermissionService {
   }
 
   @Transactional
-  public ApiResponse<?> syncPermissions() {
+  public ApiResponse<PermissionSyncResponse> syncPermissions() {
     List<String> added = new ArrayList<>();
     List<String> updated = new ArrayList<>();
 

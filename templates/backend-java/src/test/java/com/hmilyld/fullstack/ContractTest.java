@@ -219,6 +219,88 @@ class ContractTest {
 
   @Test
   @Order(2)
+  void everyEndpointDeclaresResponseSchema() throws Exception {
+    // 与 Python 侧 test_every_endpoint_declares_response_schema 对等：
+    // 每个端点都必须在 OpenAPI 中有结构化响应，不能退化为自由对象
+    MvcResult result = call(get("/openapi.json"), null);
+    JsonNode paths = json(result).get("paths");
+    List<String> problems = new ArrayList<>();
+
+    paths
+        .fieldNames()
+        .forEachRemaining(
+            path -> {
+              JsonNode operations = paths.get(path);
+              operations
+                  .fieldNames()
+                  .forEachRemaining(
+                      method -> {
+                        if (!Set.of("get", "post", "put", "delete", "patch").contains(method)) {
+                          return;
+                        }
+                        JsonNode responses = operations.get(method).get("responses");
+                        String code = responses.has("202") ? "202" : "200";
+                        JsonNode content = responses.path(code).path("content");
+                        if (content.isMissingNode() || content.isEmpty()) {
+                          problems.add(method.toUpperCase() + " " + path + ": 无响应内容");
+                        }
+                      });
+            });
+
+    assertThat(problems).as("响应 schema 不合格: %s", problems).isEmpty();
+  }
+
+  @Test
+  @Order(3)
+  void successEnvelopesAreTyped() throws Exception {
+    // 除文件下载外，成功响应必须引用具体的 schema，而不是自由对象
+    MvcResult result = call(get("/openapi.json"), null);
+    JsonNode paths = json(result).get("paths");
+    List<String> problems = new ArrayList<>();
+
+    paths
+        .fieldNames()
+        .forEachRemaining(
+            path -> {
+              if ("/api/data/export".equals(path)) {
+                return; // 文件下载，不是信封
+              }
+              JsonNode operations = paths.get(path);
+              operations
+                  .fieldNames()
+                  .forEachRemaining(
+                      method -> {
+                        if (!Set.of("get", "post", "put", "delete", "patch").contains(method)) {
+                          return;
+                        }
+                        JsonNode responses = operations.get(method).get("responses");
+                        String code = responses.has("202") ? "202" : "200";
+                        // springdoc 默认的 content key 是 `*/*`（未显式声明 produces），
+                        // 因此遍历所有 media type，而不是只查 application/json
+                        JsonNode content = responses.path(code).path("content");
+                        if (content.isMissingNode() || content.isEmpty()) {
+                          problems.add(method.toUpperCase() + " " + path + ": 无响应内容");
+                          return;
+                        }
+                        JsonNode schema = content.elements().next().path("schema");
+                        if (schema.isMissingNode() || schema.isEmpty()) {
+                          problems.add(method.toUpperCase() + " " + path + ": 缺少 JSON schema");
+                          return;
+                        }
+                        String ref = schema.path("$ref").asText("");
+                        // 通配符 ApiResponse<?> 会退化成 ApiResponseObject（data 为任意 JSON），
+                        // 与「契约机器可读」相悖，因此也算不合格
+                        if (!ref.contains("ApiResponse") || ref.endsWith("ApiResponseObject")) {
+                          problems.add(method.toUpperCase() + " " + path + ": 未使用具体信封类型 -> " + ref);
+                        }
+                      });
+            });
+
+    assertThat(problems).as("响应 schema 不合格: %s", problems).isEmpty();
+  }
+
+  @Test
+  @Order(4)
   void successEnvelope() throws Exception {
     MvcResult result = call(get("/api/users"), adminToken());
     assertThat(result.getResponse().getStatus()).isEqualTo(200);

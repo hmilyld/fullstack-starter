@@ -44,7 +44,7 @@ public class UserService {
 
   private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-  public ApiResponse<?> getUsers(String search, int page, int pageSize) {
+  public ApiResponse<PageResult<UserResponse>> getUsers(String search, int page, int pageSize) {
     page = Math.max(1, page);
     pageSize = Math.min(100, Math.max(1, pageSize));
 
@@ -61,13 +61,13 @@ public class UserService {
     return ApiResponse.success(result);
   }
 
-  public ApiResponse<?> getUser(Long id) {
+  public ApiResponse<UserResponse> getUser(Long id) {
     User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("用户不存在"));
     return ApiResponse.success(toResponse(user));
   }
 
   @Transactional
-  public ApiResponse<?> createUser(UserCreateRequest req) {
+  public ApiResponse<UserResponse> createUser(UserCreateRequest req) {
     if (userRepository.findByUsername(req.getUsername()).isPresent()) {
       throw new ConflictException("用户名已存在");
     }
@@ -94,7 +94,7 @@ public class UserService {
   }
 
   @Transactional
-  public ApiResponse<?> updateUser(Long id, UserUpdateRequest req) {
+  public ApiResponse<UserResponse> updateUser(Long id, UserUpdateRequest req) {
     User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("用户不存在"));
 
     Long operatorId = StpUtil.getLoginIdAsLong();
@@ -125,7 +125,7 @@ public class UserService {
   }
 
   @Transactional
-  public ApiResponse<?> deleteUser(Long id) {
+  public ApiResponse<Void> deleteUser(Long id) {
     User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("用户不存在"));
 
     Long operatorId = StpUtil.getLoginIdAsLong();
@@ -147,7 +147,7 @@ public class UserService {
   }
 
   @Transactional
-  public ApiResponse<?> resetPassword(Long id, String newPassword) {
+  public ApiResponse<Void> resetPassword(Long id, String newPassword) {
     User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("用户不存在"));
     if (ADMIN_ROLE_ID.equals(user.getRoleId()) && !isOperatorAdmin()) {
       throw new ForbiddenException();
@@ -160,7 +160,8 @@ public class UserService {
   }
 
   @Transactional
-  public ApiResponse<?> batchUpdateRole(BatchRoleUpdateRequestHolder req, Long currentUserId) {
+  public ApiResponse<BatchRoleResult> batchUpdateRole(
+      BatchRoleUpdateRequestHolder req, Long currentUserId) {
     int applied = 0;
     for (Long userId : req.userIds()) {
       User user = userRepository.findById(userId).orElse(null);
@@ -177,7 +178,7 @@ public class UserService {
   }
 
   @Transactional
-  public ApiResponse<?> updateMe(Long userId, UpdateMeRequest req) {
+  public ApiResponse<UserResponse> updateMe(Long userId, UpdateMeRequest req) {
     User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("用户不存在"));
     if (req.getEmail() != null && !req.getEmail().equals(user.getEmail())) {
       if (userRepository.findByEmail(req.getEmail()).isPresent()) {
@@ -191,7 +192,7 @@ public class UserService {
   }
 
   @Transactional
-  public ApiResponse<?> changePassword(Long userId, ChangePasswordRequest req) {
+  public ApiResponse<Void> changePassword(Long userId, ChangePasswordRequest req) {
     User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("用户不存在"));
     if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPasswordHash())) {
       throw new InvalidOperationException("当前密码错误");

@@ -57,7 +57,7 @@ public class DataManagementController {
   @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseStatus(org.springframework.http.HttpStatus.ACCEPTED)
   @SaCheckPermission("data_management.import")
-  public ApiResponse<?> importData(
+  public ApiResponse<Map<String, Object>> importData(
       @RequestPart("file") MultipartFile file, @RequestParam("password") String password)
       throws Exception {
     Long ownerId = Long.parseLong(StpUtil.getLoginId().toString());
@@ -104,7 +104,7 @@ public class DataManagementController {
   }
 
   @GetMapping("/import/{jobId}")
-  public ApiResponse<?> importStatus(
+  public ApiResponse<Map<String, Object>> importStatus(
       @PathVariable String jobId, @RequestHeader("X-Import-Job-Token") String jobToken) {
     DataOperationState.ImportJob job = operationState.getJob(jobId, jobToken);
     if (job == null) return ApiResponse.error("导入任务不存在");

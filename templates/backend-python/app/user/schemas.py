@@ -40,6 +40,10 @@ class BatchRoleUpdateRequest(BaseModel):
     roleId: str
 
 
+class BatchRoleResult(BaseModel):
+    applied: int
+
+
 class UserOut(BaseModel):
     id: str
     username: str

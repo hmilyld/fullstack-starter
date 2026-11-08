@@ -31,7 +31,8 @@ public class AiModelService {
   @Autowired private AiModelRepository aiModelRepository;
   @Autowired private WebClient webClient;
 
-  public ApiResponse<?> getAiModels(String search, int page, int pageSize) {
+  public ApiResponse<PageResult<AiModelResponse>> getAiModels(
+      String search, int page, int pageSize) {
     page = Math.max(1, page);
     pageSize = Math.min(100, Math.max(1, pageSize));
 
@@ -48,14 +49,14 @@ public class AiModelService {
     return ApiResponse.success(result);
   }
 
-  public ApiResponse<?> getAiModel(Long id) {
+  public ApiResponse<AiModelResponse> getAiModel(Long id) {
     AiModel model =
         aiModelRepository.findById(id).orElseThrow(() -> new NotFoundException("模型不存在"));
     return ApiResponse.success(toResponse(model));
   }
 
   @Transactional
-  public ApiResponse<?> createAiModel(AiModelCreateRequest req) {
+  public ApiResponse<AiModelResponse> createAiModel(AiModelCreateRequest req) {
     assertSafeUrl(req.getApiUrl());
     if (aiModelRepository.findByAlias(req.getAlias()).isPresent()) {
       throw new ConflictException("别名已存在");
@@ -77,7 +78,7 @@ public class AiModelService {
   }
 
   @Transactional
-  public ApiResponse<?> updateAiModel(Long id, AiModelUpdateRequest req) {
+  public ApiResponse<AiModelResponse> updateAiModel(Long id, AiModelUpdateRequest req) {
     AiModel model =
         aiModelRepository.findById(id).orElseThrow(() -> new NotFoundException("模型不存在"));
 
@@ -108,14 +109,14 @@ public class AiModelService {
   }
 
   @Transactional
-  public ApiResponse<?> deleteAiModel(Long id) {
+  public ApiResponse<Void> deleteAiModel(Long id) {
     AiModel model =
         aiModelRepository.findById(id).orElseThrow(() -> new NotFoundException("模型不存在"));
     aiModelRepository.delete(model);
     return ApiResponse.success();
   }
 
-  public ApiResponse<?> getDefaultModel() {
+  public ApiResponse<AiModelPublicResponse> getDefaultModel() {
     AiModel model =
         aiModelRepository
             .findByDefaultModelTrue()
@@ -123,13 +124,13 @@ public class AiModelService {
     return ApiResponse.success(toPublicResponse(model));
   }
 
-  public ApiResponse<?> getModelByAlias(String alias) {
+  public ApiResponse<AiModelPublicResponse> getModelByAlias(String alias) {
     AiModel model =
         aiModelRepository.findByAlias(alias).orElseThrow(() -> new NotFoundException("模型不存在"));
     return ApiResponse.success(toPublicResponse(model));
   }
 
-  public ApiResponse<?> testAiModel(AiModelTestRequest req) {
+  public ApiResponse<AiModelTestResult> testAiModel(AiModelTestRequest req) {
     String apiUrl = req.getApiUrl();
     String apiKey = req.getApiKey();
     String modelName = req.getModelName();

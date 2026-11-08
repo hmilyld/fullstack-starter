@@ -6,9 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai_model import service
 from app.ai_model.schemas import (
     AiModelCreate,
+    AiModelOut,
     AiModelPresetCreate,
+    AiModelPresetOut,
     AiModelPresetUpdate,
+    AiModelPublicOut,
     AiModelTestRequest,
+    AiModelTestResult,
     AiModelUpdate,
 )
 from app.core.database import get_db
@@ -34,7 +38,7 @@ async def get_ai_model_presets(
     db: DbSession,
     search: str = "",
     group: str = "",
-) -> ApiResponse:
+) -> ApiResponse[list[AiModelPresetOut]]:
     return ApiResponse(data=await service.list_presets(db, search, group))
 
 
@@ -42,7 +46,7 @@ async def get_ai_model_presets(
 async def get_ai_model_preset_groups(
     current_user: Annotated[User, Depends(require_permission("ai_models"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[list[str]]:
     return ApiResponse(data=await service.list_preset_groups(db))
 
 
@@ -50,7 +54,7 @@ async def get_ai_model_preset_groups(
 async def get_active_ai_model_presets(
     current_user: Annotated[User, Depends(get_current_user)],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[list[AiModelPresetOut]]:
     return ApiResponse(data=await service.list_presets(db, is_active=True))
 
 
@@ -61,7 +65,7 @@ async def create_ai_model_preset(
         User, Depends(require_permission("ai_models.create", "ai_models.presets.create"))
     ],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[AiModelPresetOut]:
     return ApiResponse(data=await service.create_preset(db, data))
 
 
@@ -70,11 +74,9 @@ async def get_ai_model_preset(
     preset_id: int,
     current_user: Annotated[User, Depends(require_permission("ai_models"))],
     db: DbSession,
-) -> ApiResponse:
-    from app.ai_model.schemas import AiModelPresetOut
-
+) -> ApiResponse[AiModelPresetOut]:
     preset = await service.get_preset(db, preset_id)
-    return ApiResponse(data=AiModelPresetOut.from_orm_model(preset).model_dump())
+    return ApiResponse(data=AiModelPresetOut.from_orm_model(preset))
 
 
 @router.put("/presets/{preset_id}")
@@ -85,7 +87,7 @@ async def update_ai_model_preset(
         User, Depends(require_permission("ai_models.edit", "ai_models.presets.edit"))
     ],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[AiModelPresetOut]:
     return ApiResponse(data=await service.update_preset(db, preset_id, data))
 
 
@@ -96,7 +98,7 @@ async def delete_ai_model_preset(
         User, Depends(require_permission("ai_models.delete", "ai_models.presets.delete"))
     ],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[None]:
     await service.delete_preset(db, preset_id)
     return ApiResponse()
 
@@ -112,12 +114,12 @@ async def get_ai_models(
     db: DbSession,
     pagination: PaginationDep,
     search: str = "",
-) -> ApiResponse:
+) -> ApiResponse[PaginatedData[AiModelOut]]:
     items, total = await service.list_models(db, search, pagination.page, pagination.page_size)
     return ApiResponse(
-        data=PaginatedData(
+        data=PaginatedData[AiModelOut](
             list=items, total=total, page=pagination.page, pageSize=pagination.page_size
-        ).model_dump()
+        )
     )
 
 
@@ -125,7 +127,7 @@ async def get_ai_models(
 async def get_default_model(
     current_user: Annotated[User, Depends(get_current_user)],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[AiModelPublicOut]:
     model = await service.get_default_model(db)
     return ApiResponse(data=service.public_out(model))
 
@@ -135,7 +137,7 @@ async def get_model_by_alias(
     alias: str,
     current_user: Annotated[User, Depends(get_current_user)],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[AiModelPublicOut]:
     model = await service.get_model_by_alias(db, alias)
     return ApiResponse(data=service.public_out(model))
 
@@ -145,7 +147,7 @@ async def create_ai_model(
     data: AiModelCreate,
     current_user: Annotated[User, Depends(require_permission("ai_models.create"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[AiModelOut]:
     return ApiResponse(data=await service.create_model(db, data))
 
 
@@ -154,7 +156,7 @@ async def test_ai_model(
     data: AiModelTestRequest,
     current_user: Annotated[User, Depends(require_permission("ai_models"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[AiModelTestResult]:
     return ApiResponse(data=await service.test_model(db, data))
 
 
@@ -163,11 +165,9 @@ async def get_ai_model(
     model_id: int,
     current_user: Annotated[User, Depends(require_permission("ai_models"))],
     db: DbSession,
-) -> ApiResponse:
-    from app.ai_model.schemas import AiModelOut
-
+) -> ApiResponse[AiModelOut]:
     model = await service.get_model(db, model_id)
-    return ApiResponse(data=AiModelOut.from_orm_model(model).model_dump())
+    return ApiResponse(data=AiModelOut.from_orm_model(model))
 
 
 @router.put("/{model_id}")
@@ -176,7 +176,7 @@ async def update_ai_model(
     data: AiModelUpdate,
     current_user: Annotated[User, Depends(require_permission("ai_models.edit"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[AiModelOut]:
     return ApiResponse(data=await service.update_model(db, model_id, data))
 
 
@@ -185,6 +185,6 @@ async def delete_ai_model(
     model_id: int,
     current_user: Annotated[User, Depends(require_permission("ai_models.delete"))],
     db: DbSession,
-) -> ApiResponse:
+) -> ApiResponse[None]:
     await service.delete_model(db, model_id)
     return ApiResponse()

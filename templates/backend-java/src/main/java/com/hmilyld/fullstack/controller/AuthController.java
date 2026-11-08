@@ -3,6 +3,7 @@ package com.hmilyld.fullstack.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.dto.LoginRequest;
+import com.hmilyld.fullstack.dto.LoginResponse;
 import com.hmilyld.fullstack.dto.RegisterRequest;
 import com.hmilyld.fullstack.security.RateLimiter;
 import com.hmilyld.fullstack.service.AuthService;
@@ -19,7 +20,8 @@ public class AuthController {
   @Autowired private RateLimiter rateLimiter;
 
   @PostMapping("/login")
-  public ApiResponse<?> login(@RequestBody @Valid LoginRequest req, HttpServletRequest request) {
+  public ApiResponse<LoginResponse> login(
+      @RequestBody @Valid LoginRequest req, HttpServletRequest request) {
     String clientIp = getClientIp(request);
     if (rateLimiter.isRateLimited("login:" + clientIp)) {
       return ApiResponse.error("登录尝试过于频繁，请稍后再试");
@@ -28,7 +30,7 @@ public class AuthController {
   }
 
   @PostMapping("/register")
-  public ApiResponse<?> register(
+  public ApiResponse<LoginResponse> register(
       @RequestBody @Valid RegisterRequest req, HttpServletRequest request) {
     String clientIp = getClientIp(request);
     if (rateLimiter.isRateLimited("register:" + clientIp)) {
@@ -38,7 +40,7 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ApiResponse<?> logout(HttpServletRequest request) {
+  public ApiResponse<Void> logout(HttpServletRequest request) {
     Long userId = null;
     try {
       Object loginId = StpUtil.getLoginIdDefaultNull();

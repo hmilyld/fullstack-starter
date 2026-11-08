@@ -33,7 +33,7 @@ public class AuthService {
 
   private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-  public ApiResponse<?> login(String account, String password, String clientIp) {
+  public ApiResponse<LoginResponse> login(String account, String password, String clientIp) {
     User user =
         userRepository
             .findByUsername(account)
@@ -71,7 +71,8 @@ public class AuthService {
   }
 
   @Transactional
-  public ApiResponse<?> register(String username, String email, String password, String clientIp) {
+  public ApiResponse<LoginResponse> register(
+      String username, String email, String password, String clientIp) {
     SystemConfig config = systemConfigRepository.findById(1L).orElse(new SystemConfig());
     if (!Boolean.TRUE.equals(config.getOpenRegistration())) {
       auditLogService.record(null, username, "register", clientIp, "fail", "注册已关闭");

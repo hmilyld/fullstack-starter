@@ -95,7 +95,7 @@ public class MenuService {
     return result;
   }
 
-  public ApiResponse<?> getConfig() {
+  public ApiResponse<MenuConfigResponse> getConfig() {
     Map<String, List<MenuConfigResponse.MenuOperationResponse>> operationsByParent =
         new LinkedHashMap<>();
     List<Permission> operationPermissions = permissionRepository.findByType(OPERATION_TYPE);
@@ -143,7 +143,7 @@ public class MenuService {
     return ApiResponse.success(new MenuConfigResponse(state.getMenuLayoutVersion(), groups));
   }
 
-  public ApiResponse<?> getNavigation() {
+  public ApiResponse<List<NavigationGroupResponse>> getNavigation() {
     long userId = Long.parseLong(StpUtil.getLoginId().toString());
     User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("用户不存在"));
 
@@ -197,7 +197,7 @@ public class MenuService {
   }
 
   @Transactional
-  public ApiResponse<?> createGroup(String name) {
+  public ApiResponse<MenuGroupResult> createGroup(String name) {
     int maxOrder =
         menuGroupRepository.findAll().stream()
             .mapToInt(item -> item.getSortOrder() == null ? 0 : item.getSortOrder())
@@ -214,7 +214,7 @@ public class MenuService {
   }
 
   @Transactional
-  public ApiResponse<?> updateGroup(String groupId, String name) {
+  public ApiResponse<MenuGroupResult> updateGroup(String groupId, String name) {
     MenuGroup group =
         menuGroupRepository.findById(groupId).orElseThrow(() -> new NotFoundException("菜单分组不存在"));
     group.setName(name);
@@ -223,7 +223,7 @@ public class MenuService {
   }
 
   @Transactional
-  public ApiResponse<?> deleteGroup(String groupId) {
+  public ApiResponse<Void> deleteGroup(String groupId) {
     MenuGroup group =
         menuGroupRepository.findById(groupId).orElseThrow(() -> new NotFoundException("菜单分组不存在"));
     if (Boolean.TRUE.equals(group.getSystem())) {
@@ -237,7 +237,7 @@ public class MenuService {
   }
 
   @Transactional
-  public ApiResponse<?> createItem(MenuItemCreateRequest request) {
+  public ApiResponse<MenuItemResult> createItem(MenuItemCreateRequest request) {
     if (menuGroupRepository.findById(request.getGroupId()).isEmpty()) {
       throw new NotFoundException("菜单分组不存在");
     }
@@ -279,7 +279,7 @@ public class MenuService {
   }
 
   @Transactional
-  public ApiResponse<?> updateItem(String permissionCode, MenuItemUpdateRequest request) {
+  public ApiResponse<Void> updateItem(String permissionCode, MenuItemUpdateRequest request) {
     MenuItem item =
         menuItemRepository
             .findById(permissionCode)
@@ -315,7 +315,7 @@ public class MenuService {
   }
 
   @Transactional
-  public ApiResponse<?> deleteItem(String permissionCode) {
+  public ApiResponse<Void> deleteItem(String permissionCode) {
     MenuItem item =
         menuItemRepository
             .findById(permissionCode)
@@ -337,7 +337,7 @@ public class MenuService {
   }
 
   @Transactional
-  public ApiResponse<?> saveLayout(MenuLayoutRequest request) {
+  public ApiResponse<MenuLayoutResult> saveLayout(MenuLayoutRequest request) {
     AppState state = appStateService.getOrCreate();
     if (!state.getMenuLayoutVersion().equals(request.getVersion())) {
       throw new ConflictException("菜单顺序已被其他管理员修改，请刷新后重试");

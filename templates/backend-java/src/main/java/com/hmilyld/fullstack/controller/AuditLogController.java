@@ -2,6 +2,8 @@ package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.PageResult;
+import com.hmilyld.fullstack.dto.AuditLogResponse;
 import com.hmilyld.fullstack.service.AuditLogService;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,7 @@ public class AuditLogController {
 
   @GetMapping("")
   @SaCheckPermission("audit_logs")
-  public ApiResponse<?> getAuditLogs(
+  public ApiResponse<PageResult<AuditLogResponse>> getAuditLogs(
       @RequestParam(defaultValue = "") String userId,
       @RequestParam(defaultValue = "") String status,
       @RequestParam(defaultValue = "") String action,

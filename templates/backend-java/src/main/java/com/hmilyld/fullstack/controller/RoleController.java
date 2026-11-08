@@ -2,7 +2,9 @@ package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.PageResult;
 import com.hmilyld.fullstack.dto.RoleCreateRequest;
+import com.hmilyld.fullstack.dto.RoleResponse;
 import com.hmilyld.fullstack.dto.RoleUpdateRequest;
 import com.hmilyld.fullstack.service.RoleService;
 import jakarta.validation.Valid;
@@ -17,7 +19,7 @@ public class RoleController {
 
   @GetMapping("")
   @SaCheckPermission("roles")
-  public ApiResponse<?> getRoles(
+  public ApiResponse<PageResult<RoleResponse>> getRoles(
       @RequestParam(defaultValue = "") String search,
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "10") int pageSize) {
@@ -26,19 +28,20 @@ public class RoleController {
 
   @PostMapping("")
   @SaCheckPermission("roles.create")
-  public ApiResponse<?> createRole(@RequestBody @Valid RoleCreateRequest req) {
+  public ApiResponse<RoleResponse> createRole(@RequestBody @Valid RoleCreateRequest req) {
     return roleService.createRole(req);
   }
 
   @PutMapping("/{id}")
   @SaCheckPermission("roles.edit")
-  public ApiResponse<?> updateRole(@PathVariable String id, @RequestBody RoleUpdateRequest req) {
+  public ApiResponse<RoleResponse> updateRole(
+      @PathVariable String id, @RequestBody RoleUpdateRequest req) {
     return roleService.updateRole(id, req);
   }
 
   @DeleteMapping("/{id}")
   @SaCheckPermission("roles.delete")
-  public ApiResponse<?> deleteRole(@PathVariable String id) {
+  public ApiResponse<Void> deleteRole(@PathVariable String id) {
     return roleService.deleteRole(id);
   }
 }

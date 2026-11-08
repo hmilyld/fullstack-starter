@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.schemas import LoginRequest, RegisterRequest
+from app.auth.schemas import LoginRequest, LoginResponse, RegisterRequest
 from app.auth.service import login as login_service
 from app.auth.service import logout as logout_service
 from app.auth.service import register as register_service
@@ -21,9 +21,8 @@ async def login(
     request: LoginRequest,
     req: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> ApiResponse:
-    payload = await login_service(db, request, audit.get_client_ip(req))
-    return ApiResponse(data=payload)
+) -> ApiResponse[LoginResponse]:
+    return ApiResponse(data=await login_service(db, request, audit.get_client_ip(req)))
 
 
 @router.post("/register")
@@ -31,7 +30,7 @@ async def register(
     request: RegisterRequest,
     req: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> ApiResponse:
+) -> ApiResponse[LoginResponse]:
     payload = await register_service(db, request, audit.get_client_ip(req))
     if payload is None:
         return ApiResponse(message="注册成功，请等待管理员审核")
@@ -43,6 +42,6 @@ async def logout(
     req: Request,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> ApiResponse:
+) -> ApiResponse[None]:
     await logout_service(db, current_user, audit.get_client_ip(req))
     return ApiResponse()

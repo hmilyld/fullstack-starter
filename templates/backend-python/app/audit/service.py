@@ -56,7 +56,7 @@ async def list_logs(
     end_time: datetime | None,
     page: int,
     page_size: int,
-) -> tuple[list[dict], int]:
+) -> tuple[list[AuditLogOut], int]:
     items, total = await get_audit_logs(
         db,
         user_id=user_id,
@@ -85,7 +85,7 @@ async def list_logs(
             status=item.status,
             detail=item.detail or "",
             createdAt=item.created_at.isoformat() if item.created_at else "",
-        ).model_dump()
+        )
         for item in items
     ], total
 

@@ -2,6 +2,7 @@ package com.hmilyld.fullstack.service;
 
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.common.InvalidOperationException;
+import com.hmilyld.fullstack.dto.PublicConfigResponse;
 import com.hmilyld.fullstack.dto.SystemConfigResponse;
 import com.hmilyld.fullstack.dto.SystemConfigUpdateRequest;
 import com.hmilyld.fullstack.entity.SystemConfig;
@@ -29,12 +30,12 @@ public class SystemConfigService {
             });
   }
 
-  public ApiResponse<?> getConfigOut() {
+  public ApiResponse<SystemConfigResponse> getConfigOut() {
     return ApiResponse.success(toResponse(getConfig()));
   }
 
   @Transactional
-  public ApiResponse<?> updateConfig(SystemConfigUpdateRequest req) {
+  public ApiResponse<SystemConfigResponse> updateConfig(SystemConfigUpdateRequest req) {
     SystemConfig config = getConfig();
 
     if (req.getSiteName() != null) config.setSiteName(req.getSiteName());
@@ -79,7 +80,7 @@ public class SystemConfigService {
     return config;
   }
 
-  public ApiResponse<?> publicConfig() {
+  public ApiResponse<PublicConfigResponse> publicConfig() {
     SystemConfig config = getConfig();
     return ApiResponse.success(
         new com.hmilyld.fullstack.dto.PublicConfigResponse(

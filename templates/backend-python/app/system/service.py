@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError, InvalidOperationError
 from app.system.models import SystemConfig
-from app.system.schemas import SystemConfigOut, SystemConfigUpdate
+from app.system.schemas import PublicConfigOut, SystemConfigOut, SystemConfigUpdate
 
 CONFIG_ID = 1
 SMTP_TIMEOUT_SECONDS = 10
@@ -45,15 +45,15 @@ async def get_config(db: AsyncSession) -> SystemConfig:
     return config
 
 
-def to_out(config: SystemConfig) -> dict:
-    return SystemConfigOut.from_orm_config(config).model_dump()
+def to_out(config: SystemConfig) -> SystemConfigOut:
+    return SystemConfigOut.from_orm_config(config)
 
 
-async def get_config_out(db: AsyncSession) -> dict:
+async def get_config_out(db: AsyncSession) -> SystemConfigOut:
     return to_out(await get_config(db))
 
 
-async def update_config(db: AsyncSession, data: SystemConfigUpdate) -> dict:
+async def update_config(db: AsyncSession, data: SystemConfigUpdate) -> SystemConfigOut:
     config = await get_config(db)
     for key, value in data.model_dump(exclude_unset=True).items():
         if value is None:
@@ -64,6 +64,17 @@ async def update_config(db: AsyncSession, data: SystemConfigUpdate) -> dict:
         setattr(config, _FIELD_MAPPING.get(key, key), value)
     await db.flush()
     return to_out(config)
+
+
+def public_out(config: SystemConfig) -> PublicConfigOut:
+    return PublicConfigOut(
+        siteName=config.site_name,
+        siteDescription=config.site_description,
+        maintenanceEnabled=bool(config.maintenance_enabled),
+        maintenanceMessage=config.maintenance_message,
+        openRegistration=bool(config.open_registration),
+        manualReview=bool(config.manual_review),
+    )
 
 
 async def send_test_email(db: AsyncSession, email: str) -> None:

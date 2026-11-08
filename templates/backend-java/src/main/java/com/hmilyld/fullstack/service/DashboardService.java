@@ -3,6 +3,7 @@ package com.hmilyld.fullstack.service;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.dto.DashboardStatsResponse;
 import com.hmilyld.fullstack.repository.UserRepository;
+import java.util.List;
 import java.util.Random;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,7 @@ public class DashboardService {
 
   @Autowired private UserRepository userRepository;
 
-  public ApiResponse<?> getStats() {
+  public ApiResponse<DashboardStatsResponse> getStats() {
     Random random = new Random();
     return ApiResponse.success(
         new DashboardStatsResponse(
@@ -23,7 +24,7 @@ public class DashboardService {
             String.format("+%d%%", random.nextInt(26) + 5)));
   }
 
-  public ApiResponse<?> getActivity() {
+  public ApiResponse<List<DashboardStatsResponse.ActivityItemResponse>> getActivity() {
     return ApiResponse.success(DashboardStatsResponse.sampleActivity());
   }
 }
