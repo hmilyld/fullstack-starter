@@ -28,3 +28,6 @@ mvnw.cmd
 # 操作系统
 .DS_Store
 Thumbs.db
+
+# 运行时数据与导出临时文件（可能包含用户数据）
+data/tmp/

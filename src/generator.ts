@@ -50,10 +50,33 @@ async function copyTemplate(templateName: string, destination: string): Promise<
   }
   await fs.copy(templatePath, destination, {
     // Skip local build/runtime artifacts so they never leak into generated projects.
-    filter: (src) =>
-      !/(^|[/\\])(__pycache__|node_modules|\.git|target|dist|dist-ssr|\.ruff_cache|\.mypy_cache|\.pytest_cache|\.venv|venv)([/\\]|$)/.test(
-        src
-      ) && !src.endsWith('.pyc'),
+    // `data/` holds the local SQLite database and export temp files from running the
+    // template backend; copying it would ship local users and credentials.
+    filter: (src) => {
+      const relative = path.relative(templatePath, src);
+      if (!relative) return true;
+      const segments = relative.split(path.sep);
+      const ignored = new Set([
+        '__pycache__',
+        'node_modules',
+        '.git',
+        'target',
+        'dist',
+        'dist-ssr',
+        '.ruff_cache',
+        '.mypy_cache',
+        '.pytest_cache',
+        '.venv',
+        'venv',
+      ]);
+      if (segments.some((segment) => ignored.has(segment))) return false;
+      if (src.endsWith('.pyc')) return false;
+      if (segments[0] === 'data') {
+        // Keep only the placeholder so the runtime directory exists in new projects.
+        return segments.length === 1 || relative === path.join('data', '.gitkeep');
+      }
+      return true;
+    },
   });
 }
 
