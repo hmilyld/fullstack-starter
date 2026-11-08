@@ -442,8 +442,8 @@ function generateReadme(
 - ✅ 仪表盘统计
 - ✅ 用户管理（增删改查 + 分页 + 搜索 + 重置密码 + 批量改角色）
 - ✅ 角色管理（增删改查 + 分页 + 搜索）
-- ✅ 权限管理（菜单权限 + 操作权限）
-- ✅ 菜单管理（分组维护、拖拽排序、跨组移动）
+- ✅ 权限总览（只读查看菜单权限 + 操作权限）
+- ✅ 菜单与权限（分组维护、显示/隐藏、拖拽即保存、跨组移动、菜单下操作权限管理）
 - ✅ 系统设置（站点配置、维护模式、开放注册、人工审核、邮件测试）
 - ✅ AI 模型与预设管理（连接测试、分组激活）
 - ✅ 审计日志（写操作与权限拦截记录，支持筛选与分页）
@@ -542,13 +542,13 @@ ${backend === 'python' ? '| POST | /api/auth/logout | 登出 | 是 |' : '| POST 
 | PUT | /api/permissions/:code | 更新操作权限 | 是(permissions.edit) |
 | DELETE | /api/permissions/:code | 删除操作权限 | 是(permissions.delete) |
 | GET | /api/menus/navigation | 当前用户动态菜单 | 是 |
-| GET | /api/menus | 菜单配置 | 是(menus) |
+| GET | /api/menus | 菜单配置（含操作权限） | 是(menus 或 permissions) |
 | POST | /api/menus/groups | 创建菜单分组 | 是(menus.create) |
 | PUT | /api/menus/groups/:id | 更新菜单分组 | 是(menus.edit) |
 | DELETE | /api/menus/groups/:id | 删除菜单分组 | 是(menus.delete) |
 | POST | /api/menus/items | 创建菜单项 | 是(menus.create) |
-| PUT | /api/menus/items/:code | 更新菜单项 | 是(menus.edit) |
-| DELETE | /api/menus/items/:code | 删除菜单项 | 是(menus.delete) |
+| PUT | /api/menus/items/:code | 更新菜单项（含显示/隐藏） | 是(menus.edit) |
+| DELETE | /api/menus/items/:code | 删除菜单项及其操作权限 | 是(menus.delete) |
 | PUT | /api/menus/layout | 保存菜单布局 | 是(menus.reorder) |
 | GET | /api/dashboard/stats | 仪表盘统计 | 是(dashboard) |
 | GET | /api/system/config | 系统配置读取 | 是(settings) |
@@ -561,7 +561,7 @@ ${backend === 'python' ? '| POST | /api/auth/logout | 登出 | 是 |' : '| POST 
 | POST | /api/data/import | 创建完整导入任务 | 是(data_management.import) |
 | GET | /api/data/import/:id | 查询导入状态 | 一次性任务令牌 |
 
-> 注：创建/更新/删除 \`menu\` 类型权限会被拒绝，菜单权限请通过「菜单管理」接口维护。
+> 注：创建/更新/删除 \`menu\` 类型权限会被拒绝，菜单权限请通过「菜单与权限」接口维护。\`menu_items.hidden\` 只控制侧边栏显示，不改变权限。
 
 ## 开发命令
 

@@ -32,6 +32,10 @@ async def create_permission(
         return ApiResponse(code=-1, message="请通过菜单管理创建菜单")
     if await crud.get_permission_by_code(db, data.code):
         return ApiResponse(code=-1, message="权限编码已存在")
+    if data.parent:
+        parent = await crud.get_permission_by_code(db, data.parent)
+        if parent is None or parent.type != "menu":
+            return ApiResponse(code=-1, message="所属菜单不存在")
     result = await crud.create_permission(db, code=data.code, name=data.name, type=data.type, parent=data.parent)
     return ApiResponse(data=result)
 
@@ -57,6 +61,10 @@ async def update_permission(
         return ApiResponse(code=-1, message="权限不存在")
     if permission.type == "menu":
         return ApiResponse(code=-1, message="请通过菜单管理编辑菜单")
+    if data.parent:
+        parent = await crud.get_permission_by_code(db, data.parent)
+        if parent is None or parent.type != "menu":
+            return ApiResponse(code=-1, message="所属菜单不存在")
     result = await crud.update_permission(db, permission, name=data.name, parent=data.parent)
     return ApiResponse(data=result)
 

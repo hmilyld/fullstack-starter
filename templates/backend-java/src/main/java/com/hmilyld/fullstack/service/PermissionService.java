@@ -60,6 +60,12 @@ public ApiResponse<?> createPermission(PermissionCreateRequest req) {
 	if (permissionRepository.findById(req.getCode()).isPresent()) {
 	return ApiResponse.error("权限编码已存在");
 	}
+	if (req.getParent() != null) {
+	Permission parent = permissionRepository.findById(req.getParent()).orElse(null);
+	if (parent == null || !"menu".equals(parent.getType())) {
+		return ApiResponse.error("所属菜单不存在");
+	}
+	}
 
 	Permission perm = new Permission();
 	perm.setCode(req.getCode());
@@ -84,6 +90,12 @@ public ApiResponse<?> updatePermission(String code, PermissionUpdateRequest req)
 			perm -> {
 			if ("menu".equals(perm.getType())) {
 				return ApiResponse.error("请通过菜单管理编辑菜单");
+			}
+			if (req.getParent() != null) {
+				Permission parent = permissionRepository.findById(req.getParent()).orElse(null);
+				if (parent == null || !"menu".equals(parent.getType())) {
+				return ApiResponse.error("所属菜单不存在");
+				}
 			}
 			if (req.getName() != null) perm.setName(req.getName());
 			if (req.getParent() != null) perm.setParent(req.getParent());

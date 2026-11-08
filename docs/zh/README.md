@@ -21,8 +21,8 @@
 | 仪表盘 | 统计卡片 + 近期活动 |
 | 用户管理 | 列表 + 分页 + 搜索 + 详情 + 新增/编辑 + 删除 + 重置密码 + 批量改角色 |
 | 角色管理 | 列表 + 分页 + 搜索 + 新增/编辑 + 删除（预设角色不可删除） |
-| 权限管理 | 菜单权限 + 操作权限；操作权限可新增/编辑/删除，菜单权限在「菜单管理」中维护，启动时自动与权限目录同步 |
-| 菜单管理 | 分组与菜单维护、跨组拖拽、全局排序、权限过滤动态侧边栏 |
+| 权限总览 | 只读查看菜单权限 + 操作权限；操作权限在「菜单与权限」中维护，启动时自动与权限目录同步 |
+| 菜单与权限 | 分组与菜单维护、显示/隐藏、跨组拖拽、拖拽即保存、每个菜单下的操作权限管理、权限过滤动态侧边栏 |
 | 系统设置 | 站点配置读写、邮件测试、维护模式（拦截非管理员登录）、开放注册、人工审核 |
 | AI 模型 | 列表/默认/按别名查询/详情/新增/编辑/删除/连接测试 |
 | AI 模型预设 | 分组、激活预设、列表/新增/编辑/删除 |
@@ -220,18 +220,18 @@ cd <生成的项目>/backend && 启动后端
 | PUT | /api/permissions/:code | 更新操作权限 | 是(permissions.edit)³ |
 | DELETE | /api/permissions/:code | 删除操作权限 | 是(permissions.delete)³ |
 
-### 菜单管理
+### 菜单与权限
 
 | 方法 | 路径 | 说明 | 认证 |
 |------|------|------|------|
 | GET | /api/menus/navigation | 当前用户动态侧边栏 | 是 |
-| GET | /api/menus | 菜单配置与当前布局版本 | 是(menus) |
+| GET | /api/menus | 菜单配置、操作权限与当前布局版本 | 是(menus 或 permissions) |
 | POST | /api/menus/groups | 创建自定义分组 | 是(menus.create) |
 | PUT | /api/menus/groups/:id | 重命名分组 | 是(menus.edit) |
 | DELETE | /api/menus/groups/:id | 删除空的自定义分组 | 是(menus.delete) |
 | POST | /api/menus/items | 创建自定义菜单及对应权限 | 是(menus.create) |
-| PUT | /api/menus/items/:code | 编辑菜单名称、分组、路由或图标 | 是(menus.edit) |
-| DELETE | /api/menus/items/:code | 删除自定义菜单及权限授权 | 是(menus.delete) |
+| PUT | /api/menus/items/:code | 编辑菜单名称、分组、路由、图标或显示状态 | 是(menus.edit) |
+| DELETE | /api/menus/items/:code | 删除自定义菜单、其操作权限及授权 | 是(menus.delete) |
 | PUT | /api/menus/layout | 原子保存分组和菜单顺序 | 是(menus.reorder) |
 
 ### 仪表盘
@@ -288,7 +288,7 @@ cd <生成的项目>/backend && 启动后端
 
 > 注 1：Python 版 logout 需登录；Java 版兼容未登录调用。
 > 注 2：创建非默认角色的用户还需 `users.assign_role` 权限。
-> 注 3：以权限 API 对 `menu` 类型权限执行创建/更新/删除会被拒绝（返回 `code: -1`），菜单权限请通过上文的「菜单管理」接口维护。
+> 注 3：以权限 API 对 `menu` 类型权限执行创建/更新/删除会被拒绝（返回 `code: -1`），菜单权限请通过上文的「菜单与权限」接口维护。`menu_items.hidden` 只控制侧边栏显示，不改变权限。
 
 ## 许可证
 

@@ -21,3 +21,4 @@ class MenuItem(Base):
     icon = Column(String(50), nullable=False, default="circle")
     sort_order = Column(Integer, nullable=False, default=0)
     is_system = Column(Boolean, nullable=False, default=False)
+    hidden = Column(Boolean, nullable=False, default=False)

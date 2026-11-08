@@ -12,7 +12,7 @@ MENU_PERMISSIONS = [
     {"code": "users", "name": "用户管理", "type": "menu"},
     {"code": "roles", "name": "角色管理", "type": "menu"},
     {"code": "permissions", "name": "权限管理", "type": "menu"},
-    {"code": "menus", "name": "菜单管理", "type": "menu"},
+    {"code": "menus", "name": "菜单与权限", "type": "menu"},
     {"code": "settings", "name": "系统设置", "type": "menu"},
     {"code": "ai_models", "name": "AI模型配置", "type": "menu"},
     {"code": "audit_logs", "name": "审计日志", "type": "menu"},

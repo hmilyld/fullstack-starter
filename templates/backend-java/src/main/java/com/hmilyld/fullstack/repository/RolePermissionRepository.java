@@ -1,6 +1,7 @@
 package com.hmilyld.fullstack.repository;
 
 import com.hmilyld.fullstack.entity.RolePermission;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,8 @@ List<RolePermission> findByRoleId(String roleId);
 void deleteByRoleId(String roleId);
 
 void deleteByPermissionCode(String permissionCode);
+
+void deleteByPermissionCodeIn(Collection<String> permissionCodes);
 
 @Query("SELECT rp.permissionCode FROM RolePermission rp WHERE rp.roleId = :roleId")
 List<String> findPermissionCodesByRoleId(@Param("roleId") String roleId);

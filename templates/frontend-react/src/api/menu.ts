@@ -27,6 +27,7 @@ export function createMenuItem(data: {
   groupId: string
   route: string
   icon: string
+  hidden?: boolean
 }) {
   return apiClient.post("/menus/items", data)
 }
@@ -38,6 +39,7 @@ export function updateMenuItem(
     groupId?: string
     route?: string
     icon?: string
+    hidden?: boolean
   }
 ) {
   return apiClient.put(`/menus/items/${permissionCode}`, data)

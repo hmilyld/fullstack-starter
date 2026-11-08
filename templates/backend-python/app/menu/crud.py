@@ -47,6 +47,21 @@ async def get_menu_config(db: AsyncSession) -> dict:
             .order_by(MenuItem.sort_order, MenuItem.permission_code)
         )
     ).all()
+    operations = (
+        await db.execute(
+            select(Permission)
+            .where(Permission.type == "operation")
+            .order_by(Permission.code)
+        )
+    ).scalars().all()
+
+    operations_by_parent: dict[str, list[dict]] = {}
+    for operation in operations:
+        if not operation.parent:
+            continue
+        operations_by_parent.setdefault(operation.parent, []).append(
+            {"code": operation.code, "name": operation.name}
+        )
 
     items_by_group: dict[str, list[dict]] = {}
     for item, name in rows:
@@ -59,6 +74,8 @@ async def get_menu_config(db: AsyncSession) -> dict:
                 "icon": item.icon,
                 "sortOrder": item.sort_order,
                 "isSystem": item.is_system,
+                "hidden": item.hidden,
+                "operations": operations_by_parent.get(item.permission_code, []),
             }
         )
 
@@ -83,6 +100,7 @@ async def get_navigation(db: AsyncSession, permissions: list[str]) -> list[dict]
         .join(MenuItem, MenuItem.group_id == MenuGroup.id)
         .join(Permission, Permission.code == MenuItem.permission_code)
         .where(Permission.type == "menu")
+        .where(MenuItem.hidden.is_(False))
         .order_by(MenuGroup.sort_order, MenuGroup.id, MenuItem.sort_order, MenuItem.permission_code)
     )
     rows = result.all()
@@ -148,6 +166,7 @@ async def create_item(
     group_id: str,
     route: str,
     icon: str,
+    hidden: bool = False,
 ) -> MenuItem:
     if await db.get(MenuGroup, group_id) is None:
         raise ValueError("菜单分组不存在")
@@ -166,6 +185,7 @@ async def create_item(
         icon=icon or "circle",
         sort_order=max_order + 1,
         is_system=False,
+        hidden=hidden,
     )
     db.add(item)
     await db.flush()
@@ -180,6 +200,7 @@ async def update_item(
     group_id: str | None,
     route: str | None,
     icon: str | None,
+    hidden: bool | None,
 ) -> MenuItem:
     if group_id is not None:
         if await db.get(MenuGroup, group_id) is None:
@@ -196,6 +217,8 @@ async def update_item(
         item.route = route
     if icon is not None:
         item.icon = icon or "circle"
+    if hidden is not None:
+        item.hidden = hidden
     if name is not None:
         permission = await db.get(Permission, item.permission_code)
         if permission is not None:
@@ -207,9 +230,15 @@ async def update_item(
 async def delete_item(db: AsyncSession, item: MenuItem) -> None:
     if item.is_system:
         raise ValueError("内置菜单不能删除")
+    children = (
+        await db.execute(select(Permission).where(Permission.parent == item.permission_code))
+    ).scalars().all()
+    codes = [item.permission_code, *(child.code for child in children)]
     await db.execute(
-        delete(RolePermission).where(RolePermission.permission_code == item.permission_code)
+        delete(RolePermission).where(RolePermission.permission_code.in_(codes))
     )
+    for child in children:
+        await db.delete(child)
     permission = await db.get(Permission, item.permission_code)
     if permission is not None:
         await db.delete(permission)

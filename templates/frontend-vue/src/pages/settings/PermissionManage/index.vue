@@ -1,43 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
-import {
-  ChevronRight,
-  KeyRound,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Search,
-  Trash2,
-} from "@lucide/vue"
-import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
+import { ChevronRight, KeyRound, RefreshCw, Search } from "@lucide/vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
 import ErrorState from "@/components/shared/ErrorState.vue"
-import FormDialog from "@/components/shared/FormDialog.vue"
 import InlineError from "@/components/shared/InlineError.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
-import RowActions from "@/components/shared/RowActions.vue"
-import type { RowAction } from "@/components/shared/row-action"
 import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -46,22 +24,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  createPermission,
-  deletePermission as apiDeletePermission,
-  getPermissions,
-  syncPermissions,
-  updatePermission,
-} from "@/api/permission"
+import { getPermissions, syncPermissions } from "@/api/permission"
 import { useUrlListState } from "@/composables/use-url-list-state"
+import {
+  buildPermissionTree,
+  filterPermissionTree,
+  type PermissionTreeNode,
+} from "@/lib/access-tree"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
-
-type PermissionTreeNode = Permission & {
-  children: Permission[]
-}
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -93,35 +66,11 @@ onMounted(() => {
 })
 
 const tree = computed<PermissionTreeNode[]>(() => {
-  const fullTree = menuPermissions.value.map((menu) => ({
-    ...menu,
-    children: operationPermissions.value.filter(
-      (operation) => operation.parent === menu.code
-    ),
-  }))
-
-  if (!search.value) return fullTree
-
-  const keyword = search.value.toLowerCase()
-  return fullTree
-    .map((node) => {
-      const nodeMatch =
-        node.code.toLowerCase().includes(keyword) ||
-        node.name.toLowerCase().includes(keyword)
-      const matchedChildren = node.children.filter(
-        (child) =>
-          child.code.toLowerCase().includes(keyword) ||
-          child.name.toLowerCase().includes(keyword)
-      )
-      if (nodeMatch || matchedChildren.length > 0) {
-        return {
-          ...node,
-          children: nodeMatch ? node.children : matchedChildren,
-        }
-      }
-      return null
-    })
-    .filter((node): node is PermissionTreeNode => node !== null)
+  const fullTree = buildPermissionTree(
+    menuPermissions.value,
+    operationPermissions.value
+  )
+  return filterPermissionTree(fullTree, search.value)
 })
 
 watch(
@@ -141,21 +90,6 @@ function toggleExpand(code: string) {
   expanded.value = next
 }
 
-const editOpen = ref(false)
-const editingItem = ref<Permission | null>(null)
-const editForm = ref({ code: "", name: "", parent: "" })
-const editSubmitting = ref(false)
-
-const deleteOpen = ref(false)
-const deleteTarget = ref<Permission | null>(null)
-const deleteSubmitting = ref(false)
-
-function handleAddOperation(parentCode: string) {
-  editingItem.value = null
-  editForm.value = { code: "", name: "", parent: parentCode }
-  editOpen.value = true
-}
-
 async function handleSync() {
   syncing.value = true
   const res = await syncPermissions()
@@ -170,94 +104,24 @@ async function handleSync() {
   void loadData()
 }
 
-function handleEdit(item: Permission) {
-  editingItem.value = item
-  editForm.value = {
-    code: item.code,
-    name: item.name,
-    parent: item.parent ?? "",
-  }
-  editOpen.value = true
-}
-
-async function handleEditSubmit() {
-  if (!editForm.value.name.trim()) {
-    toast.error("请输入权限名称")
-    return
-  }
-  if (!editingItem.value && !editForm.value.parent) {
-    toast.error("请选择所属菜单")
-    return
-  }
-
-  editSubmitting.value = true
-  const res = editingItem.value
-    ? await updatePermission(editingItem.value.code, {
-        name: editForm.value.name,
-        parent: editForm.value.parent || undefined,
-      })
-    : await createPermission({
-        code: editForm.value.code,
-        name: editForm.value.name,
-        type: "operation",
-        parent: editForm.value.parent || undefined,
-      })
-  editSubmitting.value = false
-  if (res.code !== 0) {
-    toast.error(res.message || "操作失败")
-    return
-  }
-  toast.success(editingItem.value ? "保存成功" : "创建成功")
-  editOpen.value = false
-  void loadData()
-}
-
-function handleDelete(item: Permission) {
-  deleteTarget.value = item
-  deleteOpen.value = true
-}
-
-async function handleDeleteConfirm() {
-  if (!deleteTarget.value) return
-  deleteSubmitting.value = true
-  const res = await apiDeletePermission(deleteTarget.value.code)
-  deleteSubmitting.value = false
-  if (res.code !== 0) {
-    toast.error(res.message || "删除失败")
-    return
-  }
-  toast.success("删除成功")
-  deleteOpen.value = false
-  void loadData()
-}
-
-function buildPermissionActions(permission: Permission): RowAction[] {
-  const actions: RowAction[] = []
-  if (auth.hasPermission("permissions.edit")) {
-    actions.push({
-      label: "编辑",
-      icon: Pencil,
-      onSelect: () => handleEdit(permission),
-    })
-  }
-  if (auth.hasPermission("permissions.delete")) {
-    actions.push({
-      label: "删除",
-      icon: Trash2,
-      destructive: true,
-      separatorBefore: true,
-      onSelect: () => handleDelete(permission),
-    })
-  }
-  return actions
-}
-
 const hasPermissions = computed(() => tree.value.length > 0)
 </script>
 
 <template>
   <div class="flex flex-col gap-(--page-gap)">
-    <PageHeader title="权限管理" description="管理系统的菜单权限和操作权限。" />
+    <PageHeader
+      title="权限总览"
+      description="只读查看菜单权限与操作权限；日常维护请前往菜单与权限。"
+    >
+      <template #actions>
+        <Button as-child variant="outline">
+          <RouterLink to="/settings/menu">
+            <KeyRound data-icon="inline-start" />
+            菜单与权限
+          </RouterLink>
+        </Button>
+      </template>
+    </PageHeader>
 
     <ListShell
       title="权限列表"
@@ -278,23 +142,16 @@ const hasPermissions = computed(() => tree.value.length > 0)
             <Search />
           </InputGroupAddon>
         </InputGroup>
-        <template v-if="auth.hasPermission('permissions.create')">
-          <LoadingButton
-            variant="outline"
-            :loading="syncing"
-            class="w-full md:w-auto"
-            @click="handleSync"
-          >
-            <RefreshCw v-if="!syncing" data-icon="inline-start" />
-            同步权限
-          </LoadingButton>
-          <Button as-child class="w-full md:w-auto">
-            <RouterLink to="/settings/menu">
-              <Plus data-icon="inline-start" />
-              菜单管理
-            </RouterLink>
-          </Button>
-        </template>
+        <LoadingButton
+          v-if="auth.hasPermission('permissions.create')"
+          variant="outline"
+          :loading="syncing"
+          class="w-full md:w-auto"
+          @click="handleSync"
+        >
+          <RefreshCw v-if="!syncing" data-icon="inline-start" />
+          同步权限
+        </LoadingButton>
       </template>
 
       <InlineError
@@ -303,7 +160,7 @@ const hasPermissions = computed(() => tree.value.length > 0)
         :on-retry="loadData"
       />
 
-      <TableSkeletonRow v-if="tableLoading" :col-span="4" />
+      <TableSkeletonRow v-if="tableLoading" :col-span="3" />
       <ErrorState
         v-else-if="error && !hasPermissions"
         :message="error"
@@ -316,23 +173,24 @@ const hasPermissions = computed(() => tree.value.length > 0)
         :description="
           search
             ? '换个关键词，或清空搜索条件后再试。'
-            : '在菜单管理中新增菜单后，会自动生成对应的菜单权限。'
+            : '在菜单与权限中新增菜单后，会自动生成对应的菜单权限。'
         "
       >
-        <template
-          v-if="search || auth.hasPermission('permissions.create')"
-          #action
-        >
+        <template v-if="search || auth.hasPermission('permissions')" #action>
           <Button v-if="search" variant="outline" @click="setSearch('')">
             清空搜索
           </Button>
-          <Button v-else-if="auth.hasPermission('permissions.create')" as-child>
-            <RouterLink to="/settings/menu">前往菜单管理</RouterLink>
+          <Button v-else as-child>
+            <RouterLink to="/settings/menu">前往菜单与权限</RouterLink>
           </Button>
         </template>
       </EmptyState>
 
       <template v-else>
+        <p class="px-1 text-xs text-muted-foreground">
+          隐藏菜单仍会出现在这里；隐藏只影响侧边栏展示，不影响权限与路由访问。
+        </p>
+
         <div class="flex flex-col gap-2 md:hidden">
           <div
             v-for="node in tree"
@@ -349,33 +207,22 @@ const hasPermissions = computed(() => tree.value.length > 0)
                   {{ node.code }}
                 </code>
               </div>
-              <div class="flex shrink-0 items-center gap-1">
-                <Button
-                  v-if="auth.hasPermission('permissions.create')"
-                  variant="ghost"
-                  size="icon-sm"
-                  :aria-label="`新增 ${node.name} 的子权限`"
-                  @click="handleAddOperation(node.code)"
-                >
-                  <Plus />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  :aria-label="`${expanded.has(node.code) ? '收起' : '展开'} ${node.name}`"
-                  :aria-expanded="expanded.has(node.code)"
-                  @click="toggleExpand(node.code)"
-                >
-                  <ChevronRight
-                    :class="
-                      cn(
-                        'transition-transform',
-                        expanded.has(node.code) && 'rotate-90'
-                      )
-                    "
-                  />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :aria-label="`${expanded.has(node.code) ? '收起' : '展开'} ${node.name}`"
+                :aria-expanded="expanded.has(node.code)"
+                @click="toggleExpand(node.code)"
+              >
+                <ChevronRight
+                  :class="
+                    cn(
+                      'transition-transform',
+                      expanded.has(node.code) && 'rotate-90'
+                    )
+                  "
+                />
+              </Button>
             </div>
             <div v-if="expanded.has(node.code)" class="border-t p-2">
               <div
@@ -389,7 +236,6 @@ const hasPermissions = computed(() => tree.value.length > 0)
                     {{ child.code }}
                   </code>
                 </div>
-                <RowActions :actions="buildPermissionActions(child)" />
               </div>
               <p
                 v-if="node.children.length === 0"
@@ -405,10 +251,9 @@ const hasPermissions = computed(() => tree.value.length > 0)
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead class="w-[40%]">权限名称</TableHead>
-                <TableHead class="w-[25%]">权限编码</TableHead>
+                <TableHead class="w-[45%]">权限名称</TableHead>
+                <TableHead class="w-[45%]">权限编码</TableHead>
                 <TableHead class="w-[10%]">类型</TableHead>
-                <TableHead class="w-[25%] text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -441,21 +286,6 @@ const hasPermissions = computed(() => tree.value.length > 0)
                   <TableCell>
                     <Badge variant="default">菜单</Badge>
                   </TableCell>
-                  <TableCell class="text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <Button
-                        v-if="auth.hasPermission('permissions.create')"
-                        variant="ghost"
-                        size="icon-sm"
-                        @click="handleAddOperation(node.code)"
-                      >
-                        <Plus />
-                        <span class="sr-only"
-                          >新增 {{ node.name }} 的子权限</span
-                        >
-                      </Button>
-                    </div>
-                  </TableCell>
                 </TableRow>
 
                 <template v-if="expanded.has(node.code)">
@@ -471,31 +301,9 @@ const hasPermissions = computed(() => tree.value.length > 0)
                     <TableCell>
                       <Badge variant="secondary">操作</Badge>
                     </TableCell>
-                    <TableCell class="text-right">
-                      <div class="flex items-center justify-end gap-1">
-                        <Button
-                          v-if="auth.hasPermission('permissions.edit')"
-                          variant="ghost"
-                          size="icon-sm"
-                          @click="handleEdit(child)"
-                        >
-                          <Pencil />
-                          <span class="sr-only">编辑 {{ child.name }}</span>
-                        </Button>
-                        <Button
-                          v-if="auth.hasPermission('permissions.delete')"
-                          variant="ghost"
-                          size="icon-sm"
-                          @click="handleDelete(child)"
-                        >
-                          <Trash2 />
-                          <span class="sr-only">删除 {{ child.name }}</span>
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                   <TableRow v-if="node.children.length === 0">
-                    <TableCell :colspan="4">
+                    <TableCell :colspan="3">
                       <div class="pl-9 text-sm text-muted-foreground">
                         暂无操作权限
                       </div>
@@ -508,73 +316,5 @@ const hasPermissions = computed(() => tree.value.length > 0)
         </div>
       </template>
     </ListShell>
-
-    <FormDialog
-      :open="editOpen"
-      :title="editingItem ? '编辑权限' : '新增操作权限'"
-      :description="
-        editingItem ? '修改权限的基本信息。' : '填写以下信息创建新的操作权限。'
-      "
-      :submitting="editSubmitting"
-      @update:open="editOpen = $event"
-      @submit="handleEditSubmit"
-    >
-      <FieldGroup>
-        <Field>
-          <FieldLabel for="perm-code">权限编码</FieldLabel>
-          <Input
-            id="perm-code"
-            v-model="editForm.code"
-            name="perm-code"
-            autocomplete="off"
-            :spellcheck="false"
-            placeholder="如：users.create"
-            required
-            :disabled="!!editingItem"
-            pattern="^[a-z0-9_.-]+$"
-            title="只能包含小写字母、数字、点、下划线和连字符"
-          />
-        </Field>
-        <Field>
-          <FieldLabel for="perm-name">权限名称</FieldLabel>
-          <Input
-            id="perm-name"
-            v-model="editForm.name"
-            name="perm-name"
-            autocomplete="off"
-            placeholder="如：新增用户"
-            required
-          />
-        </Field>
-        <Field>
-          <FieldLabel>所属菜单</FieldLabel>
-          <Select v-model="editForm.parent">
-            <SelectTrigger class="w-full" aria-label="所属菜单">
-              <SelectValue placeholder="请选择所属菜单" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem
-                  v-for="permission in menuPermissions"
-                  :key="permission.code"
-                  :value="permission.code"
-                >
-                  {{ permission.name }}
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </Field>
-      </FieldGroup>
-    </FormDialog>
-
-    <ConfirmDeleteDialog
-      :open="deleteOpen"
-      :target-name="deleteTarget?.name ?? ''"
-      description="删除后，已授予该权限的角色会同步失去此权限。"
-      :loading="deleteSubmitting"
-      @update:open="deleteOpen = $event"
-      @confirm="handleDeleteConfirm"
-    />
   </div>
 </template>

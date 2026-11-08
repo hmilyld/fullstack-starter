@@ -24,4 +24,6 @@ private String route;
 
 @Size(max = 50)
 private String icon = "circle";
+
+private Boolean hidden = false;
 }

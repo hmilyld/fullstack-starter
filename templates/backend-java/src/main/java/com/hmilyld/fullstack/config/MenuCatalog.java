@@ -14,7 +14,8 @@ public record MenuItem(
 	String route,
 	String icon,
 	Integer sortOrder,
-	Boolean system) {}
+	Boolean system,
+	Boolean hidden) {}
 
 public static final List<MenuGroupItem> GROUPS =
 	List.of(
@@ -23,13 +24,16 @@ public static final List<MenuGroupItem> GROUPS =
 
 public static final List<MenuItem> ITEMS =
 	List.of(
-		new MenuItem("dashboard", "navigation", "/dashboard", "layout-dashboard", 1, true),
-		new MenuItem("users", "management", "/settings/user", "users", 1, true),
-		new MenuItem("roles", "management", "/settings/role", "shield-check", 2, true),
-		new MenuItem("permissions", "management", "/settings/permission", "key-round", 3, true),
-		new MenuItem("menus", "management", "/settings/menu", "panel-left", 4, true),
-		new MenuItem("settings", "management", "/settings/system", "settings", 5, true),
-		new MenuItem("ai_models", "management", "/settings/ai-model", "bot", 6, true),
-		new MenuItem("audit_logs", "management", "/settings/audit-log", "file-text", 7, true),
-		new MenuItem("data_management", "management", "/settings/data", "database", 8, true));
+		new MenuItem("dashboard", "navigation", "/dashboard", "layout-dashboard", 1, true, false),
+		new MenuItem("users", "management", "/settings/user", "users", 1, true, false),
+		new MenuItem("roles", "management", "/settings/role", "shield-check", 2, true, false),
+		new MenuItem(
+			"permissions", "management", "/settings/permission", "key-round", 3, true, true),
+		new MenuItem("menus", "management", "/settings/menu", "panel-left", 4, true, false),
+		new MenuItem("settings", "management", "/settings/system", "settings", 5, true, false),
+		new MenuItem("ai_models", "management", "/settings/ai-model", "bot", 6, true, false),
+		new MenuItem(
+			"audit_logs", "management", "/settings/audit-log", "file-text", 7, true, false),
+		new MenuItem(
+			"data_management", "management", "/settings/data", "database", 8, true, false));
 }

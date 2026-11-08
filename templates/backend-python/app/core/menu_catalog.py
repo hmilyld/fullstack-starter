@@ -17,6 +17,7 @@ MENU_ITEMS = [
         "icon": "layout-dashboard",
         "sort_order": 1,
         "is_system": True,
+        "hidden": False,
     },
     {
         "permission_code": "users",
@@ -25,6 +26,7 @@ MENU_ITEMS = [
         "icon": "users",
         "sort_order": 1,
         "is_system": True,
+        "hidden": False,
     },
     {
         "permission_code": "roles",
@@ -33,6 +35,7 @@ MENU_ITEMS = [
         "icon": "shield-check",
         "sort_order": 2,
         "is_system": True,
+        "hidden": False,
     },
     {
         "permission_code": "permissions",
@@ -41,6 +44,7 @@ MENU_ITEMS = [
         "icon": "key-round",
         "sort_order": 3,
         "is_system": True,
+        "hidden": True,
     },
     {
         "permission_code": "menus",
@@ -49,6 +53,7 @@ MENU_ITEMS = [
         "icon": "panel-left",
         "sort_order": 4,
         "is_system": True,
+        "hidden": False,
     },
     {
         "permission_code": "settings",
@@ -57,6 +62,7 @@ MENU_ITEMS = [
         "icon": "settings",
         "sort_order": 5,
         "is_system": True,
+        "hidden": False,
     },
     {
         "permission_code": "ai_models",
@@ -65,6 +71,7 @@ MENU_ITEMS = [
         "icon": "bot",
         "sort_order": 6,
         "is_system": True,
+        "hidden": False,
     },
     {
         "permission_code": "audit_logs",
@@ -73,6 +80,7 @@ MENU_ITEMS = [
         "icon": "file-text",
         "sort_order": 7,
         "is_system": True,
+        "hidden": False,
     },
     {
         "permission_code": "data_management",
@@ -81,5 +89,6 @@ MENU_ITEMS = [
         "icon": "database",
         "sort_order": 8,
         "is_system": True,
+        "hidden": False,
     },
 ]

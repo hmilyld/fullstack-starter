@@ -17,4 +17,6 @@ private String route;
 
 @Size(max = 50)
 private String icon;
+
+private Boolean hidden;
 }

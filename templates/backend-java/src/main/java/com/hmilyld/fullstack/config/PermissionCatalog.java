@@ -14,7 +14,7 @@ public static final List<PermissionItem> MENU_PERMISSIONS =
 		new PermissionItem("users", "用户管理", "menu", null),
 		new PermissionItem("roles", "角色管理", "menu", null),
 		new PermissionItem("permissions", "权限管理", "menu", null),
-		new PermissionItem("menus", "菜单管理", "menu", null),
+		new PermissionItem("menus", "菜单与权限", "menu", null),
 		new PermissionItem("settings", "系统设置", "menu", null),
 		new PermissionItem("ai_models", "AI模型配置", "menu", null),
 		new PermissionItem("audit_logs", "审计日志", "menu", null),

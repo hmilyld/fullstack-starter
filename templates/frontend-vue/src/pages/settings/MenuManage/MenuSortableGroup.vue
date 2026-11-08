@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import type { MenuGroup, MenuItem } from "@/types/menu"
+import type { MenuGroup, MenuItem, MenuOperation } from "@/types/menu"
 import {
   groupSortableId,
   type MenuDragData,
@@ -30,8 +30,13 @@ const props = defineProps<{
   canCreate: boolean
   canEdit: boolean
   canDelete: boolean
+  canCreateOperation: boolean
+  canEditOperation: boolean
+  canDeleteOperation: boolean
+  mutationsDisabled: boolean
   canMoveUp: boolean
   canMoveDown: boolean
+  expanded: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -48,7 +53,20 @@ const emit = defineEmits<{
     permissionCode: string,
     direction: -1 | 1
   ): void
+  (e: "toggle-expanded", permissionCode: string): void
+  (e: "toggle-hidden", item: MenuItem): void
+  (e: "add-operation", item: MenuItem): void
+  (e: "edit-operation", item: MenuItem, operation: MenuOperation): void
+  (e: "delete-operation", item: MenuItem, operation: MenuOperation): void
 }>()
+
+function handleEditOperation(item: MenuItem, operation: MenuOperation) {
+  emit("edit-operation", item, operation)
+}
+
+function handleDeleteOperation(item: MenuItem, operation: MenuOperation) {
+  emit("delete-operation", item, operation)
+}
 
 const element = ref<HTMLElement | null>(null)
 const handle = ref<HTMLElement | null>(null)
@@ -82,6 +100,7 @@ const actions = computed<RowAction[]>(() => {
     result.push({
       label: "编辑分组",
       icon: Pencil,
+      disabled: props.mutationsDisabled,
       onSelect: () => emit("edit-group", props.group),
     })
   }
@@ -90,13 +109,13 @@ const actions = computed<RowAction[]>(() => {
       {
         label: "上移分组",
         icon: ChevronUp,
-        disabled: !props.canMoveUp,
+        disabled: !props.canMoveUp || props.mutationsDisabled,
         onSelect: () => emit("move-up"),
       },
       {
         label: "下移分组",
         icon: ChevronDown,
-        disabled: !props.canMoveDown,
+        disabled: !props.canMoveDown || props.mutationsDisabled,
         onSelect: () => emit("move-down"),
       }
     )
@@ -107,6 +126,7 @@ const actions = computed<RowAction[]>(() => {
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
+      disabled: props.mutationsDisabled,
       onSelect: () => emit("delete-group", props.group),
     })
   }
@@ -140,6 +160,7 @@ const actions = computed<RowAction[]>(() => {
               size="sm"
               class="max-md:w-8 max-md:px-0"
               aria-label="新增菜单"
+              :disabled="mutationsDisabled"
               @click="emit('create-item', group.id)"
             >
               <Plus data-icon="inline-start" />
@@ -169,12 +190,22 @@ const actions = computed<RowAction[]>(() => {
           :can-reorder="canReorder"
           :can-edit="canEdit"
           :can-delete="canDelete"
+          :can-create-operation="canCreateOperation"
+          :can-edit-operation="canEditOperation"
+          :can-delete-operation="canDeleteOperation"
+          :mutations-disabled="mutationsDisabled"
+          :expanded="expanded.has(item.permissionCode)"
           :can-move-up="itemIndex > 0"
           :can-move-down="itemIndex < group.items.length - 1"
           @edit="emit('edit-item', $event)"
           @delete="emit('delete-item', $event)"
           @move-up="emit('move-item', group.id, item.permissionCode, -1)"
           @move-down="emit('move-item', group.id, item.permissionCode, 1)"
+          @toggle-expanded="emit('toggle-expanded', $event)"
+          @toggle-hidden="emit('toggle-hidden', $event)"
+          @add-operation="emit('add-operation', $event)"
+          @edit-operation="handleEditOperation"
+          @delete-operation="handleDeleteOperation"
         />
         <div
           v-if="group.items.length === 0"

@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
 import { useRouter } from "vue-router"
-import { ChevronsUpDown, KeyRound, LogOut, UserCog } from "@lucide/vue"
+import {
+  ChevronsUpDown,
+  KeyRound,
+  LogOut,
+  ShieldCheck,
+  UserCog,
+} from "@lucide/vue"
 import { logout as apiLogout } from "@/api/auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -18,7 +24,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { useAuthStore } from "@/stores/auth"
 import { useSiteConfigStore } from "@/stores/site-config"
 
-/** 顶栏右上角的账户菜单：个人设置、密码修改、退出登录 */
+/** 顶栏右上角的账户菜单：个人设置、密码修改、权限总览、退出登录 */
 const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
 const router = useRouter()
@@ -98,6 +104,13 @@ async function handleLogout() {
         >
           <KeyRound />
           密码修改
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          v-if="auth.hasPermission('permissions')"
+          @select="router.push('/settings/permission')"
+        >
+          <ShieldCheck />
+          权限总览
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />

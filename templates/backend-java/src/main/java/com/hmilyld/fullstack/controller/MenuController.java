@@ -1,6 +1,7 @@
 package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaMode;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.dto.MenuGroupCreateRequest;
 import com.hmilyld.fullstack.dto.MenuGroupUpdateRequest;
@@ -24,7 +25,9 @@ public ApiResponse<?> navigation() {
 }
 
 @GetMapping("")
-@SaCheckPermission("menus")
+@SaCheckPermission(
+	value = {"menus", "permissions"},
+	mode = SaMode.OR)
 public ApiResponse<?> getConfig() {
 	return menuService.getConfig();
 }

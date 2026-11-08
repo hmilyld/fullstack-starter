@@ -32,7 +32,7 @@ async def navigation(
 
 @router.get("")
 async def get_menu_config(
-    current_user=Depends(require_permission("menus")),
+    current_user=Depends(require_permission("menus", "permissions")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     return ApiResponse(data=await crud.get_menu_config(db))
@@ -94,6 +94,7 @@ async def create_item(
             group_id=data.group_id,
             route=data.route,
             icon=data.icon,
+            hidden=data.hidden,
         )
     except ValueError as exc:
         return ApiResponse(code=-1, message=str(exc))
@@ -118,6 +119,7 @@ async def update_item(
             group_id=data.group_id,
             route=data.route,
             icon=data.icon,
+            hidden=data.hidden,
         )
     except ValueError as exc:
         return ApiResponse(code=-1, message=str(exc))

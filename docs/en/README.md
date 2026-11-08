@@ -21,8 +21,8 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | Dashboard | Stat cards + recent activity |
 | User management | List + pagination + search + detail + create/edit + delete + reset password + batch role assignment |
 | Role management | List + pagination + search + create/edit + delete (preset roles cannot be deleted) |
-| Permission management | Menu permissions + operation permissions; operation permissions can be created/edited/deleted, menu permissions are maintained in Menu Management; auto-synced with the permission catalog at startup |
-| Menu management | Group and menu maintenance, cross-group dragging, global ordering, permission-filtered dynamic sidebar |
+| Permission overview | Read-only view of menu permissions + operation permissions; operation permissions are maintained in Menu & Permissions; auto-synced with the permission catalog at startup |
+| Menu & permissions | Group and menu maintenance, show/hide, cross-group dragging, save-on-drop ordering, operation permissions per menu, permission-filtered dynamic sidebar |
 | System settings | Read/write site configuration, email test, maintenance mode (blocks non-admin logins), open registration, manual review |
 | AI models | List / default / lookup by alias / detail / create / edit / delete / connection test |
 | AI model presets | Grouping, activate a preset, list / create / edit / delete |
@@ -222,18 +222,18 @@ Except for the file download endpoint, every endpoint returns: `{ code: 0, messa
 | PUT | /api/permissions/:code | Update operation permission | Yes(permissions.edit)³ |
 | DELETE | /api/permissions/:code | Delete operation permission | Yes(permissions.delete)³ |
 
-### Menu Management
+### Menu & Permissions
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
 | GET | /api/menus/navigation | Current user's dynamic sidebar | Yes |
-| GET | /api/menus | Menu configuration and current layout version | Yes(menus) |
+| GET | /api/menus | Menu configuration, operation permissions, and current layout version | Yes(menus or permissions) |
 | POST | /api/menus/groups | Create a custom group | Yes(menus.create) |
 | PUT | /api/menus/groups/:id | Rename a group | Yes(menus.edit) |
 | DELETE | /api/menus/groups/:id | Delete an empty custom group | Yes(menus.delete) |
 | POST | /api/menus/items | Create a custom menu and its permission | Yes(menus.create) |
-| PUT | /api/menus/items/:code | Edit a menu's name, group, route, or icon | Yes(menus.edit) |
-| DELETE | /api/menus/items/:code | Delete a custom menu and its permission grant | Yes(menus.delete) |
+| PUT | /api/menus/items/:code | Edit a menu's name, group, route, icon, or visibility | Yes(menus.edit) |
+| DELETE | /api/menus/items/:code | Delete a custom menu, its operation permissions, and grants | Yes(menus.delete) |
 | PUT | /api/menus/layout | Atomically save group and menu order | Yes(menus.reorder) |
 
 ### Dashboard
@@ -290,7 +290,7 @@ Export packages can only be restored on the same backend, same application versi
 
 > Note 1: In the Python build, logout requires a login; the Java build also accepts unauthenticated calls.
 > Note 2: Creating a user with a non-default role also requires the `users.assign_role` permission.
-> Note 3: Creating/updating/deleting a `menu`-type permission through the permission API is rejected (returns `code: -1`); maintain menu permissions through the Menu Management endpoints above.
+> Note 3: Creating/updating/deleting a `menu`-type permission through the permission API is rejected (returns `code: -1`); maintain menu permissions through the Menu & Permissions endpoints above. `menu_items.hidden` only controls sidebar visibility and does not change authorization.
 
 ## License
 

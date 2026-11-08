@@ -20,6 +20,7 @@ class MenuItemCreate(CamelModel):
     group_id: str
     route: str = Field(min_length=1, max_length=255)
     icon: str = Field(default="circle", max_length=50)
+    hidden: bool = False
 
     @field_validator("route")
     @classmethod
@@ -34,6 +35,7 @@ class MenuItemUpdate(CamelModel):
     group_id: str | None = None
     route: str | None = Field(default=None, min_length=1, max_length=255)
     icon: str | None = Field(default=None, max_length=50)
+    hidden: bool | None = None
 
     @field_validator("route")
     @classmethod

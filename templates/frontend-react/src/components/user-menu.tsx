@@ -4,6 +4,7 @@ import {
   ChevronsUpDownIcon,
   KeyIcon,
   LogOutIcon,
+  ShieldCheckIcon,
   UserCogIcon,
 } from "lucide-react"
 
@@ -23,9 +24,9 @@ import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/lib/auth-context"
 import { useSiteConfig } from "@/lib/site-config"
 
-/** 顶栏右上角的账户菜单：个人设置、密码修改、退出登录 */
+/** 顶栏右上角的账户菜单：个人设置、密码修改、权限总览、退出登录 */
 export function UserMenu() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const { refresh } = useSiteConfig()
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = React.useState(false)
@@ -102,6 +103,12 @@ export function UserMenu() {
             <KeyIcon />
             密码修改
           </DropdownMenuItem>
+          {hasPermission("permissions") && (
+            <DropdownMenuItem onSelect={() => navigate("/settings/permission")}>
+              <ShieldCheckIcon />
+              权限总览
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem

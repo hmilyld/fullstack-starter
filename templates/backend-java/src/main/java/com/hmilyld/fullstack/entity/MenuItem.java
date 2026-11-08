@@ -27,4 +27,7 @@ private Integer sortOrder = 0;
 
 @Column(name = "is_system", nullable = false)
 private Boolean system = false;
+
+@Column(nullable = false)
+private Boolean hidden = false;
 }

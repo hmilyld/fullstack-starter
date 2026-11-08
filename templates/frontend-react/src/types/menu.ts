@@ -1,3 +1,8 @@
+export type MenuOperation = {
+  code: string
+  name: string
+}
+
 export type MenuItem = {
   permissionCode: string
   name: string
@@ -6,6 +11,8 @@ export type MenuItem = {
   icon: string
   sortOrder: number
   isSystem: boolean
+  hidden: boolean
+  operations: MenuOperation[]
 }
 
 export type MenuGroup = {

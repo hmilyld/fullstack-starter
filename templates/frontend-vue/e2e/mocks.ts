@@ -15,7 +15,14 @@ export const authUser = {
     "users.assign_role",
     "roles",
     "permissions",
+    "permissions.create",
+    "permissions.edit",
+    "permissions.delete",
     "menus",
+    "menus.create",
+    "menus.edit",
+    "menus.delete",
+    "menus.reorder",
     "settings",
     "ai_models",
     "audit_logs",
@@ -67,7 +74,7 @@ const navigation = [
 export async function mockApi(page: Page) {
   await page.route(
     (url) => url.pathname.startsWith("/api/"),
-    (route) => {
+    async (route) => {
       const path = new URL(route.request().url()).pathname
       const ok = (data: unknown) =>
         route.fulfill({
@@ -89,6 +96,45 @@ export async function mockApi(page: Page) {
           return ok({ token: "e2e-token", user: authUser })
         case "/api/menus/navigation":
           return ok(navigation)
+        case "/api/menus/layout":
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          return ok({ version: 2 })
+        case "/api/menus":
+          return ok({
+            version: 1,
+            groups: [
+              {
+                id: "management",
+                name: "管理",
+                sortOrder: 1,
+                isSystem: true,
+                items: [
+                  {
+                    permissionCode: "users",
+                    name: "用户管理",
+                    groupId: "management",
+                    route: "/settings/user",
+                    icon: "users",
+                    sortOrder: 1,
+                    isSystem: true,
+                    hidden: false,
+                    operations: [{ code: "users.create", name: "新增用户" }],
+                  },
+                  {
+                    permissionCode: "menus",
+                    name: "菜单与权限",
+                    groupId: "management",
+                    route: "/settings/menu",
+                    icon: "panel-left",
+                    sortOrder: 2,
+                    isSystem: true,
+                    hidden: false,
+                    operations: [],
+                  },
+                ],
+              },
+            ],
+          })
         case "/api/dashboard/stats":
           return ok({
             totalUsers: 1,

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Link } from "react-router"
 import {
   DndContext,
   KeyboardSensor,
@@ -21,27 +22,43 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import {
   ChevronDownIcon,
+  ChevronRightIcon,
   ChevronUpIcon,
+  EyeIcon,
+  EyeOffIcon,
   GripVerticalIcon,
+  KeyRoundIcon,
   PencilIcon,
   PlusIcon,
-  SaveIcon,
+  SearchIcon,
   Trash2Icon,
 } from "lucide-react"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
+import { ConfirmHideDialog } from "@/components/shared/confirm-hide-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
+import { ErrorState } from "@/components/shared/error-state"
 import { FormDialog } from "@/components/shared/form-dialog"
-import { LoadingButton } from "@/components/shared/loading-button"
+import { IconPicker, MenuIcon } from "@/components/shared/icon-picker"
+import { InlineError } from "@/components/shared/inline-error"
 import { PageHeader } from "@/components/shared/page-header"
 import { RowActions, type RowAction } from "@/components/shared/row-actions"
 import { PageFormSkeleton } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { IconPicker, MenuIcon } from "@/components/shared/icon-picker"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import {
   Select,
   SelectContent,
@@ -50,6 +67,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import {
   createMenuGroup,
   createMenuItem,
@@ -60,10 +78,21 @@ import {
   updateMenuGroup,
   updateMenuItem,
 } from "@/api/menu"
+import {
+  createPermission,
+  deletePermission,
+  updatePermission,
+} from "@/api/permission"
 import { useAuth } from "@/lib/auth-context"
+import { OPERATION_PRESETS, buildOperationCode } from "@/lib/access-tree"
 import { appToast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import type { MenuConfig, MenuGroup, MenuItem } from "@/types/menu"
+import type {
+  MenuConfig,
+  MenuGroup,
+  MenuItem,
+  MenuOperation,
+} from "@/types/menu"
 
 const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
 
@@ -74,7 +103,8 @@ type DragData =
 
 type DeleteTarget =
   | { type: "group"; id: string; name: string }
-  | { type: "item"; id: string; name: string }
+  | { type: "item"; id: string; name: string; operationCount: number }
+  | { type: "operation"; id: string; name: string }
   | null
 
 const groupSortableId = (groupId: string) => `group:${groupId}`
@@ -86,7 +116,10 @@ function cloneConfig(config: MenuConfig): MenuConfig {
     version: config.version,
     groups: config.groups.map((group) => ({
       ...group,
-      items: group.items.map((item) => ({ ...item })),
+      items: group.items.map((item) => ({
+        ...item,
+        operations: item.operations.map((operation) => ({ ...operation })),
+      })),
     })),
   }
 }
@@ -106,6 +139,91 @@ function normalize(config: MenuConfig): MenuConfig {
   }
 }
 
+function applyDragEnd(
+  current: MenuConfig,
+  activeData: DragData,
+  overData: DragData
+): MenuConfig {
+  if (activeData.type === "group" && overData.type === "group") {
+    if (activeData.groupId === overData.groupId) return current
+    const oldIndex = current.groups.findIndex(
+      (group) => group.id === activeData.groupId
+    )
+    const newIndex = current.groups.findIndex(
+      (group) => group.id === overData.groupId
+    )
+    if (oldIndex < 0 || newIndex < 0) return current
+    return normalize({
+      ...current,
+      groups: arrayMove(current.groups, oldIndex, newIndex),
+    })
+  }
+
+  if (activeData.type !== "item") return current
+  if (overData.type !== "item" && overData.type !== "group-drop") return current
+
+  const targetGroupId = overData.groupId
+  const sourceGroup = current.groups.find(
+    (group) => group.id === activeData.groupId
+  )
+  const targetGroup = current.groups.find((group) => group.id === targetGroupId)
+  if (!sourceGroup || !targetGroup) return current
+
+  const item = sourceGroup.items.find(
+    (candidate) => candidate.permissionCode === activeData.permissionCode
+  )
+  if (!item) return current
+
+  if (sourceGroup.id === targetGroup.id) {
+    const oldIndex = sourceGroup.items.findIndex(
+      (candidate) => candidate.permissionCode === activeData.permissionCode
+    )
+    const newIndex =
+      overData.type === "item"
+        ? sourceGroup.items.findIndex(
+            (candidate) => candidate.permissionCode === overData.permissionCode
+          )
+        : sourceGroup.items.length - 1
+    if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return current
+    return normalize({
+      ...current,
+      groups: current.groups.map((group) =>
+        group.id === sourceGroup.id
+          ? { ...group, items: arrayMove(group.items, oldIndex, newIndex) }
+          : group
+      ),
+    })
+  }
+
+  const targetIndex =
+    overData.type === "item"
+      ? targetGroup.items.findIndex(
+          (candidate) => candidate.permissionCode === overData.permissionCode
+        )
+      : targetGroup.items.length
+
+  return normalize({
+    ...current,
+    groups: current.groups.map((group) => {
+      if (group.id === sourceGroup.id) {
+        return {
+          ...group,
+          items: group.items.filter(
+            (candidate) =>
+              candidate.permissionCode !== activeData.permissionCode
+          ),
+        }
+      }
+      if (group.id === targetGroup.id) {
+        const items = [...group.items]
+        items.splice(targetIndex < 0 ? items.length : targetIndex, 0, item)
+        return { ...group, items }
+      }
+      return group
+    }),
+  })
+}
+
 function SortableMenuItem({
   item,
   groupId,
@@ -114,10 +232,20 @@ function SortableMenuItem({
   canDelete,
   canMoveUp,
   canMoveDown,
+  canCreateOperation,
+  canEditOperation,
+  canDeleteOperation,
+  mutationsDisabled,
+  expanded,
+  onToggleExpanded,
   onEdit,
   onDelete,
   onMoveUp,
   onMoveDown,
+  onToggleHidden,
+  onAddOperation,
+  onEditOperation,
+  onDeleteOperation,
 }: {
   item: MenuItem
   groupId: string
@@ -126,10 +254,20 @@ function SortableMenuItem({
   canDelete: boolean
   canMoveUp: boolean
   canMoveDown: boolean
+  canCreateOperation: boolean
+  canEditOperation: boolean
+  canDeleteOperation: boolean
+  mutationsDisabled: boolean
+  expanded: boolean
+  onToggleExpanded: (permissionCode: string) => void
   onEdit: (item: MenuItem) => void
   onDelete: (item: MenuItem) => void
   onMoveUp: () => void
   onMoveDown: () => void
+  onToggleHidden: (item: MenuItem) => void
+  onAddOperation: (item: MenuItem) => void
+  onEditOperation: (item: MenuItem, operation: MenuOperation) => void
+  onDeleteOperation: (item: MenuItem, operation: MenuOperation) => void
 }) {
   const {
     attributes,
@@ -156,8 +294,15 @@ function SortableMenuItem({
   const actions: RowAction[] = []
   if (canEdit) {
     actions.push({
+      label: item.hidden ? "在侧边栏显示" : "隐藏菜单",
+      icon: item.hidden ? EyeIcon : EyeOffIcon,
+      disabled: mutationsDisabled,
+      onSelect: () => onToggleHidden(item),
+    })
+    actions.push({
       label: "编辑",
       icon: PencilIcon,
+      disabled: mutationsDisabled,
       onSelect: () => onEdit(item),
     })
   }
@@ -166,13 +311,13 @@ function SortableMenuItem({
       {
         label: "上移",
         icon: ChevronUpIcon,
-        disabled: !canMoveUp,
+        disabled: !canMoveUp || mutationsDisabled,
         onSelect: onMoveUp,
       },
       {
         label: "下移",
         icon: ChevronDownIcon,
-        disabled: !canMoveDown,
+        disabled: !canMoveDown || mutationsDisabled,
         onSelect: onMoveDown,
       }
     )
@@ -183,40 +328,142 @@ function SortableMenuItem({
       icon: Trash2Icon,
       destructive: true,
       separatorBefore: true,
+      disabled: mutationsDisabled,
       onSelect: () => onDelete(item),
     })
   }
+
+  function buildOperationActions(operation: MenuOperation): RowAction[] {
+    const result: RowAction[] = []
+    if (canEditOperation) {
+      result.push({
+        label: "编辑",
+        icon: PencilIcon,
+        disabled: mutationsDisabled,
+        onSelect: () => onEditOperation(item, operation),
+      })
+    }
+    if (canDeleteOperation) {
+      result.push({
+        label: "删除",
+        icon: Trash2Icon,
+        destructive: true,
+        separatorBefore: true,
+        disabled: mutationsDisabled,
+        onSelect: () => onDeleteOperation(item, operation),
+      })
+    }
+    return result
+  }
+
+  const panelId = `operation-panel-${item.permissionCode}`
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center justify-between gap-3 rounded-xl px-3 py-2 hover:bg-muted/60",
+        "rounded-xl border bg-background",
         isDragging && "relative z-10 opacity-70"
       )}
     >
-      <div className="flex min-w-0 items-center gap-3">
-        {canReorder && (
+      <div className="flex items-center justify-between gap-3 px-3 py-2">
+        <div className="flex min-w-0 items-center gap-3">
+          {canReorder && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="cursor-grab touch-none"
+              aria-label={`拖动 ${item.name} 排序`}
+              {...attributes}
+              {...listeners}
+            >
+              <GripVerticalIcon />
+            </Button>
+          )}
+          <MenuIcon name={item.icon} className="size-4 shrink-0" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-medium">{item.name}</p>
+              {item.isSystem && <Badge variant="outline">内置</Badge>}
+              {item.hidden && <Badge variant="secondary">已隐藏</Badge>}
+            </div>
+            <p className="truncate text-xs text-muted-foreground">
+              {item.route}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
-            size="icon-xs"
-            className="cursor-grab touch-none"
-            aria-label={`拖动 ${item.name} 排序`}
-            {...attributes}
-            {...listeners}
+            size="sm"
+            className="max-md:h-11 max-md:w-11 max-md:px-0"
+            aria-expanded={expanded}
+            aria-controls={panelId}
+            aria-label={`${expanded ? "收起" : "展开"} ${item.name} 的操作权限`}
+            onClick={() => onToggleExpanded(item.permissionCode)}
           >
-            <GripVerticalIcon />
+            <ChevronRightIcon
+              className={cn("transition-transform", expanded && "rotate-90")}
+            />
+            <span className="hidden md:inline">
+              {item.operations.length} 个操作
+            </span>
           </Button>
-        )}
-        <MenuIcon name={item.icon} className="size-4 shrink-0" />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{item.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{item.route}</p>
+          <RowActions actions={actions} label={`${item.name} 的操作`} />
         </div>
-        {item.isSystem && <Badge variant="outline">内置</Badge>}
       </div>
-      <RowActions actions={actions} label={`${item.name} 的操作`} />
+
+      {expanded && (
+        <div id={panelId} className="border-t bg-muted/20 px-3 py-2">
+          <div className="flex items-center justify-between gap-2 pb-1">
+            <p className="text-xs font-medium text-muted-foreground">
+              操作权限
+            </p>
+            {canCreateOperation && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                disabled={mutationsDisabled}
+                onClick={() => onAddOperation(item)}
+              >
+                <PlusIcon data-icon="inline-start" />
+                新增操作
+              </Button>
+            )}
+          </div>
+          {item.operations.length === 0 ? (
+            <p className="px-1 py-2 text-xs text-muted-foreground">
+              还没有操作权限，添加后可在角色管理中分配。
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {item.operations.map((operation) => (
+                <div
+                  key={operation.code}
+                  className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/60"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <KeyRoundIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-sm">{operation.name}</span>
+                    <Badge
+                      variant="secondary"
+                      className="font-mono text-[10px] max-md:hidden"
+                    >
+                      {operation.code}
+                    </Badge>
+                  </div>
+                  <RowActions
+                    actions={buildOperationActions(operation)}
+                    label={`${operation.name} 的操作`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -227,8 +474,14 @@ function SortableGroup({
   canCreate,
   canEdit,
   canDelete,
+  canCreateOperation,
+  canEditOperation,
+  canDeleteOperation,
+  mutationsDisabled,
   canMoveUp,
   canMoveDown,
+  expanded,
+  onToggleExpanded,
   onCreateItem,
   onEditGroup,
   onDeleteGroup,
@@ -237,14 +490,24 @@ function SortableGroup({
   onMoveUp,
   onMoveDown,
   onMoveItem,
+  onToggleHidden,
+  onAddOperation,
+  onEditOperation,
+  onDeleteOperation,
 }: {
   group: MenuGroup
   canReorder: boolean
   canCreate: boolean
   canEdit: boolean
   canDelete: boolean
+  canCreateOperation: boolean
+  canEditOperation: boolean
+  canDeleteOperation: boolean
+  mutationsDisabled: boolean
   canMoveUp: boolean
   canMoveDown: boolean
+  expanded: Set<string>
+  onToggleExpanded: (permissionCode: string) => void
   onCreateItem: (groupId: string) => void
   onEditGroup: (group: MenuGroup) => void
   onDeleteGroup: (group: MenuGroup) => void
@@ -257,6 +520,10 @@ function SortableGroup({
     permissionCode: string,
     direction: -1 | 1
   ) => void
+  onToggleHidden: (item: MenuItem) => void
+  onAddOperation: (item: MenuItem) => void
+  onEditOperation: (item: MenuItem, operation: MenuOperation) => void
+  onDeleteOperation: (item: MenuItem, operation: MenuOperation) => void
 }) {
   const {
     attributes,
@@ -285,6 +552,7 @@ function SortableGroup({
     actions.push({
       label: "编辑分组",
       icon: PencilIcon,
+      disabled: mutationsDisabled,
       onSelect: () => onEditGroup(group),
     })
   }
@@ -293,13 +561,13 @@ function SortableGroup({
       {
         label: "上移分组",
         icon: ChevronUpIcon,
-        disabled: !canMoveUp,
+        disabled: !canMoveUp || mutationsDisabled,
         onSelect: onMoveUp,
       },
       {
         label: "下移分组",
         icon: ChevronDownIcon,
-        disabled: !canMoveDown,
+        disabled: !canMoveDown || mutationsDisabled,
         onSelect: onMoveDown,
       }
     )
@@ -310,6 +578,7 @@ function SortableGroup({
       icon: Trash2Icon,
       destructive: true,
       separatorBefore: true,
+      disabled: mutationsDisabled,
       onSelect: () => onDeleteGroup(group),
     })
   }
@@ -345,6 +614,7 @@ function SortableGroup({
                 size="sm"
                 className="max-md:w-8 max-md:px-0"
                 aria-label="新增菜单"
+                disabled={mutationsDisabled}
                 onClick={() => onCreateItem(group.id)}
               >
                 <PlusIcon data-icon="inline-start" />
@@ -378,10 +648,20 @@ function SortableGroup({
               canDelete={canDelete}
               canMoveUp={itemIndex > 0}
               canMoveDown={itemIndex < group.items.length - 1}
+              canCreateOperation={canCreateOperation}
+              canEditOperation={canEditOperation}
+              canDeleteOperation={canDeleteOperation}
+              mutationsDisabled={mutationsDisabled}
+              expanded={expanded.has(item.permissionCode)}
+              onToggleExpanded={onToggleExpanded}
               onEdit={onEditItem}
               onDelete={onDeleteItem}
               onMoveUp={() => onMoveItem(group.id, item.permissionCode, -1)}
               onMoveDown={() => onMoveItem(group.id, item.permissionCode, 1)}
+              onToggleHidden={onToggleHidden}
+              onAddOperation={onAddOperation}
+              onEditOperation={onEditOperation}
+              onDeleteOperation={onDeleteOperation}
             />
           ))}
         </SortableContext>
@@ -398,10 +678,13 @@ function SortableGroup({
 export function MenuPage() {
   const { hasPermission } = useAuth()
   const [config, setConfig] = React.useState<MenuConfig | null>(null)
-  const [savedConfig, setSavedConfig] = React.useState<MenuConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
   const [saving, setSaving] = React.useState(false)
+  const savingRef = React.useRef(false)
   const [submitting, setSubmitting] = React.useState(false)
+  const [expanded, setExpanded] = React.useState<Set<string>>(new Set())
+  const [search, setSearch] = React.useState("")
 
   const [groupOpen, setGroupOpen] = React.useState(false)
   const [editingGroup, setEditingGroup] = React.useState<MenuGroup | null>(null)
@@ -415,36 +698,101 @@ export function MenuPage() {
     groupId: "",
     route: "",
     icon: "circle",
+    hidden: false,
+  })
+
+  const [operationOpen, setOperationOpen] = React.useState(false)
+  const [operationMenu, setOperationMenu] = React.useState<MenuItem | null>(
+    null
+  )
+  const [editingOperation, setEditingOperation] =
+    React.useState<MenuOperation | null>(null)
+  const [operationForm, setOperationForm] = React.useState({
+    name: "",
+    verb: "view",
+    code: "",
+    custom: false,
   })
 
   const [deleteTarget, setDeleteTarget] = React.useState<DeleteTarget>(null)
   const [deleteLoading, setDeleteLoading] = React.useState(false)
+  const [hideConfirmTarget, setHideConfirmTarget] =
+    React.useState<MenuItem | null>(null)
+  const [hideConfirmLoading, setHideConfirmLoading] = React.useState(false)
+  const [pendingItemSubmit, setPendingItemSubmit] = React.useState(false)
 
   const canReorder = hasPermission("menus.reorder")
   const canCreate = hasPermission("menus.create")
   const canEdit = hasPermission("menus.edit")
   const canDelete = hasPermission("menus.delete")
+  const canViewOverview = hasPermission("permissions")
+  const canCreateOperation = hasPermission("permissions.create")
+  const canEditOperation = hasPermission("permissions.edit")
+  const canDeleteOperation = hasPermission("permissions.delete")
+  const reorderEnabled = canReorder && !search.trim() && !saving
 
-  const load = React.useCallback(async () => {
+  const load = React.useCallback(async (): Promise<boolean> => {
     setLoading(true)
+    setError(null)
     const response = await getMenuConfig()
     if (response.code === 0) {
       setConfig(cloneConfig(response.data))
-      setSavedConfig(cloneConfig(response.data))
-    } else {
-      appToast.error(response.message || "加载菜单失败")
+      setLoading(false)
+      return true
     }
+    setError(response.message || "加载菜单失败")
     setLoading(false)
+    return false
   }, [])
 
   React.useEffect(() => {
     void load()
   }, [load])
 
-  const dirty =
-    config !== null &&
-    savedConfig !== null &&
-    JSON.stringify(config) !== JSON.stringify(savedConfig)
+  const visibleGroups = React.useMemo(() => {
+    if (!config) return []
+    const query = search.trim().toLowerCase()
+    if (!query) return config.groups
+    return config.groups
+      .map((group) => {
+        const groupMatch = group.name.toLowerCase().includes(query)
+        const items = group.items.filter((item) => {
+          const itemMatch =
+            item.name.toLowerCase().includes(query) ||
+            item.permissionCode.toLowerCase().includes(query) ||
+            item.route.toLowerCase().includes(query)
+          const operationMatch = item.operations.some(
+            (operation) =>
+              operation.name.toLowerCase().includes(query) ||
+              operation.code.toLowerCase().includes(query)
+          )
+          return itemMatch || operationMatch
+        })
+        if (!groupMatch && items.length === 0) return null
+        return { ...group, items: groupMatch ? group.items : items }
+      })
+      .filter((group): group is MenuGroup => group !== null)
+  }, [config, search])
+
+  React.useEffect(() => {
+    const query = search.trim().toLowerCase()
+    if (!query || !config) return
+    const next = new Set<string>()
+    for (const group of config.groups) {
+      for (const item of group.items) {
+        if (
+          item.operations.some(
+            (operation) =>
+              operation.name.toLowerCase().includes(query) ||
+              operation.code.toLowerCase().includes(query)
+          )
+        ) {
+          next.add(item.permissionCode)
+        }
+      }
+    }
+    setExpanded(next)
+  }, [config, search])
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -465,21 +813,58 @@ export function MenuPage() {
     return closestCenter({ ...args, droppableContainers })
   }, [])
 
-  function updateDraft(updater: (current: MenuConfig) => MenuConfig) {
-    setConfig((current) =>
-      current ? normalize(updater(cloneConfig(current))) : current
-    )
+  function toggleExpanded(permissionCode: string) {
+    setExpanded((previous) => {
+      const next = new Set(previous)
+      if (next.has(permissionCode)) next.delete(permissionCode)
+      else next.add(permissionCode)
+      return next
+    })
+  }
+
+  async function persistLayout(next: MenuConfig) {
+    if (!canReorder || savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
+    try {
+      const response = await saveMenuLayout({
+        version: next.version,
+        groups: next.groups.map((group) => ({
+          id: group.id,
+          sortOrder: group.sortOrder,
+          items: group.items.map((item) => ({
+            permissionCode: item.permissionCode,
+            sortOrder: item.sortOrder,
+          })),
+        })),
+      })
+      if (response.code !== 0) {
+        appToast.error(response.message || "保存失败")
+        await load()
+        return
+      }
+      setConfig((current) =>
+        current ? { ...current, version: response.data.version } : current
+      )
+      setError(null)
+      window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
   }
 
   function moveGroup(groupId: string, direction: -1 | 1) {
-    updateDraft((current) => {
-      const index = current.groups.findIndex((group) => group.id === groupId)
-      const target = index + direction
-      if (index < 0 || target < 0 || target >= current.groups.length) {
-        return current
-      }
-      return { ...current, groups: arrayMove(current.groups, index, target) }
+    if (!config || !reorderEnabled || savingRef.current) return
+    const index = config.groups.findIndex((group) => group.id === groupId)
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= config.groups.length) return
+    const next = normalize({
+      ...config,
+      groups: arrayMove(config.groups, index, target),
     })
+    setConfig(next)
+    void persistLayout(next)
   }
 
   function moveItem(
@@ -487,152 +872,36 @@ export function MenuPage() {
     permissionCode: string,
     direction: -1 | 1
   ) {
-    updateDraft((current) => {
-      const group = current.groups.find((item) => item.id === groupId)
-      if (!group) return current
-      const index = group.items.findIndex(
-        (item) => item.permissionCode === permissionCode
-      )
-      const target = index + direction
-      if (index < 0 || target < 0 || target >= group.items.length) {
-        return current
-      }
-      return {
-        ...current,
-        groups: current.groups.map((item) =>
-          item.id === groupId
-            ? { ...item, items: arrayMove(item.items, index, target) }
-            : item
-        ),
-      }
+    if (!config || !reorderEnabled || savingRef.current) return
+    const group = config.groups.find((item) => item.id === groupId)
+    if (!group) return
+    const index = group.items.findIndex(
+      (item) => item.permissionCode === permissionCode
+    )
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= group.items.length) return
+    const next = normalize({
+      ...config,
+      groups: config.groups.map((item) =>
+        item.id === groupId
+          ? { ...item, items: arrayMove(item.items, index, target) }
+          : item
+      ),
     })
+    setConfig(next)
+    void persistLayout(next)
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
-    if (!over) return
-
+    if (!over || !config || !reorderEnabled || savingRef.current) return
     const activeData = active.data.current as DragData | undefined
     const overData = over.data.current as DragData | undefined
     if (!activeData || !overData) return
-
-    if (activeData.type === "group" && overData.type === "group") {
-      if (activeData.groupId === overData.groupId) return
-      updateDraft((current) => {
-        const oldIndex = current.groups.findIndex(
-          (group) => group.id === activeData.groupId
-        )
-        const newIndex = current.groups.findIndex(
-          (group) => group.id === overData.groupId
-        )
-        if (oldIndex < 0 || newIndex < 0) return current
-        return {
-          ...current,
-          groups: arrayMove(current.groups, oldIndex, newIndex),
-        }
-      })
-      return
-    }
-
-    if (activeData.type !== "item") return
-    if (overData.type !== "item" && overData.type !== "group-drop") return
-
-    const targetGroupId = overData.groupId
-
-    updateDraft((current) => {
-      const sourceGroup = current.groups.find(
-        (group) => group.id === activeData.groupId
-      )
-      const targetGroup = current.groups.find(
-        (group) => group.id === targetGroupId
-      )
-      if (!sourceGroup || !targetGroup) return current
-
-      const item = sourceGroup.items.find(
-        (candidate) => candidate.permissionCode === activeData.permissionCode
-      )
-      if (!item) return current
-
-      if (sourceGroup.id === targetGroup.id) {
-        const oldIndex = sourceGroup.items.findIndex(
-          (candidate) => candidate.permissionCode === activeData.permissionCode
-        )
-        const newIndex =
-          overData.type === "item"
-            ? sourceGroup.items.findIndex(
-                (candidate) =>
-                  candidate.permissionCode === overData.permissionCode
-              )
-            : sourceGroup.items.length - 1
-        if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) {
-          return current
-        }
-        return {
-          ...current,
-          groups: current.groups.map((group) =>
-            group.id === sourceGroup.id
-              ? { ...group, items: arrayMove(group.items, oldIndex, newIndex) }
-              : group
-          ),
-        }
-      }
-
-      const targetIndex =
-        overData.type === "item"
-          ? targetGroup.items.findIndex(
-              (candidate) =>
-                candidate.permissionCode === overData.permissionCode
-            )
-          : targetGroup.items.length
-
-      return {
-        ...current,
-        groups: current.groups.map((group) => {
-          if (group.id === sourceGroup.id) {
-            return {
-              ...group,
-              items: group.items.filter(
-                (candidate) =>
-                  candidate.permissionCode !== activeData.permissionCode
-              ),
-            }
-          }
-          if (group.id === targetGroup.id) {
-            const items = [...group.items]
-            items.splice(targetIndex < 0 ? items.length : targetIndex, 0, item)
-            return { ...group, items }
-          }
-          return group
-        }),
-      }
-    })
-  }
-
-  async function handleSave() {
-    if (!config || !dirty) return
-    setSaving(true)
-    const response = await saveMenuLayout({
-      version: config.version,
-      groups: config.groups.map((group) => ({
-        id: group.id,
-        sortOrder: group.sortOrder,
-        items: group.items.map((item) => ({
-          permissionCode: item.permissionCode,
-          sortOrder: item.sortOrder,
-        })),
-      })),
-    })
-    setSaving(false)
-    if (response.code !== 0) {
-      appToast.error(response.message || "保存失败")
-      return
-    }
-    const next = cloneConfig(config)
-    next.version = response.data.version
+    const next = applyDragEnd(config, activeData, overData)
+    if (next === config) return
     setConfig(next)
-    setSavedConfig(next)
-    window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-    appToast.success("菜单顺序已保存")
+    void persistLayout(next)
   }
 
   function openCreateGroup() {
@@ -649,19 +918,27 @@ export function MenuPage() {
 
   async function submitGroup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
     setSubmitting(true)
-    const response = editingGroup
-      ? await updateMenuGroup(editingGroup.id, groupName)
-      : await createMenuGroup(groupName)
-    setSubmitting(false)
-    if (response.code !== 0) {
-      appToast.error(response.message || "操作失败")
-      return
+    try {
+      const response = editingGroup
+        ? await updateMenuGroup(editingGroup.id, groupName)
+        : await createMenuGroup(groupName)
+      if (response.code !== 0) {
+        appToast.error(response.message || "操作失败")
+        return
+      }
+      setGroupOpen(false)
+      await load()
+      window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+      appToast.success(editingGroup ? "分组已更新" : "分组已创建")
+    } finally {
+      setSubmitting(false)
+      savingRef.current = false
+      setSaving(false)
     }
-    setGroupOpen(false)
-    await load()
-    window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-    appToast.success(editingGroup ? "分组已更新" : "分组已创建")
   }
 
   function openCreateItem(groupId: string) {
@@ -672,6 +949,7 @@ export function MenuPage() {
       groupId,
       route: "",
       icon: "circle",
+      hidden: false,
     })
     setItemOpen(true)
   }
@@ -684,58 +962,264 @@ export function MenuPage() {
       groupId: item.groupId,
       route: item.route,
       icon: item.icon,
+      hidden: item.hidden,
     })
     setItemOpen(true)
   }
 
   async function submitItem(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setSubmitting(true)
-    const response = editingItem
-      ? await updateMenuItem(editingItem.permissionCode, {
-          name: itemForm.name,
-          groupId: itemForm.groupId,
-          route: itemForm.route,
-          icon: itemForm.icon,
-        })
-      : await createMenuItem(itemForm)
-    setSubmitting(false)
-    if (response.code !== 0) {
-      appToast.error(response.message || "操作失败")
+    if (savingRef.current) return
+    if (
+      editingItem &&
+      (editingItem.permissionCode === "menus" ||
+        editingItem.permissionCode === "settings") &&
+      itemForm.hidden &&
+      !editingItem.hidden
+    ) {
+      setHideConfirmTarget(editingItem)
+      setPendingItemSubmit(true)
       return
     }
-    setItemOpen(false)
-    await load()
-    window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-    appToast.success(editingItem ? "菜单已更新" : "菜单已创建")
+    await submitItemNow()
+  }
+
+  async function submitItemNow() {
+    if (savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
+    setSubmitting(true)
+    try {
+      const response = editingItem
+        ? await updateMenuItem(editingItem.permissionCode, {
+            name: itemForm.name,
+            groupId: itemForm.groupId,
+            route: itemForm.route,
+            icon: itemForm.icon,
+            hidden: itemForm.hidden,
+          })
+        : await createMenuItem(itemForm)
+      if (response.code !== 0) {
+        appToast.error(response.message || "操作失败")
+        return
+      }
+      setItemOpen(false)
+      await load()
+      window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+      appToast.success(editingItem ? "菜单已更新" : "菜单已创建")
+    } finally {
+      setSubmitting(false)
+      savingRef.current = false
+      setSaving(false)
+    }
+  }
+
+  async function applyHidden(item: MenuItem, hidden: boolean) {
+    if (savingRef.current) return false
+    savingRef.current = true
+    setSaving(true)
+    try {
+      const response = await updateMenuItem(item.permissionCode, { hidden })
+      if (response.code !== 0) {
+        appToast.error(response.message || "操作失败")
+        return false
+      }
+      if (!(await load())) {
+        appToast.error("菜单状态已保存，但列表刷新失败，请重试")
+        return false
+      }
+      window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+      appToast.success(hidden ? "菜单已隐藏" : "菜单已显示")
+      return true
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
+  }
+
+  async function toggleHidden(item: MenuItem) {
+    if (item.hidden) {
+      await applyHidden(item, false)
+      return
+    }
+    if (item.permissionCode === "menus" || item.permissionCode === "settings") {
+      setPendingItemSubmit(false)
+      setHideConfirmTarget(item)
+      return
+    }
+    await applyHidden(item, true)
+  }
+
+  async function confirmHide() {
+    if (!hideConfirmTarget || savingRef.current) return
+    setHideConfirmLoading(true)
+    const ok = await applyHidden(hideConfirmTarget, true)
+    setHideConfirmLoading(false)
+    if (ok) setHideConfirmTarget(null)
+  }
+
+  async function handleHideConfirm() {
+    if (pendingItemSubmit) {
+      setPendingItemSubmit(false)
+      setHideConfirmTarget(null)
+      await submitItemNow()
+      return
+    }
+    await confirmHide()
+  }
+
+  function openCreateOperation(item: MenuItem) {
+    setOperationMenu(item)
+    setEditingOperation(null)
+    setOperationForm({
+      name: "",
+      verb: "view",
+      code: buildOperationCode(item.permissionCode, "view"),
+      custom: false,
+    })
+    setOperationOpen(true)
+  }
+
+  function openEditOperation(item: MenuItem, operation: MenuOperation) {
+    setOperationMenu(item)
+    setEditingOperation(operation)
+    setOperationForm({
+      name: operation.name,
+      verb: "",
+      code: operation.code,
+      custom: true,
+    })
+    setOperationOpen(true)
+  }
+
+  function handleOperationVerbChange(verb: string) {
+    setOperationForm((form) => ({
+      ...form,
+      verb,
+      code:
+        form.custom || !operationMenu
+          ? form.code
+          : buildOperationCode(operationMenu.permissionCode, verb),
+    }))
+  }
+
+  function handleOperationCustomChange(custom: boolean) {
+    setOperationForm((form) => ({
+      ...form,
+      custom,
+      code:
+        custom || !operationMenu
+          ? form.code
+          : buildOperationCode(
+              operationMenu.permissionCode,
+              form.verb || "view"
+            ),
+    }))
+  }
+
+  async function submitOperation(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!operationMenu || savingRef.current) return
+    if (!operationForm.name.trim()) {
+      appToast.error("请输入权限名称")
+      return
+    }
+    const code = operationForm.code.trim()
+    if (!editingOperation && !code) {
+      appToast.error("请输入权限编码")
+      return
+    }
+
+    savingRef.current = true
+    setSaving(true)
+    setSubmitting(true)
+    try {
+      const response = editingOperation
+        ? await updatePermission(editingOperation.code, {
+            name: operationForm.name,
+            parent: operationMenu.permissionCode,
+          })
+        : await createPermission({
+            code,
+            name: operationForm.name,
+            type: "operation",
+            parent: operationMenu.permissionCode,
+          })
+      if (response.code !== 0) {
+        appToast.error(response.message || "操作失败")
+        return
+      }
+      appToast.success(editingOperation ? "操作权限已更新" : "操作权限已创建")
+      setOperationOpen(false)
+      await load()
+    } finally {
+      setSubmitting(false)
+      savingRef.current = false
+      setSaving(false)
+    }
   }
 
   async function confirmDelete() {
-    if (!deleteTarget) return
+    if (!deleteTarget || savingRef.current) return
+    const target = deleteTarget
+    savingRef.current = true
+    setSaving(true)
     setDeleteLoading(true)
-    const response =
-      deleteTarget.type === "group"
-        ? await deleteMenuGroup(deleteTarget.id)
-        : await deleteMenuItem(deleteTarget.id)
-    setDeleteLoading(false)
-    if (response.code !== 0) {
-      appToast.error(response.message || "删除失败")
-      return
+    try {
+      const response =
+        target.type === "group"
+          ? await deleteMenuGroup(target.id)
+          : target.type === "item"
+            ? await deleteMenuItem(target.id)
+            : await deletePermission(target.id)
+      if (response.code !== 0) {
+        appToast.error(response.message || "删除失败")
+        return
+      }
+      setDeleteTarget(null)
+      await load()
+      if (target.type !== "operation") {
+        window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
+      }
+      appToast.success("删除成功")
+    } finally {
+      setDeleteLoading(false)
+      savingRef.current = false
+      setSaving(false)
     }
-    setDeleteTarget(null)
-    await load()
-    window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-    appToast.success("删除成功")
   }
 
-  if (loading || !config) {
+  const deleteDescription =
+    deleteTarget?.type === "item"
+      ? deleteTarget.operationCount > 0
+        ? `删除后将同时移除 ${deleteTarget.operationCount} 个操作权限，并从相关角色中移除授权。`
+        : "对应菜单权限和角色授权也会被删除。"
+      : deleteTarget?.type === "operation"
+        ? "删除后，已授予该权限的角色会同步失去此权限。"
+        : deleteTarget?.type === "group"
+          ? "仅空分组可以删除。"
+          : undefined
+
+  if (loading) {
     return (
       <div className="flex flex-col gap-(--page-gap)">
         <PageHeader
-          title="菜单管理"
-          description="维护系统分组、菜单入口与显示顺序。"
+          title="菜单与权限"
+          description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
         />
         <PageFormSkeleton />
+      </div>
+    )
+  }
+
+  if (!config) {
+    return (
+      <div className="flex flex-col gap-(--page-gap)">
+        <PageHeader
+          title="菜单与权限"
+          description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
+        />
+        <ErrorState message={error || "加载菜单失败"} onRetry={load} />
       </div>
     )
   }
@@ -743,30 +1227,58 @@ export function MenuPage() {
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
-        title="菜单管理"
-        description="维护系统分组、菜单入口与显示顺序。"
+        title="菜单与权限"
+        description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
         actions={
           <>
-            {dirty && <Badge variant="warning">有未保存的排序修改</Badge>}
+            {saving && (
+              <span className="text-xs text-muted-foreground">正在保存…</span>
+            )}
+            {canViewOverview && (
+              <Button asChild variant="outline">
+                <Link to="/settings/permission">
+                  <KeyRoundIcon data-icon="inline-start" />
+                  权限总览
+                </Link>
+              </Button>
+            )}
             {canCreate && (
-              <Button variant="outline" onClick={openCreateGroup}>
+              <Button
+                variant="outline"
+                disabled={saving}
+                onClick={openCreateGroup}
+              >
                 <PlusIcon data-icon="inline-start" />
                 新增分组
               </Button>
             )}
-            {canReorder && (
-              <LoadingButton
-                loading={saving}
-                disabled={!dirty}
-                onClick={handleSave}
-              >
-                <SaveIcon data-icon="inline-start" />
-                保存排序
-              </LoadingButton>
-            )}
           </>
         }
       />
+
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <InputGroup className="w-full md:w-72">
+          <InputGroupInput
+            name="q"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="搜索菜单或操作权限…"
+            aria-label="搜索菜单"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <InputGroupAddon>
+            <SearchIcon />
+          </InputGroupAddon>
+        </InputGroup>
+        {search.trim() && (
+          <p className="text-xs text-muted-foreground">
+            搜索时暂时关闭拖拽排序
+          </p>
+        )}
+      </div>
+
+      {error && <InlineError message={error} onRetry={load} />}
 
       {config.groups.length === 0 ? (
         <EmptyState
@@ -781,6 +1293,16 @@ export function MenuPage() {
             ) : null
           }
         />
+      ) : visibleGroups.length === 0 ? (
+        <EmptyState
+          title="没有匹配的菜单"
+          description="换个关键词，或清空搜索条件后再试。"
+          action={
+            <Button variant="outline" onClick={() => setSearch("")}>
+              清空搜索
+            </Button>
+          }
+        />
       ) : (
         <DndContext
           sensors={sensors}
@@ -788,20 +1310,26 @@ export function MenuPage() {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={config.groups.map((group) => groupSortableId(group.id))}
+            items={visibleGroups.map((group) => groupSortableId(group.id))}
             strategy={verticalListSortingStrategy}
           >
             <div className="flex flex-col gap-4">
-              {config.groups.map((group, groupIndex) => (
+              {visibleGroups.map((group, groupIndex) => (
                 <SortableGroup
                   key={group.id}
                   group={group}
-                  canReorder={canReorder}
+                  canReorder={reorderEnabled}
                   canCreate={canCreate}
                   canEdit={canEdit}
                   canDelete={canDelete}
+                  canCreateOperation={canCreateOperation}
+                  canEditOperation={canEditOperation}
+                  canDeleteOperation={canDeleteOperation}
+                  mutationsDisabled={saving}
                   canMoveUp={groupIndex > 0}
-                  canMoveDown={groupIndex < config.groups.length - 1}
+                  canMoveDown={groupIndex < visibleGroups.length - 1}
+                  expanded={expanded}
+                  onToggleExpanded={toggleExpanded}
                   onCreateItem={openCreateItem}
                   onEditGroup={openEditGroup}
                   onDeleteGroup={(target) =>
@@ -820,6 +1348,17 @@ export function MenuPage() {
                       type: "item",
                       id: item.permissionCode,
                       name: item.name,
+                      operationCount: item.operations.length,
+                    })
+                  }
+                  onToggleHidden={toggleHidden}
+                  onAddOperation={openCreateOperation}
+                  onEditOperation={openEditOperation}
+                  onDeleteOperation={(_item, operation) =>
+                    setDeleteTarget({
+                      type: "operation",
+                      id: operation.code,
+                      name: operation.name,
                     })
                   }
                 />
@@ -938,22 +1477,141 @@ export function MenuPage() {
               onChange={(icon) => setItemForm((form) => ({ ...form, icon }))}
             />
           </Field>
+          <Field orientation="horizontal">
+            <div className="flex flex-1 flex-col gap-1">
+              <FieldLabel htmlFor="item-visible">在侧边栏显示</FieldLabel>
+              <FieldDescription>
+                {editingItem?.permissionCode === "menus" ||
+                editingItem?.permissionCode === "settings"
+                  ? "隐藏后仍可通过 /settings/menu 直接访问并重新显示。"
+                  : "关闭后菜单仍保留权限和路由，只是不在侧边栏展示。"}
+              </FieldDescription>
+            </div>
+            <Switch
+              id="item-visible"
+              checked={!itemForm.hidden}
+              onCheckedChange={(visible) =>
+                setItemForm((form) => ({ ...form, hidden: !visible }))
+              }
+            />
+          </Field>
+        </FieldGroup>
+      </FormDialog>
+
+      <FormDialog
+        open={operationOpen}
+        onOpenChange={setOperationOpen}
+        title={editingOperation ? "编辑操作权限" : "新增操作权限"}
+        description={
+          operationMenu
+            ? `所属菜单：${operationMenu.name}（${operationMenu.permissionCode}）`
+            : undefined
+        }
+        submitting={submitting}
+        onSubmit={submitOperation}
+      >
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="operation-name">权限名称</FieldLabel>
+            <Input
+              name="operation-name"
+              autoComplete="off"
+              id="operation-name"
+              placeholder="如：新增用户"
+              value={operationForm.name}
+              onChange={(event) =>
+                setOperationForm((form) => ({
+                  ...form,
+                  name: event.target.value,
+                }))
+              }
+              required
+            />
+          </Field>
+          {!editingOperation && (
+            <Field>
+              <FieldLabel>常用动作</FieldLabel>
+              <Select
+                value={operationForm.verb}
+                onValueChange={handleOperationVerbChange}
+              >
+                <SelectTrigger className="w-full" aria-label="常用动作">
+                  <SelectValue placeholder="选择常用动作" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {OPERATION_PRESETS.map((preset) => (
+                      <SelectItem key={preset.verb} value={preset.verb}>
+                        {preset.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
+          <Field orientation="horizontal">
+            <div className="flex flex-1 flex-col gap-1">
+              <FieldLabel htmlFor="operation-custom">自定义编码</FieldLabel>
+              <FieldDescription>
+                关闭时按“菜单编码.动作”自动生成。
+              </FieldDescription>
+            </div>
+            <Switch
+              id="operation-custom"
+              checked={operationForm.custom}
+              disabled={!!editingOperation}
+              onCheckedChange={handleOperationCustomChange}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="operation-code">权限编码</FieldLabel>
+            <Input
+              name="operation-code"
+              autoComplete="off"
+              spellCheck={false}
+              id="operation-code"
+              value={operationForm.code}
+              onChange={(event) =>
+                setOperationForm((form) => ({
+                  ...form,
+                  code: event.target.value,
+                }))
+              }
+              disabled={!operationForm.custom || !!editingOperation}
+              required
+              pattern="^[a-z0-9_.-]+$"
+              title="只能包含小写字母、数字、点、下划线和连字符"
+            />
+            <FieldDescription>
+              编码用于后端鉴权，请与代码中的权限码保持一致。
+            </FieldDescription>
+          </Field>
         </FieldGroup>
       </FormDialog>
 
       <ConfirmDeleteDialog
         open={!!deleteTarget}
         targetName={deleteTarget?.name || ""}
-        description={
-          deleteTarget?.type === "group"
-            ? "仅空分组可以删除。"
-            : "对应菜单权限和角色授权也会被删除。"
-        }
+        description={deleteDescription}
         loading={deleteLoading}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null)
         }}
         onConfirm={confirmDelete}
+      />
+
+      <ConfirmHideDialog
+        open={!!hideConfirmTarget}
+        targetName={hideConfirmTarget?.name || ""}
+        loading={hideConfirmLoading}
+        onOpenChange={(open) => {
+          if (!open) {
+            setHideConfirmTarget(null)
+            setPendingItemSubmit(false)
+          }
+        }}
+        onConfirm={handleHideConfirm}
       />
     </div>
   )

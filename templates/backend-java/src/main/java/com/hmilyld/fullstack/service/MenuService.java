@@ -65,6 +65,7 @@ public Map<String, Object> syncCatalog() {
 		item.setIcon(source.icon());
 		item.setSortOrder(source.sortOrder());
 		item.setSystem(source.system());
+		item.setHidden(source.hidden());
 		menuItemRepository.save(item);
 		addedItems.add(source.permissionCode());
 	}
@@ -77,6 +78,19 @@ public Map<String, Object> syncCatalog() {
 }
 
 public ApiResponse<?> getConfig() {
+	Map<String, List<Map<String, Object>>> operationsByParent = new LinkedHashMap<>();
+	List<Permission> operationPermissions = permissionRepository.findByType("operation");
+	operationPermissions.sort(java.util.Comparator.comparing(Permission::getCode));
+	for (Permission permission : operationPermissions) {
+	if (permission.getParent() == null) continue;
+	Map<String, Object> operation = new HashMap<>();
+	operation.put("code", permission.getCode());
+	operation.put("name", permission.getName());
+	operationsByParent
+		.computeIfAbsent(permission.getParent(), key -> new ArrayList<>())
+		.add(operation);
+	}
+
 	Map<String, List<Map<String, Object>>> itemsByGroup = new LinkedHashMap<>();
 	for (MenuItem item : menuItemRepository.findAllByOrderBySortOrderAscPermissionCodeAsc()) {
 	Permission permission = permissionRepository.findById(item.getPermissionCode()).orElse(null);
@@ -89,6 +103,8 @@ public ApiResponse<?> getConfig() {
 	value.put("icon", item.getIcon());
 	value.put("sortOrder", item.getSortOrder());
 	value.put("isSystem", item.getSystem());
+	value.put("hidden", item.getHidden());
+	value.put("operations", operationsByParent.getOrDefault(item.getPermissionCode(), List.of()));
 	itemsByGroup.computeIfAbsent(item.getGroupId(), key -> new ArrayList<>()).add(value);
 	}
 
@@ -123,6 +139,7 @@ public ApiResponse<?> getNavigation() {
 
 	Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
 	for (MenuItem item : menuItemRepository.findAllByOrderBySortOrderAscPermissionCodeAsc()) {
+	if (Boolean.TRUE.equals(item.getHidden())) continue;
 	if (!allowed.contains(item.getPermissionCode())) continue;
 	MenuGroup group = menuGroupRepository.findById(item.getGroupId()).orElse(null);
 	Permission permission = permissionRepository.findById(item.getPermissionCode()).orElse(null);
@@ -221,6 +238,7 @@ public ApiResponse<?> createItem(MenuItemCreateRequest request) {
 		request.getIcon() == null || request.getIcon().isBlank() ? "circle" : request.getIcon());
 	item.setSortOrder(maxOrder + 1);
 	item.setSystem(false);
+	item.setHidden(Boolean.TRUE.equals(request.getHidden()));
 	menuItemRepository.save(item);
 
 	RolePermission adminGrant = new RolePermission();
@@ -253,6 +271,7 @@ public ApiResponse<?> updateItem(String permissionCode, MenuItemUpdateRequest re
 	if (request.getIcon() != null) {
 	item.setIcon(request.getIcon().isBlank() ? "circle" : request.getIcon());
 	}
+	if (request.getHidden() != null) item.setHidden(request.getHidden());
 	if (request.getName() != null) {
 	permissionRepository
 		.findById(permissionCode)
@@ -271,6 +290,13 @@ public ApiResponse<?> deleteItem(String permissionCode) {
 	MenuItem item = menuItemRepository.findById(permissionCode).orElse(null);
 	if (item == null) return ApiResponse.error("菜单不存在");
 	if (Boolean.TRUE.equals(item.getSystem())) return ApiResponse.error("内置菜单不能删除");
+
+	List<Permission> children = permissionRepository.findByParent(permissionCode);
+	List<String> childCodes = children.stream().map(Permission::getCode).toList();
+	if (!childCodes.isEmpty()) {
+	rolePermissionRepository.deleteByPermissionCodeIn(childCodes);
+	permissionRepository.deleteAll(children);
+	}
 	rolePermissionRepository.deleteByPermissionCode(permissionCode);
 	permissionRepository.deleteById(permissionCode);
 	menuItemRepository.delete(item);
@@ -299,13 +325,13 @@ public ApiResponse<?> saveLayout(MenuLayoutRequest request) {
 	groupUpdates.put(group.getId(), group);
 	groupOrders.put(group.getId(), groupRequest.getSortOrder());
 	for (MenuLayoutRequest.Item itemRequest : groupRequest.getItems()) {
-	MenuItem item = items.get(itemRequest.getPermissionCode());
-	if (item == null || !seen.add(itemRequest.getPermissionCode())) {
+		MenuItem item = items.get(itemRequest.getPermissionCode());
+		if (item == null || !seen.add(itemRequest.getPermissionCode())) {
 		return ApiResponse.error("菜单布局包含重复或无效菜单");
-	}
-	itemUpdates.put(item.getPermissionCode(), item);
-	itemGroups.put(item.getPermissionCode(), group.getId());
-	itemOrders.put(item.getPermissionCode(), itemRequest.getSortOrder());
+		}
+		itemUpdates.put(item.getPermissionCode(), item);
+		itemGroups.put(item.getPermissionCode(), group.getId());
+		itemOrders.put(item.getPermissionCode(), itemRequest.getSortOrder());
 	}
 	}
 	if (!seen.equals(items.keySet())) return ApiResponse.error("菜单布局必须包含全部菜单");
