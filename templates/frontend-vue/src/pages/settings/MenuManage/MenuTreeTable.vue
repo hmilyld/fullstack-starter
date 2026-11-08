@@ -48,14 +48,14 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <Table class="min-w-[640px] table-fixed">
+  <Table class="min-w-[600px] table-fixed">
     <TableHeader>
       <TableRow class="bg-muted/50 hover:bg-muted/50">
-        <TableHead class="w-[36%]">名称</TableHead>
+        <TableHead class="w-[35%]">名称</TableHead>
         <TableHead class="w-[10%]">类型</TableHead>
         <TableHead class="w-[27%]">路由 / 权限编码</TableHead>
-        <TableHead class="w-[12%]">标记</TableHead>
-        <TableHead class="sticky right-0 w-[15%] bg-muted/50 text-right">
+        <TableHead class="hidden w-[12%] lg:table-cell">标记</TableHead>
+        <TableHead class="sticky right-0 w-[16%] bg-muted/50 text-right">
           操作
         </TableHead>
       </TableRow>

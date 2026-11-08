@@ -41,6 +41,7 @@ import { ErrorState } from "@/components/shared/error-state"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { IconPicker, MenuIcon } from "@/components/shared/icon-picker"
 import { InlineError } from "@/components/shared/inline-error"
+import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
 import { RowActions, type RowAction } from "@/components/shared/row-actions"
 import { PageFormSkeleton } from "@/components/shared/table-states"
@@ -1231,18 +1232,51 @@ export function MenuPage() {
     )
   }
 
+  const totalMenus = config.groups.reduce(
+    (sum, group) => sum + group.items.length,
+    0
+  )
+  const totalOperations = config.groups.reduce(
+    (sum, group) =>
+      sum +
+      group.items.reduce(
+        (itemSum, item) => itemSum + item.operations.length,
+        0
+      ),
+    0
+  )
+
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="菜单与权限"
         description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
+      />
+
+      <ListShell
+        title="菜单结构"
+        description={`共 ${config.groups.length} 个分组，${totalMenus} 个菜单，${totalOperations} 个操作权限`}
         actions={
           <>
+            <InputGroup className="w-full md:w-64">
+              <InputGroupInput
+                name="q"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="搜索菜单或操作权限…"
+                aria-label="搜索菜单"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <InputGroupAddon>
+                <SearchIcon />
+              </InputGroupAddon>
+            </InputGroup>
             {saving && (
               <span className="text-xs text-muted-foreground">正在保存…</span>
             )}
             {canViewOverview && (
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="w-full md:w-auto">
                 <Link to="/settings/permission">
                   <KeyRoundIcon data-icon="inline-start" />
                   权限总览
@@ -1253,177 +1287,161 @@ export function MenuPage() {
               <Button
                 variant="outline"
                 disabled={saving}
+                className="w-full md:w-auto"
                 onClick={openCreateGroup}
               >
                 <PlusIcon data-icon="inline-start" />
                 新增分组
               </Button>
             )}
+            {search.trim() && (
+              <span className="text-xs text-muted-foreground">
+                搜索时暂停拖拽
+              </span>
+            )}
           </>
         }
-      />
+      >
+        {error && <InlineError message={error} onRetry={load} />}
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <InputGroup className="w-full md:w-72">
-          <InputGroupInput
-            name="q"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="搜索菜单或操作权限…"
-            aria-label="搜索菜单"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+        {config.groups.length === 0 ? (
+          <EmptyState
+            title="还没有菜单分组"
+            description="先创建一个分组，再把菜单入口放进去。"
+            action={
+              canCreate ? (
+                <Button onClick={openCreateGroup}>
+                  <PlusIcon data-icon="inline-start" />
+                  新增分组
+                </Button>
+              ) : null
+            }
           />
-          <InputGroupAddon>
-            <SearchIcon />
-          </InputGroupAddon>
-        </InputGroup>
-        {search.trim() && (
-          <p className="text-xs text-muted-foreground">
-            搜索时暂时关闭拖拽排序
-          </p>
-        )}
-      </div>
-
-      {error && <InlineError message={error} onRetry={load} />}
-
-      {config.groups.length === 0 ? (
-        <EmptyState
-          title="还没有菜单分组"
-          description="先创建一个分组，再把菜单入口放进去。"
-          action={
-            canCreate ? (
-              <Button onClick={openCreateGroup}>
-                <PlusIcon data-icon="inline-start" />
-                新增分组
+        ) : visibleGroups.length === 0 ? (
+          <EmptyState
+            title="没有匹配的菜单"
+            description="换个关键词，或清空搜索条件后再试。"
+            action={
+              <Button variant="outline" onClick={() => setSearch("")}>
+                清空搜索
               </Button>
-            ) : null
-          }
-        />
-      ) : visibleGroups.length === 0 ? (
-        <EmptyState
-          title="没有匹配的菜单"
-          description="换个关键词，或清空搜索条件后再试。"
-          action={
-            <Button variant="outline" onClick={() => setSearch("")}>
-              清空搜索
-            </Button>
-          }
-        />
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={collisionDetection}
-          onDragEnd={handleDragEnd}
-        >
-          {isCompact ? (
-            <SortableContext
-              items={visibleGroups.map((group) => groupSortableId(group.id))}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="flex flex-col gap-4">
-                {visibleGroups.map((group, groupIndex) => (
-                  <SortableGroup
-                    key={group.id}
-                    group={group}
-                    canReorder={reorderEnabled}
-                    canCreate={canCreate}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    canCreateOperation={canCreateOperation}
-                    canEditOperation={canEditOperation}
-                    canDeleteOperation={canDeleteOperation}
-                    mutationsDisabled={saving}
-                    canMoveUp={groupIndex > 0}
-                    canMoveDown={groupIndex < visibleGroups.length - 1}
-                    expanded={expanded}
-                    onToggleExpanded={toggleExpanded}
-                    onCreateItem={openCreateItem}
-                    onEditGroup={openEditGroup}
-                    onDeleteGroup={(target) =>
-                      setDeleteTarget({
-                        type: "group",
-                        id: target.id,
-                        name: target.name,
-                      })
-                    }
-                    onMoveUp={() => moveGroup(group.id, -1)}
-                    onMoveDown={() => moveGroup(group.id, 1)}
-                    onMoveItem={moveItem}
-                    onEditItem={openEditItem}
-                    onDeleteItem={(item) =>
-                      setDeleteTarget({
-                        type: "item",
-                        id: item.permissionCode,
-                        name: item.name,
-                        operationCount: item.operations.length,
-                      })
-                    }
-                    onToggleHidden={toggleHidden}
-                    onAddOperation={openCreateOperation}
-                    onEditOperation={openEditOperation}
-                    onDeleteOperation={(_item, operation) =>
-                      setDeleteTarget({
-                        type: "operation",
-                        id: operation.code,
-                        name: operation.name,
-                      })
-                    }
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          ) : (
-            <MenuTreeTable
-              groups={visibleGroups}
-              expanded={expanded}
-              collapsedGroups={
-                search.trim() ? new Set<string>() : collapsedGroups
-              }
-              canReorder={reorderEnabled}
-              canCreate={canCreate}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              canCreateOperation={canCreateOperation}
-              canEditOperation={canEditOperation}
-              canDeleteOperation={canDeleteOperation}
-              mutationsDisabled={saving}
-              onToggleGroup={toggleGroup}
-              onToggleExpanded={toggleExpanded}
-              onCreateItem={openCreateItem}
-              onEditGroup={openEditGroup}
-              onDeleteGroup={(group) =>
-                setDeleteTarget({
-                  type: "group",
-                  id: group.id,
-                  name: group.name,
-                })
-              }
-              onEditItem={openEditItem}
-              onDeleteItem={(item) =>
-                setDeleteTarget({
-                  type: "item",
-                  id: item.permissionCode,
-                  name: item.name,
-                  operationCount: item.operations.length,
-                })
-              }
-              onMoveGroup={moveGroup}
-              onMoveItem={moveItem}
-              onToggleHidden={toggleHidden}
-              onAddOperation={openCreateOperation}
-              onEditOperation={openEditOperation}
-              onDeleteOperation={(_item, operation) =>
-                setDeleteTarget({
-                  type: "operation",
-                  id: operation.code,
-                  name: operation.name,
-                })
-              }
-            />
-          )}
-        </DndContext>
-      )}
+            }
+          />
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collisionDetection}
+            onDragEnd={handleDragEnd}
+          >
+            {isCompact ? (
+              <SortableContext
+                items={visibleGroups.map((group) => groupSortableId(group.id))}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col gap-4">
+                  {visibleGroups.map((group, groupIndex) => (
+                    <SortableGroup
+                      key={group.id}
+                      group={group}
+                      canReorder={reorderEnabled}
+                      canCreate={canCreate}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canCreateOperation={canCreateOperation}
+                      canEditOperation={canEditOperation}
+                      canDeleteOperation={canDeleteOperation}
+                      mutationsDisabled={saving}
+                      canMoveUp={groupIndex > 0}
+                      canMoveDown={groupIndex < visibleGroups.length - 1}
+                      expanded={expanded}
+                      onToggleExpanded={toggleExpanded}
+                      onCreateItem={openCreateItem}
+                      onEditGroup={openEditGroup}
+                      onDeleteGroup={(target) =>
+                        setDeleteTarget({
+                          type: "group",
+                          id: target.id,
+                          name: target.name,
+                        })
+                      }
+                      onMoveUp={() => moveGroup(group.id, -1)}
+                      onMoveDown={() => moveGroup(group.id, 1)}
+                      onMoveItem={moveItem}
+                      onEditItem={openEditItem}
+                      onDeleteItem={(item) =>
+                        setDeleteTarget({
+                          type: "item",
+                          id: item.permissionCode,
+                          name: item.name,
+                          operationCount: item.operations.length,
+                        })
+                      }
+                      onToggleHidden={toggleHidden}
+                      onAddOperation={openCreateOperation}
+                      onEditOperation={openEditOperation}
+                      onDeleteOperation={(_item, operation) =>
+                        setDeleteTarget({
+                          type: "operation",
+                          id: operation.code,
+                          name: operation.name,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            ) : (
+              <MenuTreeTable
+                groups={visibleGroups}
+                expanded={expanded}
+                collapsedGroups={
+                  search.trim() ? new Set<string>() : collapsedGroups
+                }
+                canReorder={reorderEnabled}
+                canCreate={canCreate}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                canCreateOperation={canCreateOperation}
+                canEditOperation={canEditOperation}
+                canDeleteOperation={canDeleteOperation}
+                mutationsDisabled={saving}
+                onToggleGroup={toggleGroup}
+                onToggleExpanded={toggleExpanded}
+                onCreateItem={openCreateItem}
+                onEditGroup={openEditGroup}
+                onDeleteGroup={(group) =>
+                  setDeleteTarget({
+                    type: "group",
+                    id: group.id,
+                    name: group.name,
+                  })
+                }
+                onEditItem={openEditItem}
+                onDeleteItem={(item) =>
+                  setDeleteTarget({
+                    type: "item",
+                    id: item.permissionCode,
+                    name: item.name,
+                    operationCount: item.operations.length,
+                  })
+                }
+                onMoveGroup={moveGroup}
+                onMoveItem={moveItem}
+                onToggleHidden={toggleHidden}
+                onAddOperation={openCreateOperation}
+                onEditOperation={openEditOperation}
+                onDeleteOperation={(_item, operation) =>
+                  setDeleteTarget({
+                    type: "operation",
+                    id: operation.code,
+                    name: operation.name,
+                  })
+                }
+              />
+            )}
+          </DndContext>
+        )}
+      </ListShell>
 
       <FormDialog
         open={groupOpen}

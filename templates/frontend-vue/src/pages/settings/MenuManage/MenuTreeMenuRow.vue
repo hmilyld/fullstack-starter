@@ -151,6 +151,9 @@ const actions = computed<RowAction[]>(() => {
           <div class="flex min-w-0 items-center gap-1.5">
             <span class="truncate text-sm font-medium">{{ item.name }}</span>
             <Badge v-if="item.isSystem" variant="outline">内置</Badge>
+            <Badge v-if="item.hidden" variant="secondary" class="lg:hidden">
+              已隐藏
+            </Badge>
             <span class="text-xs text-muted-foreground">
               {{ item.operations.length }} 个操作
             </span>
@@ -169,7 +172,7 @@ const actions = computed<RowAction[]>(() => {
         </span>
       </div>
     </TableCell>
-    <TableCell>
+    <TableCell class="hidden lg:table-cell">
       <span
         :class="
           cn(

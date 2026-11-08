@@ -12,6 +12,7 @@ import ErrorState from "@/components/shared/ErrorState.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
 import IconPicker from "@/components/shared/IconPicker.vue"
 import InlineError from "@/components/shared/InlineError.vue"
+import ListShell from "@/components/shared/ListShell.vue"
 import PageFormSkeleton from "@/components/shared/PageFormSkeleton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
 import MenuSortableGroup from "@/pages/settings/MenuManage/MenuSortableGroup.vue"
@@ -141,6 +142,20 @@ const reorderEnabled = computed(
 const tableCollapsedGroups = computed(() =>
   search.value.trim() ? new Set<string>() : collapsedGroups.value
 )
+const menuStats = computed(() => {
+  const groups = config.value?.groups ?? []
+  const menus = groups.reduce((sum, group) => sum + group.items.length, 0)
+  const operations = groups.reduce(
+    (sum, group) =>
+      sum +
+      group.items.reduce(
+        (itemSum, item) => itemSum + item.operations.length,
+        0
+      ),
+    0
+  )
+  return `共 ${groups.length} 个分组，${menus} 个菜单，${operations} 个操作权限`
+})
 
 const visibleGroups = computed<MenuGroup[]>(() => {
   if (!config.value) return []
@@ -617,12 +632,33 @@ const operationDescription = computed(() =>
     <PageHeader
       title="菜单与权限"
       description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
-    >
+    />
+
+    <ListShell title="菜单结构" :description="menuStats">
       <template #actions>
+        <InputGroup class="w-full md:w-64">
+          <InputGroupInput
+            name="q"
+            autocomplete="off"
+            :spellcheck="false"
+            placeholder="搜索菜单或操作权限…"
+            aria-label="搜索菜单"
+            :model-value="search"
+            @update:model-value="search = String($event)"
+          />
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+        </InputGroup>
         <span v-if="saving" class="text-xs text-muted-foreground">
           正在保存…
         </span>
-        <Button v-if="canViewOverview" as-child variant="outline">
+        <Button
+          v-if="canViewOverview"
+          as-child
+          variant="outline"
+          class="w-full md:w-auto"
+        >
           <RouterLink to="/settings/permission">
             <KeyRound data-icon="inline-start" />
             权限总览
@@ -632,117 +668,56 @@ const operationDescription = computed(() =>
           v-if="canCreate"
           variant="outline"
           :disabled="saving"
+          class="w-full md:w-auto"
           @click="openCreateGroup"
         >
           <Plus data-icon="inline-start" />
           新增分组
         </Button>
+        <span v-if="search.trim()" class="text-xs text-muted-foreground">
+          搜索时暂停拖拽
+        </span>
       </template>
-    </PageHeader>
 
-    <div
-      class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-    >
-      <InputGroup class="w-full md:w-72">
-        <InputGroupInput
-          name="q"
-          autocomplete="off"
-          :spellcheck="false"
-          placeholder="搜索菜单或操作权限…"
-          aria-label="搜索菜单"
-          :model-value="search"
-          @update:model-value="search = String($event)"
-        />
-        <InputGroupAddon>
-          <Search />
-        </InputGroupAddon>
-      </InputGroup>
-      <p v-if="search.trim()" class="text-xs text-muted-foreground">
-        搜索时暂时关闭拖拽排序
-      </p>
-    </div>
+      <InlineError v-if="error && config" :message="error" :on-retry="load" />
 
-    <InlineError v-if="error && config" :message="error" :on-retry="load" />
+      <PageFormSkeleton v-if="loading" />
 
-    <PageFormSkeleton v-if="loading" />
-
-    <ErrorState
-      v-else-if="!config"
-      :message="error || '加载菜单失败'"
-      :on-retry="load"
-    />
-
-    <EmptyState
-      v-else-if="config.groups.length === 0"
-      title="还没有菜单分组"
-      description="先创建一个分组，再把菜单入口放进去。"
-    >
-      <template #action>
-        <Button v-if="canCreate" @click="openCreateGroup">
-          <Plus data-icon="inline-start" />
-          新增分组
-        </Button>
-      </template>
-    </EmptyState>
-
-    <EmptyState
-      v-else-if="visibleGroups.length === 0"
-      title="没有匹配的菜单"
-      description="换个关键词，或清空搜索条件后再试。"
-    >
-      <template #action>
-        <Button variant="outline" @click="search = ''">清空搜索</Button>
-      </template>
-    </EmptyState>
-
-    <DragDropProvider v-else @drag-end="handleDragEnd">
-      <MenuTreeTable
-        v-if="!isCompact"
-        :groups="visibleGroups"
-        :expanded="expanded"
-        :collapsed-groups="tableCollapsedGroups"
-        :can-reorder="reorderEnabled"
-        :can-create="canCreate"
-        :can-edit="canEdit"
-        :can-delete="canDelete"
-        :can-create-operation="canCreateOperation"
-        :can-edit-operation="canEditOperation"
-        :can-delete-operation="canDeleteOperation"
-        :mutations-disabled="saving"
-        @toggle-group="toggleGroup"
-        @toggle-expanded="toggleExpanded"
-        @create-item="openCreateItem"
-        @edit-group="openEditGroup"
-        @delete-group="
-          deleteTarget = {
-            type: 'group',
-            id: $event.id,
-            name: $event.name,
-          }
-        "
-        @edit-item="openEditItem"
-        @delete-item="
-          deleteTarget = {
-            type: 'item',
-            id: $event.permissionCode,
-            name: $event.name,
-            operationCount: $event.operations.length,
-          }
-        "
-        @move-group="moveGroup"
-        @move-item="moveItem"
-        @toggle-hidden="toggleHidden"
-        @add-operation="openCreateOperation"
-        @edit-operation="openEditOperation"
-        @delete-operation="handleDeleteOperation"
+      <ErrorState
+        v-else-if="!config"
+        :message="error || '加载菜单失败'"
+        :on-retry="load"
       />
 
-      <div v-else class="flex flex-col gap-4">
-        <MenuSortableGroup
-          v-for="(group, groupIndex) in visibleGroups"
-          :key="`${group.id}:${dragEpoch}`"
-          :group="group"
-          :index="groupIndex"
+      <EmptyState
+        v-else-if="config.groups.length === 0"
+        title="还没有菜单分组"
+        description="先创建一个分组，再把菜单入口放进去。"
+      >
+        <template #action>
+          <Button v-if="canCreate" @click="openCreateGroup">
+            <Plus data-icon="inline-start" />
+            新增分组
+          </Button>
+        </template>
+      </EmptyState>
+
+      <EmptyState
+        v-else-if="visibleGroups.length === 0"
+        title="没有匹配的菜单"
+        description="换个关键词，或清空搜索条件后再试。"
+      >
+        <template #action>
+          <Button variant="outline" @click="search = ''">清空搜索</Button>
+        </template>
+      </EmptyState>
+
+      <DragDropProvider v-else @drag-end="handleDragEnd">
+        <MenuTreeTable
+          v-if="!isCompact"
+          :groups="visibleGroups"
+          :expanded="expanded"
+          :collapsed-groups="tableCollapsedGroups"
           :can-reorder="reorderEnabled"
           :can-create="canCreate"
           :can-edit="canEdit"
@@ -751,9 +726,8 @@ const operationDescription = computed(() =>
           :can-edit-operation="canEditOperation"
           :can-delete-operation="canDeleteOperation"
           :mutations-disabled="saving"
-          :expanded="expanded"
-          :can-move-up="groupIndex > 0"
-          :can-move-down="groupIndex < visibleGroups.length - 1"
+          @toggle-group="toggleGroup"
+          @toggle-expanded="toggleExpanded"
           @create-item="openCreateItem"
           @edit-group="openEditGroup"
           @delete-group="
@@ -772,17 +746,61 @@ const operationDescription = computed(() =>
               operationCount: $event.operations.length,
             }
           "
-          @move-up="moveGroup(group.id, -1)"
-          @move-down="moveGroup(group.id, 1)"
+          @move-group="moveGroup"
           @move-item="moveItem"
-          @toggle-expanded="toggleExpanded"
           @toggle-hidden="toggleHidden"
           @add-operation="openCreateOperation"
           @edit-operation="openEditOperation"
           @delete-operation="handleDeleteOperation"
         />
-      </div>
-    </DragDropProvider>
+
+        <div v-else class="flex flex-col gap-4">
+          <MenuSortableGroup
+            v-for="(group, groupIndex) in visibleGroups"
+            :key="`${group.id}:${dragEpoch}`"
+            :group="group"
+            :index="groupIndex"
+            :can-reorder="reorderEnabled"
+            :can-create="canCreate"
+            :can-edit="canEdit"
+            :can-delete="canDelete"
+            :can-create-operation="canCreateOperation"
+            :can-edit-operation="canEditOperation"
+            :can-delete-operation="canDeleteOperation"
+            :mutations-disabled="saving"
+            :expanded="expanded"
+            :can-move-up="groupIndex > 0"
+            :can-move-down="groupIndex < visibleGroups.length - 1"
+            @create-item="openCreateItem"
+            @edit-group="openEditGroup"
+            @delete-group="
+              deleteTarget = {
+                type: 'group',
+                id: $event.id,
+                name: $event.name,
+              }
+            "
+            @edit-item="openEditItem"
+            @delete-item="
+              deleteTarget = {
+                type: 'item',
+                id: $event.permissionCode,
+                name: $event.name,
+                operationCount: $event.operations.length,
+              }
+            "
+            @move-up="moveGroup(group.id, -1)"
+            @move-down="moveGroup(group.id, 1)"
+            @move-item="moveItem"
+            @toggle-expanded="toggleExpanded"
+            @toggle-hidden="toggleHidden"
+            @add-operation="openCreateOperation"
+            @edit-operation="openEditOperation"
+            @delete-operation="handleDeleteOperation"
+          />
+        </div>
+      </DragDropProvider>
+    </ListShell>
 
     <FormDialog
       :open="groupOpen"

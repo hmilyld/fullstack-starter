@@ -37,7 +37,9 @@ const emit = defineEmits<{
     <TableCell>
       <span class="truncate font-mono text-xs">{{ operation.code }}</span>
     </TableCell>
-    <TableCell class="text-muted-foreground">—</TableCell>
+    <TableCell class="hidden text-muted-foreground lg:table-cell">
+      —
+    </TableCell>
     <TableCell class="sticky right-0 bg-inherit text-right">
       <div class="flex items-center justify-end gap-1">
         <Button

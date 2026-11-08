@@ -193,7 +193,9 @@ function GroupRow({
         <Badge variant="outline">分组</Badge>
       </TableCell>
       <TableCell className="text-muted-foreground">—</TableCell>
-      <TableCell className="text-muted-foreground">—</TableCell>
+      <TableCell className="hidden text-muted-foreground lg:table-cell">
+        —
+      </TableCell>
       <TableCell className="sticky right-0 bg-inherit text-right">
         <div className="flex items-center justify-end gap-1">
           {canCreate && (
@@ -361,6 +363,11 @@ function MenuRow({
             <div className="flex min-w-0 items-center gap-1.5">
               <span className="truncate text-sm font-medium">{item.name}</span>
               {item.isSystem && <Badge variant="outline">内置</Badge>}
+              {item.hidden && (
+                <Badge variant="secondary" className="lg:hidden">
+                  已隐藏
+                </Badge>
+              )}
               <span className="text-xs text-muted-foreground">
                 {item.operations.length} 个操作
               </span>
@@ -379,7 +386,7 @@ function MenuRow({
           </span>
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="hidden lg:table-cell">
         <span
           className={cn(
             "inline-flex items-center gap-1.5 text-xs",
@@ -459,7 +466,9 @@ function OperationRow({
       <TableCell>
         <span className="truncate font-mono text-xs">{operation.code}</span>
       </TableCell>
-      <TableCell className="text-muted-foreground">—</TableCell>
+      <TableCell className="hidden text-muted-foreground lg:table-cell">
+        —
+      </TableCell>
       <TableCell className="sticky right-0 bg-inherit text-right">
         <div className="flex items-center justify-end gap-1">
           {canEdit && (
@@ -517,14 +526,14 @@ export function MenuTreeTable({
   onDeleteOperation,
 }: MenuTreeTableProps) {
   return (
-    <Table className="min-w-[640px] table-fixed">
+    <Table className="min-w-[600px] table-fixed">
       <TableHeader>
         <TableRow className="bg-muted/50 hover:bg-muted/50">
-          <TableHead className="w-[36%]">名称</TableHead>
+          <TableHead className="w-[35%]">名称</TableHead>
           <TableHead className="w-[10%]">类型</TableHead>
           <TableHead className="w-[27%]">路由 / 权限编码</TableHead>
-          <TableHead className="w-[12%]">标记</TableHead>
-          <TableHead className="sticky right-0 w-[15%] bg-muted/50 text-right">
+          <TableHead className="hidden w-[12%] lg:table-cell">标记</TableHead>
+          <TableHead className="sticky right-0 w-[16%] bg-muted/50 text-right">
             操作
           </TableHead>
         </TableRow>

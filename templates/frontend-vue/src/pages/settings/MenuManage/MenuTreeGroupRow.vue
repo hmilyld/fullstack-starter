@@ -149,7 +149,9 @@ const actions = computed<RowAction[]>(() => {
       <Badge variant="outline">分组</Badge>
     </TableCell>
     <TableCell class="text-muted-foreground">—</TableCell>
-    <TableCell class="text-muted-foreground">—</TableCell>
+    <TableCell class="hidden text-muted-foreground lg:table-cell">
+      —
+    </TableCell>
     <TableCell class="sticky right-0 bg-inherit text-right">
       <div class="flex items-center justify-end gap-1">
         <Button
