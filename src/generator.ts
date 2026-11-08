@@ -75,6 +75,8 @@ async function copyTemplate(templateName: string, destination: string): Promise<
       if (segments.some((segment) => segment.endsWith('.egg-info'))) return false;
       // 模板根目录下的本地 SQLite 调试库（如运行后端时生成的 probe.db / app.db）
       if (segments.length === 1 && /\.(db|sqlite3)$/.test(relative)) return false;
+      // uv.lock 不随模板发布：由使用者在自己的项目里首次 uv sync 时生成
+      if (relative === 'uv.lock') return false;
       if (segments[0] === 'data') {
         // Keep only the placeholder so the runtime directory exists in new projects.
         return segments.length === 1 || relative === path.join('data', '.gitkeep');

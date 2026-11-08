@@ -19,6 +19,10 @@ env/
 .ruff_cache/
 .mypy_cache/
 
+# 依赖锁文件：模板不随包发布，由使用者首次 uv sync 时生成，
+# 避免把维护者的依赖解析结果固化进所有生成项目
+uv.lock
+
 # IDE
 .vscode/
 .idea/
