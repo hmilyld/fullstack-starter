@@ -1,30 +1,40 @@
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
-from app.ai_model.crud import init_default_presets
 from app.ai_model.router import router as ai_model_router
+from app.ai_model.service import init_default_presets
 from app.audit.router import router as audit_router
 from app.auth.router import router as auth_router
 from app.core.app_state import get_app_state
 from app.core.audit import AuditMiddleware
 from app.core.config import get_settings
-from app.core.database import async_session, init_db
+from app.core.database import async_session
+from app.core.exceptions import (
+    AppError,
+    AuthError,
+    ForbiddenError,
+    ServiceUnavailableError,
+)
 from app.core.schemas import ApiResponse
 from app.core.seed import seed_data
 from app.dashboard.router import router as dashboard_router
 from app.data_management.middleware import DataOperationMiddleware
 from app.data_management.router import router as data_management_router
 from app.data_management.service import clear_stale_temp_files
-from app.menu.crud import sync_menu_catalog
 from app.menu.router import router as menu_router
-from app.permission.crud import sync_permissions
+from app.menu.service import sync_menu_catalog
 from app.permission.router import router as permissions_router
+from app.permission.service import sync_catalog
 from app.public.router import router as public_router
 from app.role.router import router as roles_router
 from app.system.router import router as system_router
@@ -32,15 +42,25 @@ from app.user.router import router as users_router
 
 settings = get_settings()
 
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+
+
+def run_migrations() -> None:
+    """启动时把数据库升到最新版本。结构变更只通过 Alembic 迁移进行。"""
+    config = Config(str(BACKEND_ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(BACKEND_ROOT / "migrations"))
+    command.upgrade(config, "head")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     clear_stale_temp_files()
-    await init_db()
+    # Alembic 的 env.py 内部用 asyncio.run，必须放到独立线程里执行。
+    await asyncio.to_thread(run_migrations)
     async with async_session() as session:
         try:
             await seed_data(session)
-            await sync_permissions(session)
+            await sync_catalog(session)
             await sync_menu_catalog(session)
             await get_app_state(session)
             await init_default_presets(session)
@@ -88,6 +108,41 @@ async def validation_exception_handler(
     return JSONResponse(
         status_code=422,
         content=ApiResponse(code=-1, message="请求参数校验失败").model_dump(),
+    )
+
+
+@app.exception_handler(AppError)
+async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    """业务失败：HTTP 200 + code -1，data 为 null。"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ApiResponse(code=-1, message=exc.message).model_dump(),
+    )
+
+
+@app.exception_handler(AuthError)
+async def auth_error_handler(request: Request, exc: AuthError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ApiResponse(code=-1, message=exc.message).model_dump(),
+    )
+
+
+@app.exception_handler(ForbiddenError)
+async def forbidden_error_handler(request: Request, exc: ForbiddenError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ApiResponse(code=-1, message=exc.message).model_dump(),
+    )
+
+
+@app.exception_handler(ServiceUnavailableError)
+async def unavailable_error_handler(
+    request: Request, exc: ServiceUnavailableError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ApiResponse(code=-1, message=exc.message).model_dump(),
     )
 
 

@@ -125,11 +125,14 @@ def create_export_archive() -> tuple[str, str]:
                     columns = [column[0] for column in cursor.description]
                     row_count = 0
 
-                    def rows() -> Iterator[bytes]:
+                    def rows(
+                        _cursor: sqlite3.Cursor = cursor,
+                        _columns: list[str] = columns,
+                    ) -> Iterator[bytes]:
                         nonlocal row_count
-                        for row in cursor:
+                        for row in _cursor:
                             row_count += 1
-                            yield _json_line(row, columns)
+                            yield _json_line(row, _columns)
 
                     entry = f"data/{table}.jsonl"
                     checksums[entry], sizes[entry] = _write_entry(archive, entry, rows())

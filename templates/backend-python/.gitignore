@@ -29,3 +29,6 @@ Thumbs.db
 
 # 运行时数据与导出临时文件（可能包含用户数据）
 data/tmp/
+
+# Alembic 运行时缓存
+migrations/__pycache__/

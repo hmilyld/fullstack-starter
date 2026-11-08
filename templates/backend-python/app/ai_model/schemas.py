@@ -1,8 +1,17 @@
 import ipaddress
 import re
+import socket
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, field_validator
+
+# 云元数据端点，必须无条件拒绝
+_METADATA_HOSTS = frozenset(
+    {
+        "169.254.169.254",  # AWS / GCP / Azure 元数据
+        "metadata.google.internal",  # GCP 元数据
+    }
+)
 
 
 def mask_api_key(api_key: str) -> str:
@@ -12,30 +21,50 @@ def mask_api_key(api_key: str) -> str:
     return api_key[:2] + "****" + api_key[-2:]
 
 
+def _reject_unsafe_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> None:
+    if ip.is_private or ip.is_loopback or ip.is_link_local:
+        raise ValueError("禁止访问内网地址")
+    if ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+        raise ValueError("禁止访问该地址")
+
+
 def assert_not_private_host(url: str) -> None:
-    """拒绝访问内网地址与云元数据端点（SSRF 防护）。"""
+    """拒绝访问内网地址与云元数据端点（SSRF 防护）。
+
+    仅检查 IP 字面量是不够的：``127.0.0.1.nip.io`` 这类域名会解析到内网。
+    因此域名必须**先解析**，再对解析结果逐条判定。
+    """
     parsed = urlparse(url)
     hostname = parsed.hostname
     if not hostname:
         raise ValueError("API 地址格式无效")
-    blocked = [
-        "169.254.169.254",  # AWS/GCP/Azure 元数据
-        "metadata.google.internal",  # GCP 元数据
-        "localhost",
-        "127.0.0.1",
-        "::1",
-    ]
-    if hostname in blocked:
-        raise ValueError("禁止访问该地址")
+
+    host = hostname.lower()
+    if host in _METADATA_HOSTS or "metadata" in host:
+        raise ValueError("禁止访问元数据端点")
+
     try:
-        ip = ipaddress.ip_address(hostname)
-    except ValueError:
-        # 不是 IP 字面量（可能是域名），无法在此静态判断，放行（交由下层防护）
-        if "metadata" in hostname:
-            raise ValueError("禁止访问元数据端点")
+        _reject_unsafe_ip(ipaddress.ip_address(host))
         return
-    if ip.is_private or ip.is_loopback or ip.is_link_local:
-        raise ValueError("禁止访问内网地址")
+    except ValueError as exc:
+        if "禁止访问" in str(exc):
+            raise
+        # 不是 IP 字面量，继续做 DNS 解析
+
+    try:
+        resolved = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        # 无法解析（离线、内网 DNS 等）时放行：此处无法静态判定，
+        # 与 Java 侧保持一致，交由请求层防护。能解析的域名必须逐条判定。
+        return
+
+    for _family, _type, _proto, _canon, sockaddr in resolved:
+        address = sockaddr[0]
+        try:
+            _reject_unsafe_ip(ipaddress.ip_address(address))
+        except ValueError as exc:
+            if "禁止访问" in str(exc):
+                raise ValueError(f"禁止访问内网地址（{host} 解析为 {address}）") from exc
 
 
 class AiModelCreate(BaseModel):
@@ -159,24 +188,7 @@ class AiModelTestRequest(BaseModel):
             raise ValueError("API 地址必须使用 https 或 http 协议")
         if not parsed.hostname:
             raise ValueError("API 地址格式无效")
-        # 阻止访问内网和元数据端点
-        hostname = parsed.hostname
-        blocked = [
-            "169.254.169.254",  # AWS/GCP/Azure 元数据
-            "metadata.google.internal",  # GCP 元数据
-            "localhost", "127.0.0.1", "::1",
-        ]
-        if hostname in blocked:
-            raise ValueError("禁止访问该地址")
-        # 阻止 RFC 1918 私有地址
-        try:
-            ip = ipaddress.ip_address(hostname)
-        except ValueError:
-            if "metadata" in hostname:
-                raise ValueError("禁止访问元数据端点")
-            return v
-        if ip.is_private or ip.is_loopback or ip.is_link_local:
-            raise ValueError("禁止访问内网地址")
+        assert_not_private_host(v)
         return v
 
 

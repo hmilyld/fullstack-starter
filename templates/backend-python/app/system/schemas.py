@@ -69,3 +69,12 @@ class SystemConfigOut(BaseModel):
 
 class TestEmailRequest(BaseModel):
     email: EmailStr
+
+
+class PublicConfigOut(BaseModel):
+    siteName: str
+    siteDescription: str
+    maintenanceEnabled: bool
+    maintenanceMessage: str
+    openRegistration: bool
+    manualReview: bool

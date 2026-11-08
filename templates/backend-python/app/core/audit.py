@@ -1,11 +1,15 @@
+"""审计中间件与客户端 IP 解析。
+
+认证接口（`/api/auth/*`）由业务显式记录，这里按配置排除。
+"""
+
 from typing import Any
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.audit.models import AuditLog
+from app.audit.service import record
 from app.core.config import get_settings
-from app.core.database import async_session
 from app.core.security import decode_access_token
 
 WRITE_METHODS = ("POST", "PUT", "DELETE", "PATCH")
@@ -14,7 +18,7 @@ WRITE_METHODS = ("POST", "PUT", "DELETE", "PATCH")
 def get_client_ip(req: Request) -> str:
     """获取客户端真实 IP。
 
-    优先读取 nginx 写入的 X-Real-IP(由 $remote_addr 覆盖写入，不可伪造)，
+    优先读取 nginx 写入的 X-Real-IP（由 $remote_addr 覆盖写入，不可伪造），
     其次取 X-Forwarded-For 的第一跳，最后回退到连接方地址。
     """
     real_ip = req.headers.get("X-Real-IP")
@@ -28,8 +32,8 @@ def get_client_ip(req: Request) -> str:
     return req.client.host if req.client else "unknown"
 
 
-def _resolve_user_id(request: Request) -> int | None:
-    """从请求中解析用户 ID，不校验用户是否存在，失败返回 None"""
+def resolve_user_id(request: Request) -> int | None:
+    """从请求中解析用户 ID，不校验用户是否存在，失败返回 None。"""
     auth = request.headers.get("Authorization")
     if not auth or not auth.lower().startswith("bearer "):
         return None
@@ -41,46 +45,15 @@ def _resolve_user_id(request: Request) -> int | None:
         return None
 
 
-async def record_audit(
-    *,
-    action: str,
-    ip: str,
-    status: str = "success",
-    user_id: int | None = None,
-    username: str = "",
-    detail: str = "",
-) -> None:
-    """显式记录一条审计日志，异常时静默失败，不影响业务"""
-    try:
-        async with async_session() as session:
-            session.add(
-                AuditLog(
-                    user_id=user_id,
-                    username=username,
-                    action=action,
-                    ip=ip,
-                    status=status,
-                    detail=detail,
-                )
-            )
-            await session.commit()
-    except Exception:
-        pass
-
-
 def _is_excluded(path: str) -> bool:
-    settings = get_settings()
-    for prefix in settings.audit_exclude_paths:
+    for prefix in get_settings().audit_exclude_paths:
         if path == prefix or path.startswith(prefix.rstrip("/") + "/"):
             return True
     return False
 
 
 class AuditMiddleware(BaseHTTPMiddleware):
-    """审计日志中间件：拦截写请求与 403 响应。
-
-    认证接口（/api/auth/*）由业务显式记录，这里按配置排除。
-    """
+    """拦截写请求与 403 响应并记录审计日志。"""
 
     async def dispatch(self, request: Request, call_next: Any):
         response = await call_next(request)
@@ -93,11 +66,10 @@ class AuditMiddleware(BaseHTTPMiddleware):
         if not path.startswith("/api/") or _is_excluded(path):
             return response
 
-        status = "permission_denied" if is_denied else "success"
-        await record_audit(
+        await record(
             action=f"{request.method} {path}",
             ip=get_client_ip(request),
-            status=status,
-            user_id=_resolve_user_id(request),
+            status="permission_denied" if is_denied else "success",
+            user_id=resolve_user_id(request),
         )
         return response

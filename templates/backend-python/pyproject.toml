@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
     "sqlalchemy[asyncio]>=2.0.0",
     "aiosqlite>=0.20.0",
+    "alembic>=1.13.0",
     "pyjwt>=2.8.0",
     "bcrypt>=4.0.0",
     "pydantic-settings>=2.0.0",
@@ -21,6 +22,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ruff>=0.5.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "anyio>=4.0.0",
 ]
 
 [tool.ruff]
@@ -28,8 +32,17 @@ target-version = "py312"
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["N803", "N815"]
+select = ["E", "F", "I", "N", "W", "UP", "B", "ASYNC", "RUF"]
+# RUF001-003：中文全角标点在字符串/注释里是正常用法，不是歧义字符
+ignore = ["N803", "N815", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.fastapi]
 entrypoint = "app.main:app"

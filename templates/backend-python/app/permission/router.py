@@ -1,84 +1,62 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import require_permission
 from app.core.schemas import ApiResponse
-from app.permission import crud
+from app.permission import service
 from app.permission.schemas import PermissionCreate, PermissionUpdate
 from app.user.models import User
 
 router = APIRouter(prefix="/permissions", tags=["权限"])
 
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+
 
 @router.get("")
 async def get_permissions(
+    current_user: Annotated[User, Depends(require_permission("permissions"))],
+    db: DbSession,
     type: str | None = None,
     parent: str | None = None,
-    current_user: User = Depends(require_permission("permissions")),
-    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    permissions = await crud.get_permissions(db, type, parent)
-    return ApiResponse(data=permissions)
+    return ApiResponse(data=await service.list_permissions(db, type, parent))
 
 
 @router.post("")
 async def create_permission(
     data: PermissionCreate,
-    current_user: User = Depends(require_permission("permissions.create")),
-    db: AsyncSession = Depends(get_db),
+    current_user: Annotated[User, Depends(require_permission("permissions.create"))],
+    db: DbSession,
 ) -> ApiResponse:
-    if data.type == "menu":
-        return ApiResponse(code=-1, message="请通过菜单管理创建菜单")
-    if await crud.get_permission_by_code(db, data.code):
-        return ApiResponse(code=-1, message="权限编码已存在")
-    if data.parent:
-        parent = await crud.get_permission_by_code(db, data.parent)
-        if parent is None or parent.type != "menu":
-            return ApiResponse(code=-1, message="所属菜单不存在")
-    result = await crud.create_permission(db, code=data.code, name=data.name, type=data.type, parent=data.parent)
-    return ApiResponse(data=result)
+    return ApiResponse(data=await service.create_permission(db, data))
 
 
 @router.post("/sync")
 async def sync_permissions_route(
-    current_user: User = Depends(require_permission("permissions.create")),
-    db: AsyncSession = Depends(get_db),
+    current_user: Annotated[User, Depends(require_permission("permissions.create"))],
+    db: DbSession,
 ) -> ApiResponse:
-    result = await crud.sync_permissions(db)
-    return ApiResponse(data=result, message="权限同步完成")
+    return ApiResponse(data=await service.sync_catalog(db), message="权限同步完成")
 
 
 @router.put("/{code}")
 async def update_permission(
     code: str,
     data: PermissionUpdate,
-    current_user: User = Depends(require_permission("permissions.edit")),
-    db: AsyncSession = Depends(get_db),
+    current_user: Annotated[User, Depends(require_permission("permissions.edit"))],
+    db: DbSession,
 ) -> ApiResponse:
-    permission = await crud.get_permission_by_code(db, code)
-    if permission is None:
-        return ApiResponse(code=-1, message="权限不存在")
-    if permission.type == "menu":
-        return ApiResponse(code=-1, message="请通过菜单管理编辑菜单")
-    if data.parent:
-        parent = await crud.get_permission_by_code(db, data.parent)
-        if parent is None or parent.type != "menu":
-            return ApiResponse(code=-1, message="所属菜单不存在")
-    result = await crud.update_permission(db, permission, name=data.name, parent=data.parent)
-    return ApiResponse(data=result)
+    return ApiResponse(data=await service.update_permission(db, code, data))
 
 
 @router.delete("/{code}")
 async def delete_permission(
     code: str,
-    current_user: User = Depends(require_permission("permissions.delete")),
-    db: AsyncSession = Depends(get_db),
+    current_user: Annotated[User, Depends(require_permission("permissions.delete"))],
+    db: DbSession,
 ) -> ApiResponse:
-    permission = await crud.get_permission_by_code(db, code)
-    if permission is None:
-        return ApiResponse(code=-1, message="权限不存在")
-    if permission.type == "menu":
-        return ApiResponse(code=-1, message="请通过菜单管理删除菜单")
-    await crud.delete_permission(db, permission)
+    await service.delete_permission(db, code)
     return ApiResponse()

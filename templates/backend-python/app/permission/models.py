@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 
@@ -6,7 +7,7 @@ from app.core.database import Base
 class Permission(Base):
     __tablename__ = "permissions"
 
-    code = Column(String(100), primary_key=True)
-    name = Column(String(100), nullable=False)
-    type = Column(String(20), nullable=False)
-    parent = Column(String(100), nullable=True)
+    code: Mapped[str] = mapped_column(String(100), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    parent: Mapped[str | None] = mapped_column(String(100), nullable=True)

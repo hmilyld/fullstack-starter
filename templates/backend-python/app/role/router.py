@@ -1,69 +1,61 @@
-import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import require_permission
+from app.core.pagination import Pagination, pagination_params
 from app.core.schemas import ApiResponse, PaginatedData
-from app.role import crud
+from app.role import service
 from app.role.schemas import RoleCreate, RoleUpdate
 from app.user.models import User
 
 router = APIRouter(prefix="/roles", tags=["角色"])
 
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+PaginationDep = Annotated[Pagination, Depends(pagination_params)]
+
 
 @router.get("")
 async def get_roles(
+    current_user: Annotated[User, Depends(require_permission("roles"))],
+    db: DbSession,
+    pagination: PaginationDep,
     search: str = "",
-    page: int = Query(1, ge=1),
-    pageSize: int = Query(10, ge=1, le=100),
-    current_user: User = Depends(require_permission("roles")),
-    db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    roles, total = await crud.get_roles(db, search, page, pageSize)
-    return ApiResponse(data=PaginatedData(list=roles, total=total, page=page, pageSize=pageSize).model_dump())
+    roles, total = await service.list_roles(db, search, pagination.page, pagination.page_size)
+    return ApiResponse(
+        data=PaginatedData(
+            list=roles, total=total, page=pagination.page, pageSize=pagination.page_size
+        ).model_dump()
+    )
 
 
 @router.post("")
 async def create_role(
     data: RoleCreate,
-    current_user: User = Depends(require_permission("roles.create")),
-    db: AsyncSession = Depends(get_db),
+    current_user: Annotated[User, Depends(require_permission("roles.create"))],
+    db: DbSession,
 ) -> ApiResponse:
-    role_id = str(uuid.uuid4())[:8]
-    result = await crud.create_role(
-        db, role_id=role_id, name=data.name, description=data.description, permissions=data.permissions
-    )
-    return ApiResponse(data=result)
+    return ApiResponse(data=await service.create_role(db, data))
 
 
 @router.put("/{role_id}")
 async def update_role(
     role_id: str,
     data: RoleUpdate,
-    current_user: User = Depends(require_permission("roles.edit")),
-    db: AsyncSession = Depends(get_db),
+    current_user: Annotated[User, Depends(require_permission("roles.edit"))],
+    db: DbSession,
 ) -> ApiResponse:
-    role = await crud.get_role_by_id(db, role_id)
-    if role is None:
-        return ApiResponse(code=-1, message="角色不存在")
-    result = await crud.update_role(
-        db, role, name=data.name, description=data.description, permissions=data.permissions
-    )
-    return ApiResponse(data=result)
+    return ApiResponse(data=await service.update_role(db, role_id, data))
 
 
 @router.delete("/{role_id}")
 async def delete_role(
     role_id: str,
-    current_user: User = Depends(require_permission("roles.delete")),
-    db: AsyncSession = Depends(get_db),
+    current_user: Annotated[User, Depends(require_permission("roles.delete"))],
+    db: DbSession,
 ) -> ApiResponse:
-    role = await crud.get_role_by_id(db, role_id)
-    if role is None:
-        return ApiResponse(code=-1, message="角色不存在")
-    if role.is_preset:
-        return ApiResponse(code=-1, message="预设角色不可删除")
-    await crud.delete_role(db, role)
+    await service.delete_role(db, role_id)
     return ApiResponse()

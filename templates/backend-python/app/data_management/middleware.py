@@ -1,3 +1,5 @@
+"""导入期间冻结普通请求：返回 503，但放行导入状态查询。"""
+
 import re
 from typing import Any
 
