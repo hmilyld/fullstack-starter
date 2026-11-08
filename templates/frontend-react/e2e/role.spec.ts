@@ -38,6 +38,38 @@ test("edits role permissions in the wide table", async ({ page }) => {
   expect(payload.permissions).not.toContain("users.view")
 })
 
+test("keeps the dialog open when Enter is pressed in the permission search", async ({
+  page,
+}) => {
+  await mockApi(page)
+  await seedAuth(page)
+
+  await page.goto("/settings/role")
+  await page.getByRole("button", { name: "编辑 普通用户" }).click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByText("权限分配", { exact: true })).toBeVisible()
+
+  let saved = false
+  page.on("request", (request) => {
+    if (
+      request.method() === "PUT" &&
+      request.url().includes("/api/roles/user")
+    ) {
+      saved = true
+    }
+  })
+
+  const search = dialog.getByRole("textbox", { name: "搜索权限" })
+  await search.fill("角色")
+  await expect(dialog.getByText("用户管理")).toBeHidden()
+  await search.press("Enter")
+
+  await page.waitForTimeout(300)
+  await expect(dialog).toBeVisible()
+  expect(saved).toBe(false)
+})
+
 test("shows accordion permission cards on compact viewports", async ({
   page,
 }) => {

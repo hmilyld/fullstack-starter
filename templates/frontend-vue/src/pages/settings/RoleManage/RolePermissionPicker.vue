@@ -89,9 +89,24 @@ function menuState(menu: Permission): CheckedState {
   const menuSelected = selected.value.has(menu.code)
 
   if (children.length === 0) return menuSelected
+  // 只授予菜单本身（未选任何操作）时仍视为已勾选，点击即取消。
+  if (menuSelected && selectedChildren === 0) return true
   if (menuSelected && selectedChildren === children.length) return true
   if (menuSelected || selectedChildren > 0) return "indeterminate"
   return false
+}
+
+function menuCountLabel(code: string) {
+  const children = childrenOf(code)
+  if (children.length === 0) return "无操作权限"
+  const checked = children.filter((child) =>
+    selected.value.has(child.code)
+  ).length
+  return `${checked}/${children.length} 个操作`
+}
+
+function onSearchEnter(event: KeyboardEvent) {
+  if (!event.isComposing) event.preventDefault()
 }
 
 function toggleCollapsed(code: string) {
@@ -180,6 +195,7 @@ function clearAll() {
             aria-label="搜索权限"
             :model-value="search"
             @update:model-value="search = String($event)"
+            @keydown.enter="onSearchEnter"
           />
           <InputGroupAddon>
             <Search />
@@ -195,6 +211,7 @@ function clearAll() {
               type="button"
               variant="ghost"
               size="xs"
+              class="max-md:h-11"
               :disabled="catalogCodes.size === 0"
               @click="selectAll"
             >
@@ -204,6 +221,7 @@ function clearAll() {
               type="button"
               variant="ghost"
               size="xs"
+              class="max-md:h-11"
               :disabled="selectedCount === 0"
               @click="clearAll"
             >
@@ -224,7 +242,7 @@ function clearAll() {
       </div>
       <div
         v-else-if="isCompact"
-        class="flex max-h-[min(50vh,440px)] flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
+        class="flex max-h-[min(50vh,440px)] scroll-pt-10 flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
       >
         <div
           v-for="menu in tree"
@@ -248,11 +266,7 @@ function clearAll() {
                   menu.name
                 }}</span>
                 <span class="text-xs text-muted-foreground">
-                  {{
-                    childrenOf(menu.code).filter((child) =>
-                      selected.has(child.code)
-                    ).length
-                  }}/{{ childrenOf(menu.code).length }} 个操作
+                  {{ menuCountLabel(menu.code) }}
                 </span>
               </span>
               <span
@@ -315,7 +329,7 @@ function clearAll() {
       </div>
       <div
         v-else
-        class="max-h-[min(50vh,440px)] overflow-auto overscroll-contain rounded-xl border [&_[data-slot=table-container]]:overflow-visible"
+        class="max-h-[min(50vh,440px)] scroll-pt-10 overflow-auto overscroll-contain rounded-xl border [&_[data-slot=table-container]]:overflow-visible"
       >
         <Table class="min-w-[520px]">
           <TableHeader class="sticky top-0 z-10 bg-muted">
@@ -362,11 +376,7 @@ function clearAll() {
                       {{ menu.name }}
                     </label>
                     <span class="shrink-0 text-xs text-muted-foreground">
-                      {{
-                        childrenOf(menu.code).filter((child) =>
-                          selected.has(child.code)
-                        ).length
-                      }}/{{ childrenOf(menu.code).length }} 个操作
+                      {{ menuCountLabel(menu.code) }}
                     </span>
                   </div>
                 </TableCell>

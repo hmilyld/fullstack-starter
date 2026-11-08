@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, within } from "@testing-library/react"
 import { MemoryRouter } from "react-router"
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+const roleState = vi.hoisted(() => ({
+  permissions: ["dashboard"] as string[],
+}))
 
 vi.mock("@/lib/auth-context", () => ({
   useAuth: () => ({
@@ -26,7 +30,7 @@ vi.mock("@/api/role", () => ({
           id: "user",
           name: "普通用户",
           description: "拥有基本的查看权限",
-          permissions: ["dashboard"],
+          permissions: [...roleState.permissions],
           isPreset: true,
         },
       ],
@@ -74,7 +78,14 @@ vi.mock("@/api/permission", () => ({
   })),
 }))
 
+import { updateRole } from "@/api/role"
+
 import { RolesPage } from "./index"
+
+beforeEach(() => {
+  roleState.permissions = ["dashboard"]
+  vi.mocked(updateRole).mockClear()
+})
 
 async function openEditor() {
   render(
@@ -112,6 +123,56 @@ describe("RolesPage", () => {
     expect(
       within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
     ).toBePartiallyChecked()
+  })
+
+  it("treats a menu-only grant as checked and removes it on click", async () => {
+    roleState.permissions = ["dashboard", "users"]
+    const dialog = await openEditor()
+
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    ).toBeChecked()
+    expect(within(dialog).getByText("0/2 个操作")).toBeInTheDocument()
+    expect(within(dialog).getByText("无操作权限")).toBeInTheDocument()
+
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    )
+
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    ).not.toBeChecked()
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 查看用户" })
+    ).not.toBeChecked()
+  })
+
+  it("adds the parent menu when an operation is selected", async () => {
+    const dialog = await openEditor()
+
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: "选择 查看用户" })
+    )
+
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 查看用户" })
+    ).toBeChecked()
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    ).toBePartiallyChecked()
+    expect(within(dialog).getByText("1/2 个操作")).toBeInTheDocument()
+  })
+
+  it("does not submit the form when Enter is pressed in the search", async () => {
+    const dialog = await openEditor()
+    const search = within(dialog).getByRole("textbox", {
+      name: "搜索权限",
+    })
+
+    const notCancelled = fireEvent.keyDown(search, { key: "Enter" })
+
+    expect(notCancelled).toBe(false)
+    expect(vi.mocked(updateRole)).not.toHaveBeenCalled()
   })
 
   it("selects all, clears and filters permissions", async () => {

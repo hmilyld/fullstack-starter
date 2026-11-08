@@ -45,6 +45,8 @@ function menuState(
   const menuSelected = selected.has(menu.code)
 
   if (children.length === 0) return menuSelected
+  // 只授予菜单本身（未选任何操作）时仍视为已勾选，点击即取消。
+  if (menuSelected && selectedChildren === 0) return true
   if (menuSelected && selectedChildren === children.length) return true
   if (menuSelected || selectedChildren > 0) return "indeterminate"
   return false
@@ -197,6 +199,11 @@ export function RolePermissionPicker({
             aria-label="搜索权限"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                event.preventDefault()
+              }
+            }}
           />
           <InputGroupAddon>
             <SearchIcon />
@@ -212,6 +219,7 @@ export function RolePermissionPicker({
               type="button"
               variant="ghost"
               size="xs"
+              className="max-md:h-11"
               disabled={catalogCodes.size === 0}
               onClick={selectAll}
             >
@@ -221,6 +229,7 @@ export function RolePermissionPicker({
               type="button"
               variant="ghost"
               size="xs"
+              className="max-md:h-11"
               disabled={selectedCount === 0}
               onClick={clearAll}
             >
@@ -243,7 +252,7 @@ export function RolePermissionPicker({
           </Button>
         </div>
       ) : isCompact ? (
-        <div className="flex max-h-[min(50vh,440px)] flex-col gap-2 overflow-y-auto overscroll-contain pr-1">
+        <div className="flex max-h-[min(50vh,440px)] scroll-pt-10 flex-col gap-2 overflow-y-auto overscroll-contain pr-1">
           {tree.map((menu) => {
             const allChildren = childrenOf(menu.code)
             const checked = menuState(menu, allChildren, selected)
@@ -271,7 +280,9 @@ export function RolePermissionPicker({
                         {menu.name}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {checkedChildren}/{allChildren.length} 个操作
+                        {allChildren.length === 0
+                          ? "无操作权限"
+                          : `${checkedChildren}/${allChildren.length} 个操作`}
                       </span>
                     </span>
                     <span className="block truncate font-mono text-[11px] text-muted-foreground">
@@ -332,7 +343,7 @@ export function RolePermissionPicker({
           })}
         </div>
       ) : (
-        <div className="max-h-[min(50vh,440px)] overflow-auto overscroll-contain rounded-xl border [&_[data-slot=table-container]]:overflow-visible">
+        <div className="max-h-[min(50vh,440px)] scroll-pt-10 overflow-auto overscroll-contain rounded-xl border [&_[data-slot=table-container]]:overflow-visible">
           <Table className="min-w-[520px]">
             <TableHeader className="sticky top-0 z-10 bg-muted">
               <TableRow className="hover:bg-transparent">
@@ -387,7 +398,9 @@ export function RolePermissionPicker({
                             {menu.name}
                           </label>
                           <span className="shrink-0 text-xs text-muted-foreground">
-                            {checkedChildren}/{allChildren.length} 个操作
+                            {allChildren.length === 0
+                              ? "无操作权限"
+                              : `${checkedChildren}/${allChildren.length} 个操作`}
                           </span>
                         </div>
                       </TableCell>

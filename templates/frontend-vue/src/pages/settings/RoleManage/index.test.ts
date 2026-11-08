@@ -3,6 +3,10 @@ import { createPinia, setActivePinia } from "pinia"
 import { createMemoryHistory, createRouter } from "vue-router"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+const roleState = vi.hoisted(() => ({
+  permissions: ["dashboard"] as string[],
+}))
+
 vi.mock("@/api/role", () => ({
   getRoles: vi.fn(async () => ({
     code: 0,
@@ -13,7 +17,7 @@ vi.mock("@/api/role", () => ({
           id: "user",
           name: "普通用户",
           description: "拥有基本的查看权限",
-          permissions: ["dashboard"],
+          permissions: [...roleState.permissions],
           isPreset: true,
         },
       ],
@@ -64,6 +68,7 @@ vi.mock("@/api/permission", () => ({
 import RoleManage from "./index.vue"
 
 beforeEach(() => {
+  roleState.permissions = ["dashboard"]
   localStorage.clear()
   localStorage.setItem("token", "test-token")
   localStorage.setItem(
@@ -124,6 +129,44 @@ describe("RoleManage", () => {
     expect(
       within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
     ).toBePartiallyChecked()
+  })
+
+  it("treats a menu-only grant as checked and removes it on click", async () => {
+    roleState.permissions = ["dashboard", "users"]
+    const dialog = await openEditor()
+
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    ).toBeChecked()
+    expect(within(dialog).getByText("0/2 个操作")).toBeInTheDocument()
+    expect(within(dialog).getByText("无操作权限")).toBeInTheDocument()
+
+    await fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    )
+
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    ).not.toBeChecked()
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 查看用户" })
+    ).not.toBeChecked()
+  })
+
+  it("adds the parent menu when an operation is selected", async () => {
+    const dialog = await openEditor()
+
+    await fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: "选择 查看用户" })
+    )
+
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 查看用户" })
+    ).toBeChecked()
+    expect(
+      within(dialog).getByRole("checkbox", { name: "选择 用户管理" })
+    ).toBePartiallyChecked()
+    expect(within(dialog).getByText("1/2 个操作")).toBeInTheDocument()
   })
 
   it("selects all, clears and filters permissions", async () => {
