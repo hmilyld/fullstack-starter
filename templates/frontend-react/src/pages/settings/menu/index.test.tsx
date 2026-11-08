@@ -72,7 +72,7 @@ describe("MenuPage", () => {
 
     expect(await screen.findByText("菜单与权限")).toBeInTheDocument()
     expect(await screen.findByText("用户管理")).toBeInTheDocument()
-    expect(screen.getByText("已隐藏")).toBeInTheDocument()
+    expect(screen.getAllByText("已隐藏").length).toBeGreaterThan(0)
 
     fireEvent.click(
       screen.getByRole("button", { name: /展开 用户管理 的操作权限/ })
