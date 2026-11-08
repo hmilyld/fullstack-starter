@@ -34,7 +34,7 @@ export async function generateProject(
     generateDevSh(projectPath, frontend, backend),
     generateBuildSh(projectPath, frontend, backend),
     generateDockerfile(projectPath, frontend, backend),
-    generateDockerCompose(projectPath),
+    generateDockerCompose(projectPath, backend),
     generateDockerignore(projectPath),
     generateNginxConf(projectPath),
     generateReadme(projectPath, projectName, frontend, backend),
@@ -119,12 +119,16 @@ trap cleanup EXIT INT TERM
 
 start_backend() {
   print_info "启动后端服务..."
-  # 本地开发自动生成随机密钥，避免默认弱密钥被安全校验拒绝；若已在环境变量或 backend/.env 配置则沿用
+${
+  backend === 'python'
+    ? `  # 本地开发自动生成随机密钥，避免默认弱密钥被安全校验拒绝；若已在环境变量或 backend/.env 配置则沿用
   if [ -z "$JWT_SECRET_KEY" ] && ! grep -q "^JWT_SECRET_KEY=." backend/.env 2>/dev/null; then
     export JWT_SECRET_KEY="$(openssl rand -base64 48)"
     print_warn "未设置 JWT_SECRET_KEY，已为本地开发自动生成随机密钥（重启后登录会失效）"
   fi
-  ${backendStart} &
+`
+    : ''
+}  ${backendStart} &
   BACKEND_PID=$!
   print_info "后端服务已启动 (PID: $BACKEND_PID)"
 }
@@ -155,8 +159,12 @@ main() {
   print_info ""
   print_info "服务已全部启动"
   print_info "  后端 API:  http://localhost:8088"
-    print_info "  前端页面:  http://localhost:5173"
-  print_info "  API 文档:  http://localhost:8088/docs"
+  print_info "  前端页面:  http://localhost:5173"
+${
+  backend === 'python'
+    ? '  print_info "  API 文档:  http://localhost:8088/docs"'
+    : '  print_info "  （Java 后端未内置 OpenAPI 文档页）"'
+}
   print_info ""
   wait
 }
@@ -180,7 +188,9 @@ function generateBuildSh(
   backend: BackendType
 ): Promise<void> {
   const backendCheck =
-    backend === 'python' ? 'cd backend && uv run ruff check .' : 'cd backend && mvn spotless:check';
+    backend === 'python'
+      ? 'cd backend && uv run ruff check . && uv run pytest -q'
+      : 'cd backend && mvn spotless:check';
 
   const content = `#!/bin/bash
 # 构建脚本
@@ -350,7 +360,12 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \\
 
 // ── docker-compose.yml ────────────────────────────────────
 
-function generateDockerCompose(projectPath: string): Promise<void> {
+function generateDockerCompose(projectPath: string, backend: BackendType): Promise<void> {
+  const secret =
+    backend === 'python'
+      ? `      - JWT_SECRET_KEY=\${JWT_SECRET_KEY:?请通过环境变量 JWT_SECRET_KEY 设置一个强随机密钥}
+`
+      : '';
   const content = `services:
   app:
     build: .
@@ -358,8 +373,7 @@ function generateDockerCompose(projectPath: string): Promise<void> {
       - "5173:5173"
     environment:
       - TZ=Asia/Shanghai
-      - JWT_SECRET_KEY=\${JWT_SECRET_KEY:?请通过环境变量 JWT_SECRET_KEY 设置一个强随机密钥}
-    volumes:
+${secret}    volumes:
       - app-data:/app/data
     restart: unless-stopped
 
@@ -455,8 +469,8 @@ function generateReadme(
 |------|------|
 | 前端 | ${frontendName} + Vite + TypeScript + Tailwind CSS${frontend === 'vue' ? ' + shadcn-vue (Reka UI) + PWA' : ' + shadcn/ui + PWA'} |
 | 后端 | ${backendName} |
-| 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite)' : 'SQLite 文件 (Flyway 迁移)'} |
-| 认证 | ${backend === 'python' ? 'JWT (PyJWT + bcrypt)' : 'Sa-Token + BCrypt'} |
+| 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite，Alembic 迁移)' : 'SQLite 文件 (Flyway 迁移)'} |
+| 认证 | ${backend === 'python' ? 'JWT (PyJWT + bcrypt，登出即失效)' : 'Sa-Token + BCrypt'} |
 | 部署 | Docker（单镜像：Nginx + 后端） |
 
 ## 功能模块
@@ -488,6 +502,9 @@ cd frontend && npm install && cd ..
 
 > 本地开发无需手动配置密钥：\`dev.sh\` 会在未设置 \`JWT_SECRET_KEY\`（环境变量或 \`backend/.env\`）时自动生成随机密钥。
 > 若通过其它方式启动后端，请先设置强随机 \`JWT_SECRET_KEY\`（例如 \`openssl rand -base64 48\`），否则后端会因安全校验拒绝启动。
+
+> 数据库结构由 Alembic 迁移管理，后端启动时自动升级到最新版本。新增表或字段请使用
+> \`cd backend && uv run alembic revision --autogenerate -m "说明"\` 生成迁移，不要手工改库。
 
 ### Docker 部署（单镜像）
 

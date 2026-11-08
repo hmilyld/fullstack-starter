@@ -176,8 +176,8 @@ cd <generated project>/backend && start the backend
 |-----------|-----------------|---------------|
 | Framework | FastAPI | Spring Boot 3.2 |
 | ORM | SQLAlchemy 2.0 (async) | Spring Data JPA |
-| Database | SQLite (aiosqlite) | SQLite file (./data/app.db, Flyway migrations) |
-| Auth | PyJWT + bcrypt | Sa-Token (UUID-style token) + BCrypt |
+| Database | SQLite (aiosqlite, Alembic migrations) | SQLite file (./data/app.db, Flyway migrations) |
+| Auth | PyJWT + bcrypt (token revoked on logout) | Sa-Token (UUID-style token) + BCrypt |
 | Secret | Env var `JWT_SECRET_KEY` (refuses to start on a weak key) | No secret needed (Sa-Token server-side session token) |
 
 ## API Reference
@@ -192,7 +192,7 @@ Except for the file download endpoint, every endpoint returns: `{ code: 0, messa
 |--------|------|-------------|------|
 | POST | /api/auth/login | Login | No |
 | POST | /api/auth/register | Register (controlled by the open-registration / manual-review settings) | No |
-| POST | /api/auth/logout | Logout | Yes¹ |
+| POST | /api/auth/logout | Logout (revokes the current token immediately) | Yes¹ |
 
 ### Users
 

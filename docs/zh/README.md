@@ -174,8 +174,8 @@ cd <生成的项目>/backend && 启动后端
 |------|------------|----------|
 | 框架 | FastAPI | Spring Boot 3.2 |
 | ORM | SQLAlchemy 2.0 (async) | Spring Data JPA |
-| 数据库 | SQLite (aiosqlite) | SQLite 文件 (./data/app.db，Flyway 迁移) |
-| 认证 | PyJWT + bcrypt | Sa-Token（uuid 风格令牌）+ BCrypt |
+| 数据库 | SQLite (aiosqlite，Alembic 迁移) | SQLite 文件 (./data/app.db，Flyway 迁移) |
+| 认证 | PyJWT + bcrypt（登出即失效） | Sa-Token（uuid 风格令牌）+ BCrypt |
 | 密钥 | 环境变量 `JWT_SECRET_KEY`（弱密钥拒绝启动） | 无需密钥（Sa-Token 服务端会话令牌） |
 
 ## API 接口
@@ -190,7 +190,7 @@ cd <生成的项目>/backend && 启动后端
 |------|------|------|------|
 | POST | /api/auth/login | 登录 | 否 |
 | POST | /api/auth/register | 注册（受开放注册/人工审核设置控制） | 否 |
-| POST | /api/auth/logout | 登出 | 是¹ |
+| POST | /api/auth/logout | 登出（使当前令牌立即失效） | 是¹ |
 
 ### 用户
 
