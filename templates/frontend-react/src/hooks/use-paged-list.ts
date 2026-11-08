@@ -1,8 +1,8 @@
 import * as React from "react"
 
-import type { ApiResponse, PaginatedData } from "@/types/common"
+import type { ApiResponse, PaginatedData, QueryParams } from "@/types/common"
 
-export type ListParams = Record<string, string | number | boolean | undefined>
+export type ListParams = QueryParams
 
 type UsePagedListOptions<T, P extends ListParams> = {
   /** 传入 api/ 下的分页方法，例如 getUsers */

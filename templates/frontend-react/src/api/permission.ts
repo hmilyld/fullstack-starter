@@ -1,10 +1,11 @@
 import { apiClient } from "@/api/client"
-import type { Permission } from "@/types/permission"
+import type {
+  Permission,
+  PermissionQuery,
+  PermissionSyncResult,
+} from "@/types/permission"
 
-export async function getPermissions(params?: {
-  type?: "menu" | "operation"
-  parent?: string
-}) {
+export async function getPermissions(params?: PermissionQuery) {
   return apiClient.get<Permission[]>("/permissions", params)
 }
 
@@ -24,9 +25,5 @@ export async function deletePermission(code: string) {
 }
 
 export async function syncPermissions() {
-  return apiClient.post<{
-    added: string[]
-    updated: string[]
-    granted: string[]
-  }>("/permissions/sync")
+  return apiClient.post<PermissionSyncResult>("/permissions/sync")
 }

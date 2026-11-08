@@ -49,12 +49,9 @@ import { getAuditLogs } from "@/api/audit-log"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlPage } from "@/hooks/use-url-list-state"
 import { formatDateTime } from "@/lib/format"
-import type { AuditLog } from "@/types/audit-log"
+import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
 const PAGE_SIZE = 10
-
-type FilterKey = "userId" | "status" | "action" | "startTime" | "endTime"
-type AuditFilters = Record<FilterKey, string>
 
 const EMPTY_FILTERS: AuditFilters = {
   userId: "",
@@ -64,7 +61,7 @@ const EMPTY_FILTERS: AuditFilters = {
   endTime: "",
 }
 
-const FILTER_LABELS: Record<FilterKey, string> = {
+const FILTER_LABELS: Record<AuditFilterKey, string> = {
   userId: "用户 ID",
   status: "状态",
   action: "动作",
@@ -84,13 +81,13 @@ function getStatusBadge(status: AuditLog["status"]) {
   return <Badge variant="warning">权限不足</Badge>
 }
 
-function formatFilterValue(key: FilterKey, value: string) {
+function formatFilterValue(key: AuditFilterKey, value: string) {
   if (key === "status") return STATUS_LABELS[value] ?? value
   if (key === "startTime" || key === "endTime") return formatDateTime(value)
   return value
 }
 
-const FILTER_KEYS: FilterKey[] = [
+const FILTER_KEYS: AuditFilterKey[] = [
   "userId",
   "status",
   "action",
@@ -139,7 +136,7 @@ export function AuditLogPage() {
     )
   }
 
-  function updateDraft(key: FilterKey, value: string) {
+  function updateDraft(key: AuditFilterKey, value: string) {
     setDraft((previous) => ({ ...previous, [key]: value }))
   }
 
@@ -158,7 +155,7 @@ export function AuditLogPage() {
     writeFilters(EMPTY_FILTERS)
   }
 
-  function writeSingleFilter(key: FilterKey, value: string) {
+  function writeSingleFilter(key: AuditFilterKey, value: string) {
     setSearchParams(
       (current) => {
         const next = new URLSearchParams(current)
@@ -171,12 +168,12 @@ export function AuditLogPage() {
     )
   }
 
-  function removeFilter(key: FilterKey) {
+  function removeFilter(key: AuditFilterKey) {
     setDraft((previous) => ({ ...previous, [key]: "" }))
     writeSingleFilter(key, "")
   }
 
-  const activeFilters = (Object.keys(query) as FilterKey[])
+  const activeFilters = (Object.keys(query) as AuditFilterKey[])
     .filter((key) => query[key] !== "")
     .map((key) => ({
       key,

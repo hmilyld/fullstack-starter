@@ -1,161 +1,55 @@
-import type { ApiResponse } from "@/types/common"
+import type { ApiResponse, QueryParams } from "@/types/common"
+import { buildUrl, parseFilename, requestJson, requestRaw } from "@/api/http"
 
-const BASE_URL = "/api"
-
-function redirectToLogin() {
-  localStorage.removeItem("token")
-  localStorage.removeItem("user")
-  window.location.replace("/login")
-}
-
+/**
+ * 业务域 API 的统一入口：`api/user.ts`、`api/role.ts` 等都只调用这里的方法。
+ * 页面不要直接 import `api/http.ts`，也不要在 `api/` 里直接写 fetch。
+ */
 class ApiClient {
-  private getToken(): string | null {
-    return localStorage.getItem("token")
+  get<T>(path: string, params?: QueryParams): Promise<ApiResponse<T>> {
+    return requestJson<T>(buildUrl(path, params))
   }
 
-  private async request<T>(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    const token = this.getToken()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...(options.headers as Record<string, string>),
-    }
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`
-    }
-
-    try {
-      const response = await fetch(`${BASE_URL}${path}`, {
-        ...options,
-        headers,
-      })
-
-      if (response.status === 401) {
-        redirectToLogin()
-        return { code: -1, message: "未登录或登录已过期", data: undefined as T }
-      }
-
-      if (response.status === 204) {
-        return { code: 0, message: "success", data: undefined as T }
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        return {
-          code: -1,
-          message:
-            errorData?.message ||
-            errorData?.detail ||
-            `HTTP ${response.status}`,
-          data: undefined as T,
-        }
-      }
-
-      return await response.json()
-    } catch (error) {
-      if ((error as Error).name === "AbortError") {
-        return { code: -1, message: "请求已取消", data: undefined as T }
-      }
-      return {
-        code: -1,
-        message: (error as Error).message || "网络请求失败",
-        data: undefined as T,
-      }
-    }
-  }
-
-  private async raw(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<Response> {
-    const token = this.getToken()
-    const headers: Record<string, string> = {
-      ...(options.headers as Record<string, string>),
-    }
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`
-    }
-
-    const response = await fetch(`${BASE_URL}${path}`, {
-      ...options,
-      headers,
-    })
-
-    if (response.status === 401) {
-      redirectToLogin()
-      throw new Error("未登录或登录已过期")
-    }
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null)
-      throw new Error(
-        errorData?.message || errorData?.detail || `HTTP ${response.status}`
-      )
-    }
-    return response
-  }
-
-  async get<T>(
-    path: string,
-    params?: Record<string, string | number | boolean | undefined>
-  ): Promise<ApiResponse<T>> {
-    const searchParams = new URLSearchParams()
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") {
-          searchParams.append(key, String(value))
-        }
-      })
-    }
-    const queryString = searchParams.toString()
-    const url = queryString ? `${path}?${queryString}` : path
-    return this.request<T>(url)
-  }
-
-  async post<T>(path: string, data?: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>(path, {
+  post<T>(path: string, data?: unknown): Promise<ApiResponse<T>> {
+    return requestJson<T>(path, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     })
   }
 
-  async put<T>(path: string, data?: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>(path, {
+  put<T>(path: string, data?: unknown): Promise<ApiResponse<T>> {
+    return requestJson<T>(path, {
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     })
   }
 
-  async delete<T>(path: string): Promise<ApiResponse<T>> {
-    return this.request<T>(path, { method: "DELETE" })
+  delete<T>(path: string): Promise<ApiResponse<T>> {
+    return requestJson<T>(path, { method: "DELETE" })
   }
 
+  /** 下载二进制文件；返回 Blob、响应头与解析出的文件名 */
   async download(path: string, options: RequestInit = {}) {
-    const response = await this.raw(path, options)
-    const disposition = response.headers.get("Content-Disposition") || ""
-    const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i)
+    const response = await requestRaw(path, options)
     return {
       blob: await response.blob(),
       headers: response.headers,
-      filename: match ? decodeURIComponent(match[1].replace(/"/g, "")) : "",
+      filename: parseFilename(response.headers.get("Content-Disposition")),
     }
   }
 
+  /** multipart 上传（FormData）；不设置 Content-Type 以保留 boundary */
   async upload<T>(path: string, data: FormData): Promise<ApiResponse<T>> {
-    const response = await this.raw(path, {
-      method: "POST",
-      body: data,
-    })
+    const response = await requestRaw(path, { method: "POST", body: data })
     return response.json()
   }
 
+  /** 需要自定义请求头的 GET，例如携带一次性任务 token */
   async getWithHeaders<T>(
     path: string,
     headers: Record<string, string>
   ): Promise<ApiResponse<T>> {
-    const response = await this.raw(path, { headers })
+    const response = await requestRaw(path, { headers })
     return response.json()
   }
 }

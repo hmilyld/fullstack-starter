@@ -8,3 +8,14 @@ export type AuditLog = {
   detail: string
   createdAt: string
 }
+
+export type AuditFilterKey =
+  "userId" | "status" | "action" | "startTime" | "endTime"
+
+export type AuditFilters = Record<AuditFilterKey, string>
+
+/** 审计日志列表查询参数；过滤项均可选 */
+export type AuditLogQuery = Partial<AuditFilters> & {
+  page?: number
+  pageSize?: number
+}

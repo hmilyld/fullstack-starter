@@ -24,19 +24,14 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import {
-  exportData,
-  getImportStatus,
-  startImport,
-  type ImportStatus,
-} from "@/api/data-management"
+import { exportData, getImportStatus, startImport } from "@/api/data-management"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
+import { saveBlob } from "@/lib/download"
+import type { ExportResult, ImportStatus } from "@/types/data-management"
 
-type ExportResult = {
-  filename: string
-  password: string
-}
+/** 导出成功后展示给用户的信息（文件已保存到本地） */
+type ExportedFile = Pick<ExportResult, "filename" | "password">
 
 type ImportJob = {
   jobId: string
@@ -56,7 +51,7 @@ const auth = useAuthStore()
 const toast = useToast()
 
 const exportLoading = ref(false)
-const exportResult = ref<ExportResult | null>(null)
+const exportResult = ref<ExportedFile | null>(null)
 const passwordCopied = ref(false)
 const importFile = ref<File | null>(null)
 const importPassword = ref("")
@@ -78,14 +73,12 @@ async function handleExport() {
   exportLoading.value = true
   try {
     const result = await exportData()
-    const url = URL.createObjectURL(result.blob)
-    const anchor = document.createElement("a")
-    anchor.href = url
-    anchor.download = result.filename
-    anchor.click()
-    window.setTimeout(() => URL.revokeObjectURL(url), 0)
+    saveBlob(result.blob, result.filename)
     passwordCopied.value = false
-    exportResult.value = result
+    exportResult.value = {
+      filename: result.filename,
+      password: result.password,
+    }
   } catch (error) {
     toast.error((error as Error).message || "导出失败")
   }

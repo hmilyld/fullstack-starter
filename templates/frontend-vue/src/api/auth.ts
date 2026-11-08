@@ -1,15 +1,11 @@
 import { apiClient } from "@/api/client"
-import type { LoginResponse } from "@/types/auth"
+import type { LoginResponse, RegisterPayload } from "@/types/auth"
 
 export async function login(account: string, password: string) {
   return apiClient.post<LoginResponse>("/auth/login", { account, password })
 }
 
-export async function register(data: {
-  username: string
-  email: string
-  password: string
-}) {
+export async function register(data: RegisterPayload) {
   return apiClient.post<LoginResponse | null>("/auth/register", data)
 }
 

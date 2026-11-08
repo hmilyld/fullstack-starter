@@ -1,23 +1,16 @@
 import { apiClient } from "@/api/client"
-import type { PaginatedData } from "@/types/common"
-import type { Role } from "@/types/role"
+import type { PageParams, PaginatedData } from "@/types/common"
+import type { Role, RolePatch, RolePayload } from "@/types/role"
 
-export async function getRoles(params?: {
-  search?: string
-  page?: number
-  pageSize?: number
-}) {
+export async function getRoles(params?: PageParams) {
   return apiClient.get<PaginatedData<Role>>("/roles", params)
 }
 
-export async function createRole(data: Omit<Role, "id" | "isPreset">) {
+export async function createRole(data: RolePayload) {
   return apiClient.post<Role>("/roles", data)
 }
 
-export async function updateRole(
-  id: string,
-  data: Partial<Omit<Role, "id" | "isPreset">>
-) {
+export async function updateRole(id: string, data: RolePatch) {
   return apiClient.put<Role>(`/roles/${id}`, data)
 }
 

@@ -30,19 +30,14 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import {
-  exportData,
-  getImportStatus,
-  startImport,
-  type ImportStatus,
-} from "@/api/data-management"
+import { exportData, getImportStatus, startImport } from "@/api/data-management"
+import type { ExportResult, ImportStatus } from "@/types/data-management"
 import { useAuth } from "@/lib/auth-context"
+import { saveBlob } from "@/lib/download"
 import { appToast } from "@/lib/toast"
 
-type ExportResult = {
-  filename: string
-  password: string
-}
+/** 导出成功后展示给用户的信息（文件已保存到本地） */
+type ExportedFile = Pick<ExportResult, "filename" | "password">
 
 type ImportJob = {
   jobId: string
@@ -67,7 +62,7 @@ export function DataManagementPage() {
   const navigate = useNavigate()
   const { hasPermission, logout } = useAuth()
   const [exportLoading, setExportLoading] = React.useState(false)
-  const [exportResult, setExportResult] = React.useState<ExportResult | null>(
+  const [exportResult, setExportResult] = React.useState<ExportedFile | null>(
     null
   )
   const [passwordCopied, setPasswordCopied] = React.useState(false)
@@ -81,12 +76,7 @@ export function DataManagementPage() {
     setExportLoading(true)
     try {
       const result = await exportData()
-      const url = URL.createObjectURL(result.blob)
-      const anchor = document.createElement("a")
-      anchor.href = url
-      anchor.download = result.filename
-      anchor.click()
-      window.setTimeout(() => URL.revokeObjectURL(url), 0)
+      saveBlob(result.blob, result.filename)
       setPasswordCopied(false)
       setExportResult({
         filename: result.filename,

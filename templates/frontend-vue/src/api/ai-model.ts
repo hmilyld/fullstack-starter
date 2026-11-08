@@ -2,15 +2,13 @@ import { apiClient } from "@/api/client"
 import type {
   AiModel,
   AiModelPreset,
+  AiModelPresetQuery,
+  AiModelTestPayload,
   AiModelTestResult,
 } from "@/types/ai-model"
-import type { PaginatedData } from "@/types/common"
+import type { PageParams, PaginatedData } from "@/types/common"
 
-export async function getAiModels(params?: {
-  search?: string
-  page?: number
-  pageSize?: number
-}) {
+export async function getAiModels(params?: PageParams) {
   return apiClient.get<PaginatedData<AiModel>>("/ai-models", params)
 }
 
@@ -41,20 +39,11 @@ export async function getAiModelByAlias(alias: string) {
   return apiClient.get<AiModel>(`/ai-models/by-alias/${alias}`)
 }
 
-export async function testAiModel(data: {
-  apiUrl?: string
-  apiKey?: string
-  modelName?: string
-  modelId?: string
-}) {
+export async function testAiModel(data: AiModelTestPayload) {
   return apiClient.post<AiModelTestResult>("/ai-models/test", data)
 }
 
-export async function getAiModelPresets(params?: {
-  search?: string
-  group?: string
-  isActive?: boolean
-}) {
+export async function getAiModelPresets(params?: AiModelPresetQuery) {
   return apiClient.get<AiModelPreset[]>("/ai-models/presets", params)
 }
 

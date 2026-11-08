@@ -21,6 +21,7 @@ export default defineConfig({
       reporter: ["text", "html"],
       // 覆盖率聚焦可单元测试的共享层；页面交互由 smoke test 与三端手工验收覆盖
       include: [
+        "src/api/http.ts",
         "src/components/shared/**/*.{ts,vue}",
         "src/composables/**/*.{ts,vue}",
         "src/lib/**/*.{ts,vue}",

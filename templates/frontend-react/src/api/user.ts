@@ -1,12 +1,14 @@
 import { apiClient } from "@/api/client"
-import type { PaginatedData } from "@/types/common"
-import type { User } from "@/types/user"
+import type { PageParams, PaginatedData } from "@/types/common"
+import type {
+  PasswordChangePayload,
+  ProfilePayload,
+  User,
+  UserPatch,
+  UserPayload,
+} from "@/types/user"
 
-export async function getUsers(params?: {
-  search?: string
-  page?: number
-  pageSize?: number
-}) {
+export async function getUsers(params?: PageParams) {
   return apiClient.get<PaginatedData<User>>("/users", params)
 }
 
@@ -14,11 +16,11 @@ export async function getUser(id: string) {
   return apiClient.get<User>(`/users/${id}`)
 }
 
-export async function createUser(data: Omit<User, "id" | "avatar">) {
+export async function createUser(data: UserPayload) {
   return apiClient.post<User>("/users", data)
 }
 
-export async function updateUser(id: string, data: Partial<Omit<User, "id">>) {
+export async function updateUser(id: string, data: UserPatch) {
   return apiClient.put<User>(`/users/${id}`, data)
 }
 
@@ -34,13 +36,10 @@ export async function batchUpdateRole(userIds: number[], roleId: string) {
   return apiClient.post("/users/batch-role", { userIds, roleId })
 }
 
-export async function updateMe(data: { name: string; email: string }) {
+export async function updateMe(data: ProfilePayload) {
   return apiClient.put<User>("/users/me", data)
 }
 
-export async function changePassword(data: {
-  currentPassword: string
-  newPassword: string
-}) {
+export async function changePassword(data: PasswordChangePayload) {
   return apiClient.put("/users/me/password", data)
 }
