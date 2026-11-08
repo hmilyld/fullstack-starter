@@ -153,7 +153,7 @@ const panelId = computed(() => `operation-panel-${props.item.permissionCode}`)
     "
   >
     <div class="flex items-center justify-between gap-3 px-3 py-2">
-      <div class="flex min-w-0 items-center gap-3">
+      <div class="flex min-w-0 flex-1 items-center gap-2">
         <Button
           v-if="canReorder"
           ref="handle"
@@ -165,8 +165,8 @@ const panelId = computed(() => `operation-panel-${props.item.permissionCode}`)
           <GripVertical />
         </Button>
         <MenuIcon :name="item.icon" class="size-4 shrink-0" />
-        <div class="min-w-0">
-          <div class="flex items-center gap-2">
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <p class="truncate text-sm font-medium">{{ item.name }}</p>
             <Badge v-if="item.isSystem" variant="outline">内置</Badge>
             <Badge v-if="item.hidden" variant="secondary">已隐藏</Badge>
