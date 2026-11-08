@@ -104,6 +104,8 @@ describe("MenuManage", () => {
 
     expect(await screen.findByText("新增用户")).toBeInTheDocument()
     expect(screen.getByText("users.create")).toBeInTheDocument()
-    expect(screen.getByText("新增操作")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "新增 用户管理 的操作权限" })
+    ).toBeInTheDocument()
   })
 })

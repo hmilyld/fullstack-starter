@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router"
 import { DragDropProvider, type DragEndEvent } from "@dnd-kit/vue"
 import { isSortable } from "@dnd-kit/vue/sortable"
 import { KeyRound, Plus, Search } from "@lucide/vue"
+import { useMediaQuery } from "@/composables/use-media-query"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
 import ConfirmHideDialog from "@/components/shared/ConfirmHideDialog.vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
@@ -14,6 +15,7 @@ import InlineError from "@/components/shared/InlineError.vue"
 import PageFormSkeleton from "@/components/shared/PageFormSkeleton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
 import MenuSortableGroup from "@/pages/settings/MenuManage/MenuSortableGroup.vue"
+import MenuTreeTable from "@/pages/settings/MenuManage/MenuTreeTable.vue"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -78,6 +80,7 @@ type DeleteTarget =
 
 const auth = useAuthStore()
 const toast = useToast()
+const isCompact = useMediaQuery("(max-width: 767px)")
 
 const config = ref<MenuConfig | null>(null)
 const loading = ref(true)
@@ -85,6 +88,7 @@ const error = ref<string | null>(null)
 const saving = ref(false)
 const submitting = ref(false)
 const expanded = ref<Set<string>>(new Set())
+const collapsedGroups = ref<Set<string>>(new Set())
 const search = ref("")
 const dragEpoch = ref(0)
 
@@ -133,6 +137,9 @@ const canDeleteOperation = computed(() =>
 )
 const reorderEnabled = computed(
   () => canReorder.value && !search.value.trim() && !saving.value
+)
+const tableCollapsedGroups = computed(() =>
+  search.value.trim() ? new Set<string>() : collapsedGroups.value
 )
 
 const visibleGroups = computed<MenuGroup[]>(() => {
@@ -204,6 +211,13 @@ function toggleExpanded(permissionCode: string) {
   if (next.has(permissionCode)) next.delete(permissionCode)
   else next.add(permissionCode)
   expanded.value = next
+}
+
+function toggleGroup(groupId: string) {
+  const next = new Set(collapsedGroups.value)
+  if (next.has(groupId)) next.delete(groupId)
+  else next.add(groupId)
+  collapsedGroups.value = next
 }
 
 async function persistLayout(next: MenuConfig) {
@@ -682,7 +696,48 @@ const operationDescription = computed(() =>
     </EmptyState>
 
     <DragDropProvider v-else @drag-end="handleDragEnd">
-      <div class="flex flex-col gap-4">
+      <MenuTreeTable
+        v-if="!isCompact"
+        :groups="visibleGroups"
+        :expanded="expanded"
+        :collapsed-groups="tableCollapsedGroups"
+        :can-reorder="reorderEnabled"
+        :can-create="canCreate"
+        :can-edit="canEdit"
+        :can-delete="canDelete"
+        :can-create-operation="canCreateOperation"
+        :can-edit-operation="canEditOperation"
+        :can-delete-operation="canDeleteOperation"
+        :mutations-disabled="saving"
+        @toggle-group="toggleGroup"
+        @toggle-expanded="toggleExpanded"
+        @create-item="openCreateItem"
+        @edit-group="openEditGroup"
+        @delete-group="
+          deleteTarget = {
+            type: 'group',
+            id: $event.id,
+            name: $event.name,
+          }
+        "
+        @edit-item="openEditItem"
+        @delete-item="
+          deleteTarget = {
+            type: 'item',
+            id: $event.permissionCode,
+            name: $event.name,
+            operationCount: $event.operations.length,
+          }
+        "
+        @move-group="moveGroup"
+        @move-item="moveItem"
+        @toggle-hidden="toggleHidden"
+        @add-operation="openCreateOperation"
+        @edit-operation="openEditOperation"
+        @delete-operation="handleDeleteOperation"
+      />
+
+      <div v-else class="flex flex-col gap-4">
         <MenuSortableGroup
           v-for="(group, groupIndex) in visibleGroups"
           :key="`${group.id}:${dragEpoch}`"

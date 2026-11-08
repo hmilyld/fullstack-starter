@@ -59,9 +59,8 @@ test("confirms hiding a critical menu from the edit form", async ({ page }) => {
   await expect(page.getByText("/settings/user")).toBeVisible()
 
   await page
-    .getByRole("button", { name: "菜单与权限 的操作", exact: true })
+    .getByRole("button", { name: "编辑 菜单与权限", exact: true })
     .click()
-  await page.getByRole("menuitem", { name: "编辑" }).click()
   await expect(page.getByText("编辑菜单")).toBeVisible()
 
   await page.locator("#item-visible").click()
@@ -73,4 +72,57 @@ test("confirms hiding a critical menu from the edit form", async ({ page }) => {
 
   await expect(page.getByText("确认隐藏菜单")).not.toBeVisible()
   await expect(page.getByText("编辑菜单")).toBeVisible()
+})
+
+test("uses indented cards on compact viewports", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockApi(page)
+  await seedAuth(page)
+
+  await page.goto("/settings/menu")
+  await expect(page.getByText("/settings/user")).toBeVisible()
+  await expect(page.locator("table")).toHaveCount(0)
+  await expect(
+    page.getByRole("button", { name: "新增菜单" }).first()
+  ).toBeVisible()
+})
+
+test("drags a menu row to reorder", async ({ page }) => {
+  await mockApi(page)
+  await seedAuth(page)
+
+  await page.goto("/settings/menu")
+  await expect(page.getByText("/settings/user")).toBeVisible()
+
+  const source = page.getByRole("button", {
+    name: "拖动 用户管理 排序",
+    exact: true,
+  })
+  const target = page.getByRole("button", {
+    name: "拖动 菜单与权限 排序",
+    exact: true,
+  })
+  const sourceBox = await source.boundingBox()
+  const targetBox = await target.boundingBox()
+  expect(sourceBox).not.toBeNull()
+  expect(targetBox).not.toBeNull()
+  if (!sourceBox || !targetBox) return
+
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2,
+    sourceBox.y + sourceBox.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(sourceBox.x + 10, sourceBox.y + 10, { steps: 5 })
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + targetBox.height / 2,
+    { steps: 10 }
+  )
+  await page.mouse.up()
+
+  const rows = await page.locator("tbody tr").allTextContents()
+  const usersIndex = rows.findIndex((text) => text.includes("用户管理"))
+  const menusIndex = rows.findIndex((text) => text.includes("菜单与权限"))
+  expect(usersIndex).toBeGreaterThan(menusIndex)
 })

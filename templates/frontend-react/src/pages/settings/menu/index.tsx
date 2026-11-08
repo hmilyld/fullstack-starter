@@ -85,8 +85,11 @@ import {
 } from "@/api/permission"
 import { useAuth } from "@/lib/auth-context"
 import { OPERATION_PRESETS, buildOperationCode } from "@/lib/access-tree"
+import { groupSortableId, itemSortableId, type DragData } from "@/lib/menu-tree"
 import { appToast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { MenuTreeTable } from "@/pages/settings/menu/MenuTreeTable"
 import type {
   MenuConfig,
   MenuGroup,
@@ -96,20 +99,11 @@ import type {
 
 const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
 
-type DragData =
-  | { type: "group"; groupId: string }
-  | { type: "item"; groupId: string; permissionCode: string }
-  | { type: "group-drop"; groupId: string }
-
 type DeleteTarget =
   | { type: "group"; id: string; name: string }
   | { type: "item"; id: string; name: string; operationCount: number }
   | { type: "operation"; id: string; name: string }
   | null
-
-const groupSortableId = (groupId: string) => `group:${groupId}`
-const itemSortableId = (groupId: string, permissionCode: string) =>
-  `item:${groupId}:${permissionCode}`
 
 function cloneConfig(config: MenuConfig): MenuConfig {
   return {
@@ -677,6 +671,7 @@ function SortableGroup({
 
 export function MenuPage() {
   const { hasPermission } = useAuth()
+  const isCompact = useIsMobile()
   const [config, setConfig] = React.useState<MenuConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -684,6 +679,9 @@ export function MenuPage() {
   const savingRef = React.useRef(false)
   const [submitting, setSubmitting] = React.useState(false)
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set())
+  const [collapsedGroups, setCollapsedGroups] = React.useState<Set<string>>(
+    new Set()
+  )
   const [search, setSearch] = React.useState("")
 
   const [groupOpen, setGroupOpen] = React.useState(false)
@@ -818,6 +816,15 @@ export function MenuPage() {
       const next = new Set(previous)
       if (next.has(permissionCode)) next.delete(permissionCode)
       else next.add(permissionCode)
+      return next
+    })
+  }
+
+  function toggleGroup(groupId: string) {
+    setCollapsedGroups((previous) => {
+      const next = new Set(previous)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
       return next
     })
   }
@@ -1309,62 +1316,112 @@ export function MenuPage() {
           collisionDetection={collisionDetection}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext
-            items={visibleGroups.map((group) => groupSortableId(group.id))}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="flex flex-col gap-4">
-              {visibleGroups.map((group, groupIndex) => (
-                <SortableGroup
-                  key={group.id}
-                  group={group}
-                  canReorder={reorderEnabled}
-                  canCreate={canCreate}
-                  canEdit={canEdit}
-                  canDelete={canDelete}
-                  canCreateOperation={canCreateOperation}
-                  canEditOperation={canEditOperation}
-                  canDeleteOperation={canDeleteOperation}
-                  mutationsDisabled={saving}
-                  canMoveUp={groupIndex > 0}
-                  canMoveDown={groupIndex < visibleGroups.length - 1}
-                  expanded={expanded}
-                  onToggleExpanded={toggleExpanded}
-                  onCreateItem={openCreateItem}
-                  onEditGroup={openEditGroup}
-                  onDeleteGroup={(target) =>
-                    setDeleteTarget({
-                      type: "group",
-                      id: target.id,
-                      name: target.name,
-                    })
-                  }
-                  onMoveUp={() => moveGroup(group.id, -1)}
-                  onMoveDown={() => moveGroup(group.id, 1)}
-                  onMoveItem={moveItem}
-                  onEditItem={openEditItem}
-                  onDeleteItem={(item) =>
-                    setDeleteTarget({
-                      type: "item",
-                      id: item.permissionCode,
-                      name: item.name,
-                      operationCount: item.operations.length,
-                    })
-                  }
-                  onToggleHidden={toggleHidden}
-                  onAddOperation={openCreateOperation}
-                  onEditOperation={openEditOperation}
-                  onDeleteOperation={(_item, operation) =>
-                    setDeleteTarget({
-                      type: "operation",
-                      id: operation.code,
-                      name: operation.name,
-                    })
-                  }
-                />
-              ))}
-            </div>
-          </SortableContext>
+          {isCompact ? (
+            <SortableContext
+              items={visibleGroups.map((group) => groupSortableId(group.id))}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="flex flex-col gap-4">
+                {visibleGroups.map((group, groupIndex) => (
+                  <SortableGroup
+                    key={group.id}
+                    group={group}
+                    canReorder={reorderEnabled}
+                    canCreate={canCreate}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    canCreateOperation={canCreateOperation}
+                    canEditOperation={canEditOperation}
+                    canDeleteOperation={canDeleteOperation}
+                    mutationsDisabled={saving}
+                    canMoveUp={groupIndex > 0}
+                    canMoveDown={groupIndex < visibleGroups.length - 1}
+                    expanded={expanded}
+                    onToggleExpanded={toggleExpanded}
+                    onCreateItem={openCreateItem}
+                    onEditGroup={openEditGroup}
+                    onDeleteGroup={(target) =>
+                      setDeleteTarget({
+                        type: "group",
+                        id: target.id,
+                        name: target.name,
+                      })
+                    }
+                    onMoveUp={() => moveGroup(group.id, -1)}
+                    onMoveDown={() => moveGroup(group.id, 1)}
+                    onMoveItem={moveItem}
+                    onEditItem={openEditItem}
+                    onDeleteItem={(item) =>
+                      setDeleteTarget({
+                        type: "item",
+                        id: item.permissionCode,
+                        name: item.name,
+                        operationCount: item.operations.length,
+                      })
+                    }
+                    onToggleHidden={toggleHidden}
+                    onAddOperation={openCreateOperation}
+                    onEditOperation={openEditOperation}
+                    onDeleteOperation={(_item, operation) =>
+                      setDeleteTarget({
+                        type: "operation",
+                        id: operation.code,
+                        name: operation.name,
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          ) : (
+            <MenuTreeTable
+              groups={visibleGroups}
+              expanded={expanded}
+              collapsedGroups={
+                search.trim() ? new Set<string>() : collapsedGroups
+              }
+              canReorder={reorderEnabled}
+              canCreate={canCreate}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              canCreateOperation={canCreateOperation}
+              canEditOperation={canEditOperation}
+              canDeleteOperation={canDeleteOperation}
+              mutationsDisabled={saving}
+              onToggleGroup={toggleGroup}
+              onToggleExpanded={toggleExpanded}
+              onCreateItem={openCreateItem}
+              onEditGroup={openEditGroup}
+              onDeleteGroup={(group) =>
+                setDeleteTarget({
+                  type: "group",
+                  id: group.id,
+                  name: group.name,
+                })
+              }
+              onEditItem={openEditItem}
+              onDeleteItem={(item) =>
+                setDeleteTarget({
+                  type: "item",
+                  id: item.permissionCode,
+                  name: item.name,
+                  operationCount: item.operations.length,
+                })
+              }
+              onMoveGroup={moveGroup}
+              onMoveItem={moveItem}
+              onToggleHidden={toggleHidden}
+              onAddOperation={openCreateOperation}
+              onEditOperation={openEditOperation}
+              onDeleteOperation={(_item, operation) =>
+                setDeleteTarget({
+                  type: "operation",
+                  id: operation.code,
+                  name: operation.name,
+                })
+              }
+            />
+          )}
         </DndContext>
       )}
 

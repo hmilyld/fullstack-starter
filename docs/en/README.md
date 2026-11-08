@@ -22,7 +22,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | User management | List + pagination + search + detail + create/edit + delete + reset password + batch role assignment |
 | Role management | List + pagination + search + create/edit + delete (preset roles cannot be deleted) |
 | Permission overview | Read-only view of menu permissions + operation permissions; operation permissions are maintained in Menu & Permissions; auto-synced with the permission catalog at startup |
-| Menu & permissions | Group and menu maintenance, show/hide, cross-group dragging, save-on-drop ordering, operation permissions per menu, permission-filtered dynamic sidebar |
+| Menu & permissions | Tree table for groups and menus, show/hide, cross-group dragging, save-on-drop ordering, operation permissions per menu, permission-filtered dynamic sidebar |
 | System settings | Read/write site configuration, email test, maintenance mode (blocks non-admin logins), open registration, manual review |
 | AI models | List / default / lookup by alias / detail / create / edit / delete / connection test |
 | AI model presets | Grouping, activate a preset, list / create / edit / delete |
