@@ -328,9 +328,9 @@ private Map<String, List<String>> validateColumns(
 	List<String> exported = (List<String>) tableInfo.get("columns");
 	if (!current.equals(exported)) throw new IllegalArgumentException("数据表结构不一致: " + table);
 	for (String column : current) {
-	if (!column.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+		if (!column.matches("[A-Za-z_][A-Za-z0-9_]*")) {
 		throw new IllegalArgumentException("数据表列名非法: " + table);
-	}
+		}
 	}
 	result.put(table, current);
 	}

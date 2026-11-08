@@ -50,9 +50,9 @@ public ApiResponse<?> getAiModel(Long id) {
 @Transactional
 public ApiResponse<?> createAiModel(AiModelCreateRequest req) {
 	try {
-		assertSafeUrl(req.getApiUrl());
+	assertSafeUrl(req.getApiUrl());
 	} catch (IllegalArgumentException e) {
-		return ApiResponse.error(e.getMessage());
+	return ApiResponse.error(e.getMessage());
 	}
 	if (aiModelRepository.findByAlias(req.getAlias()).isPresent()) {
 	return ApiResponse.error("别名已存在");
@@ -90,9 +90,9 @@ public ApiResponse<?> updateAiModel(Long id, AiModelUpdateRequest req) {
 			if (req.getModelName() != null) model.setModelName(req.getModelName());
 			if (req.getApiUrl() != null) {
 				try {
-					assertSafeUrl(req.getApiUrl());
+				assertSafeUrl(req.getApiUrl());
 				} catch (IllegalArgumentException e) {
-					return ApiResponse.<Object>error(e.getMessage());
+				return ApiResponse.<Object>error(e.getMessage());
 				}
 				model.setApiUrl(req.getApiUrl());
 			}
@@ -145,21 +145,26 @@ public ApiResponse<?> testAiModel(AiModelTestRequest req) {
 	String modelName = req.getModelName();
 
 	if (req.getModelId() != null) {
-		AiModel model = aiModelRepository.findById(req.getModelId()).orElse(null);
-		if (model == null) {
-			return ApiResponse.error("模型不存在");
-		}
-		apiUrl = model.getApiUrl();
-		apiKey = model.getApiKey();
-		modelName = model.getModelName();
-	} else if (apiUrl == null || apiUrl.isBlank() || apiKey == null || apiKey.isBlank() || modelName == null || modelName.isBlank()) {
-		return ApiResponse.error("API地址、API Key 和模型名称不能为空");
+	AiModel model = aiModelRepository.findById(req.getModelId()).orElse(null);
+	if (model == null) {
+		return ApiResponse.error("模型不存在");
+	}
+	apiUrl = model.getApiUrl();
+	apiKey = model.getApiKey();
+	modelName = model.getModelName();
+	} else if (apiUrl == null
+		|| apiUrl.isBlank()
+		|| apiKey == null
+		|| apiKey.isBlank()
+		|| modelName == null
+		|| modelName.isBlank()) {
+	return ApiResponse.error("API地址、API Key 和模型名称不能为空");
 	}
 
 	try {
-		assertSafeUrl(apiUrl);
+	assertSafeUrl(apiUrl);
 	} catch (IllegalArgumentException e) {
-		return ApiResponse.error(e.getMessage());
+	return ApiResponse.error(e.getMessage());
 	}
 	long startTime = System.currentTimeMillis();
 
@@ -240,35 +245,38 @@ private String maskApiKey(String apiKey) {
 /** SSRF 防护：拒绝非 http/https、私有/回环/链路本地地址及云元数据端点。 */
 private void assertSafeUrl(String url) {
 	if (url == null || url.isBlank()) {
-		throw new IllegalArgumentException("API 地址不能为空");
+	throw new IllegalArgumentException("API 地址不能为空");
 	}
 	java.net.URI uri;
 	try {
-		uri = java.net.URI.create(url);
+	uri = java.net.URI.create(url);
 	} catch (Exception e) {
-		throw new IllegalArgumentException("API 地址格式无效");
+	throw new IllegalArgumentException("API 地址格式无效");
 	}
 	String scheme = uri.getScheme();
 	if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
-		throw new IllegalArgumentException("API 地址必须使用 http 或 https 协议");
+	throw new IllegalArgumentException("API 地址必须使用 http 或 https 协议");
 	}
 	String host = uri.getHost();
 	if (host == null || host.isBlank()) {
-		throw new IllegalArgumentException("API 地址格式无效");
+	throw new IllegalArgumentException("API 地址格式无效");
 	}
 	String lower = host.toLowerCase();
-	if (lower.equals("localhost") || lower.equals("127.0.0.1") || lower.equals("::1")
-		|| lower.equals("169.254.169.254") || lower.equals("metadata.google.internal")
+	if (lower.equals("localhost")
+		|| lower.equals("127.0.0.1")
+		|| lower.equals("::1")
+		|| lower.equals("169.254.169.254")
+		|| lower.equals("metadata.google.internal")
 		|| lower.contains("metadata")) {
-		throw new IllegalArgumentException("禁止访问该地址");
+	throw new IllegalArgumentException("禁止访问该地址");
 	}
 	try {
-		java.net.InetAddress addr = java.net.InetAddress.getByName(host);
-		if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
-			throw new IllegalArgumentException("禁止访问内网地址");
-		}
+	java.net.InetAddress addr = java.net.InetAddress.getByName(host);
+	if (addr.isSiteLocalAddress() || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
+		throw new IllegalArgumentException("禁止访问内网地址");
+	}
 	} catch (java.net.UnknownHostException ignored) {
-		// 无法解析时交由下游处理，元数据地址已在上面拦截
+	// 无法解析时交由下游处理，元数据地址已在上面拦截
 	}
 }
 

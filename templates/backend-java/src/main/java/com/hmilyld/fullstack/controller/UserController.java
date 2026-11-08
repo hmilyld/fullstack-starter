@@ -32,13 +32,17 @@ public ApiResponse<?> getUser(@PathVariable Long id) {
 }
 
 @PostMapping("")
-@SaCheckPermission(value = {"users.create", "users.assign_role"}, mode = SaMode.OR)
+@SaCheckPermission(
+	value = {"users.create", "users.assign_role"},
+	mode = SaMode.OR)
 public ApiResponse<?> createUser(@RequestBody @Valid UserCreateRequest req) {
 	return userService.createUser(req);
 }
 
 @PutMapping("/{id}")
-@SaCheckPermission(value = {"users.edit", "users.assign_role"}, mode = SaMode.OR)
+@SaCheckPermission(
+	value = {"users.edit", "users.assign_role"},
+	mode = SaMode.OR)
 public ApiResponse<?> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest req) {
 	return userService.updateUser(id, req);
 }
@@ -57,7 +61,9 @@ public ApiResponse<?> resetPassword(
 }
 
 @PostMapping("/batch-role")
-@SaCheckPermission(value = {"users.edit", "users.assign_role"}, mode = SaMode.OR)
+@SaCheckPermission(
+	value = {"users.edit", "users.assign_role"},
+	mode = SaMode.OR)
 public ApiResponse<?> batchUpdateRole(@RequestBody @Valid BatchRoleUpdateRequest req) {
 	Long currentUserId = StpUtil.getLoginIdAsLong();
 	return userService.batchUpdateRole(req, currentUserId);
