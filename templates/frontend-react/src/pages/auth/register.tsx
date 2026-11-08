@@ -6,13 +6,6 @@ import { LoadingButton } from "@/components/shared/loading-button"
 import { PasswordInput } from "@/components/shared/password-input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -65,7 +58,11 @@ export function RegisterPage() {
 
   return (
     <AuthShell>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight">创建账号</h1>
+          <p className="text-sm text-muted-foreground">填写以下信息完成注册</p>
+        </div>
         {registrationDisabled && (
           <Alert>
             <AlertTitle>注册功能已关闭</AlertTitle>
@@ -77,84 +74,76 @@ export function RegisterPage() {
             <AlertDescription>注册后需管理员审核通过才能登录</AlertDescription>
           </Alert>
         )}
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl">创建账号</CardTitle>
-            <CardDescription>填写以下信息完成注册</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit}>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="username">用户名</FieldLabel>
-                  <Input
-                    id="username"
-                    name="username"
-                    placeholder="请输入用户名"
-                    autoComplete="username"
-                    spellCheck={false}
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    required
-                    disabled={registrationDisabled}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="email">邮箱</FieldLabel>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="请输入邮箱"
-                    autoComplete="email"
-                    spellCheck={false}
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                    disabled={registrationDisabled}
-                  />
-                </Field>
-                <Field data-invalid={!!passwordError}>
-                  <FieldLabel htmlFor="password">密码</FieldLabel>
-                  <PasswordInput
-                    id="password"
-                    name="password"
-                    placeholder="至少 6 位"
-                    autoComplete="new-password"
-                    value={password}
-                    aria-invalid={!!passwordError}
-                    onChange={(event) => {
-                      setPasswordError(null)
-                      setPassword(event.target.value)
-                    }}
-                    required
-                    disabled={registrationDisabled}
-                  />
-                  <FieldError>{passwordError}</FieldError>
-                </Field>
-                <Field>
-                  <LoadingButton
-                    type="submit"
-                    className="w-full"
-                    loading={submitting}
-                    disabled={registrationDisabled}
-                  >
-                    注册
-                  </LoadingButton>
-                  <FieldDescription className="text-center">
-                    已有账号？
-                    <Link
-                      to="/login"
-                      className="underline-offset-4 hover:underline"
-                    >
-                      立即登录
-                    </Link>
-                  </FieldDescription>
-                </Field>
-              </FieldGroup>
-            </form>
-          </CardContent>
-        </Card>
+        <form onSubmit={handleSubmit}>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="username">用户名</FieldLabel>
+              <Input
+                id="username"
+                name="username"
+                placeholder="请输入用户名"
+                autoComplete="username"
+                spellCheck={false}
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                required
+                disabled={registrationDisabled}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="email">邮箱</FieldLabel>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="请输入邮箱"
+                autoComplete="email"
+                spellCheck={false}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                disabled={registrationDisabled}
+              />
+            </Field>
+            <Field data-invalid={!!passwordError}>
+              <FieldLabel htmlFor="password">密码</FieldLabel>
+              <PasswordInput
+                id="password"
+                name="password"
+                placeholder="至少 6 位"
+                autoComplete="new-password"
+                value={password}
+                aria-invalid={!!passwordError}
+                onChange={(event) => {
+                  setPasswordError(null)
+                  setPassword(event.target.value)
+                }}
+                required
+                disabled={registrationDisabled}
+              />
+              <FieldError>{passwordError}</FieldError>
+            </Field>
+            <Field>
+              <LoadingButton
+                type="submit"
+                className="w-full"
+                loading={submitting}
+                disabled={registrationDisabled}
+              >
+                注册
+              </LoadingButton>
+              <FieldDescription className="text-center">
+                已有账号？
+                <Link
+                  to="/login"
+                  className="underline-offset-4 hover:underline"
+                >
+                  立即登录
+                </Link>
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+        </form>
       </div>
     </AuthShell>
   )

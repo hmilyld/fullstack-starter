@@ -6,13 +6,6 @@ import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PasswordInput from "@/components/shared/PasswordInput.vue"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -63,6 +56,13 @@ async function handleSubmit() {
 <template>
   <AuthShell>
     <div class="flex flex-col gap-6">
+      <div class="flex flex-col gap-1.5">
+        <h1 class="text-2xl font-semibold tracking-tight">欢迎回来</h1>
+        <p class="text-sm text-muted-foreground">
+          使用邮箱或用户名登录您的账户
+        </p>
+      </div>
+
       <Alert v-if="maintenanceEnabled">
         <AlertTitle>系统维护中</AlertTitle>
         <AlertDescription>
@@ -73,64 +73,50 @@ async function handleSubmit() {
         </AlertDescription>
       </Alert>
 
-      <Card>
-        <CardHeader class="text-center">
-          <CardTitle class="text-xl">欢迎回来</CardTitle>
-          <CardDescription>使用邮箱或用户名登录您的账户</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form @submit.prevent="handleSubmit">
-            <FieldGroup>
-              <Field>
-                <FieldLabel for="account">邮箱或用户名</FieldLabel>
-                <Input
-                  id="account"
-                  v-model="account"
-                  name="account"
-                  placeholder="请输入邮箱或用户名"
-                  autocomplete="username"
-                  :spellcheck="false"
-                  required
-                />
-              </Field>
-              <Field :data-invalid="!!passwordError">
-                <FieldLabel for="password">密码</FieldLabel>
-                <PasswordInput
-                  id="password"
-                  v-model="password"
-                  name="password"
-                  placeholder="请输入密码"
-                  autocomplete="current-password"
-                  :aria-invalid="!!passwordError"
-                  required
-                  @update:model-value="passwordError = null"
-                />
-                <FieldError v-if="passwordError">{{
-                  passwordError
-                }}</FieldError>
-              </Field>
-              <Field>
-                <LoadingButton
-                  type="submit"
-                  class="w-full"
-                  :loading="submitting"
-                >
-                  登录
-                </LoadingButton>
-                <FieldDescription class="text-center">
-                  还没有账号？
-                  <RouterLink
-                    to="/register"
-                    class="underline-offset-4 hover:underline"
-                  >
-                    立即注册
-                  </RouterLink>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
-        </CardContent>
-      </Card>
+      <form @submit.prevent="handleSubmit">
+        <FieldGroup>
+          <Field>
+            <FieldLabel for="account">邮箱或用户名</FieldLabel>
+            <Input
+              id="account"
+              v-model="account"
+              name="account"
+              placeholder="请输入邮箱或用户名"
+              autocomplete="username"
+              :spellcheck="false"
+              required
+            />
+          </Field>
+          <Field :data-invalid="!!passwordError">
+            <FieldLabel for="password">密码</FieldLabel>
+            <PasswordInput
+              id="password"
+              v-model="password"
+              name="password"
+              placeholder="请输入密码"
+              autocomplete="current-password"
+              :aria-invalid="!!passwordError"
+              required
+              @update:model-value="passwordError = null"
+            />
+            <FieldError v-if="passwordError">{{ passwordError }}</FieldError>
+          </Field>
+          <Field>
+            <LoadingButton type="submit" class="w-full" :loading="submitting">
+              登录
+            </LoadingButton>
+            <FieldDescription class="text-center">
+              还没有账号？
+              <RouterLink
+                to="/register"
+                class="underline-offset-4 hover:underline"
+              >
+                立即注册
+              </RouterLink>
+            </FieldDescription>
+          </Field>
+        </FieldGroup>
+      </form>
     </div>
   </AuthShell>
 </template>

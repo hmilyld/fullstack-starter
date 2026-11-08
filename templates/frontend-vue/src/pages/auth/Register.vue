@@ -6,13 +6,6 @@ import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PasswordInput from "@/components/shared/PasswordInput.vue"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -75,7 +68,12 @@ async function handleSubmit() {
 
 <template>
   <AuthShell>
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-6">
+      <div class="flex flex-col gap-1.5">
+        <h1 class="text-2xl font-semibold tracking-tight">创建账号</h1>
+        <p class="text-sm text-muted-foreground">填写以下信息完成注册</p>
+      </div>
+
       <Alert v-if="registrationDisabled">
         <AlertTitle>注册功能已关闭</AlertTitle>
         <AlertDescription>请联系管理员开通注册。</AlertDescription>
@@ -84,81 +82,71 @@ async function handleSubmit() {
         <AlertDescription>注册后需管理员审核通过才能登录</AlertDescription>
       </Alert>
 
-      <Card>
-        <CardHeader class="text-center">
-          <CardTitle class="text-xl">创建账号</CardTitle>
-          <CardDescription>填写以下信息完成注册</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form @submit.prevent="handleSubmit">
-            <FieldGroup>
-              <Field>
-                <FieldLabel for="username">用户名</FieldLabel>
-                <Input
-                  id="username"
-                  v-model="username"
-                  name="username"
-                  placeholder="请输入用户名"
-                  autocomplete="username"
-                  :spellcheck="false"
-                  required
-                  :disabled="registrationDisabled"
-                />
-              </Field>
-              <Field>
-                <FieldLabel for="email">邮箱</FieldLabel>
-                <Input
-                  id="email"
-                  v-model="email"
-                  name="email"
-                  type="email"
-                  placeholder="请输入邮箱"
-                  autocomplete="email"
-                  :spellcheck="false"
-                  required
-                  :disabled="registrationDisabled"
-                />
-              </Field>
-              <Field :data-invalid="!!passwordError">
-                <FieldLabel for="password">密码</FieldLabel>
-                <PasswordInput
-                  id="password"
-                  v-model="password"
-                  name="password"
-                  placeholder="至少 6 位"
-                  autocomplete="new-password"
-                  :aria-invalid="!!passwordError"
-                  required
-                  :disabled="registrationDisabled"
-                  @update:model-value="passwordError = null"
-                />
-                <FieldError v-if="passwordError">{{
-                  passwordError
-                }}</FieldError>
-              </Field>
-              <Field>
-                <LoadingButton
-                  type="submit"
-                  class="w-full"
-                  :loading="submitting"
-                  :disabled="registrationDisabled"
-                >
-                  注册
-                </LoadingButton>
-                <FieldDescription class="text-center">
-                  已有账号？
-                  <RouterLink
-                    to="/login"
-                    class="underline-offset-4 hover:underline"
-                  >
-                    立即登录
-                  </RouterLink>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
-        </CardContent>
-      </Card>
+      <form @submit.prevent="handleSubmit">
+        <FieldGroup>
+          <Field>
+            <FieldLabel for="username">用户名</FieldLabel>
+            <Input
+              id="username"
+              v-model="username"
+              name="username"
+              placeholder="请输入用户名"
+              autocomplete="username"
+              :spellcheck="false"
+              required
+              :disabled="registrationDisabled"
+            />
+          </Field>
+          <Field>
+            <FieldLabel for="email">邮箱</FieldLabel>
+            <Input
+              id="email"
+              v-model="email"
+              name="email"
+              type="email"
+              placeholder="请输入邮箱"
+              autocomplete="email"
+              :spellcheck="false"
+              required
+              :disabled="registrationDisabled"
+            />
+          </Field>
+          <Field :data-invalid="!!passwordError">
+            <FieldLabel for="password">密码</FieldLabel>
+            <PasswordInput
+              id="password"
+              v-model="password"
+              name="password"
+              placeholder="至少 6 位"
+              autocomplete="new-password"
+              :aria-invalid="!!passwordError"
+              required
+              :disabled="registrationDisabled"
+              @update:model-value="passwordError = null"
+            />
+            <FieldError v-if="passwordError">{{ passwordError }}</FieldError>
+          </Field>
+          <Field>
+            <LoadingButton
+              type="submit"
+              class="w-full"
+              :loading="submitting"
+              :disabled="registrationDisabled"
+            >
+              注册
+            </LoadingButton>
+            <FieldDescription class="text-center">
+              已有账号？
+              <RouterLink
+                to="/login"
+                class="underline-offset-4 hover:underline"
+              >
+                立即登录
+              </RouterLink>
+            </FieldDescription>
+          </Field>
+        </FieldGroup>
+      </form>
     </div>
   </AuthShell>
 </template>
