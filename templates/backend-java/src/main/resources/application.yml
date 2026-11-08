@@ -53,3 +53,17 @@ app:
   data:
     tmp-dir: ./data/tmp
     max-import-size-bytes: 1073741824
+
+# OpenAPI 3 + Swagger UI
+# 路径刻意对齐 Python 侧：/docs 与 /openapi.json，
+# 这样 dev.sh 的提示文案、nginx 反向代理与两栈文档地址完全一致。
+springdoc:
+  api-docs:
+    path: /openapi.json
+  swagger-ui:
+    path: /docs
+    # 关闭默认的 petstore 示例地址
+    disable-swagger-default-url: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  paths-to-match: /api/**

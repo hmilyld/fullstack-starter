@@ -160,11 +160,7 @@ main() {
   print_info "服务已全部启动"
   print_info "  后端 API:  http://localhost:8088"
   print_info "  前端页面:  http://localhost:5173"
-${
-  backend === 'python'
-    ? '  print_info "  API 文档:  http://localhost:8088/docs"'
-    : '  print_info "  （Java 后端未内置 OpenAPI 文档页）"'
-}
+  print_info "  API 文档:  http://localhost:8088/docs"
   print_info ""
   wait
 }
@@ -433,11 +429,16 @@ function generateNginxConf(projectPath: string): Promise<void> {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Swagger 文档
+    # 接口文档（两栈路径一致）
+    # Python: /docs、/openapi.json、/redoc
+    # Java:   /docs 重定向到 /swagger-ui/index.html，静态资源在 /swagger-ui/
     location /docs {
         proxy_pass http://127.0.0.1:8088;
     }
     location /openapi.json {
+        proxy_pass http://127.0.0.1:8088;
+    }
+    location /swagger-ui/ {
         proxy_pass http://127.0.0.1:8088;
     }
     location /redoc {

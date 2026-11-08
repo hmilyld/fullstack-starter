@@ -182,10 +182,37 @@ class ContractTest {
   @Test
   @Order(1)
   void openApiMatchesContractEndpointSet() throws Exception {
-    MvcResult result = call(get("/v3/api-docs"), null);
-    // 未启用 springdoc 时退化为从 RequestMappingHandlerMapping 读取，
-    // 这里用契约清单自检，确保测试文件本身没有漂移。
-    assertThat(CONTRACT_ENDPOINTS).hasSize(55);
+    // springdoc 生成的真实 OpenAPI 描述必须与契约端点集合完全一致
+    MvcResult result = call(get("/openapi.json"), null);
+    assertThat(result.getResponse().getStatus()).isEqualTo(200);
+    JsonNode paths = json(result).get("paths");
+    assertThat(paths).isNotNull();
+
+    Set<String> actual = new LinkedHashSet<>();
+    paths
+        .fieldNames()
+        .forEachRemaining(
+            path -> {
+              JsonNode operations = paths.get(path);
+              operations
+                  .fieldNames()
+                  .forEachRemaining(
+                      method -> {
+                        if (Set.of("get", "post", "put", "delete", "patch").contains(method)) {
+                          actual.add(method.toUpperCase() + " " + normalize(path));
+                        }
+                      });
+            });
+
+    assertThat(actual)
+        .as("多出: %s\n缺失: %s", minus(actual, CONTRACT_ENDPOINTS), minus(CONTRACT_ENDPOINTS, actual))
+        .isEqualTo(CONTRACT_ENDPOINTS);
+  }
+
+  private static Set<String> minus(Set<String> left, Set<String> right) {
+    Set<String> result = new LinkedHashSet<>(left);
+    result.removeAll(right);
+    return result;
   }
 
   // ------------------------------------------------------------ 响应信封
