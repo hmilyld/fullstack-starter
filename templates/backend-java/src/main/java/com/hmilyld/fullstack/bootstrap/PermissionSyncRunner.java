@@ -1,4 +1,4 @@
-package com.hmilyld.fullstack.config;
+package com.hmilyld.fullstack.bootstrap;
 
 import com.hmilyld.fullstack.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;

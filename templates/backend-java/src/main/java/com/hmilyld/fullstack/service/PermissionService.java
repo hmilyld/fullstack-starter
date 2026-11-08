@@ -1,10 +1,10 @@
 package com.hmilyld.fullstack.service;
 
+import com.hmilyld.fullstack.catalog.PermissionCatalog;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.common.ConflictException;
 import com.hmilyld.fullstack.common.InvalidOperationException;
 import com.hmilyld.fullstack.common.NotFoundException;
-import com.hmilyld.fullstack.config.PermissionCatalog;
 import com.hmilyld.fullstack.dto.PermissionCreateRequest;
 import com.hmilyld.fullstack.dto.PermissionResponse;
 import com.hmilyld.fullstack.dto.PermissionSyncResponse;

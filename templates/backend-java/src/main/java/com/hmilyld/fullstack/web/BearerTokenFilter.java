@@ -1,4 +1,4 @@
-package com.hmilyld.fullstack.config;
+package com.hmilyld.fullstack.web;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;

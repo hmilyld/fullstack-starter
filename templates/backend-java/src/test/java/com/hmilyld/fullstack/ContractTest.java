@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hmilyld.fullstack.config.PermissionCatalog;
+import com.hmilyld.fullstack.catalog.PermissionCatalog;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;

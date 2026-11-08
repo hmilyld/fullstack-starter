@@ -1,4 +1,4 @@
-package com.hmilyld.fullstack.config;
+package com.hmilyld.fullstack.data;
 
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.ExecutorService;

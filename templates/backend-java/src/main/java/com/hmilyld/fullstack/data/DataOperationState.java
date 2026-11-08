@@ -1,4 +1,4 @@
-package com.hmilyld.fullstack.config;
+package com.hmilyld.fullstack.data;
 
 import java.security.SecureRandom;
 import java.util.HexFormat;

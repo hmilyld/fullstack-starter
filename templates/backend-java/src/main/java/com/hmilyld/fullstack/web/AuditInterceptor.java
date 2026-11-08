@@ -1,6 +1,7 @@
-package com.hmilyld.fullstack.config;
+package com.hmilyld.fullstack.web;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.hmilyld.fullstack.config.AuditProperties;
 import com.hmilyld.fullstack.service.AuditLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

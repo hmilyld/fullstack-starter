@@ -1,4 +1,4 @@
-package com.hmilyld.fullstack.config;
+package com.hmilyld.fullstack.catalog;
 
 import java.util.List;
 

@@ -3,7 +3,7 @@
  *
  * 权限码的唯一来源是代码：
  *   - Python: templates/backend-python/app/catalogs/permissions.py
- *   - Java:   templates/backend-java/.../config/PermissionCatalog.java
+ *   - Java:   templates/backend-java/.../catalog/PermissionCatalog.java
  *
  * 本脚本读取 Python 目录（结构更易解析），并交叉校验 Java 目录，
  * 两侧不一致时直接失败——这样「改了 catalog 忘了同步另一栈」会在生成阶段暴露，
@@ -27,7 +27,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const PY_CATALOG = path.join(REPO_ROOT, 'templates/backend-python/app/catalogs/permissions.py');
 const JAVA_CATALOG = path.join(
   REPO_ROOT,
-  'templates/backend-java/src/main/java/com/hmilyld/fullstack/config/PermissionCatalog.java'
+  'templates/backend-java/src/main/java/com/hmilyld/fullstack/catalog/PermissionCatalog.java'
 );
 const DOCS_ROOT = path.resolve(REPO_ROOT, '..', 'fullstack-starter-docs/src/content/docs');
 

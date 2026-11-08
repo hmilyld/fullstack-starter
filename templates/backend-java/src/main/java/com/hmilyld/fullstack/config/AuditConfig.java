@@ -1,5 +1,6 @@
 package com.hmilyld.fullstack.config;
 
+import com.hmilyld.fullstack.web.AuditInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

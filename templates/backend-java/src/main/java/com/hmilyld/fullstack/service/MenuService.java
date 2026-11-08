@@ -1,11 +1,11 @@
 package com.hmilyld.fullstack.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.hmilyld.fullstack.catalog.MenuCatalog;
 import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.common.ConflictException;
 import com.hmilyld.fullstack.common.InvalidOperationException;
 import com.hmilyld.fullstack.common.NotFoundException;
-import com.hmilyld.fullstack.config.MenuCatalog;
 import com.hmilyld.fullstack.dto.MenuConfigResponse;
 import com.hmilyld.fullstack.dto.MenuGroupResult;
 import com.hmilyld.fullstack.dto.MenuItemCreateRequest;
