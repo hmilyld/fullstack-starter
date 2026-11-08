@@ -75,8 +75,6 @@ async function copyTemplate(templateName: string, destination: string): Promise<
       if (segments.some((segment) => segment.endsWith('.egg-info'))) return false;
       // 模板根目录下的本地 SQLite 调试库（如运行后端时生成的 probe.db / app.db）
       if (segments.length === 1 && /\.(db|sqlite3)$/.test(relative)) return false;
-      // uv.lock 不随模板发布：由使用者在自己的项目里首次 uv sync 时生成
-      if (relative === 'uv.lock') return false;
       if (segments[0] === 'data') {
         // Keep only the placeholder so the runtime directory exists in new projects.
         return segments.length === 1 || relative === path.join('data', '.gitkeep');
@@ -257,13 +255,17 @@ RUN apt-get update && \\
 COPY --from=frontend-builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# 安装后端依赖
+# 安装后端依赖：以 uv.lock 为唯一来源，锁定版本，不做重新解析
 WORKDIR /app
-COPY backend/pyproject.toml ./
+COPY backend/pyproject.toml backend/uv.lock ./
 RUN pip install --no-cache-dir --upgrade pip && \\
     pip install --no-cache-dir uv
 COPY backend/ .
-RUN cd /app && uv pip install --system -e .
+RUN cd /app && uv export --frozen --no-dev --no-emit-project \\
+      --format requirements-txt -o /tmp/requirements.lock && \\
+    uv pip install --system -r /tmp/requirements.lock && \\
+    uv pip install --system --no-deps -e . && \\
+    rm -f /tmp/requirements.lock
 
 # 环境变量
 ENV DATABASE_URL=sqlite+aiosqlite:////app/data/app.db

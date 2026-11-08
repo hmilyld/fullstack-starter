@@ -46,3 +46,13 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.fastapi]
 entrypoint = "app.main:app"
+
+# 构建后端：显式声明，避免 setuptools 退回 legacy 扁平布局自动发现
+# （否则 app / migrations / data 三个顶层目录会让 `uv pip install -e .` 失败）
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# 只打包 app 包；migrations、tests、data 属于运行时/开发产物，不进发行包
+[tool.setuptools.packages.find]
+include = ["app*"]
