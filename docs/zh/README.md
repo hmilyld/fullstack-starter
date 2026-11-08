@@ -130,7 +130,7 @@ my-project/
 ```bash
 # 示例：给 React 前端加一个日志页面
 touch templates/frontend-react/src/pages/log/LogList.tsx
-# 然后在 router.tsx 添加路由、app-sidebar.tsx 添加菜单、api/ 添加 API 调用
+# 然后在 router.tsx 添加路由、api/ 添加 API 调用，最后在「菜单与权限」页新增菜单并给角色授权
 ```
 
 ### 新增模板

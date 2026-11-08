@@ -132,7 +132,7 @@ Edit files under `templates/` directly, just like editing a normal project. Temp
 ```bash
 # Example: add a log page to the React frontend
 touch templates/frontend-react/src/pages/log/LogList.tsx
-# Then add the route in router.tsx, the menu entry in app-sidebar.tsx, and the API call under api/
+# Then add the route in router.tsx and the API call under api/; finally add the menu in Menu & Permissions and grant it to roles
 ```
 
 ### Adding a Template
