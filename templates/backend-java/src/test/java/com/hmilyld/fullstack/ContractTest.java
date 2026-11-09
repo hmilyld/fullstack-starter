@@ -1,8 +1,10 @@
 package com.hmilyld.fullstack;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -677,6 +679,108 @@ class ContractTest {
     byte[] body = result.getResponse().getContentAsByteArray();
     assertThat(body.length).isGreaterThan(2);
     assertThat(new String(new byte[] {body[0], body[1]})).isEqualTo("PK");
+  }
+
+  // ------------------------------------------------------------ 角色写操作
+
+  @Test
+  @Order(35)
+  void roleCreateReturnsItsPermissions() throws Exception {
+    // 角色写接口此前只做 GET 形状断言，返回更新前旧权限的问题因此没被发现。
+    MvcResult result =
+        call(
+            post("/api/roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of(
+                            "name", unique("角色"), "permissions", List.of("dashboard", "users")))),
+            adminToken());
+    JsonNode body = json(result);
+    assertThat(body.get("code").asInt()).as(body.toString()).isZero();
+    assertThat(texts(body.get("data").get("permissions"))).containsExactly("dashboard", "users");
+  }
+
+  @Test
+  @Order(36)
+  void roleUpdateReturnsNewPermissions() throws Exception {
+    String roleId = createRole(List.of("dashboard", "users"));
+
+    MvcResult result =
+        call(
+            put("/api/roles/" + roleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(Map.of("permissions", List.of("settings")))),
+            adminToken());
+    JsonNode body = json(result);
+    assertThat(body.get("code").asInt()).as(body.toString()).isZero();
+    assertThat(texts(body.get("data").get("permissions"))).containsExactly("settings");
+
+    JsonNode role = findRole(roleId);
+    assertThat(texts(role.get("permissions"))).as("更新后的权限没有持久化").containsExactly("settings");
+  }
+
+  @Test
+  @Order(37)
+  void roleUpdateWithoutPermissionsKeepsThem() throws Exception {
+    String roleId = createRole(List.of("dashboard"));
+
+    MvcResult result =
+        call(
+            put("/api/roles/" + roleId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("name", "改名后的角色"))),
+            adminToken());
+    JsonNode body = json(result);
+    assertThat(body.get("code").asInt()).as(body.toString()).isZero();
+    assertThat(texts(body.get("data").get("permissions"))).containsExactly("dashboard");
+  }
+
+  @Test
+  @Order(38)
+  void roleDeleteRemovesGrants() throws Exception {
+    String roleId = createRole(List.of("dashboard", "users"));
+
+    MvcResult result = call(delete("/api/roles/" + roleId), adminToken());
+    assertThat(json(result).get("code").asInt()).isZero();
+    assertThat(result.getResponse().getStatus()).isEqualTo(200);
+
+    MvcResult listing = call(get("/api/roles?pageSize=100"), adminToken());
+    json(listing)
+        .get("data")
+        .get("list")
+        .forEach(role -> assertThat(role.get("id").asText()).isNotEqualTo(roleId));
+  }
+
+  private String createRole(List<String> permissions) throws Exception {
+    MvcResult created =
+        call(
+            post("/api/roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("name", unique("角色"), "permissions", permissions))),
+            adminToken());
+    JsonNode body = json(created);
+    assertThat(body.get("code").asInt()).as(body.toString()).isZero();
+    return body.get("data").get("id").asText();
+  }
+
+  private JsonNode findRole(String roleId) throws Exception {
+    MvcResult listing = call(get("/api/roles?pageSize=100"), adminToken());
+    for (JsonNode role : json(listing).get("data").get("list")) {
+      if (roleId.equals(role.get("id").asText())) {
+        return role;
+      }
+    }
+    throw new AssertionError("角色不存在: " + roleId);
+  }
+
+  private static List<String> texts(JsonNode array) {
+    List<String> out = new ArrayList<>();
+    array.forEach(item -> out.add(item.asText()));
+    return out;
   }
 
   private static List<String> fieldNames(JsonNode node) {

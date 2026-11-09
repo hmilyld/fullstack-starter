@@ -319,6 +319,91 @@ async def test_role_shape(client, admin_headers) -> None:
     assert isinstance(role["isPreset"], bool)
 
 
+async def test_role_create_returns_its_permissions(client, admin_headers) -> None:
+    """创建角色后返回的 permissions 必须是刚写入的那一组。
+
+    角色写接口此前只做 GET 形状断言，``role.permissions`` 在异步会话里懒加载
+    抛 ``MissingGreenlet``、以及返回更新前旧权限的问题因此都没被发现。
+    """
+    response = await client.post(
+        "/api/roles",
+        headers=admin_headers,
+        json={"name": _unique("角色"), "permissions": ["dashboard", "users"]},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["code"] == 0, payload
+    assert payload["data"]["permissions"] == ["dashboard", "users"]
+
+
+async def test_role_update_returns_new_permissions(client, admin_headers) -> None:
+    """更新权限后必须返回新权限，且真的落库。"""
+    created = await client.post(
+        "/api/roles",
+        headers=admin_headers,
+        json={"name": _unique("角色"), "permissions": ["dashboard", "users"]},
+    )
+    role_id = created.json()["data"]["id"]
+
+    updated = await client.put(
+        f"/api/roles/{role_id}", headers=admin_headers, json={"permissions": ["settings"]}
+    )
+    assert updated.status_code == 200
+    assert updated.json()["data"]["permissions"] == ["settings"], updated.json()
+
+    listing = await client.get("/api/roles?pageSize=100", headers=admin_headers)
+    role = next(r for r in listing.json()["data"]["list"] if r["id"] == role_id)
+    assert role["permissions"] == ["settings"], "更新后的权限没有持久化"
+
+
+async def test_role_update_without_permissions_keeps_them(client, admin_headers) -> None:
+    """只改名字时不得清空已有权限（permissions 缺省表示不改）。"""
+    created = await client.post(
+        "/api/roles",
+        headers=admin_headers,
+        json={"name": _unique("角色"), "permissions": ["dashboard"]},
+    )
+    role_id = created.json()["data"]["id"]
+
+    renamed = await client.put(
+        f"/api/roles/{role_id}", headers=admin_headers, json={"name": "改名后的角色"}
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["data"]["permissions"] == ["dashboard"], renamed.json()
+
+
+async def test_role_delete_removes_grants(client, admin_headers) -> None:
+    """删除角色后，其授权记录必须一并消失，不能留下孤儿行。"""
+    from sqlalchemy import func, select
+
+    from app.core.database import async_session
+    from app.role.models import RolePermission
+
+    created = await client.post(
+        "/api/roles",
+        headers=admin_headers,
+        json={"name": _unique("角色"), "permissions": ["dashboard", "users"]},
+    )
+    role_id = created.json()["data"]["id"]
+
+    deleted = await client.delete(f"/api/roles/{role_id}", headers=admin_headers)
+    assert deleted.status_code == 200
+    assert deleted.json()["code"] == 0, deleted.json()
+
+    listing = await client.get("/api/roles?pageSize=100", headers=admin_headers)
+    assert all(r["id"] != role_id for r in listing.json()["data"]["list"])
+
+    async with async_session() as session:
+        orphans = (
+            await session.execute(
+                select(func.count())
+                .select_from(RolePermission)
+                .where(RolePermission.role_id == role_id)
+            )
+        ).scalar()
+    assert orphans == 0, "删除角色后仍残留 role_permissions 行"
+
+
 async def test_permission_shape(client, admin_headers) -> None:
     response = await client.get("/api/permissions", headers=admin_headers)
     data = response.json()["data"]
