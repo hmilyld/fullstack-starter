@@ -404,6 +404,39 @@ async def test_role_delete_removes_grants(client, admin_headers) -> None:
     assert orphans == 0, "删除角色后仍残留 role_permissions 行"
 
 
+async def test_role_delete_hands_users_to_default_role(client, admin_headers) -> None:
+    """删除角色前必须把其下用户转交到默认角色。
+
+    否则 users.role_id 会指向一个已删除的角色，用户既登不进去也改不了角色。
+    """
+    created = await client.post(
+        "/api/roles",
+        headers=admin_headers,
+        json={"name": _unique("角色"), "permissions": ["dashboard"]},
+    )
+    role_id = created.json()["data"]["id"]
+
+    users = (await client.get("/api/users?pageSize=100", headers=admin_headers)).json()["data"][
+        "list"
+    ]
+    # 不能动自己（admin 无法修改自己的角色），挑一个普通用户
+    victim = next(u for u in users if u["username"] == "zhangsan")
+    moved = await client.put(
+        f"/api/users/{victim['id']}", headers=admin_headers, json={"roleId": role_id}
+    )
+    assert moved.json()["code"] == 0, moved.json()
+    assert moved.json()["data"]["roleId"] == role_id
+
+    deleted = await client.delete(f"/api/roles/{role_id}", headers=admin_headers)
+    assert deleted.json()["code"] == 0, deleted.json()
+
+    after = (await client.get("/api/users?pageSize=100", headers=admin_headers)).json()["data"][
+        "list"
+    ]
+    handed_over = next(u for u in after if u["id"] == victim["id"])
+    assert handed_over["roleId"] == "user", "删除角色后用户应转交到默认角色"
+
+
 async def test_permission_shape(client, admin_headers) -> None:
     response = await client.get("/api/permissions", headers=admin_headers)
     data = response.json()["data"]

@@ -9,8 +9,10 @@ import com.hmilyld.fullstack.dto.RoleResponse;
 import com.hmilyld.fullstack.dto.RoleUpdateRequest;
 import com.hmilyld.fullstack.entity.Role;
 import com.hmilyld.fullstack.entity.RolePermission;
+import com.hmilyld.fullstack.entity.User;
 import com.hmilyld.fullstack.repository.RolePermissionRepository;
 import com.hmilyld.fullstack.repository.RoleRepository;
+import com.hmilyld.fullstack.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +29,11 @@ public class RoleService {
 
   @Autowired private RoleRepository roleRepository;
   @Autowired private RolePermissionRepository rolePermissionRepository;
+  @Autowired private UserRepository userRepository;
+  @Autowired private SystemConfigService systemConfigService;
+
+  /** 默认角色的兜底值：系统设置未配置或指向不可用角色时使用。 */
+  private static final String DEFAULT_ROLE_ID = "user";
 
   public ApiResponse<PageResult<RoleResponse>> getRoles(String search, int page, int pageSize) {
     page = Math.max(1, page);
@@ -110,9 +117,30 @@ public class RoleService {
     if (Boolean.TRUE.equals(role.getPreset())) {
       throw new InvalidOperationException("预设角色不可删除");
     }
+    // 该角色下的用户先转交到默认角色，避免 users.role_id 指向已删除的角色。
+    // 前端删除确认框的文案就是按这个语义写的：「已分配该角色的用户将失去对应权限」。
+    String fallbackRoleId = fallbackRoleId(id);
+    for (User user : userRepository.findByRoleId(id)) {
+      user.setRoleId(fallbackRoleId);
+      userRepository.save(user);
+    }
     rolePermissionRepository.deleteByRoleId(id);
     roleRepository.delete(role);
     return ApiResponse.success();
+  }
+
+  /** 删除角色时把其下用户转交给哪个角色。 */
+  private String fallbackRoleId(String deletingRoleId) {
+    String configured = systemConfigService.getConfig().getDefaultRoleId();
+    for (String candidate : new String[] {configured, DEFAULT_ROLE_ID}) {
+      if (candidate == null || candidate.isBlank() || candidate.equals(deletingRoleId)) {
+        continue;
+      }
+      if (roleRepository.existsById(candidate)) {
+        return candidate;
+      }
+    }
+    throw new InvalidOperationException("找不到可用的默认角色，请先在系统设置中配置默认角色");
   }
 
   /** 供权限同步使用：补齐 admin 角色缺失的授权。 */

@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   long countByRoleId(String roleId);
 
+  List<User> findByRoleId(String roleId);
+
   @Query(
       "SELECT u FROM User u WHERE "
           + "(:search = '' OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) "

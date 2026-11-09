@@ -753,6 +753,49 @@ class ContractTest {
         .forEach(role -> assertThat(role.get("id").asText()).isNotEqualTo(roleId));
   }
 
+  @Test
+  @Order(39)
+  void roleDeleteHandsUsersToDefaultRole() throws Exception {
+    // 删除角色前必须先把其下用户转交到默认角色，否则 users.role_id 会指向已删除的角色。
+    String roleId = createRole(List.of("dashboard"));
+    long userId = createUserWithRole(roleId);
+
+    MvcResult result = call(delete("/api/roles/" + roleId), adminToken());
+    assertThat(json(result).get("code").asInt())
+        .as(result.getResponse().getContentAsString())
+        .isZero();
+
+    MvcResult user = call(get("/api/users/" + userId), adminToken());
+    assertThat(json(user).get("data").get("roleId").asText())
+        .as("删除角色后用户应转交到默认角色")
+        .isEqualTo("user");
+  }
+
+  private long createUserWithRole(String roleId) throws Exception {
+    String username = unique("handover");
+    MvcResult created =
+        call(
+            post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of(
+                            "username",
+                            username,
+                            "name",
+                            "转交用户",
+                            "email",
+                            username + "@example.com",
+                            "roleId",
+                            roleId,
+                            "password",
+                            "123456"))),
+            adminToken());
+    JsonNode body = json(created);
+    assertThat(body.get("code").asInt()).as(body.toString()).isZero();
+    return body.get("data").get("id").asLong();
+  }
+
   private String createRole(List<String> permissions) throws Exception {
     MvcResult created =
         call(

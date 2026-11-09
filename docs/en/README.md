@@ -20,7 +20,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | Authentication | Token login, registration, logout, login/registration rate limiting, automatic logout on 401 |
 | Dashboard | Stat cards + recent activity |
 | User management | List + pagination + search + detail + create/edit + delete + reset password + batch role assignment |
-| Role management | List + pagination + search + create/edit (wide dialog with a permission tree) + delete (preset roles cannot be deleted) |
+| Role management | List + pagination + search + create/edit (wide dialog with a permission tree) + delete (preset roles cannot be deleted; users are handed over to the default role) |
 | Permission overview | Read-only view of menu permissions + operation permissions; operation permissions are maintained in Menu & Permissions; auto-synced with the permission catalog at startup |
 | Menu & permissions | Tree table for groups and menus, show/hide, cross-group dragging, save-on-drop ordering, operation permissions per menu, permission-filtered dynamic sidebar |
 | System settings | Read/write site configuration, email test, maintenance mode (blocks non-admin logins), open registration, manual review |
@@ -215,7 +215,7 @@ Except for the file download endpoint, every endpoint returns: `{ code: 0, messa
 | GET | /api/roles | Role list (pagination + search) | Yes(roles) |
 | POST | /api/roles | Create role | Yes(roles.create) |
 | PUT | /api/roles/:id | Update role | Yes(roles.edit) |
-| DELETE | /api/roles/:id | Delete role (preset roles cannot be deleted) | Yes(roles.delete) |
+| DELETE | /api/roles/:id | Delete role (preset roles cannot be deleted; its users move to the default role) | Yes(roles.delete) |
 | GET | /api/permissions | Permission list | Yes(permissions) |
 | POST | /api/permissions | Create operation permission | Yes(permissions.create)³ |
 | POST | /api/permissions/sync | Sync with the permission catalog | Yes(permissions.create) |

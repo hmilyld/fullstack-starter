@@ -84,6 +84,8 @@
 | PUT | `/api/roles/{id}` | `roles.edit` |
 | DELETE | `/api/roles/{id}` | `roles.delete` |
 
+删除角色时，该角色下的用户先转交到系统设置里的 `defaultRoleId`（指向不可用角色时退回 `user`），再删除角色及其授权记录；`users.roleId` 不得指向已删除的角色。
+
 ### 权限 `/api/permissions`
 
 | 方法 | 路径 | 权限 |
