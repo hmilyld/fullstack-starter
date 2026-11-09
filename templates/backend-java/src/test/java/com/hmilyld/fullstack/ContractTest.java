@@ -3,6 +3,7 @@ package com.hmilyld.fullstack;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -679,6 +681,53 @@ class ContractTest {
     byte[] body = result.getResponse().getContentAsByteArray();
     assertThat(body.length).isGreaterThan(2);
     assertThat(new String(new byte[] {body[0], body[1]})).isEqualTo("PK");
+  }
+
+  @Test
+  @Order(40)
+  void importTwiceInARow() throws Exception {
+    // 连续导入两次都必须成功：导出目录若用非幂等的方式创建，
+    // 第二次导入会在建目录处失败（Python 侧曾因 Path.mkdir 位置参数写错而 500）。
+    MvcResult export = call(post("/api/data/export"), adminToken());
+    assertThat(export.getResponse().getStatus()).isEqualTo(200);
+    String password = export.getResponse().getHeader("X-Export-Password");
+    byte[] archive = export.getResponse().getContentAsByteArray();
+
+    for (int attempt = 1; attempt <= 2; attempt++) {
+      MockMultipartFile file =
+          new MockMultipartFile("file", "backup.zip", "application/zip", archive);
+      MvcResult created =
+          mockMvc
+              .perform(
+                  multipart("/api/data/import")
+                      .file(file)
+                      .param("password", password)
+                      .header("Authorization", "Bearer " + adminToken()))
+              .andReturn();
+      assertThat(created.getResponse().getStatus()).as("第 %d 次导入未被接受", attempt).isEqualTo(202);
+      JsonNode job = json(created).get("data");
+
+      String status = null;
+      for (int i = 0; i < 120; i++) {
+        MvcResult polled =
+            mockMvc
+                .perform(
+                    get("/api/data/import/" + job.get("jobId").asText())
+                        .header("X-Import-Job-Token", job.get("jobToken").asText()))
+                .andReturn();
+        status = json(polled).get("data").get("status").asText();
+        if ("success".equals(status) || "failed".equals(status)) {
+          break;
+        }
+        Thread.sleep(100);
+      }
+      assertThat(status).as("第 %d 次导入失败", attempt).isEqualTo("success");
+
+      // 导入成功后既有令牌失效，重新登录再继续第二轮
+      MvcResult stale = call(get("/api/users"), adminToken());
+      assertThat(stale.getResponse().getStatus()).isEqualTo(401);
+      token = login(ADMIN_ACCOUNT, ADMIN_PASSWORD);
+    }
   }
 
   // ------------------------------------------------------------ 角色写操作

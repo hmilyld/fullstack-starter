@@ -57,13 +57,16 @@ async def _restore(job: ImportJob, upload_path: Path, password: str) -> None:
     except Exception as exc:
         data_operation_state.finish_job(job, status="failed", message=str(exc))
     finally:
-        await asyncio.to_thread(upload_path.unlink, True)
+        await asyncio.to_thread(upload_path.unlink, missing_ok=True)
 
 
 async def start_import(file: UploadFile, password: str, owner_id: int) -> ImportJobHandle:
     settings = get_settings()
     temp_dir = Path(settings.data_tmp_dir)
-    await asyncio.to_thread(temp_dir.mkdir, True, True)
+    # 必须用关键字参数：Path.mkdir 的第二个位置参数是 mode，不是 exist_ok，
+    # 写成 mkdir(True, True) 会把 mode 设成 1 且 exist_ok 仍为 False，
+    # 于是第二次导入直接抛 FileExistsError。
+    await asyncio.to_thread(temp_dir.mkdir, parents=True, exist_ok=True)
 
     job = data_operation_state.begin_job(owner_id)
     if job is None:
@@ -73,7 +76,7 @@ async def start_import(file: UploadFile, password: str, owner_id: int) -> Import
     try:
         await _save_upload(file, upload_path)
     except Exception as exc:
-        await asyncio.to_thread(upload_path.unlink, True)
+        await asyncio.to_thread(upload_path.unlink, missing_ok=True)
         data_operation_state.finish_job(job, status="failed", message=str(exc))
         raise AppError(str(exc)) from exc
 

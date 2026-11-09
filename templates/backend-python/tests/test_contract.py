@@ -717,3 +717,59 @@ async def test_export_is_zip_with_password_header(client, admin_headers) -> None
     assert response.headers["content-type"] == "application/zip"
     assert response.headers.get("X-Export-Password")
     assert response.content[:2] == b"PK"
+
+
+async def test_import_twice_in_a_row(client, admin_headers) -> None:
+    """连续导入两次都必须成功。
+
+    ``start_import`` 曾写成 ``temp_dir.mkdir(True, True)``：``Path.mkdir`` 的
+    第二个位置参数是 ``mode`` 而不是 ``exist_ok``，于是 ``mode`` 变成 1、
+    ``exist_ok`` 仍为 False，第二次导入直接抛 ``FileExistsError`` 变成 500。
+    只有同一进程内导入过第二次才会暴露，所以这里必须跑两轮。
+    """
+    import asyncio
+    import io
+    import zipfile
+
+    export = await client.post("/api/data/export", headers=admin_headers)
+    assert export.status_code == 200
+    password = export.headers["X-Export-Password"]
+    archive = export.content
+
+    # 先确认导出的 ZIP 结构是契约要求的那几项
+    names = zipfile.ZipFile(io.BytesIO(archive)).namelist()
+    for required in ("manifest.json", "schema.sql", "checksums.sha256"):
+        assert required in names, f"导出包缺少 {required}"
+
+    for attempt in (1, 2):
+        created = await client.post(
+            "/api/data/import",
+            headers=admin_headers,
+            data={"password": password},
+            files={"file": ("backup.zip", archive, "application/zip")},
+        )
+        assert created.status_code == 202, f"第 {attempt} 次导入未被接受: {created.text}"
+        payload = created.json()
+        assert payload["code"] == 0, payload
+        job = payload["data"]
+
+        status = None
+        for _ in range(60):
+            polled = await client.get(
+                f"/api/data/import/{job['jobId']}",
+                headers={"X-Import-Job-Token": job["jobToken"]},
+            )
+            status = polled.json()["data"]["status"]
+            if status in ("success", "failed"):
+                break
+            await asyncio.sleep(0.1)
+        assert status == "success", f"第 {attempt} 次导入失败: {status}"
+
+        # 导入成功后所有既有令牌失效，重新登录再继续第二轮
+        stale = await client.get("/api/users", headers=admin_headers)
+        assert stale.status_code == 401
+        relogin = await client.post(
+            "/api/auth/login", json={"account": "admin", "password": "123456"}
+        )
+        assert relogin.json()["code"] == 0
+        admin_headers["Authorization"] = f"Bearer {relogin.json()['data']['token']}"
