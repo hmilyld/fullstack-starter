@@ -17,7 +17,10 @@ from app.core.database import Base
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # disable_existing_loggers 默认是 True，会把已经创建的 uvicorn 等 logger 一并禁用。
+    # 启动迁移跑在 lifespan 里，一旦静音，之后连 "Application startup complete"、
+    # 访问日志和启动失败的堆栈都不会再输出，容器看起来就是"卡住不动"。
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
 

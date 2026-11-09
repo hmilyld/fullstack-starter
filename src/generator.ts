@@ -284,10 +284,30 @@ set -e
 # 确保数据目录存在
 mkdir -p /app/data
 
-# 启动后端（后台）
-cd /app && python -m uvicorn app.main:app --host 0.0.0.0 --port 8088 &
-# 启动 Nginx（前台）
-nginx -g "daemon off;"
+# 启动后端
+cd /app
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8088 &
+BACKEND_PID=$!
+
+# 启动 Nginx
+nginx -g "daemon off;" &
+NGINX_PID=$!
+
+stop_all() {
+  kill "$BACKEND_PID" "$NGINX_PID" 2>/dev/null || true
+  wait 2>/dev/null || true
+}
+# bash 是容器里的 1 号进程，需要把停止信号转发给两个子进程
+trap 'stop_all; exit 0' TERM INT
+
+# 任一进程退出就停掉另一个并整体退出：
+# 否则后端启动失败时 Nginx 仍在对外提供页面，接口全部 502，容器状态却一直是 Up，
+# 从外部看就像"卡住不动"。
+STATUS=0
+wait -n "$BACKEND_PID" "$NGINX_PID" || STATUS=$?
+trap - TERM INT
+stop_all
+exit "$STATUS"
 STARTUP
 
 CMD ["/app/startup.sh"]
