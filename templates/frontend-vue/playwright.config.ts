@@ -8,7 +8,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   expect: { timeout: 10_000 },
   use: {
-    baseURL: "http://localhost:5199",
+    baseURL: "http://localhost:5198",
     trace: "on-first-retry",
   },
   projects: [
@@ -19,8 +19,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --port 5199",
-    url: "http://localhost:5199",
+    command: "npm run dev -- --port 5198",
+    url: "http://localhost:5198",
     reuseExistingServer: !process.env.CI,
     stdout: "ignore",
     stderr: "pipe",
