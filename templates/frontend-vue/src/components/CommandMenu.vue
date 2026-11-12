@@ -2,7 +2,12 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { CornerDownLeft, Search } from "@lucide/vue"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { useCommandMenu } from "@/composables/use-command-menu"
 import { useNavigation } from "@/composables/use-navigation"
@@ -176,6 +181,9 @@ onUnmounted(() => {
       class="top-[12%] max-h-[70svh] max-w-[calc(100%-2rem)] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg"
     >
       <DialogTitle class="sr-only">快速查找</DialogTitle>
+      <DialogDescription class="sr-only">
+        搜索页面、菜单或外观操作
+      </DialogDescription>
       <div class="flex items-center gap-2 border-b px-3">
         <Search class="size-4 shrink-0 text-muted-foreground" />
         <Input

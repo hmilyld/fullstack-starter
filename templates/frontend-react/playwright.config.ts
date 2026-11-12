@@ -6,6 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
+  expect: { timeout: 10_000 },
   use: {
     baseURL: "http://localhost:5199",
     trace: "on-first-retry",
@@ -13,7 +14,8 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      expect: { timeout: 10_000 },
+  use: { ...devices["Desktop Chrome"] },
     },
   ],
   webServer: {

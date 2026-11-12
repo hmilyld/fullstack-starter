@@ -147,6 +147,26 @@ export async function mockApi(page: Page) {
           })
         case "/api/dashboard/activity":
           return ok([])
+        case "/api/system/config":
+          return ok({
+            siteName: "管理系统",
+            siteDescription: "",
+            keywords: "",
+            maintenanceEnabled: false,
+            maintenanceMessage: "",
+            openRegistration: true,
+            manualReview: false,
+            defaultRoleId: "user",
+            welcomeMessage: "",
+            smtpEnabled: false,
+            smtpHost: "",
+            smtpPort: 465,
+            smtpUsername: "",
+            smtpPassword: "",
+            smtpFromName: "",
+            smtpFromEmail: "",
+            smtpUseSsl: true,
+          })
         case "/api/users":
           return ok({ list: [user], total: 1, page: 1, pageSize: 8 })
         case "/api/roles":

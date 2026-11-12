@@ -3,7 +3,12 @@ import { useNavigate } from "react-router"
 import { CornerDownLeftIcon, SearchIcon } from "lucide-react"
 
 import { useTheme } from "@/components/theme-provider"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useNavigation } from "@/hooks/use-navigation"
@@ -178,6 +183,9 @@ export function CommandMenu() {
         className="top-[12%] max-h-[70svh] max-w-[calc(100%-2rem)] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
         <DialogTitle className="sr-only">快速查找</DialogTitle>
+        <DialogDescription className="sr-only">
+          搜索页面、菜单或外观操作
+        </DialogDescription>
         <div className="flex items-center gap-2 border-b px-3">
           <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
           <Input
