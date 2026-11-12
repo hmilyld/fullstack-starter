@@ -1,8 +1,12 @@
 > [简体中文](../zh/README.md) ｜ **English**
 
-# create-fullstack-app
+# Fullstack Forge
 
-A full-stack application scaffolder — generate a system with a complete admin panel in one command.
+A full-stack scaffolder — generate a system with a complete admin panel in one command. Pick React or Vue for the frontend, FastAPI or Spring Boot for the backend: all four combinations share one API contract and one visual spec. The generator itself is published as the npm package `create-fullstack-app`.
+
+![Dashboard](../images/dashboard.webp)
+
+More screens (login, user management, settings, audit logs) are in the [root README](../../README.md); the docs site <https://fullstack.hmilyld.com/en/> covers each module.
 
 ## Features
 
@@ -12,14 +16,16 @@ A full-stack application scaffolder — generate a system with a complete admin 
 - 🧩 **Complete modules**: users, roles, permissions, menus, system settings, AI models and presets, audit logs, data management, dashboard
 - 🐳 **Docker ready**: single-image deployment with an Nginx reverse proxy
 - 📊 **Works out of the box**: dashboard stats, user/role/permission CRUD, paginated search, personal settings
-- 🧭 **List experience**: per-table column visibility (remembered), page size, sticky headers, multi-select bulk actions, a ⌘K command palette, and an unsaved-changes warning
+- 🧭 **List experience**: per-table column visibility and row density (remembered), page size, sticky headers, multi-select bulk actions, a ⌘K command palette (with recent pages), an appearance drawer (theme / sidebar variant), and an unsaved-changes warning
+- 🎛 **Design spec**: blue-grey neutrals with a deep navy primary, Inter / Manrope, a 6/8/10/14/18 radius scale; tokens and component rules live in `templates/frontend-react/DESIGN.md` (the Vue template is identical)
+- 🗓 **Date-time control**: a custom Chinese calendar with hour/minute inputs (native `datetime-local` renders English `mm/dd/yyyy` and has an inconsistent box model across browsers)
 
 ## Features of the Generated Project
 
 | Module | Features |
 |--------|----------|
 | Authentication | Token login, registration, logout, login/registration rate limiting, automatic logout on 401 |
-| Dashboard | Stat cards + recent activity |
+| Dashboard | Stat cards + a 7-day activity trend (hand-drawn SVG, no chart dependency) + recent activity + shortcuts |
 | User management | List + pagination + search + detail + create/edit + delete + reset password + batch role assignment |
 | Role management | List + pagination + search + create/edit (wide dialog with a permission tree) + delete (preset roles cannot be deleted; users are handed over to the default role) |
 | Permission overview | Read-only view of menu permissions + operation permissions; operation permissions are maintained in Menu & Permissions; auto-synced with the permission catalog at startup |
@@ -30,8 +36,8 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | Audit logs | Records of write operations and permission denials, filtered by user/status/action/time, paginated view |
 | Data management | AES-encrypted full export, same-version full import, global freeze during import, all sessions invalidated |
 | Profile | Edit profile, change password |
-| Device support | Responsive across phone, tablet, and desktop; phones use cards and drawers, tablets use an icon rail, desktop uses the full sidebar |
-| Lists & interaction | Column visibility remembered per table, page size, sticky table headers, multi-select bulk actions, card lists on phones; ⌘K command palette; unsaved-changes warning |
+| Device support | Responsive across phone, tablet, and desktop: `< 768px` card lists + drawer nav, `768–1279px` icon rail, `≥ 1280px` full sidebar; below 1280 it starts collapsed, including when the viewport shrinks at runtime |
+| Lists & interaction | Column visibility and row density remembered per table, page size, sticky table headers, multi-select bulk actions, card lists on phones; ⌘K command palette (recent pages first); appearance drawer; unsaved-changes warning; a custom date-time picker |
 
 Default accounts: `admin / 123456` (the only administrator); `zhangsan / lisi / wangwu / zhaoliu` all use the password `123456` (regular users). New accounts are assigned the "pending review" or "regular user" role according to system settings.
 
@@ -181,6 +187,17 @@ cd <generated project>/backend && start the backend
 | Database | SQLite (aiosqlite, Alembic migrations) | SQLite file (./data/app.db, Flyway migrations) |
 | Auth | PyJWT + bcrypt (token revoked on logout) | Sa-Token (UUID-style token) + BCrypt |
 | Secret | Env var `JWT_SECRET_KEY` (refuses to start on a weak key) | No secret needed (Sa-Token server-side session token) |
+
+## Design Spec
+
+Both frontends follow one design spec (`templates/frontend-react/DESIGN.md`, `templates/frontend-vue/DESIGN.md`):
+
+- **Color**: neutrals carry a blue hue (`oklch` 256–265) with a deep navy primary and five semantic chart colors; separate light and dark token sets
+- **Type**: Inter for body text, Manrope for headings, monospace for codes and action names
+- **Radius**: 6 / 8 / 10 / 14 / 18 for sm / md / lg / xl / 2xl — no one-off magic values
+- **Sizing**: controls 36px (44px on touch), icon buttons 32px (40px on touch)
+- **Breakpoints**: Compact `< 768px`, Medium `768–1279px`, Expanded `≥ 1280px`; content max width 1536px
+- **Components**: `DataList` (column-driven table + cards + states), `PageHeader`, `ListShell`, `ColumnToggle`, `DensityToggle`, `DateTimeField`, `ConfigDrawer`, `CommandMenu`, kept in sync across both stacks
 
 ## API Reference
 
