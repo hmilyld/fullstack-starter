@@ -1,8 +1,156 @@
-# 前端三端设计规范
+# 前端设计系统（frontend-react）
 
-本文件是 `frontend-react` 模板的布局、交互与 Token 约定。新增页面必须遵守，不要在页面里重新发明断点、卡片、分页或弹窗结构。
+本文件是 `frontend-react` 模板的**唯一视觉真源**：色彩、字体、间距、圆角、组件形态、页面结构与交互约定。新增或修改页面必须遵循；不要在页面里重新发明断点、卡片、分页或弹窗。
 
-## 1. 三端模式
+视觉方向参照 [satnaing/shadcn-admin](https://github.com/satnaing/shadcn-admin)：**蓝灰中性色 + 深藏蓝主色 + 克制的高饱和图表色**，密集但可扫读的运营后台。目标不是"花哨"，而是"精密工具"：层级清楚、边界明确、数字对齐、状态一眼可辨。
+
+`frontend-vue` 必须与本文件保持同一套 Token 与页面结构（允许组件实现不同）。
+
+---
+
+## 1. 设计原则
+
+1. **结构即信息**：边框、分隔线、分组标签只用来表达层级，不做装饰。
+2. **一屏之内可判断**：首屏必须回答"系统现在什么状态"——指标、趋势、最近动作三者缺一不可。
+3. **主色只给关键动作**：一屏最多一个主按钮；其余用 `outline` / `ghost`。
+4. **状态用色，身份不用色**：成功/警告/失败/信息有语义色；角色、分组等身份信息用中性色阶，不靠随机彩色区分。
+5. **边界靠 border，深度靠 shadow**：卡片 `border + shadow-sm`，不叠加 `ring` 模拟描边；浮层才用 `shadow-lg`。
+6. **数字必须对齐**：所有数值、计数、金额使用 `tabular-nums`。
+7. **动效服务于变化**：只保留进入/展开/反馈三类，时长 120–240ms，`prefers-reduced-motion` 下全部退化为瞬时。
+
+---
+
+## 2. 色彩
+
+所有颜色以 OKLCH 定义于 `src/index.css`。**中性色一律带蓝相（hue ≈ 256–265）**，不使用 chroma = 0 的纯灰——纯灰在屏幕上显脏、显廉价。
+
+### 2.1 语义 Token（亮色）
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `--background` | `oklch(1 0 0)` | 页面底色 |
+| `--foreground` | `oklch(0.129 0.042 264.695)` | 主文本 |
+| `--card` | `oklch(1 0 0)` | 卡片 |
+| `--popover` | `oklch(1 0 0)` | 浮层 |
+| `--primary` | `oklch(0.208 0.042 265.755)` | 主按钮、品牌块 |
+| `--primary-foreground` | `oklch(0.984 0.003 247.858)` | 主色上的文字 |
+| `--secondary` | `oklch(0.968 0.007 247.896)` | 次级按钮、标签底 |
+| `--muted` | `oklch(0.968 0.007 247.896)` | 弱化底、骨架屏 |
+| `--muted-foreground` | `oklch(0.554 0.046 257.417)` | 辅助文本（≥ 4.5:1） |
+| `--accent` | `oklch(0.968 0.007 247.896)` | hover / 选中底 |
+| `--destructive` | `oklch(0.577 0.245 27.325)` | 删除、失败 |
+| `--success` | `oklch(0.52 0.13 152)` | 成功、在线 |
+| `--warning` | `oklch(0.666 0.157 74.3)` | 待处理、告警 |
+| `--info` | `oklch(0.546 0.157 258)` | 提示、审核中 |
+| `--border` | `oklch(0.929 0.013 255.508)` | 边框、分隔线 |
+| `--input` | `oklch(0.929 0.013 255.508)` | 表单描边 |
+| `--ring` | `oklch(0.62 0.035 257)` | 焦点环（≥ 3:1） |
+
+### 2.2 语义 Token（暗色）
+
+`--background oklch(0.129 0.042 264.695)`、`--card oklch(0.14 0.04 259.21)`（比底色略亮一档，靠 border 分界）、`--popover oklch(0.208 0.042 265.755)`、`--primary oklch(0.929 0.013 255.508)`（反相为浅色按钮）、`--border oklch(1 0 0 / 10%)`、`--input oklch(1 0 0 / 15%)`、`--ring oklch(0.704 0.04 256.788)`。
+
+暗色下**品牌色不换相**：`--sidebar-*` 全部由 `--background` / `--foreground` / `--primary` 间接引用，禁止在 `.dark` 里另写一个品牌色。
+
+### 2.3 图表色
+
+图表是仪表盘的第一视觉，必须成体系，不能是灰阶。
+
+| Token | 亮色 | 暗色 |
+|---|---|---|
+| `--chart-1` | `oklch(0.646 0.222 41.116)` 橙 | `oklch(0.488 0.243 264.376)` 靛 |
+| `--chart-2` | `oklch(0.6 0.118 184.704)` 青 | `oklch(0.696 0.17 162.48)` 绿 |
+| `--chart-3` | `oklch(0.398 0.07 227.392)` 深蓝 | `oklch(0.769 0.188 70.08)` 黄 |
+| `--chart-4` | `oklch(0.828 0.189 84.429)` 明黄 | `oklch(0.627 0.265 303.9)` 紫 |
+| `--chart-5` | `oklch(0.769 0.188 70.08)` 琥珀 | `oklch(0.645 0.246 16.439)` 红 |
+
+规则：
+
+- 单序列用 `--chart-1`，多序列按 1→5 顺序取，最多 5 条。
+- 面积图用 `var(--chart-1)` 到透明的渐变，透明度上限 0.25。
+- 坐标轴文字用 `--muted-foreground`，不画坐标轴线（`axisLine={false}`、`tickLine={false}`）。
+- 图例必须有文字，不能只靠颜色区分序列。
+- 无数据时给"图表骨架 + 一句说明"，不要渲染空坐标系。
+
+### 2.4 侧边栏
+
+`--sidebar` 引用 `--background`（亮色为白、暗色随底色），`--sidebar-accent` 引用 `--accent`。当前项 = `bg-sidebar-accent + font-medium`，与底色的亮度差必须 ≥ 0.03，不允许"几乎看不见"的选中态。
+
+---
+
+## 3. 字体与字阶
+
+| 角色 | 字体 | 说明 |
+|---|---|---|
+| 正文 / UI | `Inter Variable`（`@fontsource-variable/inter`） | 自托管，无外链 |
+| 标题 / 数字 | `Manrope Variable`（`@fontsource-variable/manrope`） | 用于页面标题、统计数值、品牌名 |
+
+中文由系统字体回退，因此 Manrope 只作用于拉丁字符与数字，不会破坏中文排版。
+
+| 层级 | 规格 | 使用位置 |
+|---|---|---|
+| Display | 30/36, 600, `tracking-tight` | 统计卡数值 |
+| H1 | 24/32, 600, `tracking-tight`, `text-balance` | `PageHeader` |
+| H2 | 16/24, 600 | `CardTitle`、区块标题 |
+| Body | 14/20, 400 | 表格、表单、正文 |
+| Small | 13/18, 400 | 辅助说明、表头 |
+| Micro | 12/16, 500 | 徽标、时间戳、`kbd` |
+
+规则：
+
+- 正文最小 12px，可点击文字不小于 14px。
+- 标题用 `text-wrap: balance`，正文段落用 `text-pretty`。
+- 数字列、金额、计数一律 `tabular-nums`。
+- 不用全大写小标签（CJK 下无意义），不做"一个小词变色/斜体"的标题点缀。
+- 引号用 `“ ”`，省略号用 `…`。
+
+---
+
+## 4. 间距、圆角与层级
+
+### 4.1 间距
+
+基准 4px。页面节奏只有三档：
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `--layout-gutter` | 16px（Compact）/ 24px（≥768） | 页面左右留白 |
+| `--page-gap` | 16px | 页面区块间距 |
+| `--card-spacing` | 24px | 卡片内边距与卡片内元素间距 |
+
+表单字段间距 20px；表格单元格内边距 8px（`p-2`），行高由内容决定；按钮组间距 8px。标题与其下方内容的间距必须小于区块之间的间距。
+
+### 4.2 圆角（单一体系，`--radius: 0.625rem`）
+
+| 类 | 值 | 使用 |
+|---|---|---|
+| `rounded-sm` | 6px | 徽标内的小块、`kbd` |
+| `rounded-md` | 8px | **按钮、输入框、下拉项、标签** |
+| `rounded-lg` | 10px | 分段控件、提示条 |
+| `rounded-xl` | 14px | **卡片、弹窗、浮层容器** |
+| `rounded-2xl` | 18px | 品牌块、登录卡片 |
+| `rounded-full` | — | 头像、状态点 |
+
+`--radius` 到 `--radius-4xl` 的映射为 `r-4 / r-2 / r / r+4 / r+8 / r+12 / r+16`。**禁止**再写 `rounded-[min(var(--radius-4xl),24px)]` 这类一次性魔法值。
+
+### 4.3 高度与层级
+
+| Token | 桌面（pointer: fine） | 触屏（`pointer: coarse` 或 < 768px） |
+|---|---|---|
+| `--control-h` | 36px | 44px |
+| `--icon-btn` | 32px | 40px |
+| `--icon-btn-xs` | 28px | 36px |
+| `--dialog-inset` | 24px | 16px |
+
+阴影：卡片 `shadow-sm`；下拉/选择器 `shadow-lg`；弹窗 `shadow-xl`；按钮 `shadow-xs`。**同一个元素只用一种边界手段**：卡片用 1px border，不再叠 `ring-foreground/5`。
+
+### 4.4 布局宽度
+
+内容最大宽 `--layout-max: 80rem`（1280px），≥1024px 生效；Compact/Medium 为 100%。顶栏与内容区共用同一最大宽与左右留白，保证面包屑与页面标题左对齐。
+
+---
+
+## 5. 三端模式
 
 | 模式 | 断点 | 导航 | 列表 | 筛选 | 弹窗 |
 |---|---|---|---|---|---|
@@ -10,52 +158,109 @@
 | Medium | `768–1023px` | 48px 图标栏 | 表格 + 优先列 | 2–3 列内联 | 居中 |
 | Expanded | `≥ 1024px` | 256px 完整侧边栏 | 表格 + 全部列 | 多列内联 | 居中 |
 
-补充规则：
+- **布局按宽度切换，控件密度按输入方式切换**：触屏通过 `pointer: coarse` 放大控件，Compact 宽度下始终使用触控尺寸。
+- Medium 默认收起为图标栏，Expanded 默认展开，用户切换后写入 cookie。
+- 顶栏固定：左侧菜单键 + 面包屑，右侧搜索、主题、账户菜单。**账户菜单固定在右上角**，不放回侧边栏底部。
+- 触控目标不小于 44×44，相邻目标间距至少 8px。
 
-- **布局按宽度切换，控件密度按输入方式切换**。触屏设备通过 `pointer: coarse` 放大控件；Compact 宽度下也始终使用触控尺寸。
-- 内容最大宽度 `1440px`，超宽屏居中，不把表格或表单拉满整屏。
-- Medium 默认收起侧边栏为图标栏；Expanded 默认展开。用户手动切换后写入 cookie。
-- 顶栏固定：左侧为菜单/面包屑，右侧为主题切换与账户菜单。账户菜单统一放在右上角（`UserMenu`），不要放回侧边栏底部。
+---
 
-## 2. Token
+## 6. 组件规范
 
-定义在 `src/index.css`：
+### 6.1 基础件
 
-| Token | Compact | Medium | Expanded | 用途 |
-|---|---|---|---|---|
-| `--layout-gutter` | 16px | 24px | 24px | 页面左右留白 |
-| `--layout-max` | 100% | 100% | 1440px | 内容最大宽度 |
-| `--page-gap` | 16px | 24px | 24px | 页面区块间距 |
-| `--control-h` | 44px | 32 / 44px¹ | 32 / 44px¹ | 输入、按钮高度 |
-| `--icon-btn` | 40px | 28 / 40px¹ | 28 / 40px¹ | 图标按钮 |
-| `--icon-btn-xs` | 36px | 24 / 36px¹ | 24 / 36px¹ | 小图标按钮 |
-| `--dialog-inset` | 16px | 24px | 24px | 弹窗安全边距 |
+| 组件 | 形态 |
+|---|---|
+| `Button` | 高 `--control-h`，`rounded-md`，`text-sm font-medium`，`gap-2`，`shadow-xs`；主按钮 `bg-primary`，次按钮 `border + bg-background`，危险操作 `bg-destructive/10 + text-destructive` |
+| `Input` / `Select` / `Textarea` | `rounded-md`，`border-input`，`bg-transparent`，`shadow-xs`；聚焦时 `border-ring + ring-[3px] ring-ring` |
+| `Card` | `rounded-xl border bg-card shadow-sm`，内边距 24px，内部间距 24px；标题 16/600，说明 13/muted |
+| `Badge` | `rounded-md`，`h-5`，`text-xs font-medium`；语义变体 `success / warning / info / destructive / secondary / outline` |
+| `Table` | 表头 `h-10 text-muted-foreground text-[13px]`，行 `border-b` 且 hover `bg-muted/50`，单元格 `p-2` |
+| `Dialog` | `rounded-xl border shadow-xl`，标题 18/600，底部操作右对齐 |
+| `DropdownMenu` / `Select` 内容 | `rounded-xl border shadow-lg`，选项 `rounded-md` |
+| `Tabs` | 轨道 `rounded-lg bg-muted p-1`，触发器 `rounded-md`，选中 `bg-background shadow-xs` |
+| `Skeleton` | `bg-muted` + 1.6s 微光，不做彩色脉冲 |
+| `EmptyState` | 虚线边框容器 + 图标底块 + 标题 + 说明 + 主操作，垂直居中 |
 
-¹ 鼠标环境取小值，`pointer: coarse` 取大值。
+### 6.2 结构件
 
-页面根节点统一使用 `gap-(--page-gap)`；主内容区由 `AdminLayout` 统一 `max-w-(--layout-max)` 与 `px-(--layout-gutter)`。
+| 组件 | 约定 |
+|---|---|
+| `AppSidebar` | 顶部品牌块：32px 方形 logo（`bg-sidebar-primary`）+ 站点名（Manrope 600）+ 一行副标题（12px muted）；中部菜单按分组，分组可折叠且记住展开状态；底部放版本/说明信息，**不放账户菜单** |
+| `Header` | 高 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、账户 |
+| `CommandMenu` | ⌘K / Ctrl+K 打开，搜索路由与菜单项，↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明 |
+| `PageHeader` | H1 + 一行说明 + 右侧操作；Compact 下操作换行且主操作全宽 |
+| `ListShell` | 卡片外壳：标题/说明/工具栏 → 内容 → 底部分页；工具栏在 Compact 下纵向堆叠 |
 
-## 3. 组件约定
+### 6.3 状态色映射
 
-| 场景 | 使用 | 不要 |
-|---|---|---|
-| 页面标题 | `PageHeader` | 手写 `h1` + `p` |
-| 列表卡片 | `ListShell` | 每页重复 Card + 分页 |
-| 手机列表项 | `RecordCard` | 手机硬塞表格 |
-| 行操作 | `RowActions` | 4 个图标挤在一行 |
-| 分页 | `TablePagination` | 手写上一页/下一页 |
-| 新增/编辑 | `FormDialog` | 自写 Dialog + 表单 |
-| 空态 | `EmptyState` | “暂无数据”纯文本 |
-| 加载失败 | `ErrorState` / `InlineError` | 只弹 Toast |
-| 筛选 | 桌面内联；手机 `Sheet side="bottom"` | 手机堆 5 个筛选框 |
-| 导航开关 | `SidebarTrigger` | 自写菜单按钮 |
-| 账户菜单 | `UserMenu`（Header 右上角） | 侧边栏底部用户块 |
+| 场景 | 变体 |
+|---|---|
+| 管理员角色 | `default`（primary） |
+| 内置角色 | `secondary` |
+| 自定义角色 | `outline` |
+| 成功 / 启用 / 在线 | `success` |
+| 待审核 / 待处理 / 预警 | `warning` |
+| 审核中 / 提示 | `info` |
+| 失败 / 禁用 / 删除 | `destructive` |
 
-`ui/sidebar` 已内置移动端 Sheet 与 `openMobile` 状态；不要在 Header 里另造移动抽屉。
+---
 
-- 登录/注册页使用居中分栏卡片：桌面左侧品牌说明、右侧表单；`<lg` 隐藏品牌面板，在表单上方显示紧凑品牌。表单列 `max-w-sm`，品牌面板使用 `bg-primary`，暗色模式改用 `bg-background`。
+## 7. 页面配方
 
-## 4. 列优先级
+### 7.1 仪表盘
+
+首屏结构固定为四段（顺序不可调换）：
+
+1. **标题行**：`PageHeader`，右侧一个刷新类操作。
+2. **指标行**：4 张统计卡，`sm:grid-cols-2 lg:grid-cols-4`；每卡 = 标签 + 图标（16px，muted）+ 数值（30/600 `tabular-nums`）+ 一行副文本（环比或说明）。
+3. **图表行**：`lg:grid-cols-7`，面积/柱状图占 4 栏，分布或最近动态占 3 栏。图表卡必须有标题、说明与单位。
+4. **快捷入口**：有权限的页面入口，`sm:grid-cols-2`，图标 + 名称 + 一句说明。
+
+占位数据必须就地标注（例如数值旁的小号“演示数据”），不得用整屏 `Alert` 打断首屏。
+
+### 7.2 列表页
+
+`PageHeader` → `ListShell`（搜索 + 新增 + 次操作）→ 表格（≥768）或 `RecordCard`（<768）→ `TablePagination`。空态、错误态、加载态三件套齐全；表格操作列 `sticky right-0`。
+
+### 7.3 表单页
+
+卡片分组，每组一个 `CardHeader`（标题 + 说明）；字段用 `Field` + 可见 `FieldLabel`，错误贴近字段；底部操作右侧对齐，主操作在最后。
+
+### 7.4 登录 / 注册
+
+桌面左右分栏：左侧 `bg-primary` 品牌面板（logo 方块 + 站点名 + 一句话价值 + 能力列表），右侧表单列 `max-w-sm`。`<lg` 隐藏品牌面板，在表单上方显示紧凑品牌行。登录卡片 `rounded-2xl border shadow-xl`。
+
+---
+
+## 8. 动效
+
+| 场景 | 规格 |
+|---|---|
+| 浮层进入 | `fade-in` + `zoom-in-95`，150ms |
+| 折叠展开 | 高度过渡 200ms `ease-out` |
+| 悬停 / 聚焦 | 颜色与阴影 150ms |
+| 页面切换 | 不做整页位移；只允许内容淡入 120ms |
+| 骨架屏 | 透明度微光 1.6s 循环 |
+
+`prefers-reduced-motion: reduce` 下动画时长降至 0.01ms（已在 `index.css` 全局处理），不依赖动画结束才可见。
+
+---
+
+## 9. 可访问性底线
+
+- 正文与占位文本对比度 ≥ 4.5:1，大字 ≥ 3:1；彩色底上的次要文字用同色相前景，不用灰。
+- 焦点必须可见：`focus-visible` 使用实色 `--ring` 3px，禁止只给 `outline-none`。
+- 图标按钮必须有可访问名称（`aria-label` 或 `sr-only` 文本）。
+- 破坏性操作二次确认；提交中按钮显示加载态并禁用。
+- 表单控件有 `label` / `htmlFor`；错误用 `aria-invalid` + 就地提示。
+- 弹窗包含标题；移动端弹窗 `overscroll-behavior: contain`。
+- 表格横向滚动时操作列固定在右侧；手机不显示表格。
+- 键盘可达：菜单折叠、命令面板、排序按钮均可操作。
+
+---
+
+## 10. 列优先级
 
 | 表 | 始终显示 | `≥768` | `≥1024` | `≥1280` |
 |---|---|---|---|---|
@@ -66,29 +271,13 @@
 | 审计 | 时间、动作、状态 | 操作者 | IP | 详情 |
 | 权限总览 | 名称、编码、类型 | — | — | — |
 
-- 菜单与权限页使用三级树形表格：分组 → 菜单 → 操作权限；操作权限为独立行，不单独成页。
-- 桌面列：名称、类型、路由 / 权限编码、标记、操作；操作列 `sticky right-0`。分组和菜单可拖拽，操作权限按编码排序、不参与拖拽。
-- 操作按钮：新增/编辑直接露出；隐藏、上下移、删除收进“更多”；`<768px` 使用缩进卡片，不横向滚动。
-- 角色权限使用宽弹窗（`sm:max-w-4xl`）+ 权限树表格：勾选菜单会级联选中全部操作，半选表示部分授予；`<768px` 使用手风琴卡片，保留搜索与全选/清空。
-- 角色名称/描述按表单容器宽度两列排布（`@md/field-group`），窄屏自动堆叠，避免窄弹窗里单个输入框占满整行。
-- 权限总览只读，不提供新增/编辑/删除按钮。
+菜单与权限页使用三级树形表格：分组 → 菜单 → 操作权限；分组和菜单可拖拽，操作权限按编码排序、不参与拖拽；`<768px` 使用缩进卡片。
 
-- 表格操作列使用 `sticky right-0`，避免横向滚动时找不到操作。
-- 手机端不显示表格，使用卡片；不要在手机端保留横向滚动表格作为主交互。
+---
 
-## 5. 交互与可访问性
+## 11. 新页面检查清单
 
-- 触控目标不小于 44×44（Web 最低 24×24，本模板按更严格的触控标准执行）；相邻目标间距至少 8px。
-- 所有图标按钮必须有可访问名称；优先 `aria-label`，不要只靠 Tooltip。
-- 破坏性操作必须二次确认。
-- 表单错误显示在字段附近，并使用 `data-invalid` / `aria-invalid`。
-- 弹窗必须包含 `DialogTitle` / `SheetTitle`；关闭按钮文案为中文。
-- 支持 `prefers-reduced-motion`；不要依赖动画结束才可见。
-- 菜单排序必须同时提供拖拽、键盘和“上移/下移”三种方式（WCAG 2.5.7）；拖拽结束即保存，写操作期间禁用排序与其他菜单/操作写操作。
-
-## 6. 新页面检查清单
-
-- [ ] 页面根节点使用 `gap-(--page-gap)`
+- [ ] 页面根节点 `flex flex-col gap-(--page-gap)`
 - [ ] 标题区使用 `PageHeader`
 - [ ] 列表使用 `ListShell` + `TablePagination`
 - [ ] `<768px` 有卡片形态，操作在 `RowActions`
@@ -97,29 +286,33 @@
 - [ ] 筛选在手机使用 Sheet
 - [ ] 弹窗有 Title、取消/提交、内部滚动
 - [ ] 图标按钮有 `aria-label`
-- [ ] 在 390 / 768 / 1440 三个宽度检查无横向页面滚动
+- [ ] 数字列 `tabular-nums`
+- [ ] 颜色只用 Token，不写死 hex
+- [ ] 深浅色都已检查；对比度达标
+- [ ] 390 / 768 / 1440 三个宽度无横向滚动
+- [ ] 纯键盘可完成主流程
 
-## 7. PWA 与测试
+---
 
-- PWA manifest 由 `src/lib/pwa.ts` 在运行时根据「站点名称 / 描述 + 当前主题」生成，`PwaManifest` 挂载在 `SiteConfigProvider` 内。
-- 站点信息保存后调用 `useSiteConfig().refresh()`，侧边栏、页面标题、`theme-color`、`application-name` 与 manifest 同步更新。
-- 静态 `manifest.webmanifest` 只作为首屏回退；运行时使用 Blob URL 覆盖。
-- 图标位于 `public/icons/`：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步更新 `index.html`、`vite.config.ts`、`src/lib/pwa.ts` 与本节。
-- 单元/组件测试使用 Vitest + React Testing Library：`npm test`（单次）、`npm run test:watch`、`npm run test:coverage`。
-- E2E 使用 Playwright：首次执行 `npx playwright install chromium`，随后 `npm run test:e2e`；覆盖登录、手机卡片/抽屉、URL 筛选恢复。
-- 新增共享组件或纯函数必须补单元测试；列表页/表单页至少补一个渲染或交互 smoke test。
+## 12. PWA 与测试
 
-## 8. React / Vue 对齐契约
+- PWA manifest 由 `src/lib/pwa.ts` 运行时生成（站点名称/描述 + 当前主题），`PwaManifest` 挂在 `SiteConfigProvider` 内；静态 `manifest.webmanifest` 仅作首屏回退。
+- 图标位于 `public/icons/`：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步 `index.html`、`vite.config.ts`、`src/lib/pwa.ts` 与本文件。
+- 单元/组件测试：Vitest + React Testing Library（`npm test`、`npm run test:coverage`）。
+- E2E：Playwright（`npm run test:e2e`），覆盖登录、手机卡片/抽屉、URL 筛选恢复。
+- 新增共享组件或纯函数必须补单元测试；列表页/表单页至少一个渲染或交互 smoke test。
 
-后续 Vue 重构以本节作为对照，不要求组件库相同，但布局、交互和状态约定必须一致：
+---
 
-- 三端断点、Token、页面壳、列优先级、卡片/表格切换、弹窗与筛选模式保持一致。
+## 13. React / Vue 对齐契约
+
+- Token：`templates/frontend-vue/src/assets/main.css` 与本文件第 2、4 节逐项一致（颜色、圆角映射、字体、高度、最大宽）。
+- 结构：三端断点、页面壳、列优先级、卡片/表格切换、弹窗与筛选模式保持一致。
 - **URL 状态键**：
   - 列表：`q`、`page`（第 1 页省略 `page`）。
   - 审计日志：`userId`、`status`、`action`、`startTime`、`endTime`、`page`。
   - AI 模型：`tab=models|presets`、`page`、`presetQ`、`presetGroup`。
-  - 搜索输入以 URL 为唯一来源；输入使用 `replace`，请求侧做 300ms 防抖；搜索变化时删除 `page`。
-- 表单：字段使用可见 Label + `id/htmlFor`；控件补 `name`；非登录字段 `autoComplete="off"`；邮箱/编码/URL 等 `spellCheck={false}`；错误贴近字段展示。
-- 导航：页面跳转使用链接语义（`Link` / `<a>`），不要用按钮 `onClick` 模拟跳转。
-- PWA：manifest 名称/描述/主题色/图标清单保持一致；运行时 manifest + 静态回退。
-- 测试：React 使用 Vitest + React Testing Library；Vue 使用 Vitest + `@testing-library/vue`（必要时配合 `@vue/test-utils`）。共享层/纯函数保持同等覆盖，关键页面至少一个渲染或交互 smoke test。
+- 搜索输入以 URL 为唯一来源；输入用 `replace`，请求侧 300ms 防抖；搜索变化时删除 `page`。
+- 表单：可见 Label + `id/htmlFor`；控件补 `name`；非登录字段 `autoComplete="off"`；邮箱/编码/URL `spellCheck={false}`。
+- 导航：页面跳转用链接语义（`Link` / `<a>`），不用按钮 `onClick` 模拟跳转。
+- 主题：`class="dark"` + `color-scheme`；`meta theme-color` 随主题更新。

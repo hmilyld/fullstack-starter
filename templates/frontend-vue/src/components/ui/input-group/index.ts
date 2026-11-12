@@ -34,7 +34,7 @@ export const inputGroupAddonVariants = cva(
 export type InputGroupVariants = VariantProps<typeof inputGroupAddonVariants>
 
 export const inputGroupButtonVariants = cva(
-  "flex items-center gap-2 rounded-2xl text-sm shadow-none",
+  "flex items-center gap-2 rounded-md text-sm shadow-none",
   {
     variants: {
       size: {

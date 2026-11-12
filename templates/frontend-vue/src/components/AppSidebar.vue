@@ -1,28 +1,33 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue"
+import { computed, onMounted, onUnmounted } from "vue"
 import { RouterLink } from "vue-router"
 import BrandMark from "@/components/BrandMark.vue"
 import NavMain from "@/components/NavMain.vue"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { getNavigation } from "@/api/menu"
+import { openCommandMenu } from "@/composables/use-command-menu"
+import {
+  onNavigationRefresh,
+  useNavigation,
+} from "@/composables/use-navigation"
 import { DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
-import type { NavigationGroup } from "@/types/menu"
-
-const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
 
 const siteConfig = useSiteConfigStore()
 const { isMobile, setOpenMobile } = useSidebar()
-const navGroups = ref<NavigationGroup[]>([])
+const { groups: navGroups, load } = useNavigation()
 
 const siteName = computed(
   () => siteConfig.config?.siteName || DEFAULT_SITE_NAME
+)
+const siteDescription = computed(
+  () => siteConfig.config?.siteDescription || "运营管理后台"
 )
 
 const groups = computed(() =>
@@ -36,51 +41,62 @@ const groups = computed(() =>
   }))
 )
 
-let cancelled = false
-
-async function loadNavigation() {
-  try {
-    const response = await getNavigation()
-    if (!cancelled && response.code === 0) navGroups.value = response.data
-  } catch {
-    // 导航不是关键路径，加载失败时保留上一次的菜单
-  }
-}
+let disposeRefresh: (() => void) | null = null
 
 function handleHeaderClick() {
   if (isMobile.value) setOpenMobile(false)
 }
 
 onMounted(() => {
-  void loadNavigation()
-  window.addEventListener(NAVIGATION_REFRESH_EVENT, loadNavigation)
+  void load()
+  disposeRefresh = onNavigationRefresh(() => {
+    void load(true)
+  })
 })
 
 onUnmounted(() => {
-  cancelled = true
-  window.removeEventListener(NAVIGATION_REFRESH_EVENT, loadNavigation)
+  disposeRefresh?.()
 })
 </script>
 
 <template>
   <Sidebar collapsible="icon">
-    <SidebarHeader>
+    <SidebarHeader class="gap-2 p-2">
       <RouterLink
         to="/dashboard"
-        class="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none group-data-[collapsible=icon]:justify-center focus-visible:ring-3 focus-visible:ring-ring/30 max-md:pr-10"
+        class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors outline-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:bg-sidebar-accent focus-visible:ring-[3px] focus-visible:ring-sidebar-ring max-md:pr-10"
         @click="handleHeaderClick"
       >
-        <BrandMark />
-        <span
-          class="truncate text-base font-semibold group-data-[collapsible=icon]:hidden"
+        <BrandMark class="size-9 shrink-0" />
+        <div
+          class="grid min-w-0 flex-1 leading-tight group-data-[collapsible=icon]:hidden"
         >
-          {{ siteName }}
-        </span>
+          <span class="truncate font-heading text-sm font-semibold">
+            {{ siteName }}
+          </span>
+          <span class="truncate text-xs text-muted-foreground">
+            {{ siteDescription }}
+          </span>
+        </div>
       </RouterLink>
     </SidebarHeader>
     <SidebarContent>
       <NavMain :groups="groups" />
     </SidebarContent>
+    <SidebarFooter class="p-2 group-data-[collapsible=icon]:hidden">
+      <button
+        type="button"
+        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring"
+        @click="openCommandMenu"
+      >
+        <span>快速查找</span>
+        <kbd
+          class="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground"
+        >
+          ⌘K
+        </kbd>
+      </button>
+    </SidebarFooter>
     <SidebarRail />
   </Sidebar>
 </template>

@@ -12,7 +12,7 @@ const props = defineProps<{
     data-slot="card-footer"
     :class="
       cn(
-        'flex items-center rounded-b-[min(var(--radius-4xl),24px)] px-(--card-spacing) [.border-t]:pt-(--card-spacing)',
+        'flex items-center px-(--card-spacing) [.border-t]:pt-(--card-spacing)',
         props.class
       )
     "

@@ -6,42 +6,25 @@ import { NavMain } from "@/components/nav-main"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { getNavigation } from "@/api/menu"
+import { openCommandMenu } from "@/components/command-menu"
+import { useNavigation } from "@/hooks/use-navigation"
 import { useSiteConfig } from "@/lib/site-config"
-import type { NavigationGroup } from "@/types/menu"
-
-const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { config } = useSiteConfig()
   const { isMobile, setOpenMobile } = useSidebar()
-  const [navGroups, setNavGroups] = React.useState<NavigationGroup[]>([])
+  const { groups: navGroups } = useNavigation()
 
   const siteName = config?.siteName || "管理系统"
-
-  React.useEffect(() => {
-    let cancelled = false
-    async function loadNavigation() {
-      try {
-        const response = await getNavigation()
-        if (!cancelled && response.code === 0) setNavGroups(response.data)
-      } catch {
-        // 导航不是关键路径，加载失败时保留上一次的菜单
-      }
-    }
-    void loadNavigation()
-    window.addEventListener(NAVIGATION_REFRESH_EVENT, loadNavigation)
-    return () => {
-      cancelled = true
-      window.removeEventListener(NAVIGATION_REFRESH_EVENT, loadNavigation)
-    }
-  }, [])
+  const siteDescription = config?.siteDescription || "运营管理后台"
 
   const groups = navGroups.map((group) => ({
+    id: group.id,
     label: group.name,
     items: group.items.map((item) => ({
       title: item.name,
@@ -52,23 +35,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="gap-2 p-2">
         <Link
           to="/dashboard"
           onClick={() => {
             if (isMobile) setOpenMobile(false)
           }}
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none group-data-[collapsible=icon]:justify-center focus-visible:ring-3 focus-visible:ring-ring/30 max-md:pr-10"
+          className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors outline-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:bg-sidebar-accent focus-visible:ring-[3px] focus-visible:ring-sidebar-ring max-md:pr-10"
         >
-          <BrandMark />
-          <span className="truncate text-base font-semibold group-data-[collapsible=icon]:hidden">
-            {siteName}
-          </span>
+          <BrandMark className="size-9 shrink-0" />
+          <div className="grid min-w-0 flex-1 leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="truncate font-heading text-sm font-semibold">
+              {siteName}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {siteDescription}
+            </span>
+          </div>
         </Link>
       </SidebarHeader>
       <SidebarContent>
         <NavMain groups={groups} />
       </SidebarContent>
+      <SidebarFooter className="p-2 group-data-[collapsible=icon]:hidden">
+        <button
+          type="button"
+          onClick={openCommandMenu}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring"
+        >
+          <span>快速查找</span>
+          <kbd className="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
+            ⌘K
+          </kbd>
+        </button>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

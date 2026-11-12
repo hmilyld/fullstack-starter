@@ -19,7 +19,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
 
   return (
     <main className="flex min-h-svh items-center justify-center bg-background px-(--layout-gutter) py-6 pb-[max(2rem,env(safe-area-inset-bottom))] md:py-10">
-      <div className="grid w-full max-w-6xl overflow-hidden rounded-[min(var(--radius-4xl),24px)] border bg-card shadow-xl ring-1 ring-foreground/5 max-lg:rounded-none max-lg:border-0 max-lg:bg-transparent max-lg:shadow-none max-lg:ring-0 lg:grid-cols-[1.08fr_1fr] dark:ring-foreground/10">
+      <div className="grid w-full max-w-6xl overflow-hidden rounded-2xl border bg-card shadow-xl max-lg:rounded-none max-lg:border-0 max-lg:bg-transparent max-lg:shadow-none max-lg:ring-0 lg:grid-cols-[1.08fr_1fr]">
         <aside className="relative hidden flex-col justify-between gap-10 bg-primary p-10 text-primary-foreground lg:flex xl:p-14 dark:border-border dark:bg-background dark:text-foreground dark:lg:border-r">
           <div className="flex items-center gap-3">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-sm">

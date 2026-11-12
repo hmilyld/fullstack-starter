@@ -23,7 +23,7 @@ export function RecordCard({
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-3 rounded-2xl border bg-card p-4",
+        "flex items-start justify-between gap-3 rounded-xl border bg-card p-4",
         className
       )}
     >

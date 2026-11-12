@@ -24,7 +24,7 @@ export function PageHeader({
       )}
     >
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight text-balance">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight text-balance">
           {title}
         </h1>
         {description && (

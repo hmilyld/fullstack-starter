@@ -17,7 +17,9 @@ defineProps<{
     "
   >
     <div class="flex flex-col gap-1">
-      <h1 class="text-2xl font-bold tracking-tight text-balance">
+      <h1
+        class="font-heading text-2xl font-semibold tracking-tight text-balance"
+      >
         {{ title }}
       </h1>
       <p

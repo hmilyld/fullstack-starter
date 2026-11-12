@@ -5,9 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 <template>
   <div class="flex flex-col gap-(--page-gap)">
     <Skeleton class="h-8 w-56" />
-    <div
-      class="flex flex-col gap-(--page-gap) rounded-[min(var(--radius-4xl),24px)] bg-card p-5 ring-1 ring-foreground/5"
-    >
+    <div class="flex flex-col gap-(--page-gap) rounded-xl border bg-card p-5">
       <div class="flex flex-col gap-2">
         <Skeleton class="h-5 w-32" />
         <Skeleton class="h-4 w-64" />

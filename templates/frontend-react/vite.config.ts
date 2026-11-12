@@ -4,6 +4,9 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 
+// 本地联调时可指向 Python（8088）或 Java（8089）后端
+const apiTarget = process.env.VITE_API_TARGET ?? "http://localhost:8088"
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -69,11 +72,15 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     proxy: {
       "/api": {
-        target: "http://localhost:8088",
+        target: apiTarget,
         changeOrigin: true,
       },
     },
+  },
+  preview: {
+    host: true,
   },
 })
