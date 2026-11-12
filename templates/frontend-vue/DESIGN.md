@@ -173,6 +173,7 @@
 |---|---|
 | `Button` | 高 `--control-h`，`rounded-md`，`text-sm font-medium`，`gap-2`，`shadow-xs`；主按钮 `bg-primary`，次按钮 `border + bg-background`，危险操作 `bg-destructive/10 + text-destructive` |
 | `Input` / `Select` / `Textarea` | `rounded-md`，`border-input`，`bg-transparent`，`shadow-xs`；聚焦时 `border-ring + ring-[3px] ring-ring` |
+| `DateTimeField` | 输入框外观（同 `--control-h`、同宽）＋中文月历浮层：周一为首、格子 32px、今天用 `ring` 标记、时分两位数字输入；值为 `YYYY-MM-DDTHH:mm`，展示 `YYYY-MM-DD HH:mm`。**不使用原生 `datetime-local`**：中文界面下它固定显示 `mm/dd/yyyy, --:-- --`，且各浏览器盒模型不一致，会比其他输入框更高更宽 |
 | `Card` | `rounded-xl border bg-card shadow-sm`，内边距 24px，内部间距 24px；标题 16/600，说明 13/muted |
 | `Badge` | `rounded-md`，`h-5`，`text-xs font-medium`；语义变体 `success / warning / info / destructive / secondary / outline` |
 | `Sonner` | 语义色写在 `index.css` 的 `[data-sonner-theme]` 规则里，深浅色各一套；**不要用 `color-mix` 与白色混合**，浏览器会把白色的 hue 当作 0 参与插值，绿色会偏成品红 |
@@ -187,7 +188,7 @@
 
 | 组件 | 约定 |
 |---|---|
-| `AppSidebar` | 顶部品牌块：32px 方形 logo（`bg-sidebar-primary`）+ 站点名（Manrope 600）+ 一行副标题（12px muted）；中部菜单按分组，分组可折叠且记住展开状态；底部放版本/说明信息，**不放账户菜单** |
+| `AppSidebar` | 顶部品牌块：32px 方形 logo（`bg-sidebar-primary`）+ 站点名（Manrope 600）+ 一行副标题（12px muted）；中部菜单按分组，分组可折叠且记住展开状态；底部只放「快速查找」入口，不放版本号（与页脚重复），**不放账户菜单** |
 | `Header` | 高 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、外观设置、账户 |
 | `CommandMenu` | ⌘K / Ctrl+K 打开，搜索路由、菜单项与外观动作；空查询时先列「最近」；↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明 |
 | `ConfigDrawer` | 外观设置抽屉：主题、侧栏样式（默认 / 浮动 / 内嵌）、折叠方式（图标栏 / 抽屉）；配置存 localStorage，侧栏与抽屉共用 |
@@ -304,7 +305,7 @@
 - [ ] `<768px` 有卡片形态，操作在 `RowActions`
 - [ ] 表格按优先级隐藏列，操作列 sticky
 - [ ] 空态、错误态、加载态齐全
-- [ ] 筛选在手机使用 Sheet
+- [ ] 筛选在手机使用 Sheet；桌面筛选网格 `md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5`，两列时间控件同排，避免列宽压到内容截断
 - [ ] 弹窗有 Title、取消/提交、内部滚动
 - [ ] 图标按钮有 `aria-label`
 - [ ] 数字列 `tabular-nums`
@@ -320,7 +321,7 @@
 - PWA manifest 由 `src/lib/pwa.ts` 运行时生成（站点名称/描述 + 当前主题），`PwaManifest` 挂在 `SiteConfigProvider` 内；静态 `manifest.webmanifest` 仅作首屏回退。
 - 图标位于 `public/icons/`：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步 `index.html`、`vite.config.ts`、`src/lib/pwa.ts` 与本文件。
 - 单元/组件测试：Vitest + `@testing-library/vue`（`npm test`、`npm run test:coverage`）。
-- E2E：Playwright（`npm run test:e2e`），覆盖登录、手机卡片/抽屉、URL 筛选恢复。
+- E2E：Playwright（`npm run test:e2e`），覆盖登录、手机卡片/抽屉、URL 筛选恢复、日期时间选择器。
 - 新增共享组件或纯函数必须补单元测试；列表页/表单页至少一个渲染或交互 smoke test。
 - 图表面板：React 用 `trend-chart.tsx`，Vue 用 `TrendChart.vue`，两者都是**自绘 SVG 面积图、无图表依赖**；坐标、配色、文案与无障碍数据表保持一致。
 

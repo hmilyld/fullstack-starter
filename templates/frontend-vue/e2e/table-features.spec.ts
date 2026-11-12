@@ -141,7 +141,5 @@ test("shows recently visited pages in the command palette", async ({
 
   await page.keyboard.press("Control+K")
   await expect(page.getByText("最近", { exact: true })).toBeVisible()
-  await expect(
-    page.getByRole("option", { name: /用户管理/ })
-  ).toBeVisible()
+  await expect(page.getByRole("option", { name: /用户管理/ })).toBeVisible()
 })

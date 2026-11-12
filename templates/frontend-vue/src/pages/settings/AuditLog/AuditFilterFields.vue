@@ -2,6 +2,7 @@
 import { computed } from "vue"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import DateTimeField from "@/components/shared/DateTimeField.vue"
 import {
   Select,
   SelectContent,
@@ -32,7 +33,7 @@ function update(key: keyof AuditFilters, value: string) {
 </script>
 
 <template>
-  <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+  <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
     <Field>
       <FieldLabel :for="`${prefix}-user`">用户 ID</FieldLabel>
       <Input
@@ -75,24 +76,20 @@ function update(key: keyof AuditFilters, value: string) {
     </Field>
     <Field>
       <FieldLabel :for="`${prefix}-start`">开始时间</FieldLabel>
-      <Input
+      <DateTimeField
         :id="`${prefix}-start`"
         name="audit-start"
-        autocomplete="off"
-        type="datetime-local"
         :model-value="modelValue.startTime"
-        @update:model-value="update('startTime', String($event))"
+        @update:model-value="update('startTime', $event)"
       />
     </Field>
     <Field>
       <FieldLabel :for="`${prefix}-end`">结束时间</FieldLabel>
-      <Input
+      <DateTimeField
         :id="`${prefix}-end`"
         name="audit-end"
-        autocomplete="off"
-        type="datetime-local"
         :model-value="modelValue.endTime"
-        @update:model-value="update('endTime', String($event))"
+        @update:model-value="update('endTime', $event)"
       />
     </Field>
   </div>

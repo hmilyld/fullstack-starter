@@ -12,6 +12,7 @@ import {
 import { ColumnToggle } from "@/components/shared/column-toggle"
 import { DensityToggle } from "@/components/shared/density-toggle"
 import { DataList, type DataColumn } from "@/components/shared/data-list"
+import { DateTimeField } from "@/components/shared/date-time-field"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
 import { RecordCard } from "@/components/shared/record-card"
@@ -178,7 +179,7 @@ export function AuditLogPage() {
 
   function renderFilterFields(prefix: string) {
     return (
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         <Field>
           <FieldLabel htmlFor={`${prefix}-user`}>用户 ID</FieldLabel>
           <Input
@@ -226,24 +227,20 @@ export function AuditLogPage() {
         </Field>
         <Field>
           <FieldLabel htmlFor={`${prefix}-start`}>开始时间</FieldLabel>
-          <Input
-            name="audit-start"
-            autoComplete="off"
+          <DateTimeField
             id={`${prefix}-start`}
-            type="datetime-local"
+            name="audit-start"
             value={draft.startTime}
-            onChange={(event) => updateDraft("startTime", event.target.value)}
+            onChange={(value) => updateDraft("startTime", value)}
           />
         </Field>
         <Field>
           <FieldLabel htmlFor={`${prefix}-end`}>结束时间</FieldLabel>
-          <Input
-            name="audit-end"
-            autoComplete="off"
+          <DateTimeField
             id={`${prefix}-end`}
-            type="datetime-local"
+            name="audit-end"
             value={draft.endTime}
-            onChange={(event) => updateDraft("endTime", event.target.value)}
+            onChange={(value) => updateDraft("endTime", value)}
           />
         </Field>
       </div>
