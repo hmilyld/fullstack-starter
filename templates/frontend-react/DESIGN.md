@@ -222,10 +222,10 @@
 
 ### 7.2 列表页
 
-`PageHeader` → `ListShell`（搜索 + 列 + 新增 + 次操作）→ 表格（≥768）或 `RecordCard`（<768）→ `TablePagination`。空态、错误态、加载态三件套齐全；表格操作列 `sticky right-0`。
+`PageHeader` → `ListShell` 工具栏（左侧计数、右侧搜索 + 列 + 主操作）→ 表格容器 → `TablePagination`。**不要再套一层卡片、也不要重复页面标题**：表格自带独立边框容器。≥768 用表格，<768 用 `RecordCard`；空态、错误态、加载态齐全；操作列 `sticky right-0`。
 
-- 表格由 `DataList` 的列定义驱动（`header / cell / hideable / headClass / cellClass / pinRight`），页面不再手写 `<Table>`；
-- 工具栏的「列」菜单控制可隐藏列，按表名记忆在 localStorage，名称列与操作列不可隐藏；
+- 表格由 `DataList` 的列定义驱动（`header / cell / hideable / headClass / cellClass / pinRight`），页面不再手写 `<Table>`；单元格 `px-4 py-3`，表头 `h-11`，行高约 58px；
+- 工具栏的「列」菜单与列头的「隐藏此列」都控制同一份显隐状态，按表名记忆在 localStorage，名称列与操作列不可隐藏；
 - 分页栏提供每页条数（8/16/32 或 10/20/50），切换后回到第 1 页；
 - 表头吸顶：`Card` 用 `overflow-clip`（不建立滚动容器），桌面端表格容器不横向滚动（靠列优先级与 `truncate` 控制宽度），`html` 设 `scroll-padding-top: 5rem` 防止焦点被表头遮挡；
 - 手机端不显示表格，使用卡片；不要在手机端保留横向滚动表格作为主交互。
@@ -243,7 +243,7 @@
 - **≥1024px 为左栏**：`lg:w-1/5 lg:min-w-44` + `sticky top-20`，右侧内容列 `flex-1 min-w-0`；<1024px 横向排列（与站点导航的三端断点一致）；
 - 导航用 `SettingsNav`：**无底色轨道**的 ghost 列表，图标 + 文案，选中 `bg-muted`、悬停 `bg-accent`；不要用「灰底分段控件 + 白色胶囊」——那是表单内的分段选择器，不是页面导航；
 - <768px：同一个 Tabs 变成横向 ghost 行，允许 `flex-wrap` 换行；**不要给它 `overflow-x-auto`**，否则 36px 高的行里会多出一条横向滚动条；
-- 卡片用 `max-w-3xl`（系统设置）/ `max-w-2xl`（个人设置）控制阅读宽度，剩余空间留白，不把输入框拉满；
+- 分区用 `Card variant="plain"`：无边框/底纹，分区标题 18px + 分隔线 + 表单；`max-w-3xl`（系统设置）/ `max-w-2xl`（个人设置）控制阅读宽度；
 - Tabs 的方向由 `useMediaQuery` 决定，保证键盘方向键与视觉方向一致。
 
 ### 7.5 登录 / 注册
