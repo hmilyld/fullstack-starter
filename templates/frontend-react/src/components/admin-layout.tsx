@@ -14,7 +14,7 @@ export function AdminLayout() {
     <TooltipProvider>
       <LayoutConfigProvider>
         <SidebarProvider
-          defaultOpen={window.matchMedia("(min-width: 1024px)").matches}
+          defaultOpen={window.matchMedia("(min-width: 1280px)").matches}
         >
           <a
             href="#main-content"

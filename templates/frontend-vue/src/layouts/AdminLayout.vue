@@ -5,7 +5,7 @@ import AppHeader from "@/components/AppHeader.vue"
 import CommandMenu from "@/components/CommandMenu.vue"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
-const defaultOpen = window.matchMedia("(min-width: 1024px)").matches
+const defaultOpen = window.matchMedia("(min-width: 1280px)").matches
 </script>
 
 <template>

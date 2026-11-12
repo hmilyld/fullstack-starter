@@ -98,7 +98,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 
 ## Frontend Responsive Rules (frontend-react / frontend-vue)
 
-- Three modes: **Compact `< 768px`**, **Medium `768–1023px`**, **Expanded `≥ 1024px`**. Content max width is `1536px` (`--layout-max: 96rem`); below that the content fills the available width, so a collapsed sidebar widens it.
+- Three modes: **Compact `< 768px`**, **Medium `768–1279px`**, **Expanded `≥ 1280px`**. Content max width is `1536px` (`--layout-max: 96rem`); below that the content fills the available width, so a collapsed sidebar widens it. Below 1280 the sidebar starts collapsed (icon rail) and any stored expanded state is ignored on load.
 - Layout switches **by width**; control density switches by **input modality** (`pointer: coarse`) and compact width. Do not tie touch sizing only to a breakpoint.
 - Compact: mobile Sheet nav (`ui/sidebar` built-in), card lists (`RecordCard`), filter bottom sheets, full-width page actions.
 - Medium: icon rail, tables with priority columns, inline filters.

@@ -51,8 +51,13 @@ const isMobile = useMediaQuery(
 )
 const openMobile = ref(false)
 
+// 平板及以下默认收起：低于 1280 时忽略上次保存的展开状态
+const isTabletViewport =
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 1279px)").matches
+
 const open = useVModel(props, "open", emits, {
-  defaultValue: storedOpen ?? props.defaultOpen,
+  defaultValue: isTabletViewport ? false : (storedOpen ?? props.defaultOpen),
   passive: (props.open === undefined) as false,
 }) as Ref<boolean>
 

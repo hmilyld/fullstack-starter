@@ -100,7 +100,6 @@ onUnmounted(() => {
           ⌘K
         </kbd>
       </button>
-      <p class="px-1 text-[11px] text-muted-foreground">v1.0.0</p>
     </SidebarFooter>
     <SidebarRail />
   </Sidebar>

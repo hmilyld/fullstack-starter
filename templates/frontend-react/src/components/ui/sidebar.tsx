@@ -68,6 +68,8 @@ function SidebarProvider({
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
   const [_open, _setOpen] = React.useState(() => {
+    // 平板及以下默认收起：低于 1280 时忽略上次保存的展开状态
+    if (window.matchMedia("(max-width: 1279px)").matches) return false
     const match = document.cookie.match(
       new RegExp(`(?:^|; )${SIDEBAR_COOKIE_NAME}=([^;]*)`)
     )
