@@ -32,7 +32,7 @@ export function SettingsNav({
         <TabsTrigger
           key={item.value}
           value={item.value}
-          className="flex-none justify-start gap-2 px-3 text-sm font-normal text-muted-foreground hover:bg-accent hover:text-foreground data-active:bg-muted data-active:font-medium data-active:text-foreground dark:data-active:bg-muted"
+          className="min-h-9 flex-none justify-start gap-2 px-4 py-2 text-sm font-normal text-muted-foreground hover:bg-accent hover:text-foreground data-active:bg-muted data-active:font-medium data-active:text-foreground dark:data-active:bg-muted"
         >
           <item.icon className="size-4 shrink-0" />
           {item.title}

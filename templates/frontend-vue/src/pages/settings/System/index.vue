@@ -324,7 +324,7 @@ function applySmtpPreset(name: string) {
       <Tabs
         :model-value="activeTab"
         :orientation="isWide ? 'vertical' : 'horizontal'"
-        class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
+        class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-12"
         @update:model-value="setActiveTab(String($event))"
       >
         <SettingsNav :items="settingsTabs" />

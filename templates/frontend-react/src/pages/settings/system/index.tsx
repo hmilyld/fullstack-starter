@@ -368,7 +368,7 @@ export function SystemPage() {
         value={activeTab}
         onValueChange={setActiveTab}
         orientation={isWide ? "vertical" : "horizontal"}
-        className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
+        className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-12"
       >
         <SettingsNav items={SETTINGS_TABS} />
 
