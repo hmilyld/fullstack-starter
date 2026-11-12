@@ -331,7 +331,7 @@ export function DashboardPage() {
                           <stop
                             offset="0%"
                             stopColor="var(--chart-1)"
-                            stopOpacity={0.28}
+                            stopOpacity={0.34}
                           />
                           <stop
                             offset="100%"

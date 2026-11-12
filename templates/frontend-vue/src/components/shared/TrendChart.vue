@@ -88,7 +88,7 @@ const successDots = computed(() =>
               <stop
                 offset="0%"
                 stop-color="var(--chart-1)"
-                stop-opacity="0.28"
+                stop-opacity="0.34"
               />
               <stop
                 offset="100%"
