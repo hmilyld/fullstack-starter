@@ -56,6 +56,10 @@ type DataListProps<T> = {
   columns: DataColumn<T>[]
   /** 传了就会在可隐藏列的列头显示「隐藏此列」 */
   onHideColumn?: (key: string) => void
+  /** 表头吸顶（页面滚动场景默认开；弹窗内关闭） */
+  stickyHeader?: boolean
+  /** 表格外部边框容器（弹窗内关闭） */
+  bordered?: boolean
   skeletonColSpan?: number
 }
 
@@ -73,6 +77,8 @@ export function DataList<T>({
   renderCard,
   columns,
   onHideColumn,
+  stickyHeader = true,
+  bordered = true,
   skeletonColSpan = 5,
 }: DataListProps<T>) {
   const hasItems = items.length > 0
@@ -103,9 +109,19 @@ export function DataList<T>({
               </React.Fragment>
             ))}
           </div>
-          <div className="hidden overflow-clip rounded-xl border bg-card md:block">
+          <div
+            className={cn(
+              "hidden md:block",
+              bordered && "overflow-clip rounded-xl border bg-card"
+            )}
+          >
             <Table sticky>
-              <TableHeader className="[&_th]:sticky [&_th]:top-16 [&_th]:z-10 [&_th]:border-b [&_th]:border-border [&_th]:bg-card">
+              <TableHeader
+                className={cn(
+                  "[&_th]:border-b [&_th]:border-border [&_th]:bg-card",
+                  stickyHeader && "[&_th]:sticky [&_th]:top-16 [&_th]:z-10"
+                )}
+              >
                 <TableRow>
                   {columns.map((column) => (
                     <TableHead

@@ -15,7 +15,6 @@ import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
 import BulkActionsBar from "@/components/shared/BulkActionsBar.vue"
 import ColumnToggle from "@/components/shared/ColumnToggle.vue"
 import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
-import EmptyState from "@/components/shared/EmptyState.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
@@ -51,15 +50,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Spinner } from "@/components/ui/spinner"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   batchUpdateRole,
   createUser,
@@ -445,6 +435,13 @@ const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
   "users",
   columns
 )
+
+const pendingColumns: DataColumn[] = [
+  { key: "select", header: "", headClass: "w-12" },
+  { key: "username", header: "用户名" },
+  { key: "name", header: "姓名" },
+  { key: "email", header: "邮箱" },
+]
 
 const hasUsers = computed(() => users.value.length > 0)
 </script>
@@ -849,51 +846,54 @@ const hasUsers = computed(() => users.value.length > 0)
             {{ selectedPending.size }} 位。
           </DialogDescription>
         </DialogHeader>
-        <div class="max-h-[400px] overflow-auto">
-          <div
-            v-if="pendingLoading"
-            class="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground"
-          >
-            <Spinner />
-            加载中…
-          </div>
-          <EmptyState
-            v-else-if="pendingUsers.length === 0"
-            :icon="UserRound"
-            title="暂无待审核用户"
-            description="开启人工审核后，新注册用户会出现在这里。"
-          />
-          <Table v-else>
-            <TableHeader>
-              <TableRow>
-                <TableHead class="w-12">
-                  <Checkbox
-                    :model-value="pendingCheckboxState"
-                    aria-label="选择全部待审核用户"
-                    @update:model-value="toggleAllPending"
-                  />
-                </TableHead>
-                <TableHead>用户名</TableHead>
-                <TableHead>姓名</TableHead>
-                <TableHead>邮箱</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="user in pendingUsers" :key="user.id">
-                <TableCell>
-                  <Checkbox
-                    :model-value="selectedPending.has(user.id)"
-                    :aria-label="`选择 ${user.name}`"
-                    @update:model-value="togglePending(user.id)"
-                  />
-                </TableCell>
-                <TableCell>{{ user.username }}</TableCell>
-                <TableCell>{{ user.name }}</TableCell>
-                <TableCell>{{ user.email }}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+        <DataList
+          :items="pendingUsers"
+          :loading="pendingLoading"
+          :error="null"
+          :columns="pendingColumns"
+          :skeleton-col-span="4"
+          :sticky-header="false"
+          :bordered="false"
+          :empty="{
+            icon: UserRound,
+            title: '暂无待审核用户',
+            description: '开启人工审核后，新注册用户会出现在这里。',
+          }"
+          @retry="openPending"
+        >
+          <template #head-select>
+            <Checkbox
+              :model-value="pendingCheckboxState"
+              aria-label="选择全部待审核用户"
+              @update:model-value="toggleAllPending"
+            />
+          </template>
+          <template #cell-select="{ row }">
+            <Checkbox
+              :model-value="selectedPending.has(row.id)"
+              :aria-label="`选择 ${row.name}`"
+              @update:model-value="togglePending(row.id)"
+            />
+          </template>
+          <template #cell-username="{ row }">{{ row.username }}</template>
+          <template #cell-name="{ row }">{{ row.name }}</template>
+          <template #cell-email="{ row }">{{ row.email }}</template>
+          <template #card="{ row }">
+            <RecordCard
+              :title="row.name"
+              :subtitle="`@${row.username} · ${row.email}`"
+            >
+              <template #leading>
+                <Checkbox
+                  :model-value="selectedPending.has(row.id)"
+                  :aria-label="`选择 ${row.name}`"
+                  class="mt-0.5"
+                  @update:model-value="togglePending(row.id)"
+                />
+              </template>
+            </RecordCard>
+          </template>
+        </DataList>
         <DialogFooter class="gap-2">
           <Button
             variant="destructive"

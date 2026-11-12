@@ -39,9 +39,13 @@ withDefaults(
     error: string | null
     columns: DataColumn[]
     empty: { icon?: Component; title: string; description?: string }
+    /** 表头吸顶（页面滚动场景默认开；弹窗内关闭） */
+    stickyHeader?: boolean
+    /** 表格外部边框容器（弹窗内关闭） */
+    bordered?: boolean
     skeletonColSpan?: number
   }>(),
-  { skeletonColSpan: 5 }
+  { skeletonColSpan: 5, stickyHeader: true, bordered: true }
 )
 
 const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
@@ -82,7 +86,14 @@ const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
         <slot name="card" :row="item" />
       </template>
     </div>
-    <div class="hidden overflow-clip rounded-xl border bg-card md:block">
+    <div
+      :class="
+        cn(
+          'hidden md:block',
+          bordered && 'overflow-clip rounded-xl border bg-card'
+        )
+      "
+    >
       <Table sticky>
         <TableHeader
           class="[&_th]:sticky [&_th]:top-16 [&_th]:z-10 [&_th]:border-b [&_th]:border-border [&_th]:bg-card"

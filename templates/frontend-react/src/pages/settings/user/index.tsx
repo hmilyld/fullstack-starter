@@ -15,7 +15,6 @@ import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { BulkActionsBar } from "@/components/shared/bulk-actions-bar"
 import { ColumnToggle } from "@/components/shared/column-toggle"
 import { DataList, type DataColumn } from "@/components/shared/data-list"
-import { EmptyState } from "@/components/shared/empty-state"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { ListShell } from "@/components/shared/list-shell"
 import { LoadingButton } from "@/components/shared/loading-button"
@@ -50,15 +49,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Spinner } from "@/components/ui/spinner"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   batchUpdateRole,
   createUser,
@@ -495,6 +485,36 @@ export function UsersPage() {
 
   const table = useColumnVisibility("users", columns)
 
+  const pendingColumns: DataColumn<User>[] = [
+    {
+      key: "select",
+      header: (
+        <Checkbox
+          checked={
+            allPendingSelected
+              ? true
+              : somePendingSelected
+                ? "indeterminate"
+                : false
+          }
+          onCheckedChange={toggleAllPending}
+          aria-label="选择全部待审核用户"
+        />
+      ),
+      headClassName: "w-12",
+      cell: (user) => (
+        <Checkbox
+          checked={selectedPending.has(user.id)}
+          onCheckedChange={() => togglePending(user.id)}
+          aria-label={`选择 ${user.name}`}
+        />
+      ),
+    },
+    { key: "username", header: "用户名", cell: (user) => user.username },
+    { key: "name", header: "姓名", cell: (user) => user.name },
+    { key: "email", header: "邮箱", cell: (user) => user.email },
+  ]
+
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
@@ -861,59 +881,36 @@ export function UsersPage() {
               {selectedPending.size} 位。
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[400px] overflow-auto">
-            {pendingLoading ? (
-              <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-                <Spinner />
-                加载中…
-              </div>
-            ) : pendingUsers.length === 0 ? (
-              <EmptyState
-                icon={UserRoundIcon}
-                title="暂无待审核用户"
-                description="开启人工审核后，新注册用户会出现在这里。"
+          <DataList
+            items={pendingUsers}
+            loading={pendingLoading}
+            error={null}
+            onRetry={() => void openPending()}
+            columns={pendingColumns}
+            getKey={(user) => user.id}
+            stickyHeader={false}
+            bordered={false}
+            skeletonColSpan={4}
+            empty={{
+              icon: UserRoundIcon,
+              title: "暂无待审核用户",
+              description: "开启人工审核后，新注册用户会出现在这里。",
+            }}
+            renderCard={(user) => (
+              <RecordCard
+                title={user.name}
+                subtitle={`@${user.username} · ${user.email}`}
+                leading={
+                  <Checkbox
+                    checked={selectedPending.has(user.id)}
+                    onCheckedChange={() => togglePending(user.id)}
+                    aria-label={`选择 ${user.name}`}
+                    className="mt-0.5"
+                  />
+                }
               />
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={
-                          allPendingSelected
-                            ? true
-                            : somePendingSelected
-                              ? "indeterminate"
-                              : false
-                        }
-                        onCheckedChange={toggleAllPending}
-                        aria-label="选择全部待审核用户"
-                      />
-                    </TableHead>
-                    <TableHead>用户名</TableHead>
-                    <TableHead>姓名</TableHead>
-                    <TableHead>邮箱</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedPending.has(user.id)}
-                          onCheckedChange={() => togglePending(user.id)}
-                          aria-label={`选择 ${user.name}`}
-                        />
-                      </TableCell>
-                      <TableCell>{user.username}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             )}
-          </div>
+          />
           <DialogFooter className="gap-2">
             <Button
               variant="destructive"
