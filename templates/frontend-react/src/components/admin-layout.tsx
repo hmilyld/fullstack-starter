@@ -38,7 +38,7 @@ export function AdminLayout() {
               </div>
             </main>
             <footer className="shrink-0 px-(--layout-gutter) pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
-              © {new Date().getFullYear()} hmilyld · v1.0.0
+              © {new Date().getFullYear()} hmilyld.com · v{__APP_VERSION__}
             </footer>
           </SidebarInset>
           <CommandMenu />

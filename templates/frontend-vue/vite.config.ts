@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import tailwindcss from "@tailwindcss/vite"
 import vue from "@vitejs/plugin-vue"
@@ -7,8 +8,18 @@ import { VitePWA } from "vite-plugin-pwa"
 // 本地联调时可指向 Python（8088）或 Java（8089）后端
 const apiTarget = process.env.VITE_API_TARGET ?? "http://localhost:8088"
 
+// 页脚展示的版本号始终与 package.json 一致（发布新版本时只需改 package.json）
+const appVersion = (
+  JSON.parse(
+    readFileSync(new URL("./package.json", import.meta.url), "utf8")
+  ) as { version: string }
+).version
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   plugins: [
     vue(),
     tailwindcss(),

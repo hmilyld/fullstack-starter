@@ -6,6 +6,8 @@ import CommandMenu from "@/components/CommandMenu.vue"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 const defaultOpen = window.matchMedia("(min-width: 1280px)").matches
+// 构建时注入，值来自 package.json
+const appVersion = __APP_VERSION__
 </script>
 
 <template>
@@ -32,7 +34,7 @@ const defaultOpen = window.matchMedia("(min-width: 1280px)").matches
       <footer
         class="shrink-0 px-(--layout-gutter) pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground"
       >
-        © {{ new Date().getFullYear() }} hmilyld · v1.0.0
+        © {{ new Date().getFullYear() }} hmilyld.com · v{{ appVersion }}
       </footer>
     </SidebarInset>
     <CommandMenu />
