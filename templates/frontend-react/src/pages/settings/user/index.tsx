@@ -483,36 +483,11 @@ export function UsersPage() {
               <span className="sr-only">编辑 {user.name}</span>
             </Button>
           )}
-          {hasPermission("users.assign_role") && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => handleRole(user)}
-            >
-              <ShieldIcon />
-              <span className="sr-only">维护角色</span>
-            </Button>
-          )}
-          {hasPermission("users.edit") && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => openReset(user)}
-            >
-              <KeyIcon />
-              <span className="sr-only">重置密码</span>
-            </Button>
-          )}
-          {hasPermission("users.delete") && user.id !== currentUser?.id && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => handleDelete(user)}
-            >
-              <Trash2Icon />
-              <span className="sr-only">删除</span>
-            </Button>
-          )}
+          <RowActions
+            actions={buildUserActions(user).filter(
+              (action) => action.label !== "编辑"
+            )}
+          />
         </div>
       ),
     },
@@ -525,7 +500,6 @@ export function UsersPage() {
       <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
 
       <ListShell
-        title="用户列表"
         description={`共 ${list.total} 位用户`}
         actions={
           <>

@@ -56,7 +56,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -388,7 +387,7 @@ const hasModels = computed(() => models.value.length > 0)
       </TabsList>
 
       <TabsContent value="models" class="flex flex-col gap-(--page-gap)">
-        <ListShell title="模型列表" :description="`共 ${total} 个模型配置`">
+        <ListShell :description="`共 ${total} 个模型配置`">
           <template #actions>
             <InputGroup class="w-full md:w-64">
               <InputGroupInput
@@ -525,17 +524,6 @@ const hasModels = computed(() => models.value.length > 0)
             <template #cell-actions="{ row }">
               <div class="flex items-center justify-end gap-1">
                 <Button
-                  v-if="auth.hasPermission('ai_models')"
-                  variant="ghost"
-                  size="icon-sm"
-                  :disabled="testingId === row.id"
-                  @click="handleTest(row)"
-                >
-                  <Spinner v-if="testingId === row.id" />
-                  <TestTube v-else />
-                  <span class="sr-only">测试 {{ row.alias }}</span>
-                </Button>
-                <Button
                   v-if="auth.hasPermission('ai_models.edit')"
                   variant="ghost"
                   size="icon-sm"
@@ -544,15 +532,13 @@ const hasModels = computed(() => models.value.length > 0)
                   <Pencil />
                   <span class="sr-only">编辑 {{ row.alias }}</span>
                 </Button>
-                <Button
-                  v-if="auth.hasPermission('ai_models.delete')"
-                  variant="ghost"
-                  size="icon-sm"
-                  @click="handleDelete(row)"
-                >
-                  <Trash2 />
-                  <span class="sr-only">删除 {{ row.alias }}</span>
-                </Button>
+                <RowActions
+                  :actions="
+                    buildModelActions(row).filter(
+                      (item) => item.label !== '编辑'
+                    )
+                  "
+                />
               </div>
             </template>
           </DataList>

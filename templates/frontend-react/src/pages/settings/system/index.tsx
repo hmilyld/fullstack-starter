@@ -374,9 +374,9 @@ export function SystemPage() {
 
         <TabsContent
           value="site"
-          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
         >
-          <Card className="max-w-3xl">
+          <Card variant="plain" className="max-w-3xl">
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
               <CardDescription>配置站点名称、描述等基本信息。</CardDescription>
@@ -437,7 +437,7 @@ export function SystemPage() {
             </SaveFooter>
           </Card>
 
-          <Card className="max-w-3xl">
+          <Card variant="plain" className="max-w-3xl">
             <CardHeader>
               <CardTitle>维护模式</CardTitle>
               <CardDescription>
@@ -491,9 +491,9 @@ export function SystemPage() {
 
         <TabsContent
           value="register"
-          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
         >
-          <Card className="max-w-3xl">
+          <Card variant="plain" className="max-w-3xl">
             <CardHeader>
               <CardTitle>注册策略</CardTitle>
               <CardDescription>控制用户注册方式和验证流程。</CardDescription>
@@ -541,7 +541,7 @@ export function SystemPage() {
             </SaveFooter>
           </Card>
 
-          <Card className="max-w-3xl">
+          <Card variant="plain" className="max-w-3xl">
             <CardHeader>
               <CardTitle>默认配置</CardTitle>
               <CardDescription>
@@ -601,9 +601,9 @@ export function SystemPage() {
 
         <TabsContent
           value="smtp"
-          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
         >
-          <Card className="max-w-3xl">
+          <Card variant="plain" className="max-w-3xl">
             <CardHeader>
               <CardTitle>SMTP 邮件配置</CardTitle>
               <CardDescription>
@@ -778,7 +778,7 @@ export function SystemPage() {
             </SaveFooter>
           </Card>
 
-          <Card className="max-w-3xl">
+          <Card variant="plain" className="max-w-3xl">
             <CardHeader>
               <CardTitle>测试邮件</CardTitle>
               <CardDescription>

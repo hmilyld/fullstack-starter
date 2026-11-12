@@ -1254,7 +1254,6 @@ export function MenuPage() {
       />
 
       <ListShell
-        title="菜单结构"
         description={`共 ${config.groups.length} 个分组，${totalMenus} 个菜单，${totalOperations} 个操作权限`}
         actions={
           <>

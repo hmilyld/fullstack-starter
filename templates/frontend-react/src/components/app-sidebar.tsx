@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Link } from "react-router"
+import { SearchIcon } from "lucide-react"
 
 import { BrandMark } from "@/components/brand-mark"
 import { NavMain } from "@/components/nav-main"
@@ -57,17 +58,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain groups={groups} />
       </SidebarContent>
-      <SidebarFooter className="p-2 group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="gap-1 p-2 group-data-[collapsible=icon]:hidden">
         <button
           type="button"
           onClick={openCommandMenu}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring"
+          className="flex h-8 w-full items-center gap-2 rounded-md border bg-background px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring"
         >
+          <SearchIcon className="size-3.5 shrink-0" />
           <span>快速查找</span>
           <kbd className="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
             ⌘K
           </kbd>
         </button>
+        <p className="px-1 text-[11px] text-muted-foreground">v1.0.0</p>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

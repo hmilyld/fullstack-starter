@@ -248,11 +248,10 @@ onMounted(() => {
               <CardTitle class="text-sm font-medium text-muted-foreground">
                 {{ stat.title }}
               </CardTitle>
-              <span
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
-              >
-                <component :is="stat.icon" class="size-4" />
-              </span>
+              <component
+                :is="stat.icon"
+                class="size-4 shrink-0 text-muted-foreground"
+              />
             </CardHeader>
             <CardContent>
               <div

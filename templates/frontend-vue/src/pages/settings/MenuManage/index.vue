@@ -634,7 +634,7 @@ const operationDescription = computed(() =>
       description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
     />
 
-    <ListShell title="菜单结构" :description="menuStats">
+    <ListShell :description="menuStats">
       <template #actions>
         <InputGroup class="w-full md:w-64">
           <InputGroupInput

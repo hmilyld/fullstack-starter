@@ -247,9 +247,7 @@ export function DashboardPage() {
                       <CardTitle className="text-sm font-medium text-muted-foreground">
                         {stat.title}
                       </CardTitle>
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <stat.icon className="size-4" />
-                      </span>
+                      <stat.icon className="size-4 shrink-0 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="font-heading text-3xl font-semibold tracking-tight tabular-nums">

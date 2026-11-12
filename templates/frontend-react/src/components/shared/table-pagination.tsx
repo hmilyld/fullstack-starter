@@ -130,7 +130,7 @@ export function TablePagination({
             ) : (
               <PaginationItem key={item} className="hidden md:flex">
                 <Button
-                  variant={item === page ? "outline" : "ghost"}
+                  variant={item === page ? "default" : "ghost"}
                   size="icon-sm"
                   aria-current={item === page ? "page" : undefined}
                   onClick={() => onPageChange(item)}

@@ -225,7 +225,7 @@ const hasLogs = computed(() => logs.value.length > 0)
       description="查看系统的写操作与权限拦截记录。"
     />
 
-    <ListShell title="操作记录" :description="`共 ${total} 条记录`">
+    <ListShell :description="`共 ${total} 条记录`">
       <template v-if="hasLogs" #footer>
         <TablePagination
           :page="currentPage"

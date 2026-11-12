@@ -75,7 +75,9 @@ describe("UsersPage", () => {
     )
 
     expect(await screen.findByText("共 1 位用户")).toBeInTheDocument()
-    expect(screen.getByText("用户列表")).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "用户管理" })
+    ).toBeInTheDocument()
     expect(await screen.findAllByText("张三")).not.toHaveLength(0)
     expect(await screen.findAllByText("普通用户")).not.toHaveLength(0)
   })

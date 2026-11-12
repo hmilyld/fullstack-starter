@@ -303,7 +303,6 @@ export function AuditLogPage() {
       />
 
       <ListShell
-        title="操作记录"
         description={`共 ${list.total} 条记录`}
         footer={
           list.items.length > 0 ? (

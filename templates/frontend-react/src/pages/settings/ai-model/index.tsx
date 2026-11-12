@@ -54,7 +54,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -330,16 +329,11 @@ function AiModelPresetManager() {
               <span className="sr-only">编辑 {preset.alias}</span>
             </Button>
           )}
-          {hasPermission("ai_models.presets.delete") && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => handleDelete(preset)}
-            >
-              <Trash2Icon />
-              <span className="sr-only">删除 {preset.alias}</span>
-            </Button>
-          )}
+          <RowActions
+            actions={buildPresetActions(preset).filter(
+              (action) => action.label !== "编辑"
+            )}
+          />
         </div>
       ),
     },
@@ -350,7 +344,6 @@ function AiModelPresetManager() {
   return (
     <>
       <ListShell
-        title="预设模型列表"
         description={`共 ${presets.length} 个预设模型`}
         actions={
           <>
@@ -900,17 +893,6 @@ export function AiModelPage() {
       cellClassName: "text-right",
       cell: (model) => (
         <div className="flex items-center justify-end gap-1">
-          {hasPermission("ai_models") && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => handleTest(model)}
-              disabled={testingId === model.id}
-            >
-              {testingId === model.id ? <Spinner /> : <TestTubeIcon />}
-              <span className="sr-only">测试 {model.alias}</span>
-            </Button>
-          )}
           {hasPermission("ai_models.edit") && (
             <Button
               variant="ghost"
@@ -921,16 +903,11 @@ export function AiModelPage() {
               <span className="sr-only">编辑 {model.alias}</span>
             </Button>
           )}
-          {hasPermission("ai_models.delete") && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => handleDelete(model)}
-            >
-              <Trash2Icon />
-              <span className="sr-only">删除 {model.alias}</span>
-            </Button>
-          )}
+          <RowActions
+            actions={buildModelActions(model).filter(
+              (action) => action.label !== "编辑"
+            )}
+          />
         </div>
       ),
     },
@@ -952,7 +929,6 @@ export function AiModelPage() {
 
         <TabsContent value="models" className="flex flex-col gap-(--page-gap)">
           <ListShell
-            title="模型列表"
             description={`共 ${list.total} 个模型配置`}
             actions={
               <>

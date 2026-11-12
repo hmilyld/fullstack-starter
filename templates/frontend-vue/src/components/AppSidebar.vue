@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from "vue"
 import { RouterLink } from "vue-router"
+import { Search } from "@lucide/vue"
 import BrandMark from "@/components/BrandMark.vue"
 import NavMain from "@/components/NavMain.vue"
 import {
@@ -83,12 +84,13 @@ onUnmounted(() => {
     <SidebarContent>
       <NavMain :groups="groups" />
     </SidebarContent>
-    <SidebarFooter class="p-2 group-data-[collapsible=icon]:hidden">
+    <SidebarFooter class="gap-1 p-2 group-data-[collapsible=icon]:hidden">
       <button
         type="button"
-        class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring"
+        class="flex h-8 w-full items-center gap-2 rounded-md border bg-background px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring"
         @click="openCommandMenu"
       >
+        <Search class="size-3.5 shrink-0" />
         <span>快速查找</span>
         <kbd
           class="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground"
@@ -96,6 +98,7 @@ onUnmounted(() => {
           ⌘K
         </kbd>
       </button>
+      <p class="px-1 text-[11px] text-muted-foreground">v1.0.0</p>
     </SidebarFooter>
     <SidebarRail />
   </Sidebar>

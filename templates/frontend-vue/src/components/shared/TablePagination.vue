@@ -138,7 +138,7 @@ const pageSizeModel = computed({
           </Button>
           <Button
             v-else
-            :variant="item === page ? 'outline' : 'ghost'"
+            :variant="item === page ? 'default' : 'ghost'"
             size="icon-sm"
             :aria-current="item === page ? 'page' : undefined"
             @click="emit('page-change', item as number)"

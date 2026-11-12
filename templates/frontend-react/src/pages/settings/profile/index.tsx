@@ -121,9 +121,9 @@ export function ProfilePage() {
 
         <TabsContent
           value="profile"
-          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
         >
-          <Card className="max-w-2xl">
+          <Card variant="plain" className="max-w-2xl">
             <CardHeader>
               <CardTitle>基本资料</CardTitle>
               <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
@@ -174,9 +174,9 @@ export function ProfilePage() {
 
         <TabsContent
           value="security"
-          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
         >
-          <Card className="max-w-2xl">
+          <Card variant="plain" className="max-w-2xl">
             <CardHeader>
               <CardTitle>密码修改</CardTitle>
               <CardDescription>

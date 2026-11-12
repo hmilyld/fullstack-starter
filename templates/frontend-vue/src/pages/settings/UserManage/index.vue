@@ -453,7 +453,7 @@ const hasUsers = computed(() => users.value.length > 0)
   <div class="flex flex-col gap-(--page-gap)">
     <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
 
-    <ListShell title="用户列表" :description="`共 ${total} 位用户`">
+    <ListShell :description="`共 ${total} 位用户`">
       <template #actions>
         <InputGroup class="w-full md:w-64">
           <InputGroupInput
@@ -626,35 +626,11 @@ const hasUsers = computed(() => users.value.length > 0)
               <Pencil />
               <span class="sr-only">编辑 {{ row.name }}</span>
             </Button>
-            <Button
-              v-if="auth.hasPermission('users.assign_role')"
-              variant="ghost"
-              size="icon-sm"
-              @click="handleRole(row)"
-            >
-              <Shield />
-              <span class="sr-only">维护角色</span>
-            </Button>
-            <Button
-              v-if="auth.hasPermission('users.edit')"
-              variant="ghost"
-              size="icon-sm"
-              @click="openReset(row)"
-            >
-              <KeyRound />
-              <span class="sr-only">重置密码</span>
-            </Button>
-            <Button
-              v-if="
-                auth.hasPermission('users.delete') && row.id !== auth.user?.id
+            <RowActions
+              :actions="
+                buildUserActions(row).filter((item) => item.label !== '编辑')
               "
-              variant="ghost"
-              size="icon-sm"
-              @click="handleDelete(row)"
-            >
-              <Trash2 />
-              <span class="sr-only">删除</span>
-            </Button>
+            />
           </div>
         </template>
       </DataList>

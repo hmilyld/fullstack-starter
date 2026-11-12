@@ -54,10 +54,12 @@ const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
     @retry="emit('retry')"
   />
 
-  <TableSkeletonRow
+  <div
     v-if="loading && items.length === 0"
-    :col-span="skeletonColSpan"
-  />
+    class="overflow-clip rounded-xl border bg-card max-md:rounded-none max-md:border-0"
+  >
+    <TableSkeletonRow :col-span="skeletonColSpan" />
+  </div>
   <ErrorState
     v-else-if="error && items.length === 0"
     :message="error"
@@ -80,7 +82,7 @@ const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
         <slot name="card" :row="item" />
       </template>
     </div>
-    <div class="hidden md:block">
+    <div class="hidden overflow-clip rounded-xl border bg-card md:block">
       <Table sticky>
         <TableHeader
           class="[&_th]:sticky [&_th]:top-16 [&_th]:z-10 [&_th]:border-b [&_th]:border-border [&_th]:bg-card"

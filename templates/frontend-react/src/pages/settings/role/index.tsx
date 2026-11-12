@@ -234,16 +234,11 @@ export function RolesPage() {
               <span className="sr-only">编辑 {role.name}</span>
             </Button>
           )}
-          {!role.isPreset && hasPermission("roles.delete") && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => handleDelete(role)}
-            >
-              <Trash2Icon />
-              <span className="sr-only">删除 {role.name}</span>
-            </Button>
-          )}
+          <RowActions
+            actions={buildRoleActions(role).filter(
+              (action) => action.label !== "编辑"
+            )}
+          />
         </div>
       ),
     },
@@ -256,7 +251,6 @@ export function RolesPage() {
       <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
 
       <ListShell
-        title="角色列表"
         description={`共 ${list.total} 个角色`}
         actions={
           <>

@@ -103,7 +103,7 @@ function handleNavigate() {
           <span class="truncate">{{ group.label }}</span>
           <ChevronRight
             :class="[
-              'size-3.5 shrink-0 opacity-60 transition-transform duration-200',
+              'size-3.5 shrink-0 opacity-0 transition-[opacity,transform] duration-200 group-hover/label:opacity-60 focus-visible:opacity-100',
               (iconMode || isOpen(group)) && 'rotate-90',
             ]"
           />

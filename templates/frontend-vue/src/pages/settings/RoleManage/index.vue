@@ -215,7 +215,7 @@ const hasRoles = computed(() => roles.value.length > 0)
   <div class="flex flex-col gap-(--page-gap)">
     <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
 
-    <ListShell title="角色列表" :description="`共 ${total} 个角色`">
+    <ListShell :description="`共 ${total} 个角色`">
       <template #actions>
         <InputGroup class="w-full md:w-64">
           <InputGroupInput
@@ -343,15 +343,11 @@ const hasRoles = computed(() => roles.value.length > 0)
               <Pencil />
               <span class="sr-only">编辑 {{ row.name }}</span>
             </Button>
-            <Button
-              v-if="!row.isPreset && auth.hasPermission('roles.delete')"
-              variant="ghost"
-              size="icon-sm"
-              @click="handleDelete(row)"
-            >
-              <Trash2 />
-              <span class="sr-only">删除 {{ row.name }}</span>
-            </Button>
+            <RowActions
+              :actions="
+                buildRoleActions(row).filter((item) => item.label !== '编辑')
+              "
+            />
           </div>
         </template>
       </DataList>

@@ -132,9 +132,9 @@ async function handlePasswordSubmit() {
 
       <TabsContent
         value="profile"
-        class="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
       >
-        <Card class="max-w-2xl">
+        <Card variant="plain" class="max-w-2xl">
           <CardHeader>
             <CardTitle>基本资料</CardTitle>
             <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
@@ -183,9 +183,9 @@ async function handlePasswordSubmit() {
 
       <TabsContent
         value="security"
-        class="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
       >
-        <Card class="max-w-2xl">
+        <Card variant="plain" class="max-w-2xl">
           <CardHeader>
             <CardTitle>密码修改</CardTitle>
             <CardDescription>

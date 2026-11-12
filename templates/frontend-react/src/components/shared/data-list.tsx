@@ -82,7 +82,9 @@ export function DataList<T>({
       {error && hasItems && <InlineError message={error} onRetry={onRetry} />}
 
       {loading && !hasItems ? (
-        <TableSkeletonRow colSpan={skeletonColSpan} />
+        <div className="overflow-clip rounded-xl border bg-card max-md:rounded-none max-md:border-0">
+          <TableSkeletonRow colSpan={skeletonColSpan} />
+        </div>
       ) : error && !hasItems ? (
         <ErrorState message={error} onRetry={onRetry} />
       ) : !hasItems ? (
@@ -101,7 +103,7 @@ export function DataList<T>({
               </React.Fragment>
             ))}
           </div>
-          <div className="hidden md:block">
+          <div className="hidden overflow-clip rounded-xl border bg-card md:block">
             <Table sticky>
               <TableHeader className="[&_th]:sticky [&_th]:top-16 [&_th]:z-10 [&_th]:border-b [&_th]:border-border [&_th]:bg-card">
                 <TableRow>

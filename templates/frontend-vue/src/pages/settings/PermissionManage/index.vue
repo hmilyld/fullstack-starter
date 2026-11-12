@@ -124,7 +124,6 @@ const hasPermissions = computed(() => tree.value.length > 0)
     </PageHeader>
 
     <ListShell
-      title="权限列表"
       :description="`共 ${menuPermissions.length} 个菜单权限，${operationPermissions.length} 个操作权限`"
     >
       <template #actions>

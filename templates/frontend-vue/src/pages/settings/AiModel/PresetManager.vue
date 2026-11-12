@@ -261,10 +261,7 @@ const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
 </script>
 
 <template>
-  <ListShell
-    title="预设模型列表"
-    :description="`共 ${presets.length} 个预设模型`"
-  >
+  <ListShell :description="`共 ${presets.length} 个预设模型`">
     <template #actions>
       <Select
         :model-value="selectedGroup || 'all'"
@@ -396,15 +393,11 @@ const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
             <Pencil />
             <span class="sr-only">编辑 {{ row.alias }}</span>
           </Button>
-          <Button
-            v-if="auth.hasPermission('ai_models.presets.delete')"
-            variant="ghost"
-            size="icon-sm"
-            @click="handleDelete(row)"
-          >
-            <Trash2 />
-            <span class="sr-only">删除 {{ row.alias }}</span>
-          </Button>
+          <RowActions
+            :actions="
+              buildPresetActions(row).filter((item) => item.label !== '编辑')
+            "
+          />
         </div>
       </template>
     </DataList>
