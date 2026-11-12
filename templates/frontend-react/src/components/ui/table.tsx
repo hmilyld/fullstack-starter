@@ -2,11 +2,19 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+function Table({
+  className,
+  sticky = false,
+  ...props
+}: React.ComponentProps<"table"> & { sticky?: boolean }) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn(
+        "relative w-full overflow-x-auto",
+        // sticky 表头要求容器不是滚动容器：桌面端宽度由优先列保证不溢出
+        sticky && "md:overflow-x-visible"
+      )}
     >
       <table
         data-slot="table"

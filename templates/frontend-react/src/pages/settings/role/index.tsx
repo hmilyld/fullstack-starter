@@ -9,7 +9,8 @@ import {
 } from "lucide-react"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
-import { DataList } from "@/components/shared/data-list"
+import { ColumnToggle } from "@/components/shared/column-toggle"
+import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
@@ -31,14 +32,6 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { getPermissions } from "@/api/permission"
 import {
   createRole,
@@ -47,6 +40,7 @@ import {
   updateRole,
 } from "@/api/role"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
@@ -185,6 +179,78 @@ export function RolesPage() {
     return actions
   }
 
+  const columns: DataColumn<Role>[] = [
+    {
+      key: "name",
+      header: "角色名称",
+      cell: (role) => <span className="font-medium">{role.name}</span>,
+    },
+    {
+      key: "description",
+      header: "描述",
+      hideable: true,
+      headClassName: "hidden md:table-cell",
+      cellClassName: "hidden text-muted-foreground md:table-cell",
+      cell: (role) => role.description || "-",
+    },
+    {
+      key: "permissions",
+      header: "权限数",
+      hideable: true,
+      headClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+      cell: (role) => (
+        <Badge variant="secondary">{role.permissions.length}</Badge>
+      ),
+    },
+    {
+      key: "type",
+      header: "类型",
+      cell: (role) =>
+        role.isPreset ? (
+          <Badge variant="outline">
+            <LockIcon />
+            预设
+          </Badge>
+        ) : (
+          <Badge variant="secondary">自定义</Badge>
+        ),
+    },
+    {
+      key: "actions",
+      header: "操作",
+      pinRight: true,
+      headClassName: "text-right",
+      cellClassName: "text-right",
+      cell: (role) => (
+        <div className="flex items-center justify-end gap-1">
+          {hasPermission("roles.edit") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleEdit(role)}
+            >
+              <PencilIcon />
+              <span className="sr-only">编辑 {role.name}</span>
+            </Button>
+          )}
+          {!role.isPreset && hasPermission("roles.delete") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleDelete(role)}
+            >
+              <Trash2Icon />
+              <span className="sr-only">删除 {role.name}</span>
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
+
+  const table = useColumnVisibility("roles", columns)
+
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
@@ -208,6 +274,12 @@ export function RolesPage() {
                 <SearchIcon />
               </InputGroupAddon>
             </InputGroup>
+            <ColumnToggle
+              columns={columns}
+              hidden={table.hidden}
+              onToggle={table.toggle}
+              onReset={table.reset}
+            />
             {hasPermission("roles.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
@@ -278,68 +350,8 @@ export function RolesPage() {
               actions={<RowActions actions={buildRoleActions(role)} />}
             />
           )}
-        >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>角色名称</TableHead>
-                <TableHead className="hidden md:table-cell">描述</TableHead>
-                <TableHead className="hidden lg:table-cell">权限数</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead className="sticky right-0 bg-card text-right">
-                  操作
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {list.items.map((role) => (
-                <TableRow key={role.id}>
-                  <TableCell className="font-medium">{role.name}</TableCell>
-                  <TableCell className="hidden text-muted-foreground md:table-cell">
-                    {role.description || "-"}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <Badge variant="secondary">{role.permissions.length}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {role.isPreset ? (
-                      <Badge variant="outline">
-                        <LockIcon />
-                        预设
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">自定义</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="sticky right-0 bg-inherit text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {hasPermission("roles.edit") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleEdit(role)}
-                        >
-                          <PencilIcon />
-                          <span className="sr-only">编辑 {role.name}</span>
-                        </Button>
-                      )}
-                      {!role.isPreset && hasPermission("roles.delete") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleDelete(role)}
-                        >
-                          <Trash2Icon />
-                          <span className="sr-only">删除 {role.name}</span>
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DataList>
+          columns={table.visibleColumns}
+        />
       </ListShell>
 
       <FormDialog

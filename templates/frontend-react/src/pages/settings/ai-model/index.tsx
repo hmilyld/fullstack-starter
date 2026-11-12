@@ -14,7 +14,8 @@ import {
 import { useSearchParams } from "react-router"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
-import { DataList } from "@/components/shared/data-list"
+import { ColumnToggle } from "@/components/shared/column-toggle"
+import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
@@ -56,14 +57,6 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import {
   createAiModel,
@@ -79,6 +72,7 @@ import {
   updateAiModelPreset,
 } from "@/api/ai-model"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
@@ -263,6 +257,96 @@ function AiModelPresetManager() {
     return actions
   }
 
+  const columns: DataColumn<AiModelPreset>[] = [
+    {
+      key: "group",
+      header: "分组",
+      hideable: true,
+      cell: (preset) => <Badge variant="outline">{preset.group}</Badge>,
+    },
+    {
+      key: "alias",
+      header: "别名",
+      cell: (preset) => <span className="font-medium">{preset.alias}</span>,
+    },
+    {
+      key: "modelName",
+      header: "模型名称",
+      hideable: true,
+      headClassName: "hidden md:table-cell",
+      cellClassName: "hidden md:table-cell",
+      cell: (preset) => preset.modelName,
+    },
+    {
+      key: "apiUrl",
+      header: "API 地址",
+      hideable: true,
+      headClassName: "hidden lg:table-cell",
+      cellClassName:
+        "hidden max-w-[200px] truncate text-muted-foreground lg:table-cell",
+      cell: (preset) => preset.apiUrl,
+    },
+    {
+      key: "description",
+      header: "描述",
+      hideable: true,
+      headClassName: "hidden xl:table-cell",
+      cellClassName:
+        "hidden max-w-[150px] truncate text-muted-foreground xl:table-cell",
+      cell: (preset) => preset.description || "-",
+    },
+    {
+      key: "status",
+      header: "状态",
+      cell: (preset) => (
+        <Badge variant={preset.isActive ? "success" : "secondary"}>
+          {preset.isActive ? "启用" : "禁用"}
+        </Badge>
+      ),
+    },
+    {
+      key: "sort",
+      header: "排序",
+      hideable: true,
+      headClassName: "hidden lg:table-cell",
+      cellClassName: "hidden lg:table-cell",
+      cell: (preset) => preset.sortOrder,
+    },
+    {
+      key: "actions",
+      header: "操作",
+      pinRight: true,
+      headClassName: "text-right",
+      cellClassName: "text-right",
+      cell: (preset) => (
+        <div className="flex items-center justify-end gap-1">
+          {hasPermission("ai_models.presets.edit") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleEdit(preset)}
+            >
+              <PencilIcon />
+              <span className="sr-only">编辑 {preset.alias}</span>
+            </Button>
+          )}
+          {hasPermission("ai_models.presets.delete") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleDelete(preset)}
+            >
+              <Trash2Icon />
+              <span className="sr-only">删除 {preset.alias}</span>
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
+
+  const table = useColumnVisibility("ai-presets", columns)
+
   return (
     <>
       <ListShell
@@ -304,6 +388,12 @@ function AiModelPresetManager() {
                 <SearchIcon />
               </InputGroupAddon>
             </InputGroup>
+            <ColumnToggle
+              columns={columns}
+              hidden={table.hidden}
+              onToggle={table.toggle}
+              onReset={table.reset}
+            />
             {hasPermission("ai_models.presets.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
@@ -365,75 +455,8 @@ function AiModelPresetManager() {
               actions={<RowActions actions={buildPresetActions(preset)} />}
             />
           )}
-        >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>分组</TableHead>
-                <TableHead>别名</TableHead>
-                <TableHead className="hidden md:table-cell">模型名称</TableHead>
-                <TableHead className="hidden lg:table-cell">API 地址</TableHead>
-                <TableHead className="hidden xl:table-cell">描述</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead className="hidden lg:table-cell">排序</TableHead>
-                <TableHead className="sticky right-0 bg-card text-right">
-                  操作
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {presets.map((preset) => (
-                <TableRow key={preset.id}>
-                  <TableCell>
-                    <Badge variant="outline">{preset.group}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">{preset.alias}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {preset.modelName}
-                  </TableCell>
-                  <TableCell className="hidden max-w-[200px] truncate text-muted-foreground lg:table-cell">
-                    {preset.apiUrl}
-                  </TableCell>
-                  <TableCell className="hidden max-w-[150px] truncate text-muted-foreground xl:table-cell">
-                    {preset.description || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={preset.isActive ? "success" : "secondary"}>
-                      {preset.isActive ? "启用" : "禁用"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {preset.sortOrder}
-                  </TableCell>
-                  <TableCell className="sticky right-0 bg-inherit text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {hasPermission("ai_models.presets.edit") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleEdit(preset)}
-                        >
-                          <PencilIcon />
-                          <span className="sr-only">编辑 {preset.alias}</span>
-                        </Button>
-                      )}
-                      {hasPermission("ai_models.presets.delete") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleDelete(preset)}
-                        >
-                          <Trash2Icon />
-                          <span className="sr-only">删除 {preset.alias}</span>
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DataList>
+          columns={table.visibleColumns}
+        />
       </ListShell>
 
       <FormDialog
@@ -801,6 +824,118 @@ export function AiModelPage() {
 
   const groupedPresets = React.useMemo(() => groupPresets(presets), [presets])
 
+  const columns: DataColumn<AiModel>[] = [
+    {
+      key: "alias",
+      header: "别名",
+      cell: (model) => <span className="font-medium">{model.alias}</span>,
+    },
+    {
+      key: "modelName",
+      header: "模型名称",
+      hideable: true,
+      headClassName: "hidden md:table-cell",
+      cellClassName: "hidden md:table-cell",
+      cell: (model) => model.modelName,
+    },
+    {
+      key: "apiUrl",
+      header: "API 地址",
+      hideable: true,
+      headClassName: "hidden lg:table-cell",
+      cellClassName:
+        "hidden max-w-[200px] truncate text-muted-foreground lg:table-cell",
+      cell: (model) => model.apiUrl,
+    },
+    {
+      key: "apiKey",
+      header: "API Key",
+      hideable: true,
+      headClassName: "hidden xl:table-cell",
+      cellClassName: "hidden xl:table-cell",
+      cell: (model) => (
+        <div className="flex items-center gap-2">
+          <code className="text-xs">
+            {visibleKeys.has(model.id)
+              ? model.apiKey
+              : maskApiKey(model.apiKey)}
+          </code>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={
+              visibleKeys.has(model.id) ? "隐藏 API Key" : "显示 API Key"
+            }
+            onClick={() => toggleKeyVisibility(model.id)}
+          >
+            {visibleKeys.has(model.id) ? <EyeOffIcon /> : <EyeIcon />}
+          </Button>
+        </div>
+      ),
+    },
+    {
+      key: "description",
+      header: "描述",
+      hideable: true,
+      headClassName: "hidden xl:table-cell",
+      cellClassName:
+        "hidden max-w-[150px] truncate text-muted-foreground xl:table-cell",
+      cell: (model) => model.description || "-",
+    },
+    {
+      key: "status",
+      header: "状态",
+      cell: (model) => (
+        <Badge variant={model.isDefault ? "success" : "secondary"}>
+          {model.isDefault ? "默认" : "普通"}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "操作",
+      pinRight: true,
+      headClassName: "text-right",
+      cellClassName: "text-right",
+      cell: (model) => (
+        <div className="flex items-center justify-end gap-1">
+          {hasPermission("ai_models") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleTest(model)}
+              disabled={testingId === model.id}
+            >
+              {testingId === model.id ? <Spinner /> : <TestTubeIcon />}
+              <span className="sr-only">测试 {model.alias}</span>
+            </Button>
+          )}
+          {hasPermission("ai_models.edit") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleEdit(model)}
+            >
+              <PencilIcon />
+              <span className="sr-only">编辑 {model.alias}</span>
+            </Button>
+          )}
+          {hasPermission("ai_models.delete") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleDelete(model)}
+            >
+              <Trash2Icon />
+              <span className="sr-only">删除 {model.alias}</span>
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
+
+  const table = useColumnVisibility("ai-models", columns)
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
@@ -834,6 +969,12 @@ export function AiModelPage() {
                     <SearchIcon />
                   </InputGroupAddon>
                 </InputGroup>
+                <ColumnToggle
+                  columns={columns}
+                  hidden={table.hidden}
+                  onToggle={table.toggle}
+                  onReset={table.reset}
+                />
                 {hasPermission("ai_models.create") && (
                   <Button onClick={handleAdd} className="w-full md:w-auto">
                     <PlusIcon data-icon="inline-start" />
@@ -902,124 +1043,8 @@ export function AiModelPage() {
                   actions={<RowActions actions={buildModelActions(model)} />}
                 />
               )}
-            >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>别名</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      模型名称
-                    </TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      API 地址
-                    </TableHead>
-                    <TableHead className="hidden xl:table-cell">
-                      API Key
-                    </TableHead>
-                    <TableHead className="hidden xl:table-cell">描述</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead className="sticky right-0 bg-card text-right">
-                      操作
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {list.items.map((model) => (
-                    <TableRow key={model.id}>
-                      <TableCell className="font-medium">
-                        {model.alias}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {model.modelName}
-                      </TableCell>
-                      <TableCell className="hidden max-w-[200px] truncate text-muted-foreground lg:table-cell">
-                        {model.apiUrl}
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs">
-                            {visibleKeys.has(model.id)
-                              ? model.apiKey
-                              : maskApiKey(model.apiKey)}
-                          </code>
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label={
-                              visibleKeys.has(model.id)
-                                ? "隐藏 API Key"
-                                : "显示 API Key"
-                            }
-                            onClick={() => toggleKeyVisibility(model.id)}
-                          >
-                            {visibleKeys.has(model.id) ? (
-                              <EyeOffIcon />
-                            ) : (
-                              <EyeIcon />
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden max-w-[150px] truncate text-muted-foreground xl:table-cell">
-                        {model.description || "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={model.isDefault ? "success" : "secondary"}
-                        >
-                          {model.isDefault ? "默认" : "普通"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="sticky right-0 bg-inherit text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {hasPermission("ai_models") && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleTest(model)}
-                              disabled={testingId === model.id}
-                            >
-                              {testingId === model.id ? (
-                                <Spinner />
-                              ) : (
-                                <TestTubeIcon />
-                              )}
-                              <span className="sr-only">
-                                测试 {model.alias}
-                              </span>
-                            </Button>
-                          )}
-                          {hasPermission("ai_models.edit") && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleEdit(model)}
-                            >
-                              <PencilIcon />
-                              <span className="sr-only">
-                                编辑 {model.alias}
-                              </span>
-                            </Button>
-                          )}
-                          {hasPermission("ai_models.delete") && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleDelete(model)}
-                            >
-                              <Trash2Icon />
-                              <span className="sr-only">
-                                删除 {model.alias}
-                              </span>
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </DataList>
+              columns={table.visibleColumns}
+            />
           </ListShell>
         </TabsContent>
 

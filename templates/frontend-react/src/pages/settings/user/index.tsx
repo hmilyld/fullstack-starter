@@ -12,7 +12,8 @@ import {
 } from "lucide-react"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
-import { DataList } from "@/components/shared/data-list"
+import { ColumnToggle } from "@/components/shared/column-toggle"
+import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { EmptyState } from "@/components/shared/empty-state"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { ListShell } from "@/components/shared/list-shell"
@@ -66,6 +67,7 @@ import {
   updateUser,
 } from "@/api/user"
 import { getRoles } from "@/api/role"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
@@ -404,6 +406,119 @@ export function UsersPage() {
     pendingUsers.length > 0 && selectedPending.size === pendingUsers.length
   const somePendingSelected = selectedPending.size > 0 && !allPendingSelected
 
+  const columns: DataColumn<User>[] = [
+    {
+      key: "select",
+      header: (
+        <Checkbox
+          checked={allSelected ? true : someSelected ? "indeterminate" : false}
+          onCheckedChange={(checked) => toggleAll(checked === true)}
+          aria-label="全选当前页用户"
+        />
+      ),
+      headClassName: "w-10",
+      cell: (user) => (
+        <Checkbox
+          checked={selectedIds.has(user.id)}
+          onCheckedChange={() => toggleSelected(user.id)}
+          aria-label={`选择 ${user.name}`}
+        />
+      ),
+    },
+    {
+      key: "username",
+      header: "用户名",
+      cell: (user) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="size-8">
+            <AvatarImage
+              src={user.avatar}
+              alt={user.name}
+              width={32}
+              height={32}
+            />
+            <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
+          </Avatar>
+          <span className="text-sm font-medium">{user.username}</span>
+        </div>
+      ),
+    },
+    {
+      key: "name",
+      header: "姓名",
+      hideable: true,
+      headClassName: "hidden md:table-cell",
+      cellClassName: "hidden md:table-cell",
+      cell: (user) => user.name,
+    },
+    {
+      key: "email",
+      header: "邮箱",
+      hideable: true,
+      headClassName: "hidden lg:table-cell",
+      cellClassName: "hidden text-muted-foreground lg:table-cell",
+      cell: (user) => user.email,
+    },
+    {
+      key: "role",
+      header: "角色",
+      cell: (user) => <RoleBadge roleId={user.roleId} roles={roles} />,
+    },
+    {
+      key: "actions",
+      header: "操作",
+      pinRight: true,
+      headClassName: "text-right",
+      cellClassName: "text-right",
+      cell: (user) => (
+        <div className="flex items-center justify-end gap-1">
+          {hasPermission("users.edit") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleEdit(user)}
+            >
+              <PencilIcon />
+              <span className="sr-only">编辑 {user.name}</span>
+            </Button>
+          )}
+          {hasPermission("users.assign_role") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleRole(user)}
+            >
+              <ShieldIcon />
+              <span className="sr-only">维护角色</span>
+            </Button>
+          )}
+          {hasPermission("users.edit") && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => openReset(user)}
+            >
+              <KeyIcon />
+              <span className="sr-only">重置密码</span>
+            </Button>
+          )}
+          {hasPermission("users.delete") && user.id !== currentUser?.id && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => handleDelete(user)}
+            >
+              <Trash2Icon />
+              <span className="sr-only">删除</span>
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
+
+  const table = useColumnVisibility("users", columns)
+
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
@@ -427,6 +542,12 @@ export function UsersPage() {
                 <SearchIcon />
               </InputGroupAddon>
             </InputGroup>
+            <ColumnToggle
+              columns={columns}
+              hidden={table.hidden}
+              onToggle={table.toggle}
+              onReset={table.reset}
+            />
             {hasPermission("users.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
@@ -542,117 +663,8 @@ export function UsersPage() {
               actions={<RowActions actions={buildUserActions(user)} />}
             />
           )}
-        >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={
-                      allSelected
-                        ? true
-                        : someSelected
-                          ? "indeterminate"
-                          : false
-                    }
-                    onCheckedChange={(checked) => toggleAll(checked === true)}
-                    aria-label="全选当前页用户"
-                  />
-                </TableHead>
-                <TableHead>用户名</TableHead>
-                <TableHead className="hidden md:table-cell">姓名</TableHead>
-                <TableHead className="hidden lg:table-cell">邮箱</TableHead>
-                <TableHead>角色</TableHead>
-                <TableHead className="sticky right-0 bg-card text-right">
-                  操作
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {list.items.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedIds.has(user.id)}
-                      onCheckedChange={() => toggleSelected(user.id)}
-                      aria-label={`选择 ${user.name}`}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
-                        <AvatarImage
-                          src={user.avatar}
-                          alt={user.name}
-                          width={32}
-                          height={32}
-                        />
-                        <AvatarFallback>{user.name.slice(0, 1)}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium">
-                        {user.username}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {user.name}
-                  </TableCell>
-                  <TableCell className="hidden text-muted-foreground lg:table-cell">
-                    {user.email}
-                  </TableCell>
-                  <TableCell>
-                    <RoleBadge roleId={user.roleId} roles={roles} />
-                  </TableCell>
-                  <TableCell className="sticky right-0 bg-inherit text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {hasPermission("users.edit") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleEdit(user)}
-                        >
-                          <PencilIcon />
-                          <span className="sr-only">编辑 {user.name}</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.assign_role") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => handleRole(user)}
-                        >
-                          <ShieldIcon />
-                          <span className="sr-only">维护角色</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.edit") && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => openReset(user)}
-                        >
-                          <KeyIcon />
-                          <span className="sr-only">重置密码</span>
-                        </Button>
-                      )}
-                      {hasPermission("users.delete") &&
-                        user.id !== currentUser?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => handleDelete(user)}
-                          >
-                            <Trash2Icon />
-                            <span className="sr-only">删除</span>
-                          </Button>
-                        )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DataList>
+          columns={table.visibleColumns}
+        />
       </ListShell>
 
       <FormDialog

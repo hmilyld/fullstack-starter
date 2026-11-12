@@ -5,6 +5,29 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { ErrorState } from "@/components/shared/error-state"
 import { InlineError } from "@/components/shared/inline-error"
 import { TableSkeletonRow } from "@/components/shared/table-states"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { cn } from "@/lib/utils"
+
+export type DataColumn<T> = {
+  key: string
+  header: React.ReactNode
+  cell: (item: T) => React.ReactNode
+  /** 可在「列」菜单里隐藏 */
+  hideable?: boolean
+  /** 默认隐藏（低优先级列） */
+  defaultHidden?: boolean
+  headClassName?: string
+  cellClassName?: string
+  /** 操作列固定在右侧 */
+  pinRight?: boolean
+}
 
 export type DataListEmpty = {
   icon?: LucideIcon
@@ -20,15 +43,16 @@ type DataListProps<T> = {
   onRetry: () => void
   empty: DataListEmpty
   getKey: (item: T) => string
-  /** 手机端的卡片形态；桌面端由 children 提供表格 */
+  /** 手机端的卡片形态 */
   renderCard: (item: T) => React.ReactNode
+  /** 桌面端的列定义（已按显隐过滤） */
+  columns: DataColumn<T>[]
   skeletonColSpan?: number
-  children: React.ReactNode
 }
 
 /**
- * 列表页的统一状态机：错误 / 加载 / 空态 / 手机卡片 + 桌面表格。
- * 页面只负责「一行长什么样」，不再各自复制这套分支。
+ * 列表页的统一状态机与表格渲染：错误 / 加载 / 空态 / 手机卡片 + 桌面表格。
+ * 页面只提供列定义与卡片形态，不再各自复制表格与分支。
  */
 export function DataList<T>({
   items,
@@ -38,8 +62,8 @@ export function DataList<T>({
   empty,
   getKey,
   renderCard,
+  columns,
   skeletonColSpan = 5,
-  children,
 }: DataListProps<T>) {
   const hasItems = items.length > 0
 
@@ -67,7 +91,42 @@ export function DataList<T>({
               </React.Fragment>
             ))}
           </div>
-          <div className="hidden md:block">{children}</div>
+          <div className="hidden md:block">
+            <Table sticky>
+              <TableHeader className="[&_th]:sticky [&_th]:top-16 [&_th]:z-10 [&_th]:border-b [&_th]:border-border [&_th]:bg-card">
+                <TableRow>
+                  {columns.map((column) => (
+                    <TableHead
+                      key={column.key}
+                      className={cn(
+                        column.headClassName,
+                        column.pinRight && "sticky right-0 bg-card"
+                      )}
+                    >
+                      {column.header}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={getKey(item)}>
+                    {columns.map((column) => (
+                      <TableCell
+                        key={column.key}
+                        className={cn(
+                          column.cellClassName,
+                          column.pinRight && "sticky right-0 bg-inherit"
+                        )}
+                      >
+                        {column.cell(item)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </>
       )}
     </>

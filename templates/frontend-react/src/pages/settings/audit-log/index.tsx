@@ -9,7 +9,8 @@ import {
   XIcon,
 } from "lucide-react"
 
-import { DataList } from "@/components/shared/data-list"
+import { ColumnToggle } from "@/components/shared/column-toggle"
+import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
 import { RecordCard } from "@/components/shared/record-card"
@@ -34,15 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { getAuditLogs } from "@/api/audit-log"
+import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlPage } from "@/hooks/use-url-list-state"
 import { formatDateTime } from "@/lib/format"
@@ -254,6 +248,53 @@ export function AuditLogPage() {
     )
   }
 
+  const columns: DataColumn<AuditLog>[] = [
+    {
+      key: "createdAt",
+      header: "时间",
+      cellClassName: "whitespace-nowrap text-muted-foreground",
+      cell: (log) => formatDateTime(log.createdAt),
+    },
+    {
+      key: "username",
+      header: "操作者",
+      hideable: true,
+      headClassName: "hidden md:table-cell",
+      cellClassName: "hidden md:table-cell",
+      cell: (log) => log.username || "未知",
+    },
+    {
+      key: "action",
+      header: "动作",
+      cellClassName: "font-mono text-xs",
+      cell: (log) => log.action,
+    },
+    {
+      key: "ip",
+      header: "IP",
+      hideable: true,
+      headClassName: "hidden lg:table-cell",
+      cellClassName: "hidden text-muted-foreground lg:table-cell",
+      cell: (log) => log.ip || "-",
+    },
+    {
+      key: "status",
+      header: "状态",
+      cell: (log) => getStatusBadge(log.status),
+    },
+    {
+      key: "detail",
+      header: "详情",
+      hideable: true,
+      headClassName: "hidden xl:table-cell",
+      cellClassName:
+        "hidden max-w-[240px] truncate text-muted-foreground xl:table-cell",
+      cell: (log) => log.detail || "-",
+    },
+  ]
+
+  const table = useColumnVisibility("audit-logs", columns)
+
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
@@ -294,6 +335,12 @@ export function AuditLogPage() {
                 <RotateCcwIcon data-icon="inline-start" />
                 重置
               </Button>
+              <ColumnToggle
+                columns={columns}
+                hidden={table.hidden}
+                onToggle={table.toggle}
+                onReset={table.reset}
+              />
             </div>
           </div>
           <div className="flex items-center gap-2 md:hidden">
@@ -412,42 +459,8 @@ export function AuditLogPage() {
               }
             />
           )}
-        >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>时间</TableHead>
-                <TableHead className="hidden md:table-cell">操作者</TableHead>
-                <TableHead>动作</TableHead>
-                <TableHead className="hidden lg:table-cell">IP</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead className="hidden xl:table-cell">详情</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {list.items.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">
-                    {formatDateTime(log.createdAt)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {log.username || "未知"}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {log.action}
-                  </TableCell>
-                  <TableCell className="hidden text-muted-foreground lg:table-cell">
-                    {log.ip || "-"}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(log.status)}</TableCell>
-                  <TableCell className="hidden max-w-[240px] truncate text-muted-foreground xl:table-cell">
-                    {log.detail || "-"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DataList>
+          columns={table.visibleColumns}
+        />
       </ListShell>
     </div>
   )
