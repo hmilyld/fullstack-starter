@@ -23,8 +23,8 @@ export function SettingsNav({
   return (
     <TabsList
       className={cn(
-        "w-full justify-start gap-1 overflow-x-auto bg-transparent p-0",
-        "lg:sticky lg:top-20 lg:w-1/5 lg:min-w-44 lg:flex-col lg:overflow-visible",
+        "w-full flex-wrap justify-start gap-1 bg-transparent p-0",
+        "md:sticky md:top-20 md:w-1/5 md:min-w-40 md:flex-col md:flex-nowrap",
         className
       )}
     >

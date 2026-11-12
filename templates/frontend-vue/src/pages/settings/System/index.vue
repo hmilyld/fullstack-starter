@@ -173,7 +173,7 @@ const smtpDirty = computed(
     smtpPassword.value.trim() !== ""
 )
 
-const isDesktop = useMediaQuery("(min-width: 1024px)")
+const isWide = useMediaQuery("(min-width: 768px)")
 
 const settingsTabs = [
   { value: "site", title: "站点设置", icon: Settings2 },
@@ -311,8 +311,8 @@ function applySmtpPreset(name: string) {
     <template v-else-if="config">
       <Tabs
         :model-value="activeTab"
-        :orientation="isDesktop ? 'vertical' : 'horizontal'"
-        class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
+        :orientation="isWide ? 'vertical' : 'horizontal'"
+        class="flex flex-col gap-4 md:flex-row md:items-start md:gap-8"
         @update:model-value="setActiveTab(String($event))"
       >
         <SettingsNav :items="settingsTabs" />
