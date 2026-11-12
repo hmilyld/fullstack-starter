@@ -1,13 +1,35 @@
 import type { ReactNode } from "react"
-import { DatabaseIcon, ScrollTextIcon, ShieldCheckIcon } from "lucide-react"
+import {
+  DatabaseIcon,
+  MonitorSmartphoneIcon,
+  ScrollTextIcon,
+  ShieldCheckIcon,
+} from "lucide-react"
 
 import { BrandMark } from "@/components/brand-mark"
 import { useSiteConfig } from "@/lib/site-config"
 
-const highlights = [
-  { icon: ShieldCheckIcon, label: "细粒度权限" },
-  { icon: ScrollTextIcon, label: "操作审计" },
-  { icon: DatabaseIcon, label: "数据导入导出" },
+const capabilities = [
+  {
+    icon: ShieldCheckIcon,
+    label: "细粒度权限",
+    description: "菜单与操作级授权",
+  },
+  {
+    icon: ScrollTextIcon,
+    label: "操作审计",
+    description: "写操作与拦截留痕",
+  },
+  {
+    icon: DatabaseIcon,
+    label: "数据管理",
+    description: "加密导入与导出",
+  },
+  {
+    icon: MonitorSmartphoneIcon,
+    label: "多端适配",
+    description: "手机 / 平板 / 桌面",
+  },
 ]
 
 /** 登录/注册页共用的分栏布局：品牌说明 + 表单 */
@@ -20,9 +42,13 @@ export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <main className="flex min-h-svh items-center justify-center bg-background px-(--layout-gutter) py-6 pb-[max(2rem,env(safe-area-inset-bottom))] md:py-10">
       <div className="grid w-full max-w-6xl overflow-hidden rounded-2xl border bg-card shadow-xl max-lg:rounded-none max-lg:border-0 max-lg:bg-transparent max-lg:shadow-none max-lg:ring-0 lg:grid-cols-[1.08fr_1fr]">
-        <aside className="relative hidden flex-col justify-between gap-10 bg-primary p-10 text-primary-foreground lg:flex xl:p-14 dark:border-border dark:bg-background dark:text-foreground dark:lg:border-r">
-          <div className="flex items-center gap-3">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-sm">
+        <aside className="relative hidden flex-col justify-between gap-10 overflow-hidden bg-primary p-10 text-primary-foreground lg:flex xl:p-14 dark:border-border dark:bg-background dark:text-foreground dark:lg:border-r">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent"
+          />
+          <div className="relative flex items-center gap-3">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-sm ring-1 ring-primary-foreground/10 dark:ring-border">
               <BrandMark className="size-8" />
             </div>
             <div className="flex min-w-0 flex-col">
@@ -33,7 +59,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="relative flex flex-col gap-4">
             <p className="text-3xl leading-[1.15] font-semibold tracking-tight text-balance xl:text-4xl">
               把用户、权限与数据，
               <br />
@@ -44,12 +70,20 @@ export function AuthShell({ children }: { children: ReactNode }) {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-3 text-xs text-primary-foreground/60 dark:text-muted-foreground">
-            {highlights.map(({ icon: Icon, label }) => (
-              <span key={label} className="flex items-center gap-1.5">
-                <Icon className="size-3.5" />
-                {label}
-              </span>
+          <div className="relative grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-primary-foreground/10 bg-primary-foreground/10 dark:border-border dark:bg-border">
+            {capabilities.map(({ icon: Icon, label, description }) => (
+              <div
+                key={label}
+                className="flex items-start gap-2.5 bg-primary p-3.5 dark:bg-background"
+              >
+                <Icon className="mt-0.5 size-4 shrink-0 opacity-70" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{label}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed opacity-60">
+                    {description}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </aside>
