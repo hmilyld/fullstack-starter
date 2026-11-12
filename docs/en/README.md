@@ -12,6 +12,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 - 🧩 **Complete modules**: users, roles, permissions, menus, system settings, AI models and presets, audit logs, data management, dashboard
 - 🐳 **Docker ready**: single-image deployment with an Nginx reverse proxy
 - 📊 **Works out of the box**: dashboard stats, user/role/permission CRUD, paginated search, personal settings
+- 🧭 **List experience**: per-table column visibility (remembered), page size, sticky headers, multi-select bulk actions, a ⌘K command palette, and an unsaved-changes warning
 
 ## Features of the Generated Project
 
@@ -30,6 +31,7 @@ A full-stack application scaffolder — generate a system with a complete admin 
 | Data management | AES-encrypted full export, same-version full import, global freeze during import, all sessions invalidated |
 | Profile | Edit profile, change password |
 | Device support | Responsive across phone, tablet, and desktop; phones use cards and drawers, tablets use an icon rail, desktop uses the full sidebar |
+| Lists & interaction | Column visibility remembered per table, page size, sticky table headers, multi-select bulk actions, card lists on phones; ⌘K command palette; unsaved-changes warning |
 
 Default accounts: `admin / 123456` (the only administrator); `zhangsan / lisi / wangwu / zhaoliu` all use the password `123456` (regular users). New accounts are assigned the "pending review" or "regular user" role according to system settings.
 
