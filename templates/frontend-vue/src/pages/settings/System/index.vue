@@ -31,6 +31,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMediaQuery } from "@vueuse/core"
 import { getRoles } from "@/api/role"
 import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { useSiteConfigStore } from "@/stores/site-config"
@@ -170,6 +171,8 @@ const smtpDirty = computed(
     smtpPassword.value.trim() !== ""
 )
 
+const isDesktop = useMediaQuery("(min-width: 1024px)")
+
 const activePreset = computed(() =>
   SMTP_PRESETS.find((preset) => preset.name === smtpPreset.value)
 )
@@ -288,7 +291,7 @@ function applySmtpPreset(name: string) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-(--page-gap)">
+  <div class="mx-auto flex w-full max-w-5xl flex-col gap-(--page-gap)">
     <PageHeader
       title="系统设置"
       description="管理站点全局配置、注册策略与邮件服务。"
@@ -298,16 +301,20 @@ function applySmtpPreset(name: string) {
     <template v-else-if="config">
       <Tabs
         :model-value="activeTab"
-        class="w-full"
+        :orientation="isDesktop ? 'vertical' : 'horizontal'"
+        class="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
         @update:model-value="setActiveTab(String($event))"
       >
-        <TabsList>
+        <TabsList class="w-full lg:sticky lg:top-20 lg:w-56 lg:shrink-0">
           <TabsTrigger value="site">站点设置</TabsTrigger>
           <TabsTrigger value="register">注册设置</TabsTrigger>
           <TabsTrigger value="smtp">邮件配置</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="site" class="flex flex-col gap-(--page-gap)">
+        <TabsContent
+          value="site"
+          class="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        >
           <Card class="max-w-3xl">
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
@@ -404,7 +411,10 @@ function applySmtpPreset(name: string) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="register" class="flex flex-col gap-(--page-gap)">
+        <TabsContent
+          value="register"
+          class="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        >
           <Card class="max-w-3xl">
             <CardHeader>
               <CardTitle>注册策略</CardTitle>
@@ -497,7 +507,10 @@ function applySmtpPreset(name: string) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="smtp" class="flex flex-col gap-(--page-gap)">
+        <TabsContent
+          value="smtp"
+          class="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        >
           <Card class="max-w-3xl">
             <CardHeader>
               <CardTitle>SMTP 邮件配置</CardTitle>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useMediaQuery } from "@vueuse/core"
 import { useRoute, useRouter } from "vue-router"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
@@ -29,6 +30,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 
+const isDesktop = useMediaQuery("(min-width: 1024px)")
 const activeTab = computed(() =>
   route.query.tab === "security" ? "security" : "profile"
 )
@@ -98,20 +100,24 @@ async function handlePasswordSubmit() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-(--page-gap)">
+  <div class="mx-auto flex w-full max-w-4xl flex-col gap-(--page-gap)">
     <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
 
     <Tabs
       :model-value="activeTab"
-      class="w-full"
+      :orientation="isDesktop ? 'vertical' : 'horizontal'"
+      class="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
       @update:model-value="setActiveTab(String($event))"
     >
-      <TabsList>
+      <TabsList class="w-full lg:sticky lg:top-20 lg:w-52 lg:shrink-0">
         <TabsTrigger value="profile">基本资料</TabsTrigger>
         <TabsTrigger value="security">密码修改</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="profile" class="flex flex-col gap-(--page-gap)">
+      <TabsContent
+        value="profile"
+        class="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+      >
         <Card class="max-w-2xl">
           <CardHeader>
             <CardTitle>基本资料</CardTitle>
@@ -159,7 +165,10 @@ async function handlePasswordSubmit() {
         </Card>
       </TabsContent>
 
-      <TabsContent value="security" class="flex flex-col gap-(--page-gap)">
+      <TabsContent
+        value="security"
+        class="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+      >
         <Card class="max-w-2xl">
           <CardHeader>
             <CardTitle>密码修改</CardTitle>

@@ -9,13 +9,18 @@ import {
 } from "lucide-react"
 
 import { useTheme } from "@/components/theme-provider"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 function Toaster({ ...props }: ToasterProps) {
   const { theme } = useTheme()
+  const prefersDark = useMediaQuery("(prefers-color-scheme: dark)")
+  // 语义色写在 index.css（按 data-sonner-theme 区分深浅），这里只传解析后的主题
+  const resolvedTheme =
+    theme === "system" ? (prefersDark ? "dark" : "light") : theme
 
   return (
     <Sonner
-      theme={theme}
+      theme={resolvedTheme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
@@ -26,29 +31,7 @@ function Toaster({ ...props }: ToasterProps) {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
-          "--success-bg":
-            "color-mix(in oklch, var(--success) 12%, var(--popover))",
-          "--success-border":
-            "color-mix(in oklch, var(--success) 28%, var(--popover))",
-          "--success-text": "var(--success)",
-          "--error-bg":
-            "color-mix(in oklch, var(--destructive) 10%, var(--popover))",
-          "--error-border":
-            "color-mix(in oklch, var(--destructive) 26%, var(--popover))",
-          "--error-text": "var(--destructive)",
-          "--warning-bg":
-            "color-mix(in oklch, var(--warning) 14%, var(--popover))",
-          "--warning-border":
-            "color-mix(in oklch, var(--warning) 30%, var(--popover))",
-          "--warning-text": "var(--warning)",
-          "--info-bg": "color-mix(in oklch, var(--info) 12%, var(--popover))",
-          "--info-border":
-            "color-mix(in oklch, var(--info) 28%, var(--popover))",
-          "--info-text": "var(--info)",
         } as CSSProperties
       }
       {...props}

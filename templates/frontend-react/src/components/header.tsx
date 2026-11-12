@@ -44,7 +44,7 @@ export function Header() {
           <SidebarTrigger className="-ml-1" />
           <Separator
             orientation="vertical"
-            className="mr-1 hidden h-5 md:block"
+            className="mr-1 hidden h-5 self-center md:block"
           />
           <Breadcrumb className="hidden md:block">
             <BreadcrumbList>
@@ -102,7 +102,7 @@ export function Header() {
           <ThemeToggle />
           <Separator
             orientation="vertical"
-            className="mx-1 hidden h-5 sm:block"
+            className="mx-1 hidden h-5 self-center sm:block"
           />
           <UserMenu />
         </div>

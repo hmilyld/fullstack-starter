@@ -54,7 +54,7 @@ onUnmounted(() => {
         <SidebarTrigger class="-ml-1" />
         <Separator
           orientation="vertical"
-          class="mr-1 hidden h-5 data-[orientation=vertical]:h-5 md:block"
+          class="mr-1 hidden h-5 self-center md:block"
         />
         <Breadcrumb class="hidden md:block">
           <BreadcrumbList>
@@ -110,7 +110,7 @@ onUnmounted(() => {
         <ThemeToggle />
         <Separator
           orientation="vertical"
-          class="mx-1 hidden h-5 data-[orientation=vertical]:h-5 sm:block"
+          class="mx-1 hidden h-5 self-center sm:block"
         />
         <UserMenu />
       </div>

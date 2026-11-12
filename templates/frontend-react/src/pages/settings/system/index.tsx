@@ -2,6 +2,8 @@ import * as React from "react"
 import { MailIcon, SaveIcon } from "lucide-react"
 import { useSearchParams } from "react-router"
 
+import { useMediaQuery } from "@/hooks/use-media-query"
+
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
 import { PageFormSkeleton } from "@/components/shared/table-states"
@@ -130,6 +132,7 @@ function SaveFooter({
 export function SystemPage() {
   const { refresh: refreshSiteConfig } = useSiteConfig()
   const [searchParams, setSearchParams] = useSearchParams()
+  const isDesktop = useMediaQuery("(min-width: 1024px)")
   const tabParam = searchParams.get("tab")
   const activeTab =
     tabParam === "register" || tabParam === "smtp" ? tabParam : "site"
@@ -337,20 +340,28 @@ export function SystemPage() {
   const activePreset = SMTP_PRESETS.find((preset) => preset.name === smtpPreset)
 
   return (
-    <div className="flex flex-col gap-(--page-gap)">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-(--page-gap)">
       <PageHeader
         title="系统设置"
         description="管理站点全局配置、注册策略与邮件服务。"
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        orientation={isDesktop ? "vertical" : "horizontal"}
+        className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
+      >
+        <TabsList className="w-full lg:sticky lg:top-20 lg:w-56 lg:shrink-0">
           <TabsTrigger value="site">站点设置</TabsTrigger>
           <TabsTrigger value="register">注册设置</TabsTrigger>
           <TabsTrigger value="smtp">邮件配置</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="site" className="flex flex-col gap-(--page-gap)">
+        <TabsContent
+          value="site"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        >
           <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
@@ -466,7 +477,7 @@ export function SystemPage() {
 
         <TabsContent
           value="register"
-          className="flex flex-col gap-(--page-gap)"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
         >
           <Card className="max-w-3xl">
             <CardHeader>
@@ -574,7 +585,10 @@ export function SystemPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="smtp" className="flex flex-col gap-(--page-gap)">
+        <TabsContent
+          value="smtp"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        >
           <Card className="max-w-3xl">
             <CardHeader>
               <CardTitle>SMTP 邮件配置</CardTitle>

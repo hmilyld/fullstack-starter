@@ -1,6 +1,8 @@
 import * as React from "react"
 import { useSearchParams } from "react-router"
 
+import { useMediaQuery } from "@/hooks/use-media-query"
+
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
 import { PasswordInput } from "@/components/shared/password-input"
@@ -27,6 +29,7 @@ import { appToast } from "@/lib/toast"
 export function ProfilePage() {
   const { user, updateUser } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
+  const isDesktop = useMediaQuery("(min-width: 1024px)")
   const activeTab =
     searchParams.get("tab") === "security" ? "security" : "profile"
 
@@ -90,16 +93,24 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col gap-(--page-gap)">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-(--page-gap)">
       <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        orientation={isDesktop ? "vertical" : "horizontal"}
+        className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
+      >
+        <TabsList className="w-full lg:sticky lg:top-20 lg:w-52 lg:shrink-0">
           <TabsTrigger value="profile">基本资料</TabsTrigger>
           <TabsTrigger value="security">密码修改</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="flex flex-col gap-(--page-gap)">
+        <TabsContent
+          value="profile"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
+        >
           <Card className="max-w-2xl">
             <CardHeader>
               <CardTitle>基本资料</CardTitle>
@@ -151,7 +162,7 @@ export function ProfilePage() {
 
         <TabsContent
           value="security"
-          className="flex flex-col gap-(--page-gap)"
+          className="flex min-w-0 flex-1 flex-col gap-(--page-gap)"
         >
           <Card className="max-w-2xl">
             <CardHeader>

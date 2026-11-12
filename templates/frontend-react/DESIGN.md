@@ -146,7 +146,7 @@
 
 ### 4.4 布局宽度
 
-内容最大宽 `--layout-max: 80rem`（1280px），≥1024px 生效；Compact/Medium 为 100%。顶栏与内容区共用同一最大宽与左右留白，保证面包屑与页面标题左对齐。
+内容最大宽 `--layout-max: 96rem`（1536px），≥1024px 生效；Compact/Medium 为 100%。**侧边栏收起后内容必须随可用宽度铺满**，只在 ≥1536px 的超宽屏才居中限宽——否则收起侧边栏反而缩小可用区域，用户会认为布局出错。顶栏与内容区共用同一最大宽与左右留白，保证面包屑与页面标题左对齐。
 
 ---
 
@@ -175,6 +175,7 @@
 | `Input` / `Select` / `Textarea` | `rounded-md`，`border-input`，`bg-transparent`，`shadow-xs`；聚焦时 `border-ring + ring-[3px] ring-ring` |
 | `Card` | `rounded-xl border bg-card shadow-sm`，内边距 24px，内部间距 24px；标题 16/600，说明 13/muted |
 | `Badge` | `rounded-md`，`h-5`，`text-xs font-medium`；语义变体 `success / warning / info / destructive / secondary / outline` |
+| `Sonner` | 语义色写在 `index.css` 的 `[data-sonner-theme]` 规则里，深浅色各一套；**不要用 `color-mix` 与白色混合**，浏览器会把白色的 hue 当作 0 参与插值，绿色会偏成品红 |
 | `Table` | 表头 `h-10 text-muted-foreground text-[13px]`，行 `border-b` 且 hover `bg-muted/50`，单元格 `p-2` |
 | `Dialog` | `rounded-xl border shadow-xl`，标题 18/600，底部操作右对齐 |
 | `DropdownMenu` / `Select` 内容 | `rounded-xl border shadow-lg`，选项 `rounded-md` |
@@ -227,7 +228,16 @@
 
 卡片分组，每组一个 `CardHeader`（标题 + 说明）；字段用 `Field` + 可见 `FieldLabel`，错误贴近字段；底部操作右侧对齐，主操作在最后。
 
-### 7.4 登录 / 注册
+### 7.4 设置类页面
+
+设置页是「分类多、字段少」的页面，使用**左栏竖向 Tabs + 右侧内容**，而不是顶部横向 Tabs：
+
+- ≥1024px：`Tabs orientation="vertical"`，左栏 `w-52`/`w-56` 且 `sticky top-20`，右侧内容列 `flex-1 min-w-0`；
+- <1024px：同一个 Tabs 切回横向分段控件，内容在下方；
+- 整页居中限宽（系统设置 `max-w-5xl`，个人设置 `max-w-4xl`），让表单阅读宽度稳定，避免右侧大片空白；
+- Tabs 的方向由 `useMediaQuery` 决定，保证键盘方向键与视觉方向一致。
+
+### 7.5 登录 / 注册
 
 桌面左右分栏：左侧 `bg-primary` 品牌面板（logo 方块 + 站点名 + 一句话价值 + 能力列表），右侧表单列 `max-w-sm`。`<lg` 隐藏品牌面板，在表单上方显示紧凑品牌行。登录卡片 `rounded-2xl border shadow-xl`。
 
