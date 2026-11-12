@@ -2,8 +2,10 @@ import * as React from "react"
 import { useNavigate } from "react-router"
 import { CornerDownLeftIcon, SearchIcon } from "lucide-react"
 
+import { useTheme } from "@/components/theme-provider"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { useSidebar } from "@/components/ui/sidebar"
 import { useNavigation } from "@/hooks/use-navigation"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
@@ -19,7 +21,12 @@ type CommandEntry = {
   id: string
   group: string
   title: string
-  url: string
+  /** 跳转地址；与 run 二选一 */
+  url?: string
+  /** 直接执行的动作，如切换主题 */
+  run?: () => void
+  /** 右侧提示，默认显示 url */
+  hint?: string
 }
 
 const EXTRA_ENTRIES: CommandEntry[] = [
@@ -33,6 +40,8 @@ export function CommandMenu() {
   const navigate = useNavigate()
   const { groups } = useNavigation()
   const { hasPermission } = useAuth()
+  const { theme, setTheme } = useTheme()
+  const { toggleSidebar } = useSidebar()
   const listRef = React.useRef<HTMLDivElement>(null)
 
   const entries = React.useMemo<CommandEntry[]>(() => {
@@ -55,8 +64,41 @@ export function CommandMenu() {
           },
         ]
       : EXTRA_ENTRIES
-    return [...navEntries, ...extra]
-  }, [groups, hasPermission])
+
+    const themeSuffix = (value: string) => (theme === value ? "（当前）" : "")
+    const actions: CommandEntry[] = [
+      {
+        id: "theme-light",
+        group: "外观",
+        title: `切换为浅色主题${themeSuffix("light")}`,
+        hint: "主题",
+        run: () => setTheme("light"),
+      },
+      {
+        id: "theme-dark",
+        group: "外观",
+        title: `切换为深色主题${themeSuffix("dark")}`,
+        hint: "主题",
+        run: () => setTheme("dark"),
+      },
+      {
+        id: "theme-system",
+        group: "外观",
+        title: `跟随系统主题${themeSuffix("system")}`,
+        hint: "主题",
+        run: () => setTheme("system"),
+      },
+      {
+        id: "sidebar-toggle",
+        group: "外观",
+        title: "收起 / 展开侧边栏",
+        hint: "布局",
+        run: toggleSidebar,
+      },
+    ]
+
+    return [...navEntries, ...extra, ...actions]
+  }, [groups, hasPermission, theme, setTheme, toggleSidebar])
 
   const results = React.useMemo(() => {
     const keyword = query.trim().toLowerCase()
@@ -64,7 +106,8 @@ export function CommandMenu() {
     return entries.filter(
       (entry) =>
         entry.title.toLowerCase().includes(keyword) ||
-        entry.url.toLowerCase().includes(keyword)
+        entry.hint?.toLowerCase().includes(keyword) ||
+        entry.url?.toLowerCase().includes(keyword)
     )
   }, [entries, query])
 
@@ -101,7 +144,11 @@ export function CommandMenu() {
 
   function select(entry: CommandEntry) {
     setOpen(false)
-    navigate(entry.url)
+    if (entry.run) {
+      entry.run()
+      return
+    }
+    if (entry.url) navigate(entry.url)
   }
 
   function handleInputKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -182,7 +229,7 @@ export function CommandMenu() {
                   >
                     <span className="truncate">{entry.title}</span>
                     <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
-                      {entry.url}
+                      {entry.url ?? entry.hint}
                     </span>
                   </button>
                 </React.Fragment>
