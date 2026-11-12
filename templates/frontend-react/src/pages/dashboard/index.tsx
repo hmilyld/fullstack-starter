@@ -13,20 +13,12 @@ import {
   TrendingUpIcon,
   UsersIcon,
 } from "lucide-react"
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { ErrorState } from "@/components/shared/error-state"
 import { InlineError } from "@/components/shared/inline-error"
 import { PageHeader } from "@/components/shared/page-header"
+import { TrendChart } from "@/components/shared/trend-chart"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -41,7 +33,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { getAuditLogs } from "@/api/audit-log"
 import { getDashboardActivity, getDashboardStats } from "@/api/dashboard"
-import { useMediaQuery } from "@/hooks/use-media-query"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import type { AuditLog } from "@/types/audit-log"
@@ -128,7 +119,6 @@ function buildTrend(logs: AuditLog[]): TrendPoint[] {
 
 export function DashboardPage() {
   const { hasPermission } = useAuth()
-  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
   const [stats, setStats] = React.useState<DashboardStats | null>(null)
   const [activity, setActivity] = React.useState<ActivityItem[]>([])
   const [logs, setLogs] = React.useState<AuditLog[]>([])
@@ -315,90 +305,7 @@ export function DashboardPage() {
                     </p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={trend}
-                      margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
-                    >
-                      <defs>
-                        <linearGradient
-                          id="trend-fill"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="0%"
-                            stopColor="var(--chart-1)"
-                            stopOpacity={0.34}
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="var(--chart-1)"
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        vertical={false}
-                        stroke="var(--border)"
-                        strokeDasharray="3 3"
-                      />
-                      <XAxis
-                        dataKey="label"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        stroke="var(--muted-foreground)"
-                        fontSize={12}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        width={44}
-                        allowDecimals={false}
-                        stroke="var(--muted-foreground)"
-                        fontSize={12}
-                      />
-                      <Tooltip
-                        cursor={{ stroke: "var(--border)" }}
-                        contentStyle={{
-                          backgroundColor: "var(--popover)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "var(--radius)",
-                          color: "var(--popover-foreground)",
-                          fontSize: 12,
-                          boxShadow: "0 8px 24px rgb(15 23 42 / 0.10)",
-                        }}
-                        labelStyle={{ color: "var(--muted-foreground)" }}
-                        formatter={(value, name) => [
-                          `${Number(value ?? 0)} 次`,
-                          name === "success" ? "成功" : "失败或被拦截",
-                        ]}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="success"
-                        name="success"
-                        stroke="var(--chart-1)"
-                        strokeWidth={2}
-                        fill="url(#trend-fill)"
-                        isAnimationActive={!prefersReducedMotion}
-                      />
-                      {weekFailed > 0 && (
-                        <Area
-                          type="monotone"
-                          dataKey="failed"
-                          name="failed"
-                          stroke="var(--destructive)"
-                          strokeWidth={2}
-                          fill="transparent"
-                          isAnimationActive={!prefersReducedMotion}
-                        />
-                      )}
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <TrendChart points={trend} />
                 )}
               </CardContent>
             </Card>
