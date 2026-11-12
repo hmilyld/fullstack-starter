@@ -3,6 +3,7 @@ name: Build demo image
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -47,6 +48,10 @@ jobs:
       - name: Verify design spec matches templates
         run: pnpm run sync:design:check
 
+      - name: Read release version
+        id: version
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+
       - name: Generate demo project (React + Python)
         run: pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated" demo react python
 
@@ -71,6 +76,14 @@ jobs:
         with:
           context: ${{ runner.temp }}/generated/demo
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}:latest
+          labels: |
+            org.opencontainers.image.title=${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
