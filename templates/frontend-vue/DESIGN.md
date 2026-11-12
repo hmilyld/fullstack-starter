@@ -192,6 +192,7 @@
 | `Header` | 高 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、外观设置、账户 |
 | `CommandMenu` | ⌘K / Ctrl+K 打开，搜索路由、菜单项与外观动作；空查询时先列「最近」；↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明 |
 | `ConfigDrawer` | 外观设置抽屉：主题、侧栏样式（默认 / 浮动 / 内嵌）、折叠方式（图标栏 / 抽屉）；配置存 localStorage，侧栏与抽屉共用 |
+| 侧栏变体 | `默认` 通栏；`浮动` 侧栏本体 `m-2 rounded-2xl shadow-sm`；`内嵌` 内容面板 `m-2 ml-0 rounded-2xl ring-1 ring-border` 且 **`overflow-clip`**——否则顶栏等子元素的底色会盖住面板的圆角，角落里看不到弧线。用 `clip` 不用 `hidden`，避免打断表头吸顶 |
 | `PageHeader` | H1 + 一行说明 + 右侧操作；Compact 下操作换行且主操作全宽 |
 | `ListShell` | 卡片外壳：标题/说明/工具栏 → 内容 → 底部分页；工具栏在 Compact 下纵向堆叠 |
 

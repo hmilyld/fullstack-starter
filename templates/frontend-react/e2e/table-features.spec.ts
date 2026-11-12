@@ -107,6 +107,17 @@ test("switches sidebar variant from the appearance drawer", async ({
   await page.keyboard.press("Escape")
 
   await expect(page.locator('[data-variant="inset"]').first()).toBeAttached()
+
+  // 圆角 + 裁剪：子元素（顶栏）底色不能盖住内容面板的圆角
+  const panel = await page
+    .locator('[data-slot="sidebar-inset"]')
+    .evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { radius: style.borderTopLeftRadius, overflow: style.overflow }
+    })
+  expect(panel.radius).toBe("18px")
+  expect(panel.overflow).toBe("clip")
+
   await page.reload()
   await expect(page.locator('[data-variant="inset"]').first()).toBeAttached()
 })
