@@ -7,6 +7,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
 import { SettingsNav } from "@/components/shared/settings-nav"
+import { UnsavedChangesGuard } from "@/components/shared/unsaved-changes-guard"
 import { PasswordInput } from "@/components/shared/password-input"
 import {
   Card,
@@ -100,8 +101,12 @@ export function ProfilePage() {
     setConfirmPassword("")
   }
 
+  const passwordDirty =
+    currentPassword !== "" || newPassword !== "" || confirmPassword !== ""
+
   return (
     <div className="flex flex-col gap-(--page-gap)">
+      <UnsavedChangesGuard when={profileDirty || passwordDirty} />
       <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
 
       <Separator />

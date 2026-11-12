@@ -7,6 +7,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
 import { SettingsNav } from "@/components/shared/settings-nav"
+import { UnsavedChangesGuard } from "@/components/shared/unsaved-changes-guard"
 import { PageFormSkeleton } from "@/components/shared/table-states"
 import {
   Card,
@@ -229,6 +230,13 @@ export function SystemPage() {
     smtpPort !== String(savedConfig?.smtpPort ?? "") ||
     smtpPassword.trim() !== ""
 
+  const pageDirty =
+    siteDirty ||
+    maintenanceDirty ||
+    registrationDirty ||
+    defaultDirty ||
+    smtpDirty
+
   async function savePatch(
     key: SaveKey,
     patch: Partial<SystemConfig>,
@@ -348,6 +356,7 @@ export function SystemPage() {
 
   return (
     <div className="flex flex-col gap-(--page-gap)">
+      <UnsavedChangesGuard when={pageDirty} />
       <PageHeader
         title="系统设置"
         description="管理站点全局配置、注册策略与邮件服务。"
