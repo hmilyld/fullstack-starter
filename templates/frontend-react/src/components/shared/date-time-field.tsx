@@ -20,12 +20,19 @@ import {
   parseDateTimeInput,
   toDateTimeInput,
   todayKey,
-  type DateTimeParts,
 } from "@/lib/date-time"
 import { cn } from "@/lib/utils"
 
 const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"]
 const PLACEHOLDER = "选择日期时间"
+
+/** 方向键在日历里移动的天数 */
+const ARROW_STEPS: Record<string, number> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -7,
+  ArrowDown: 7,
+}
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -74,6 +81,9 @@ export function DateTimeField({
   const [minuteText, setMinuteText] = React.useState(() =>
     parts ? pad(parts.minute) : "00"
   )
+  const gridRef = React.useRef<HTMLDivElement>(null)
+  // 方向键移动到上/下月时，等新月份渲染完再落焦点
+  const pendingFocus = React.useRef<string | null>(null)
 
   // 外部值变化（回填 URL、重置）时同步时分输入；本地输入不回写，避免光标跳动
   React.useEffect(() => {
@@ -95,6 +105,24 @@ export function DateTimeField({
   )
   const today = todayKey()
 
+  React.useEffect(() => {
+    const key = pendingFocus.current
+    if (!key) return
+    const button = gridRef.current?.querySelector<HTMLButtonElement>(
+      `[data-date="${key}"]`
+    )
+    if (!button) return
+    button.focus()
+    pendingFocus.current = null
+  }, [cells])
+
+  // 日历只保留一个 Tab 落点，进入后用方向键移动
+  const focusableDate = cells.some((cell) => cell.date === dateKey)
+    ? dateKey
+    : cells.some((cell) => cell.date === today)
+      ? today
+      : (cells.find((cell) => cell.inMonth)?.date ?? cells[0].date)
+
   function handleOpenChange(next: boolean) {
     setOpen(next)
     if (next) {
@@ -110,20 +138,23 @@ export function DateTimeField({
     })
   }
 
-  function emit(next: DateTimeParts) {
-    onChange(toDateTimeInput(next))
+  function emitTime(hour: number, minute: number) {
+    const base = parts ?? { ...nowParts(), hour: 0, minute: 0 }
+    onChange(toDateTimeInput({ ...base, hour, minute }))
   }
 
   function selectDay(date: string) {
     const [year, month, day] = date.split("-").map(Number)
     // 还没选过时间时默认整天起点，避免出现当前时刻这种意外值
-    emit({
-      year,
-      month,
-      day,
-      hour: parts?.hour ?? 0,
-      minute: parts?.minute ?? 0,
-    })
+    onChange(
+      toDateTimeInput({
+        year,
+        month,
+        day,
+        hour: parts?.hour ?? 0,
+        minute: parts?.minute ?? 0,
+      })
+    )
     if (!parts) {
       setHourText("00")
       setMinuteText("00")
@@ -137,32 +168,63 @@ export function DateTimeField({
     else setMinuteText(digits)
     if (digits === "") return
 
-    const base = parts ?? {
-      ...nowParts(),
-      hour: 0,
-      minute: 0,
-    }
     const max = kind === "hour" ? 23 : 59
     const next = clamp(Number(digits), 0, max)
-    emit({
-      ...base,
-      hour: kind === "hour" ? next : base.hour,
-      minute: kind === "minute" ? next : base.minute,
-    })
+    if (kind === "hour") {
+      emitTime(next, parts?.minute ?? 0)
+    } else {
+      emitTime(parts?.hour ?? 0, next)
+    }
   }
 
+  // 失焦时补齐两位并提交：否则输入框显示 00、真实值仍是 08:30
   function blurTime(kind: "hour" | "minute") {
-    const current = kind === "hour" ? hourText : minuteText
+    const raw = kind === "hour" ? hourText : minuteText
     const max = kind === "hour" ? 23 : 59
-    const padded = pad(clamp(Number(current || 0), 0, max))
-    if (kind === "hour") setHourText(padded)
-    else setMinuteText(padded)
+    const next = clamp(Number(raw || 0), 0, max)
+    if (kind === "hour") setHourText(pad(next))
+    else setMinuteText(pad(next))
+
+    // 没有任何值、也没输入过：不要凭空生成时间和日期
+    if (!parts && raw === "") return
+    const committed = parts
+      ? kind === "hour"
+        ? parts.hour
+        : parts.minute
+      : null
+    if (next === committed) return
+
+    if (kind === "hour") emitTime(next, parts?.minute ?? 0)
+    else emitTime(parts?.hour ?? 0, next)
+  }
+
+  function handleGridKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    const step = ARROW_STEPS[event.key]
+    if (!step) return
+    const current = (event.target as HTMLElement).dataset.date
+    if (!current) return
+    event.preventDefault()
+
+    const [year, month, day] = current.split("-").map(Number)
+    const next = new Date(year, month - 1, day + step)
+    const key = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`
+    const button = gridRef.current?.querySelector<HTMLButtonElement>(
+      `[data-date="${key}"]`
+    )
+    if (button) {
+      button.focus()
+      return
+    }
+    pendingFocus.current = key
+    setView({ year: next.getFullYear(), month: next.getMonth() + 1 })
   }
 
   function setNow() {
     const now = nowParts()
-    emit(now)
+    onChange(toDateTimeInput(now))
     setView({ year: now.year, month: now.month })
+    setHourText(pad(now.hour))
+    setMinuteText(pad(now.minute))
   }
 
   function clear() {
@@ -198,14 +260,14 @@ export function DateTimeField({
           </button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-[17.5rem] p-3">
+        <PopoverContent className="w-[17.5rem] p-3 [@media(pointer:coarse)]:w-[22rem]">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <button
                 type="button"
                 aria-label="上个月"
                 onClick={() => shiftMonth(-1)}
-                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
               >
                 <ChevronLeftIcon className="size-4" />
               </button>
@@ -216,7 +278,7 @@ export function DateTimeField({
                 type="button"
                 aria-label="下个月"
                 onClick={() => shiftMonth(1)}
-                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
               >
                 <ChevronRightIcon className="size-4" />
               </button>
@@ -233,7 +295,13 @@ export function DateTimeField({
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-y-0.5">
+            <div
+              ref={gridRef}
+              role="group"
+              aria-label="选择日期"
+              onKeyDown={handleGridKeyDown}
+              className="grid grid-cols-7 gap-y-0.5 [@media(pointer:coarse)]:gap-y-1"
+            >
               {cells.map((cell) => {
                 const selected = cell.date === dateKey
                 const isToday = cell.date === today
@@ -241,11 +309,13 @@ export function DateTimeField({
                   <button
                     key={cell.date}
                     type="button"
+                    data-date={cell.date}
+                    tabIndex={cell.date === focusableDate ? 0 : -1}
                     aria-pressed={selected}
                     aria-label={cell.date}
                     onClick={() => selectDay(cell.date)}
                     className={cn(
-                      "mx-auto flex size-8 items-center justify-center rounded-md text-sm tabular-nums transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+                      "mx-auto flex size-8 items-center justify-center rounded-md text-sm tabular-nums transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-11",
                       !cell.inMonth && "text-muted-foreground",
                       selected &&
                         "bg-primary text-primary-foreground hover:bg-primary",
@@ -269,7 +339,7 @@ export function DateTimeField({
                 value={hourText}
                 onChange={(event) => commitTime("hour", event.target.value)}
                 onBlur={() => blurTime("hour")}
-                className="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:w-12"
               />
               <span className="text-sm text-muted-foreground">:</span>
               <input
@@ -279,12 +349,12 @@ export function DateTimeField({
                 value={minuteText}
                 onChange={(event) => commitTime("minute", event.target.value)}
                 onBlur={() => blurTime("minute")}
-                className="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:w-12"
               />
               <button
                 type="button"
                 onClick={setNow}
-                className="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
               >
                 此刻
               </button>
@@ -295,7 +365,7 @@ export function DateTimeField({
                 type="button"
                 onClick={clear}
                 disabled={!value}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
               >
                 <XIcon className="size-3.5" />
                 清除
@@ -303,7 +373,7 @@ export function DateTimeField({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring"
+                className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-4"
               >
                 完成
               </button>

@@ -19,7 +19,7 @@ test("picks a date and time without the native control", async ({ page }) => {
   await page.getByRole("textbox", { name: "分钟" }).fill("30")
   await page.getByRole("button", { name: "完成" }).click()
 
-  await expect(start).toHaveText("2026-11-12 08:30")
+  await expect(start).toHaveText("2026/11/12 08:30")
 
   await page.getByRole("button", { name: "查询" }).click()
   await expect(page).toHaveURL(/startTime=2026-11-12T08(:|%3A)30/)
@@ -50,7 +50,7 @@ test("clears a picked value", async ({ page }) => {
   await page.goto("/settings/audit-log?startTime=2026-11-12T08:30")
 
   const start = page.locator("#audit-start")
-  await expect(start).toHaveText("2026-11-12 08:30")
+  await expect(start).toHaveText("2026/11/12 08:30")
 
   await start.click()
   await expect(
@@ -60,4 +60,36 @@ test("clears a picked value", async ({ page }) => {
   await page.getByRole("button", { name: "完成" }).click()
 
   await expect(start).toHaveText("选择日期时间")
+})
+
+test("commits the time when the input is cleared and blurred", async ({
+  page,
+}) => {
+  await mockApi(page)
+  await seedAuth(page)
+  await page.goto("/settings/audit-log?startTime=2026-11-12T08:30")
+  await page.locator("#audit-start").click()
+
+  const hour = page.getByRole("textbox", { name: "小时" })
+  await hour.click()
+  await hour.press("Control+a")
+  await hour.press("Backspace")
+  await hour.press("Tab")
+
+  await expect(hour).toHaveValue("00")
+  await expect(page.locator("#audit-start")).toHaveText("2026/11/12 00:30")
+})
+
+test("moves the calendar with arrow keys", async ({ page }) => {
+  await mockApi(page)
+  await seedAuth(page)
+  await page.goto("/settings/audit-log")
+
+  await page.locator("#audit-start").click()
+  await page.getByRole("button", { name: "2026-11-12" }).click()
+  await page.keyboard.press("ArrowRight")
+  await expect(page.locator('[data-date="2026-11-13"]')).toBeFocused()
+
+  await page.keyboard.press("Enter")
+  await expect(page.locator("#audit-start")).toHaveText("2026/11/13 00:00")
 })

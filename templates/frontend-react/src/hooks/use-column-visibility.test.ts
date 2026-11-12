@@ -35,10 +35,14 @@ describe("useColumnVisibility", () => {
     expect(second.result.current.hidden).toContain("email")
   })
 
-  it("重置清空隐藏状态（含默认隐藏列）", () => {
+  it("重置回到默认隐藏状态，而不是全部显示", () => {
     const { result } = renderHook(() => useColumnVisibility("t3", columns))
+    act(() => result.current.toggle("email"))
+    expect(result.current.hidden).toEqual(["phone", "email"])
+
     act(() => result.current.reset())
-    expect(result.current.hidden).toEqual([])
+    expect(result.current.hidden).toEqual(["phone"])
+    expect(window.localStorage.getItem("table-columns:t3")).toBeNull()
   })
 
   it("忽略存储中已不存在的列 key", () => {

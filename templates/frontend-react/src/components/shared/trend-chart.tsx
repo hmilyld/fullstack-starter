@@ -18,7 +18,10 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
     ...points.map((point) => Math.max(point.success, point.failed))
   )
   const weekFailed = points.reduce((sum, point) => sum + point.failed, 0)
-  const ticks = [1, 0.5, 0].map((ratio) => Math.round(max * ratio))
+  // 去重：最大值只有 1 时 1 / 0.5 / 0 会取整成 1 / 1 / 0
+  const ticks = Array.from(
+    new Set([1, 0.5, 0].map((ratio) => Math.round(max * ratio)))
+  )
 
   const xAt = (index: number) =>
     points.length > 1 ? (index / (points.length - 1)) * 100 : 50

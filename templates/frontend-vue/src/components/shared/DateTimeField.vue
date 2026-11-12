@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue"
-import { computed, ref, watch } from "vue"
+import { computed, nextTick, ref, watch } from "vue"
 import { Calendar, ChevronLeft, ChevronRight, X } from "@lucide/vue"
 import {
   Popover,
@@ -20,6 +20,14 @@ import {
 import { cn } from "@/lib/utils"
 
 const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"]
+
+/** 方向键在日历里移动的天数 */
+const ARROW_STEPS: Record<string, number> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -7,
+  ArrowDown: 7,
+}
 
 const props = withDefaults(
   defineProps<{
@@ -47,6 +55,9 @@ const parts = computed(() => parseDateTimeInput(props.modelValue))
 const view = ref({ year: 0, month: 1 })
 const hourText = ref("00")
 const minuteText = ref("00")
+const gridRef = ref<HTMLDivElement | null>(null)
+// 方向键移动到上/下月时，等新月份渲染完再落焦点
+const pendingFocus = ref<string | null>(null)
 
 function syncView() {
   const base = parts.value ?? nowParts()
@@ -78,6 +89,26 @@ const dateKey = computed(() => {
 const cells = computed(() => buildMonthCells(view.value.year, view.value.month))
 const today = todayKey()
 
+// 日历只保留一个 Tab 落点，进入后用方向键移动
+const focusableDate = computed(() => {
+  const list = cells.value
+  if (list.some((cell) => cell.date === dateKey.value)) return dateKey.value
+  if (list.some((cell) => cell.date === today)) return today
+  return list.find((cell) => cell.inMonth)?.date ?? list[0].date
+})
+
+watch(cells, async () => {
+  const key = pendingFocus.value
+  if (!key) return
+  await nextTick()
+  const button = gridRef.value?.querySelector<HTMLButtonElement>(
+    `[data-date="${key}"]`
+  )
+  if (!button) return
+  button.focus()
+  pendingFocus.value = null
+})
+
 function handleOpenChange(next: boolean) {
   open.value = next
   if (next) syncView()
@@ -90,6 +121,11 @@ function shiftMonth(step: number) {
 
 function emitParts(next: DateTimeParts) {
   emit("update:modelValue", toDateTimeInput(next))
+}
+
+function emitTime(hour: number, minute: number) {
+  const base = parts.value ?? { ...nowParts(), hour: 0, minute: 0 }
+  emitParts({ ...base, hour, minute })
 }
 
 function selectDay(date: string) {
@@ -115,22 +151,52 @@ function commitTime(kind: "hour" | "minute", raw: string) {
   else minuteText.value = digits
   if (digits === "") return
 
-  const base = parts.value ?? { ...nowParts(), hour: 0, minute: 0 }
   const max = kind === "hour" ? 23 : 59
   const next = clamp(Number(digits), 0, max)
-  emitParts({
-    ...base,
-    hour: kind === "hour" ? next : base.hour,
-    minute: kind === "minute" ? next : base.minute,
-  })
+  if (kind === "hour") emitTime(next, parts.value?.minute ?? 0)
+  else emitTime(parts.value?.hour ?? 0, next)
 }
 
+// 失焦时补齐两位并提交：否则输入框显示 00、真实值仍是 08:30
 function blurTime(kind: "hour" | "minute") {
-  const current = kind === "hour" ? hourText.value : minuteText.value
+  const raw = kind === "hour" ? hourText.value : minuteText.value
   const max = kind === "hour" ? 23 : 59
-  const padded = pad(clamp(Number(current || 0), 0, max))
-  if (kind === "hour") hourText.value = padded
-  else minuteText.value = padded
+  const next = clamp(Number(raw || 0), 0, max)
+  if (kind === "hour") hourText.value = pad(next)
+  else minuteText.value = pad(next)
+
+  // 没有任何值、也没输入过：不要凭空生成时间和日期
+  if (!parts.value && raw === "") return
+  const committed = parts.value
+    ? kind === "hour"
+      ? parts.value.hour
+      : parts.value.minute
+    : null
+  if (next === committed) return
+
+  if (kind === "hour") emitTime(next, parts.value?.minute ?? 0)
+  else emitTime(parts.value?.hour ?? 0, next)
+}
+
+function handleGridKeyDown(event: KeyboardEvent) {
+  const step = ARROW_STEPS[event.key]
+  if (!step) return
+  const current = (event.target as HTMLElement).dataset.date
+  if (!current) return
+  event.preventDefault()
+
+  const [year, month, day] = current.split("-").map(Number)
+  const next = new Date(year, month - 1, day + step)
+  const key = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`
+  const button = gridRef.value?.querySelector<HTMLButtonElement>(
+    `[data-date="${key}"]`
+  )
+  if (button) {
+    button.focus()
+    return
+  }
+  pendingFocus.value = key
+  view.value = { year: next.getFullYear(), month: next.getMonth() + 1 }
 }
 
 function setNow() {
@@ -174,13 +240,13 @@ function clear() {
       </button>
     </PopoverTrigger>
 
-    <PopoverContent class="w-[17.5rem] p-3">
+    <PopoverContent class="w-[17.5rem] p-3 [@media(pointer:coarse)]:w-[22rem]">
       <div class="flex flex-col gap-2">
         <div class="flex items-center justify-between">
           <button
             type="button"
             aria-label="上个月"
-            class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
             @click="shiftMonth(-1)"
           >
             <ChevronLeft class="size-4" />
@@ -191,7 +257,7 @@ function clear() {
           <button
             type="button"
             aria-label="下个月"
-            class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
             @click="shiftMonth(1)"
           >
             <ChevronRight class="size-4" />
@@ -208,16 +274,24 @@ function clear() {
           </span>
         </div>
 
-        <div class="grid grid-cols-7 gap-y-0.5">
+        <div
+          ref="gridRef"
+          role="group"
+          aria-label="选择日期"
+          class="grid grid-cols-7 gap-y-0.5 [@media(pointer:coarse)]:gap-y-1"
+          @keydown="handleGridKeyDown"
+        >
           <button
             v-for="cell in cells"
             :key="cell.date"
             type="button"
+            :data-date="cell.date"
+            :tabindex="cell.date === focusableDate ? 0 : -1"
             :aria-pressed="cell.date === dateKey"
             :aria-label="cell.date"
             :class="
               cn(
-                'mx-auto flex size-8 items-center justify-center rounded-md text-sm tabular-nums transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
+                'mx-auto flex size-8 items-center justify-center rounded-md text-sm tabular-nums transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-11',
                 !cell.inMonth && 'text-muted-foreground',
                 cell.date === dateKey &&
                   'bg-primary text-primary-foreground hover:bg-primary',
@@ -239,7 +313,7 @@ function clear() {
             inputmode="numeric"
             autocomplete="off"
             :value="hourText"
-            class="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
+            class="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:w-12"
             @input="
               commitTime('hour', ($event.target as HTMLInputElement).value)
             "
@@ -251,7 +325,7 @@ function clear() {
             inputmode="numeric"
             autocomplete="off"
             :value="minuteText"
-            class="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
+            class="h-7 w-10 rounded-md border border-input bg-transparent text-center text-sm tabular-nums outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:w-12"
             @input="
               commitTime('minute', ($event.target as HTMLInputElement).value)
             "
@@ -259,7 +333,7 @@ function clear() {
           />
           <button
             type="button"
-            class="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            class="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
             @click="setNow"
           >
             此刻
@@ -270,7 +344,7 @@ function clear() {
           <button
             type="button"
             :disabled="!modelValue"
-            class="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            class="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
             @click="clear"
           >
             <X class="size-3.5" />
@@ -278,7 +352,7 @@ function clear() {
           </button>
           <button
             type="button"
-            class="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring"
+            class="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-4"
             @click="open = false"
           >
             完成

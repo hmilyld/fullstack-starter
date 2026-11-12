@@ -32,6 +32,7 @@ import { useColumnVisibility } from "@/composables/use-column-visibility"
 import { useTableDensity } from "@/composables/use-table-density"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlPage } from "@/composables/use-url-list-state"
+import { formatDateTimeInput } from "@/lib/date-time"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
@@ -156,7 +157,8 @@ function removeFilter(key: AuditFilterKey) {
 
 function formatFilterValue(key: AuditFilterKey, value: string) {
   if (key === "status") return STATUS_LABELS[value] ?? value
-  if (key === "startTime" || key === "endTime") return formatDateTime(value)
+  if (key === "startTime" || key === "endTime")
+    return formatDateTimeInput(value)
   return value
 }
 

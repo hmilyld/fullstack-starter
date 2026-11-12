@@ -42,6 +42,7 @@ import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlPage } from "@/hooks/use-url-list-state"
+import { formatDateTimeInput } from "@/lib/date-time"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
@@ -78,7 +79,8 @@ function getStatusBadge(status: AuditLog["status"]) {
 
 function formatFilterValue(key: AuditFilterKey, value: string) {
   if (key === "status") return STATUS_LABELS[value] ?? value
-  if (key === "startTime" || key === "endTime") return formatDateTime(value)
+  if (key === "startTime" || key === "endTime")
+    return formatDateTimeInput(value)
   return value
 }
 

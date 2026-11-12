@@ -8,7 +8,7 @@ import {
 } from "@vueuse/core"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "reka-ui"
-import { computed, ref } from "vue"
+import { computed, onScopeDispose, ref } from "vue"
 import {
   provideSidebarContext,
   SIDEBAR_COOKIE_MAX_AGE,
@@ -71,6 +71,21 @@ function setOpen(value: boolean) {
 function setOpenMobile(value: boolean) {
   openMobile.value = value
 }
+
+// 跨断点收起：从 ≥1280 缩到平板宽度时不再占 256px。
+// 不写 cookie，保留桌面上「展开」的偏好，回到宽屏仍然展开。
+const tabletQuery =
+  typeof window !== "undefined"
+    ? window.matchMedia("(max-width: 1279px)")
+    : null
+const handleTabletChange = (event: MediaQueryListEvent) => {
+  if (!event.matches) return
+  open.value = false
+}
+tabletQuery?.addEventListener("change", handleTabletChange)
+onScopeDispose(() =>
+  tabletQuery?.removeEventListener("change", handleTabletChange)
+)
 
 // Helper to toggle the sidebar.
 function toggleSidebar() {

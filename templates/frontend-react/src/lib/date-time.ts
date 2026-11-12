@@ -37,6 +37,8 @@ export function parseDateTimeInput(value: string): DateTimeParts | null {
   if (parts.day < 1 || parts.day > daysInMonth(parts.year, parts.month)) {
     return null
   }
+  if (parts.hour < 0 || parts.hour > 23) return null
+  if (parts.minute < 0 || parts.minute > 59) return null
   return parts
 }
 
@@ -45,11 +47,11 @@ export function toDateTimeInput(parts: DateTimeParts) {
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(parts.hour)}:${pad(parts.minute)}`
 }
 
-/** 展示用：`2026-11-12 08:30` */
+/** 展示用：`2026/11/12 08:30`，与表格、筛选 chip 的分隔符一致 */
 export function formatDateTimeInput(value: string) {
   const parts = parseDateTimeInput(value)
   if (!parts) return value
-  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}`
+  return `${parts.year}/${pad(parts.month)}/${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}`
 }
 
 /** 展示用：`2026 年 11 月` */

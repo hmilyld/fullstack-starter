@@ -31,6 +31,8 @@ describe("parseDateTimeInput", () => {
     expect(parseDateTimeInput("")).toBeNull()
     expect(parseDateTimeInput("2026-13-01T08:30")).toBeNull()
     expect(parseDateTimeInput("2026-02-30T08:30")).toBeNull()
+    expect(parseDateTimeInput("2026-11-12T24:00")).toBeNull()
+    expect(parseDateTimeInput("2026-11-12T08:60")).toBeNull()
   })
 })
 
@@ -49,8 +51,8 @@ describe("toDateTimeInput", () => {
 })
 
 describe("formatDateTimeInput", () => {
-  it("展示为中文习惯的日期时间", () => {
-    expect(formatDateTimeInput("2026-11-12T08:30")).toBe("2026-11-12 08:30")
+  it("展示为与表格一致的斜杠日期", () => {
+    expect(formatDateTimeInput("2026-11-12T08:30")).toBe("2026/11/12 08:30")
   })
 
   it("无法解析时原样返回", () => {

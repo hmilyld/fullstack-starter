@@ -173,7 +173,7 @@
 |---|---|
 | `Button` | 高 `--control-h`，`rounded-md`，`text-sm font-medium`，`gap-2`，`shadow-xs`；主按钮 `bg-primary`，次按钮 `border + bg-background`，危险操作 `bg-destructive/10 + text-destructive` |
 | `Input` / `Select` / `Textarea` | `rounded-md`，`border-input`，`bg-transparent`，`shadow-xs`；聚焦时 `border-ring + ring-[3px] ring-ring` |
-| `DateTimeField` | 输入框外观（同 `--control-h`、同宽）＋中文月历浮层：周一为首、格子 32px、今天用 `ring` 标记、时分两位数字输入；值为 `YYYY-MM-DDTHH:mm`，展示 `YYYY-MM-DD HH:mm`。**不使用原生 `datetime-local`**：中文界面下它固定显示 `mm/dd/yyyy, --:-- --`，且各浏览器盒模型不一致，会比其他输入框更高更宽 |
+| `DateTimeField` | 输入框外观（同 `--control-h`、同宽）＋中文月历浮层：周一为首、今天用 `ring` 标记、方向键移动（整个日历只占一个 Tab 落点）、时分两位数字输入且失焦即提交。值为 `YYYY-MM-DDTHH:mm`，展示 `YYYY/MM/DD HH:mm`（与表格、筛选 chip 一致）。格子 32px，`pointer: coarse` 下 44px、面板 352px。**不使用原生 `datetime-local`**：中文界面下它固定显示 `mm/dd/yyyy, --:-- --`，且各浏览器盒模型不一致，会比其他输入框更高更宽 |
 | `Card` | `rounded-xl border bg-card shadow-sm`，内边距 24px，内部间距 24px；标题 16/600，说明 13/muted |
 | `Badge` | `rounded-md`，`h-5`，`text-xs font-medium`；语义变体 `success / warning / info / destructive / secondary / outline` |
 | `Sonner` | 语义色写在 `index.css` 的 `[data-sonner-theme]` 规则里，深浅色各一套；**不要用 `color-mix` 与白色混合**，浏览器会把白色的 hue 当作 0 参与插值，绿色会偏成品红 |

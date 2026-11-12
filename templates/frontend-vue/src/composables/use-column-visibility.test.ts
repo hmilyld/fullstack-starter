@@ -33,10 +33,17 @@ describe("useColumnVisibility", () => {
     expect(second.hidden.value).toContain("email")
   })
 
-  it("重置清空隐藏状态（含默认隐藏列）", () => {
-    const table = useColumnVisibility("t3", columns)
-    table.reset()
-    expect(table.hidden.value).toEqual([])
+  it("重置回到默认隐藏状态，而不是全部显示", () => {
+    const first = useColumnVisibility("t3", columns)
+    first.toggle("email")
+    expect(first.hidden.value).toEqual(["phone", "email"])
+
+    first.reset()
+    expect(first.hidden.value).toEqual(["phone"])
+    expect(window.localStorage.getItem("table-columns:t3")).toBeNull()
+
+    const second = useColumnVisibility("t3", columns)
+    expect(second.hidden.value).toEqual(["phone"])
   })
 
   it("忽略存储中已不存在的列 key", () => {

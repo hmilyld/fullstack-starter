@@ -21,8 +21,9 @@ const weekFailed = computed(() =>
   props.points.reduce((sum, point) => sum + point.failed, 0)
 )
 
+// 去重：最大值只有 1 时 1 / 0.5 / 0 会取整成 1 / 1 / 0
 const ticks = computed(() =>
-  [1, 0.5, 0].map((ratio) => Math.round(max.value * ratio))
+  Array.from(new Set([1, 0.5, 0].map((ratio) => Math.round(max.value * ratio))))
 )
 
 /** viewBox 0..100，preserveAspectRatio=none 拉伸，线宽用 non-scaling-stroke 校正 */

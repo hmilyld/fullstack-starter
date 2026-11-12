@@ -12,6 +12,13 @@ function storageKey(tableId: string) {
   return `${STORAGE_PREFIX}${tableId}`
 }
 
+/** 没有存储值时使用的默认隐藏列 */
+function defaultHiddenKeys(columns: ColumnLike[]): string[] {
+  return columns
+    .filter((column) => column.hideable && column.defaultHidden)
+    .map((column) => column.key)
+}
+
 function readHidden<T extends ColumnLike>(
   tableId: string,
   columns: T[]
@@ -21,11 +28,7 @@ function readHidden<T extends ColumnLike>(
   )
   try {
     const raw = window.localStorage.getItem(storageKey(tableId))
-    if (!raw) {
-      return columns
-        .filter((column) => column.hideable && column.defaultHidden)
-        .map((column) => column.key)
-    }
+    if (!raw) return defaultHiddenKeys(columns)
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
     return parsed.filter(
@@ -64,8 +67,14 @@ export function useColumnVisibility<T extends ColumnLike>(
     )
   }
 
+  // 回到「没有存储值」的状态：默认隐藏的列重新隐藏，而不是全部显示
   function reset() {
-    persist([])
+    try {
+      window.localStorage.removeItem(storageKey(tableId))
+    } catch {
+      // 隐私模式下不可写，忽略
+    }
+    hidden.value = defaultHiddenKeys(columns)
   }
 
   const hideableColumns = computed(() =>

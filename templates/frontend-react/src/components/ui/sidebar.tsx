@@ -92,6 +92,19 @@ function SidebarProvider({
     [setOpenProp, open]
   )
 
+  // 跨断点收起：从 ≥1280 缩到平板宽度时不再占 256px。
+  // 不写 cookie，保留桌面上「展开」的偏好，回到宽屏仍然展开。
+  React.useEffect(() => {
+    const query = window.matchMedia("(max-width: 1279px)")
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (!event.matches) return
+      if (setOpenProp) setOpenProp(false)
+      else _setOpen(false)
+    }
+    query.addEventListener("change", handleChange)
+    return () => query.removeEventListener("change", handleChange)
+  }, [setOpenProp])
+
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
     return setOpen((open) => !open)
