@@ -9,16 +9,13 @@ import {
 } from "lucide-react"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
-import { EmptyState } from "@/components/shared/empty-state"
-import { ErrorState } from "@/components/shared/error-state"
+import { DataList } from "@/components/shared/data-list"
 import { FormDialog } from "@/components/shared/form-dialog"
-import { InlineError } from "@/components/shared/inline-error"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
 import { RecordCard } from "@/components/shared/record-card"
 import { RowActions, type RowAction } from "@/components/shared/row-actions"
 import { TablePagination } from "@/components/shared/table-pagination"
-import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -58,16 +55,18 @@ import { RolePermissionPicker } from "@/pages/settings/role/RolePermissionPicker
 import type { Permission } from "@/types/permission"
 import type { Role } from "@/types/role"
 
-const PAGE_SIZE = 8
+const DEFAULT_PAGE_SIZE = 8
+const PAGE_SIZE_OPTIONS = [8, 16, 32]
 
 export function RolesPage() {
   const { hasPermission } = useAuth()
   const { search, page, setSearch, setPage } = useUrlListState()
   const debouncedSearch = useDebouncedValue(search)
+  const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE)
   const list = usePagedList<Role, { search: string }>({
     fetcher: getRoles,
     params: { search: debouncedSearch },
-    pageSize: PAGE_SIZE,
+    pageSize,
     page,
     onPageChange: setPage,
   })
@@ -186,9 +185,6 @@ export function RolesPage() {
     return actions
   }
 
-  const hasRoles = list.items.length > 0
-  const showEmpty = !list.loading && !hasRoles
-
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
@@ -221,139 +217,129 @@ export function RolesPage() {
           </>
         }
         footer={
-          hasRoles ? (
+          list.items.length > 0 ? (
             <TablePagination
               page={list.page}
               totalPages={list.totalPages}
               total={list.total}
               itemLabel="个角色"
+              pageSize={pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              onPageSizeChange={(size) => {
+                setPageSize(size)
+                setPage(1)
+              }}
               onPageChange={list.setPage}
             />
           ) : null
         }
       >
-        {list.error && hasRoles && (
-          <InlineError message={list.error} onRetry={list.refresh} />
-        )}
-
-        {list.loading && !hasRoles ? (
-          <TableSkeletonRow colSpan={5} />
-        ) : list.error && !hasRoles ? (
-          <ErrorState message={list.error} onRetry={list.refresh} />
-        ) : showEmpty ? (
-          <EmptyState
-            icon={ShieldCheckIcon}
-            title={debouncedSearch ? "没有匹配的角色" : "还没有角色"}
-            description={
-              debouncedSearch
-                ? "换个关键词，或清空搜索条件后再试。"
-                : "创建角色并分配权限，再把角色授予用户。"
-            }
-            action={
-              debouncedSearch ? (
-                <Button variant="outline" onClick={() => setSearch("")}>
-                  清空搜索
-                </Button>
-              ) : hasPermission("roles.create") ? (
-                <Button onClick={handleAdd}>
-                  <PlusIcon data-icon="inline-start" />
-                  新增角色
-                </Button>
-              ) : null
-            }
-          />
-        ) : (
-          <>
-            <div className="flex flex-col gap-2 md:hidden">
+        <DataList
+          items={list.items}
+          loading={list.loading}
+          error={list.error}
+          onRetry={list.refresh}
+          skeletonColSpan={5}
+          getKey={(role) => role.id}
+          empty={{
+            icon: ShieldCheckIcon,
+            title: debouncedSearch ? "没有匹配的角色" : "还没有角色",
+            description: debouncedSearch
+              ? "换个关键词，或清空搜索条件后再试。"
+              : "创建角色并分配权限，再把角色授予用户。",
+            action: debouncedSearch ? (
+              <Button variant="outline" onClick={() => setSearch("")}>
+                清空搜索
+              </Button>
+            ) : hasPermission("roles.create") ? (
+              <Button onClick={handleAdd}>
+                <PlusIcon data-icon="inline-start" />
+                新增角色
+              </Button>
+            ) : null,
+          }}
+          renderCard={(role) => (
+            <RecordCard
+              key={role.id}
+              title={role.name}
+              badges={
+                <>
+                  {role.isPreset ? (
+                    <Badge variant="outline">预设</Badge>
+                  ) : (
+                    <Badge variant="secondary">自定义</Badge>
+                  )}
+                  <Badge variant="secondary">
+                    {role.permissions.length} 项权限
+                  </Badge>
+                </>
+              }
+              subtitle={role.description || "暂无描述"}
+              actions={<RowActions actions={buildRoleActions(role)} />}
+            />
+          )}
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>角色名称</TableHead>
+                <TableHead className="hidden md:table-cell">描述</TableHead>
+                <TableHead className="hidden lg:table-cell">权限数</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead className="sticky right-0 bg-card text-right">
+                  操作
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {list.items.map((role) => (
-                <RecordCard
-                  key={role.id}
-                  title={role.name}
-                  badges={
-                    <>
-                      {role.isPreset ? (
-                        <Badge variant="outline">预设</Badge>
-                      ) : (
-                        <Badge variant="secondary">自定义</Badge>
-                      )}
-                      <Badge variant="secondary">
-                        {role.permissions.length} 项权限
+                <TableRow key={role.id}>
+                  <TableCell className="font-medium">{role.name}</TableCell>
+                  <TableCell className="hidden text-muted-foreground md:table-cell">
+                    {role.description || "-"}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <Badge variant="secondary">{role.permissions.length}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {role.isPreset ? (
+                      <Badge variant="outline">
+                        <LockIcon />
+                        预设
                       </Badge>
-                    </>
-                  }
-                  subtitle={role.description || "暂无描述"}
-                  actions={<RowActions actions={buildRoleActions(role)} />}
-                />
+                    ) : (
+                      <Badge variant="secondary">自定义</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="sticky right-0 bg-inherit text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {hasPermission("roles.edit") && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleEdit(role)}
+                        >
+                          <PencilIcon />
+                          <span className="sr-only">编辑 {role.name}</span>
+                        </Button>
+                      )}
+                      {!role.isPreset && hasPermission("roles.delete") && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleDelete(role)}
+                        >
+                          <Trash2Icon />
+                          <span className="sr-only">删除 {role.name}</span>
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-            <div className="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>角色名称</TableHead>
-                    <TableHead className="hidden md:table-cell">描述</TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      权限数
-                    </TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead className="sticky right-0 bg-card text-right">
-                      操作
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {list.items.map((role) => (
-                    <TableRow key={role.id}>
-                      <TableCell className="font-medium">{role.name}</TableCell>
-                      <TableCell className="hidden text-muted-foreground md:table-cell">
-                        {role.description || "-"}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Badge variant="secondary">
-                          {role.permissions.length}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {role.isPreset ? (
-                          <Badge variant="outline">
-                            <LockIcon />
-                            预设
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">自定义</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="sticky right-0 bg-inherit text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {hasPermission("roles.edit") && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleEdit(role)}
-                            >
-                              <PencilIcon />
-                              <span className="sr-only">编辑 {role.name}</span>
-                            </Button>
-                          )}
-                          {!role.isPreset && hasPermission("roles.delete") && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleDelete(role)}
-                            >
-                              <Trash2Icon />
-                              <span className="sr-only">删除 {role.name}</span>
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </>
-        )}
+            </TableBody>
+          </Table>
+        </DataList>
       </ListShell>
 
       <FormDialog

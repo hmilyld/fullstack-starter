@@ -7,12 +7,23 @@ import {
   PaginationEllipsis,
   PaginationItem,
 } from "@/components/ui/pagination"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 type TablePaginationProps = {
   page: number
   totalPages: number
   total: number
   itemLabel?: string
+  /** 传入 pageSize + onPageSizeChange 时显示「每页条数」选择器 */
+  pageSize?: number
+  pageSizeOptions?: number[]
+  onPageSizeChange?: (pageSize: number) => void
   onPageChange: (page: number) => void
 }
 
@@ -40,15 +51,45 @@ export function TablePagination({
   totalPages,
   total,
   itemLabel = "条记录",
+  pageSize,
+  pageSizeOptions = [10, 20, 50],
+  onPageSizeChange,
   onPageChange,
 }: TablePaginationProps) {
   const pageItems = getPageItems(page, totalPages)
+  const showPageSize = pageSize !== undefined && onPageSizeChange !== undefined
 
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <p className="text-sm text-muted-foreground">
-        共 {total} {itemLabel}，第 {page} / {totalPages} 页
-      </p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+        <p>
+          共 {total} {itemLabel}，第 {page} / {totalPages} 页
+        </p>
+        {showPageSize && (
+          <label className="flex items-center gap-2 text-xs">
+            每页
+            <Select
+              value={String(pageSize)}
+              onValueChange={(value) => onPageSizeChange(Number(value))}
+            >
+              <SelectTrigger
+                size="sm"
+                className="h-8 w-[76px]"
+                aria-label="每页显示条数"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((option) => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option} 条
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        )}
+      </div>
       <Pagination className="mx-0 w-auto justify-end">
         <PaginationContent>
           <PaginationItem>

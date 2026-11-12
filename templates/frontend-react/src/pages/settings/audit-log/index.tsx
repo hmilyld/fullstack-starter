@@ -9,14 +9,11 @@ import {
   XIcon,
 } from "lucide-react"
 
-import { EmptyState } from "@/components/shared/empty-state"
-import { ErrorState } from "@/components/shared/error-state"
-import { InlineError } from "@/components/shared/inline-error"
+import { DataList } from "@/components/shared/data-list"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
 import { RecordCard } from "@/components/shared/record-card"
 import { TablePagination } from "@/components/shared/table-pagination"
-import { TableSkeletonRow } from "@/components/shared/table-states"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -51,7 +48,8 @@ import { useUrlPage } from "@/hooks/use-url-list-state"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
-const PAGE_SIZE = 10
+const DEFAULT_PAGE_SIZE = 10
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 const EMPTY_FILTERS: AuditFilters = {
   userId: "",
@@ -108,10 +106,11 @@ export function AuditLogPage() {
   const { page, setPage } = useUrlPage()
   const [draft, setDraft] = React.useState<AuditFilters>(query)
   const [filterOpen, setFilterOpen] = React.useState(false)
+  const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE)
   const list = usePagedList<AuditLog, AuditFilters>({
     fetcher: getAuditLogs,
     params: query,
-    pageSize: PAGE_SIZE,
+    pageSize,
     page,
     onPageChange: setPage,
   })
@@ -255,9 +254,6 @@ export function AuditLogPage() {
     )
   }
 
-  const hasLogs = list.items.length > 0
-  const showEmpty = !list.loading && !hasLogs
-
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
@@ -269,12 +265,18 @@ export function AuditLogPage() {
         title="操作记录"
         description={`共 ${list.total} 条记录`}
         footer={
-          hasLogs ? (
+          list.items.length > 0 ? (
             <TablePagination
               page={list.page}
               totalPages={list.totalPages}
               total={list.total}
               itemLabel="条记录"
+              pageSize={pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              onPageSizeChange={(size) => {
+                setPageSize(size)
+                setPage(1)
+              }}
               onPageChange={list.setPage}
             />
           ) : null
@@ -369,94 +371,83 @@ export function AuditLogPage() {
           </SheetContent>
         </Sheet>
 
-        {list.error && hasLogs && (
-          <InlineError message={list.error} onRetry={list.refresh} />
-        )}
-
-        {list.loading && !hasLogs ? (
-          <TableSkeletonRow colSpan={6} />
-        ) : list.error && !hasLogs ? (
-          <ErrorState message={list.error} onRetry={list.refresh} />
-        ) : showEmpty ? (
-          <EmptyState
-            icon={activeFilters.length > 0 ? SearchXIcon : ShieldAlertIcon}
-            title={
-              activeFilters.length > 0 ? "没有符合条件的记录" : "还没有审计记录"
-            }
-            description={
+        <DataList
+          items={list.items}
+          loading={list.loading}
+          error={list.error}
+          onRetry={list.refresh}
+          skeletonColSpan={6}
+          getKey={(log) => log.id}
+          empty={{
+            icon: activeFilters.length > 0 ? SearchXIcon : ShieldAlertIcon,
+            title:
+              activeFilters.length > 0
+                ? "没有符合条件的记录"
+                : "还没有审计记录",
+            description:
               activeFilters.length > 0
                 ? "试着放宽筛选条件，或清除筛选后重试。"
-                : "系统的写操作和权限拦截会自动记录在这里。"
-            }
-            action={
+                : "系统的写操作和权限拦截会自动记录在这里。",
+            action:
               activeFilters.length > 0 ? (
                 <Button variant="outline" onClick={handleReset}>
                   清除筛选
                 </Button>
-              ) : null
-            }
-          />
-        ) : (
-          <>
-            <div className="flex flex-col gap-2 md:hidden">
+              ) : null,
+          }}
+          renderCard={(log) => (
+            <RecordCard
+              key={log.id}
+              title={log.action}
+              badges={getStatusBadge(log.status)}
+              subtitle={formatDateTime(log.createdAt)}
+              meta={
+                <>
+                  <span>{log.username || "未知"}</span>
+                  <span>{log.ip || "-"}</span>
+                  {log.detail && (
+                    <span className="w-full truncate">{log.detail}</span>
+                  )}
+                </>
+              }
+            />
+          )}
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>时间</TableHead>
+                <TableHead className="hidden md:table-cell">操作者</TableHead>
+                <TableHead>动作</TableHead>
+                <TableHead className="hidden lg:table-cell">IP</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead className="hidden xl:table-cell">详情</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {list.items.map((log) => (
-                <RecordCard
-                  key={log.id}
-                  title={log.action}
-                  badges={getStatusBadge(log.status)}
-                  subtitle={formatDateTime(log.createdAt)}
-                  meta={
-                    <>
-                      <span>{log.username || "未知"}</span>
-                      <span>{log.ip || "-"}</span>
-                      {log.detail && (
-                        <span className="w-full truncate">{log.detail}</span>
-                      )}
-                    </>
-                  }
-                />
+                <TableRow key={log.id}>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    {formatDateTime(log.createdAt)}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {log.username || "未知"}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {log.action}
+                  </TableCell>
+                  <TableCell className="hidden text-muted-foreground lg:table-cell">
+                    {log.ip || "-"}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(log.status)}</TableCell>
+                  <TableCell className="hidden max-w-[240px] truncate text-muted-foreground xl:table-cell">
+                    {log.detail || "-"}
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-            <div className="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>时间</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      操作者
-                    </TableHead>
-                    <TableHead>动作</TableHead>
-                    <TableHead className="hidden lg:table-cell">IP</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead className="hidden xl:table-cell">详情</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {list.items.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {formatDateTime(log.createdAt)}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {log.username || "未知"}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {log.action}
-                      </TableCell>
-                      <TableCell className="hidden text-muted-foreground lg:table-cell">
-                        {log.ip || "-"}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(log.status)}</TableCell>
-                      <TableCell className="hidden max-w-[240px] truncate text-muted-foreground xl:table-cell">
-                        {log.detail || "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </>
-        )}
+            </TableBody>
+          </Table>
+        </DataList>
       </ListShell>
     </div>
   )

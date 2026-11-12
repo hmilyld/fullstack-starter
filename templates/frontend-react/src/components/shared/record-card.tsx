@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils"
 
 type RecordCardProps = {
   title: ReactNode
+  /** 左侧附加控件（如多选复选框） */
+  leading?: ReactNode
   subtitle?: ReactNode
   meta?: ReactNode
   badges?: ReactNode
@@ -14,6 +16,7 @@ type RecordCardProps = {
 /** 手机端列表卡片：主信息 + 次要信息 + 状态 + 操作 */
 export function RecordCard({
   title,
+  leading,
   subtitle,
   meta,
   badges,
@@ -27,6 +30,7 @@ export function RecordCard({
         className
       )}
     >
+      {leading}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="min-w-0 truncate text-sm font-medium">{title}</span>
