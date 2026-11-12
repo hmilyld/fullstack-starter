@@ -6,6 +6,8 @@
 
 `frontend-react` 必须与本文件保持同一套 Token 与页面结构（允许组件实现不同）。
 
+**新增模块时的使用顺序**：先查 §6 有没有可复用组件（能组合就不新建）→ 按 §7 的页面配方搭骨架 → 用 §10 决定列优先级 → 用 §11 自检 → 两栈同步实现与验证。Token 与结构不允许只有一侧。
+
 ---
 
 ## 1. 设计原则
@@ -66,10 +68,11 @@
 
 规则：
 
-- 单序列用 `--chart-1`，多序列按 1→5 顺序取，最多 5 条。
-- 面积图用 `var(--chart-1)` 到透明的渐变，透明度上限 0.25。
-- 坐标轴文字用 `--muted-foreground`，不画坐标轴线（`axisLine={false}`、`tickLine={false}`）。
-- 图例必须有文字，不能只靠颜色区分序列。
+- 单序列用 `--chart-1`，多序列按 1→5 顺序取，最多 5 条；失败 / 拦截用 `--destructive`。
+- 图表一律自绘 SVG（`TrendChart`），**不引入图表库**：面积用 `var(--chart-1)` → 透明渐变（起始 `stop-opacity: 0.34`），折线 `stroke-width: 2` + `vector-effect: non-scaling-stroke`。
+- 网格线是 `border/70` 的 1px 横线，不画坐标轴线；刻度文字 `--muted-foreground`、10–11px、`tabular-nums`。
+- 图例必须有文字，不能只靠颜色区分序列；数据点用 `<title>` 给出当天明细。
+- 图表必须附带 `sr-only` 数据表，让屏幕阅读器读到同样的数值。
 - 无数据时给"图表骨架 + 一句说明"，不要渲染空坐标系。
 
 ### 2.4 侧边栏
@@ -118,7 +121,7 @@
 | `--page-gap` | 16px | 页面区块间距 |
 | `--card-spacing` | 24px | 卡片内边距与卡片内元素间距 |
 
-表单字段间距 20px；表格单元格内边距 8px（`p-2`），行高由内容决定；按钮组间距 8px。标题与其下方内容的间距必须小于区块之间的间距。
+字段组间距 24px（`FieldGroup` 的 `gap-6`），标签与控件 12px（`Field` 的 `gap-3`）；表格单元格 `px-4 py-3`，行高由内容决定；按钮组间距 8px。标题与其下方内容的间距必须小于区块之间的间距。
 
 ### 4.2 圆角（单一体系，`--radius: 0.625rem`）
 
@@ -146,7 +149,7 @@
 
 ### 4.4 布局宽度
 
-内容最大宽 `--layout-max: 96rem`（1536px），≥1024px 生效；Compact/Medium 为 100%。**侧边栏收起后内容必须随可用宽度铺满**，只在 ≥1536px 的超宽屏才居中限宽——否则收起侧边栏反而缩小可用区域，用户会认为布局出错。顶栏与内容区共用同一最大宽与左右留白，保证面包屑与页面标题左对齐。
+内容最大宽 `--layout-max`：Compact / Medium 为 `100%`，≥1024px 起设为 `96rem`（1536px）。96rem 大于 1280，所以实际只有 ≥1536px 才真正限宽。**侧边栏收起后内容必须随可用宽度铺满**，任何宽度下都不要给内容区固定宽度——否则收起侧边栏反而缩小可用区域，用户会认为布局出错。顶栏与内容区共用同一最大宽与左右留白，保证面包屑与页面标题左对齐。
 
 ---
 
@@ -160,6 +163,7 @@
 
 - **布局按宽度切换，控件密度按输入方式切换**：触屏通过 `pointer: coarse` 放大控件，Compact 宽度下始终使用触控尺寸。
 - Medium（<1280）默认收起为图标栏，Expanded 默认展开，用户切换后写入 cookie。**低于 1280 时忽略已保存的展开状态**：平板打开就是图标栏，用户本次仍可手动展开。
+- **运行时跨断点同样生效**：从 ≥1280 缩到 <1280 时自动收起（不写 cookie，桌面偏好保留）；回到宽屏不强制展开。
 - 顶栏固定：左侧菜单键 + 面包屑，右侧搜索、主题、账户菜单。**账户菜单固定在右上角**，不放回侧边栏底部。
 - 触控目标不小于 44×44，相邻目标间距至少 8px。
 
@@ -176,11 +180,11 @@
 | `DateTimeField` | 输入框外观（同 `--control-h`、同宽）＋中文月历浮层：周一为首、今天用 `ring` 标记、方向键移动（整个日历只占一个 Tab 落点）、时分两位数字输入且失焦即提交。值为 `YYYY-MM-DDTHH:mm`，展示 `YYYY/MM/DD HH:mm`（与表格、筛选 chip 一致）。格子 32px，`pointer: coarse` 下 44px、面板 352px。**不使用原生 `datetime-local`**：中文界面下它固定显示 `mm/dd/yyyy, --:-- --`，且各浏览器盒模型不一致，会比其他输入框更高更宽 |
 | `Card` | `rounded-xl border bg-card shadow-sm`，内边距 24px，内部间距 24px；标题 16/600，说明 13/muted |
 | `Badge` | `rounded-md`，`h-5`，`text-xs font-medium`；语义变体 `success / warning / info / destructive / secondary / outline` |
-| `Sonner` | 语义色写在 `index.css` 的 `[data-sonner-theme]` 规则里，深浅色各一套；**不要用 `color-mix` 与白色混合**，浏览器会把白色的 hue 当作 0 参与插值，绿色会偏成品红 |
-| `Table` | 表头 `h-10 text-muted-foreground text-[13px]`，行 `border-b` 且 hover `bg-muted/50`，单元格 `p-2` |
+| `Sonner` | 语义色写在 `main.css` 的 `[data-sonner-theme]` 规则里，深浅色各一套；**不要用 `color-mix` 与白色混合**，浏览器会把白色的 hue 当作 0 参与插值，绿色会偏成品红 |
+| `Table` | 表头 `h-11 px-4 text-[13px] text-muted-foreground`，单元格 `px-4 py-3`，行 `border-b` + hover `bg-muted/50`；紧凑密度下表头 `h-9`、单元格 `py-1.5` |
 | `Dialog` | `rounded-xl border shadow-xl`，标题 18/600，底部操作右对齐 |
 | `DropdownMenu` / `Select` 内容 | `rounded-xl border shadow-lg`，选项 `rounded-md` |
-| `Tabs` | 轨道 `rounded-lg bg-muted p-1`，触发器 `rounded-md`，选中 `bg-background shadow-xs` |
+| `Tabs` | 轨道 `rounded-lg bg-muted p-[3px]`，触发器 `rounded-md`，选中 `bg-background shadow-xs`；设置页的 `SettingsNav` 用 `variant="line"`（无底色轨道） |
 | `Skeleton` | `bg-muted` + 1.6s 微光，不做彩色脉冲 |
 | `EmptyState` | 虚线边框容器 + 图标底块 + 标题 + 说明 + 主操作，垂直居中 |
 
@@ -189,7 +193,7 @@
 | 组件 | 约定 |
 |---|---|
 | `AppSidebar` | 顶部品牌块：32px 方形 logo（`bg-sidebar-primary`）+ 站点名（Manrope 600）+ 一行副标题（12px muted）；中部菜单按分组，分组可折叠且记住展开状态；底部只放「快速查找」入口，不放版本号（与页脚重复），**不放账户菜单** |
-| `Header` | 高 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、外观设置、账户 |
+| `Header` | Compact 56px / ≥768px 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、外观设置、账户 |
 | `CommandMenu` | ⌘K / Ctrl+K 打开，搜索路由、菜单项与外观动作；空查询时先列「最近」；↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明 |
 | `ConfigDrawer` | 外观设置抽屉：主题、侧栏样式（默认 / 浮动 / 内嵌）、折叠方式（图标栏 / 抽屉）；配置存 localStorage，侧栏与抽屉共用 |
 | 侧栏变体 | `默认` 通栏；`浮动` 侧栏本体 `m-2 rounded-2xl shadow-sm`；`内嵌` 内容面板 `m-2 ml-0 rounded-2xl ring-1 ring-border` 且 **`overflow-clip`**——否则顶栏等子元素的底色会盖住面板的圆角，角落里看不到弧线。用 `clip` 不用 `hidden`，避免打断表头吸顶 |
@@ -208,6 +212,27 @@
 | 审核中 / 提示 | `info` |
 | 失败 / 禁用 / 删除 | `destructive` |
 
+### 6.4 共享组件清单
+
+新增页面只能组合下列组件，不要另起一套。路径以 React 为准，Vue 为同目录下的 PascalCase `.vue`。
+
+| 场景 | 组件 | 说明 |
+|---|---|---|
+| 页面壳 | `AdminLayout` / `AppSidebar` / `Header` | 布局与导航，页面里不重写 |
+| 标题区 | `PageHeader` | H1 + 说明 + 右侧操作 |
+| 列表 | `DataList` | 列驱动表格 + 手机卡片 + 加载/错误/空态的唯一入口 |
+| 列表 | `ListShell` / `TablePagination` | 卡片外壳与分页（含每页条数） |
+| 列表 | `ColumnToggle` / `DensityToggle` | 列显隐与表格密度，按表记忆 |
+| 列表 | `RowActions` / `BulkActionsBar` | 行操作菜单、多选悬浮操作栏 |
+| 卡片 | `RecordCard` | 手机端的记录卡片 |
+| 表单 | `FormDialog` / `ConfirmDeleteDialog` / `ConfirmHideDialog` | 新建编辑、删除确认、隐藏确认 |
+| 表单 | `Field` + `FieldLabel` | 标签与控件成组，错误就地显示 |
+| 表单 | `DateTimeField` | 日期时间，规则见 6.1 |
+| 表单 | `PasswordInput` / `IconPicker` / `InlineError` | 密码、图标、字段级错误 |
+| 反馈 | `EmptyState` / `ErrorState` / `LoadingButton` | 空、错、提交中 |
+| 导航 | `SettingsNav` / `CommandMenu` / `ConfigDrawer` | 设置左栏、⌘K 面板、外观抽屉 |
+| 展示 | `TrendChart` / `Badge` / `RoleBadge` | 趋势图与状态标识 |
+
 ---
 
 ## 7. 页面配方
@@ -218,7 +243,7 @@
 
 1. **标题行**：`PageHeader`，右侧一个刷新类操作。
 2. **指标行**：4 张统计卡，`sm:grid-cols-2 lg:grid-cols-4`；每卡 = 标签 + 图标（16px，muted）+ 数值（30/600 `tabular-nums`）+ 一行副文本（环比或说明）。
-3. **图表行**：`lg:grid-cols-7`，面积/柱状图占 4 栏，分布或最近动态占 3 栏。图表卡必须有标题、说明与单位。
+3. **图表行**：`lg:grid-cols-7`，趋势图占 4 栏、最近动态占 3 栏。图表卡必须有标题、说明与图例；趋势图是自绘 SVG（`TrendChart`），7 天、成功用 `--chart-1` 面积、失败用 `--destructive` 折线。
 4. **快捷入口**：有权限的页面入口，`sm:grid-cols-2`，图标 + 名称 + 一句说明。
 
 占位数据必须就地标注（例如数值旁的小号“演示数据”），不得用整屏 `Alert` 打断首屏。
@@ -227,7 +252,7 @@
 
 `PageHeader` → `ListShell` 工具栏（左侧计数、右侧搜索 + 列 + 主操作）→ 表格容器 → `TablePagination`。**不要再套一层卡片、也不要重复页面标题**：表格自带独立边框容器。≥768 用表格，<768 用 `RecordCard`；空态、错误态、加载态齐全；操作列 `sticky right-0`。
 
-- 表格由 `DataList` 的列定义驱动（`header / cell / hideable / headClass / cellClass / pinRight`），页面不再手写 `<Table>`；单元格 `px-4 py-3`，表头 `h-11`，行高约 58px；
+- 表格由 `DataList` 的列定义驱动（`header / cell / hideable / pinRight`；列宽样式为 React `headClassName / cellClassName`、Vue `headClass / cellClass`），页面不再手写 `<Table>`；单元格 `px-4 py-3`，表头 `h-11`，行高约 58px；
 - 工具栏的「列」菜单与列头的「隐藏此列」都控制同一份显隐状态，按表名记忆在 localStorage，名称列与操作列不可隐藏；
 - 工具栏的「密度」在舒适 / 紧凑之间切换，按表记忆；紧凑时单元格 `py-1.5`、表头 `h-9`；
 - 分页栏提供每页条数（8/16/32 或 10/20/50），切换后回到第 1 页；
@@ -244,8 +269,8 @@
 设置页是「分类多、字段少」的页面，使用**左栏竖向导航 + 右侧内容**：
 
 - 标题区下方加一条 `Separator`，页面本身铺满内容区，不再整体居中限宽；
-- **≥1024px 为左栏**：`lg:w-1/5 lg:min-w-44` + `sticky top-20`，右侧内容列 `flex-1 min-w-0`；<1024px 横向排列（与站点导航的三端断点一致）；
-- 导航用 `SettingsNav`：**无底色轨道**的 ghost 列表，图标 + 文案，选中 `bg-muted`、悬停 `bg-accent`；不要用「灰底分段控件 + 白色胶囊」——那是表单内的分段选择器，不是页面导航；
+- **≥1024px 为左栏**：`lg:w-1/5 lg:min-w-44` + `sticky top-20`，右侧内容列 `flex-1 min-w-0`；<1024px 横向排列。这里比站点导航（1280）早一档是有意的：此时侧栏已收成图标栏，横向空间足够放下左栏 + 表单；
+- 导航用 `SettingsNav`：**无底色轨道**的 ghost 列表，图标 + 文案，导航项 `min-h-9 px-4 py-2`（36px，行距 4px），选中 `bg-muted`、悬停 `bg-accent`；不要用「灰底分段控件 + 白色胶囊」——那是表单内的分段选择器，不是页面导航；
 - <768px：同一个 Tabs 变成横向 ghost 行，允许 `flex-wrap` 换行；**不要给它 `overflow-x-auto`**，否则 36px 高的行里会多出一条横向滚动条；
 - 分区用 `Card variant="plain"`：无边框/底纹，分区标题 18px + 分隔线 + 表单；`max-w-3xl`（系统设置）/ `max-w-2xl`（个人设置）控制阅读宽度；
 - Tabs 的方向由 `useMediaQuery` 决定，保证键盘方向键与视觉方向一致。
@@ -263,10 +288,10 @@
 | 浮层进入 | `fade-in` + `zoom-in-95`，150ms |
 | 折叠展开 | 高度过渡 200ms `ease-out` |
 | 悬停 / 聚焦 | 颜色与阴影 150ms |
-| 页面切换 | 不做整页位移；只允许内容淡入 120ms |
+| 页面切换 | 只做 140ms 淡入 + 4px 上移（`content-in`），不做整页位移动画 |
 | 骨架屏 | 透明度微光 1.6s 循环 |
 
-`prefers-reduced-motion: reduce` 下动画时长降至 0.01ms（已在 `index.css` 全局处理），不依赖动画结束才可见。
+`prefers-reduced-motion: reduce` 下动画时长降至 0.01ms（已在 `main.css` 全局处理），不依赖动画结束才可见。
 
 ---
 
@@ -279,7 +304,7 @@
 - 表单控件有 `label` / `htmlFor`；错误用 `aria-invalid` + 就地提示。
 - 弹窗包含标题；移动端弹窗 `overscroll-behavior: contain`。
 - 表格横向滚动时操作列固定在右侧；手机不显示表格。
-- 键盘可达：菜单折叠、命令面板、排序按钮均可操作。
+- 键盘可达：菜单折叠、命令面板、日期选择器、弹窗均可纯键盘操作；日历整组只占一个 Tab 落点，进入后用方向键移动。
 
 ---
 
@@ -307,6 +332,8 @@
 - [ ] 表格按优先级隐藏列，操作列 sticky
 - [ ] 空态、错误态、加载态齐全
 - [ ] 筛选在手机使用 Sheet；桌面筛选网格 `md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5`，两列时间控件同排，避免列宽压到内容截断
+- [ ] 日期字段用 `DateTimeField`，不用原生 `datetime-local`
+- [ ] 新控件先落到 `components/shared/`（或 `ui/`），页面里不写一次性实现
 - [ ] 弹窗有 Title、取消/提交、内部滚动
 - [ ] 图标按钮有 `aria-label`
 - [ ] 数字列 `tabular-nums`
@@ -322,9 +349,8 @@
 - PWA manifest 由 `src/lib/pwa.ts` 运行时生成（站点名称/描述 + 当前主题），`PwaManifest` 挂在 `SiteConfigProvider` 内；静态 `manifest.webmanifest` 仅作首屏回退。
 - 图标位于 `public/icons/`：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步 `index.html`、`vite.config.ts`、`src/lib/pwa.ts` 与本文件。
 - 单元/组件测试：Vitest + `@testing-library/vue`（`npm test`、`npm run test:coverage`）。
-- E2E：Playwright（`npm run test:e2e`），覆盖登录、手机卡片/抽屉、URL 筛选恢复、日期时间选择器。
+- E2E：Playwright（`npm run test:e2e`），覆盖登录、手机卡片/抽屉、平板默认收起与跨断点收起、URL 筛选恢复、列显隐与表格密度持久化、命令面板最近访问、日期时间选择器。
 - 新增共享组件或纯函数必须补单元测试；列表页/表单页至少一个渲染或交互 smoke test。
-- 图表面板：React 用 `trend-chart.tsx`，Vue 用 `TrendChart.vue`，两者都是**自绘 SVG 面积图、无图表依赖**；坐标、配色、文案与无障碍数据表保持一致。
 
 ---
 
@@ -340,3 +366,7 @@
 - 表单：可见 Label + `id/htmlFor`；控件补 `name`；非登录字段 `autoComplete="off"`；邮箱/编码/URL `spellCheck={false}`。
 - 导航：页面跳转用链接语义（`RouterLink` / `<a>`），不用按钮 `@click` 模拟跳转。
 - 主题：`class="dark"` + `color-scheme`；`meta theme-color` 随主题更新。
+- 图表：两栈都是自绘 SVG（`trend-chart.tsx` / `TrendChart.vue`），无图表依赖；坐标、配色、文案、`sr-only` 数据表逐项一致。
+- 日期时间：两栈共用同一套 `lib/date-time.ts`（解析 / 组合 / 展示），值格式 `YYYY-MM-DDTHH:mm`、展示 `YYYY/MM/DD HH:mm`。
+- 本文件的两份副本必须结构一致：平台差异只允许出现在标题、CSS 路径、测试库、路由 API 和组件文件名上。
+- 一致性有脚本兜底：在仓库根目录运行 `npm run sync:design:check`，会比对两份 `DESIGN.md` 的结构，以及第 2.1 节的 Token 与 `index.css` / `main.css` 是否相同。改了 Token 或组件规格后必须跑一次。

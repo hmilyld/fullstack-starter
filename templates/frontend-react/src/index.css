@@ -204,7 +204,7 @@
 }
 
 /* === 三端布局 Token ===
- * Compact < 768px | Medium 768–1023px | Expanded >= 1024px
+ * Compact < 768px | Medium 768–1279px | Expanded >= 1280px
  * 密度按输入方式（pointer: coarse）切换，布局按宽度切换。
  */
 :root {

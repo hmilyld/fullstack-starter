@@ -84,7 +84,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 
 - **backend-python/** — domain modules: `app/core/` (infrastructure: config, runtime state, database, security, deps, pagination, exceptions, audit middleware, seed, permission/menu catalogs) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `menu/`, `system/`, `ai_model/`, `audit/`, `data_management/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `service.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`. Routers do HTTP mapping only; business rules and transaction boundaries live in `service.py`. Schema changes go through Alembic (`migrations/`), never `create_all`. Do not commit `uv.lock` — it is gitignored and filtered out of generated projects; users resolve their own dependency versions on first `uv sync`.
 - **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus infrastructure packages `common/` (envelope, page result, exceptions, global handler), `config/` (Spring `@Configuration` classes only), `catalog/` (permission/menu data, no framework deps), `bootstrap/` (startup sync runners), `web/` (interceptors and filters), `data/` (import runtime state), `security/` (rate limiter, Sa-Token permission source). Keep those boundaries: a data catalog must not live in `config/`, or `service/` ends up importing the config package. Responses are typed records in `dto/` (`*Response`), never `Map<String, Object>`. Business failures throw `AppException` / `NotFoundException` / `ConflictException` / `InvalidOperationException` / `ForbiddenException`; `GlobalExceptionHandler` maps them to the envelope, so `@Transactional` rolls back. Schema changes go through Flyway (`db/migration`).
-- **frontend-react/ & frontend-vue/** — feature-based: pages under `pages/settings/<Domain>/index.tsx` (React) or `index.vue` (Vue), API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
+- **frontend-react/ & frontend-vue/** — 新增或修改页面前先读 `templates/frontend-react/DESIGN.md`（Vue 版同构）：它是这两套前端的唯一视觉真源，也是新增模块的验收标准。feature-based: pages under `pages/settings/<Domain>/index.tsx` (React) or `index.vue` (Vue), API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
 
 ### API layer rules (frontend-react / frontend-vue)
 
@@ -144,6 +144,12 @@ npm run test:e2e        # first run: npx playwright install chromium
 ```
 
 Vue uses `vue-tsc --noEmit -p tsconfig.app.json` for type checking and `@testing-library/vue` for component tests.
+
+Design spec consistency is checked by a script (the docs site is not involved):
+
+```bash
+npm run sync:design:check   # 两份 DESIGN.md 结构一致；DESIGN.md 第 2.1 节的 Token 与 index.css / main.css 相同
+```
 
 The Python backend template carries the executable API contract:
 

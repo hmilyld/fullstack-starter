@@ -16,6 +16,7 @@
     "sync:permissions": "tsx scripts/sync-permission-docs.ts",
     "sync:permissions:check": "tsx scripts/sync-permission-docs.ts --check",
     "sync:permissions:catalog": "tsx scripts/sync-permission-docs.ts --catalog-only",
+    "sync:design:check": "tsx scripts/check-design-sync.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
