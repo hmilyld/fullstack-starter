@@ -37,7 +37,7 @@ const PROFILE_TABS = [
 export function ProfilePage() {
   const { user, updateUser } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const isWide = useMediaQuery("(min-width: 768px)")
+  const isWide = useMediaQuery("(min-width: 1024px)")
   const activeTab =
     searchParams.get("tab") === "security" ? "security" : "profile"
 
@@ -110,7 +110,7 @@ export function ProfilePage() {
         value={activeTab}
         onValueChange={setActiveTab}
         orientation={isWide ? "vertical" : "horizontal"}
-        className="flex flex-col gap-4 md:flex-row md:items-start md:gap-8"
+        className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
       >
         <SettingsNav items={PROFILE_TABS} />
 

@@ -33,7 +33,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 
-const isWide = useMediaQuery("(min-width: 768px)")
+const isWide = useMediaQuery("(min-width: 1024px)")
 
 const profileTabs = [
   { value: "profile", title: "基本资料", icon: UserRound },
@@ -116,7 +116,7 @@ async function handlePasswordSubmit() {
     <Tabs
       :model-value="activeTab"
       :orientation="isWide ? 'vertical' : 'horizontal'"
-      class="flex flex-col gap-4 md:flex-row md:items-start md:gap-8"
+      class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
       @update:model-value="setActiveTab(String($event))"
     >
       <SettingsNav :items="profileTabs" />
