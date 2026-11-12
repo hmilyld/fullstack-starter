@@ -3,15 +3,13 @@ import { computed, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { Pencil, Plus, Search, Star, Trash2 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
-import EmptyState from "@/components/shared/EmptyState.vue"
-import ErrorState from "@/components/shared/ErrorState.vue"
+import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
-import InlineError from "@/components/shared/InlineError.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import RecordCard from "@/components/shared/RecordCard.vue"
 import RowActions from "@/components/shared/RowActions.vue"
 import type { RowAction } from "@/components/shared/row-action"
-import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -35,14 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import {
   createAiModelPreset,
@@ -51,6 +41,7 @@ import {
   getAiModelPresets,
   updateAiModelPreset,
 } from "@/api/ai-model"
+import { useColumnVisibility } from "@/composables/use-column-visibility"
 import { useDebouncedValue } from "@/composables/use-debounced-value"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
@@ -220,8 +211,53 @@ function clearFilters() {
   void router.replace({ query: next })
 }
 
-const hasPresets = computed(() => presets.value.length > 0)
-const showEmpty = computed(() => !loading.value && !hasPresets.value)
+const columns: DataColumn[] = [
+  { key: "group", header: "分组", hideable: true },
+  { key: "alias", header: "别名" },
+  {
+    key: "modelName",
+    header: "模型名称",
+    hideable: true,
+    headClass: "hidden md:table-cell",
+    cellClass: "hidden md:table-cell",
+  },
+  {
+    key: "apiUrl",
+    header: "API 地址",
+    hideable: true,
+    headClass: "hidden lg:table-cell",
+    cellClass:
+      "hidden max-w-[200px] truncate text-muted-foreground lg:table-cell",
+  },
+  {
+    key: "description",
+    header: "描述",
+    hideable: true,
+    headClass: "hidden xl:table-cell",
+    cellClass:
+      "hidden max-w-[150px] truncate text-muted-foreground xl:table-cell",
+  },
+  { key: "status", header: "状态" },
+  {
+    key: "sort",
+    header: "排序",
+    hideable: true,
+    headClass: "hidden lg:table-cell",
+    cellClass: "hidden lg:table-cell",
+  },
+  {
+    key: "actions",
+    header: "操作",
+    pinRight: true,
+    headClass: "text-right",
+    cellClass: "text-right",
+  },
+]
+
+const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
+  "ai-presets",
+  columns
+)
 </script>
 
 <template>
@@ -262,6 +298,12 @@ const showEmpty = computed(() => !loading.value && !hasPresets.value)
           <Search />
         </InputGroupAddon>
       </InputGroup>
+      <ColumnToggle
+        :columns="columns"
+        :hidden="hidden"
+        @toggle="toggle"
+        @reset="reset"
+      />
       <Button
         v-if="auth.hasPermission('ai_models.presets.create')"
         class="w-full md:w-auto"
@@ -272,38 +314,26 @@ const showEmpty = computed(() => !loading.value && !hasPresets.value)
       </Button>
     </template>
 
-    <InlineError
-      v-if="error && hasPresets"
-      :message="error"
-      :on-retry="loadData"
-    />
-
-    <TableSkeletonRow v-if="loading" :col-span="8" />
-    <ErrorState
-      v-else-if="error && !hasPresets"
-      :message="error"
-      :on-retry="loadData"
-    />
-    <EmptyState
-      v-else-if="showEmpty"
-      :icon="Star"
-      :title="
-        debouncedSearch || selectedGroup ? '没有匹配的预设' : '还没有预设模型'
-      "
-      :description="
-        debouncedSearch || selectedGroup
-          ? '换个关键词或分组再试。'
-          : '预设在新增模型时用于快速填充模型名称和接口地址。'
-      "
+    <DataList
+      :items="presets"
+      :loading="loading"
+      :error="error"
+      :columns="visibleColumns"
+      :skeleton-col-span="8"
+      :empty="{
+        icon: Star,
+        title:
+          debouncedSearch || selectedGroup
+            ? '没有匹配的预设'
+            : '还没有预设模型',
+        description:
+          debouncedSearch || selectedGroup
+            ? '换个关键词或分组再试。'
+            : '预设在新增模型时用于快速填充模型名称和接口地址。',
+      }"
+      @retry="loadData"
     >
-      <template
-        v-if="
-          debouncedSearch ||
-          selectedGroup ||
-          auth.hasPermission('ai_models.presets.create')
-        "
-        #action
-      >
+      <template #empty-action>
         <Button
           v-if="debouncedSearch || selectedGroup"
           variant="outline"
@@ -319,101 +349,64 @@ const showEmpty = computed(() => !loading.value && !hasPresets.value)
           新增预设
         </Button>
       </template>
-    </EmptyState>
 
-    <template v-else>
-      <div class="flex flex-col gap-2 md:hidden">
-        <RecordCard
-          v-for="preset in presets"
-          :key="preset.id"
-          :title="preset.alias"
-          :subtitle="preset.modelName"
-        >
+      <template #card="{ row }">
+        <RecordCard :title="row.alias" :subtitle="row.modelName">
           <template #badges>
-            <Badge variant="outline">{{ preset.group }}</Badge>
-            <Badge :variant="preset.isActive ? 'success' : 'secondary'">
-              {{ preset.isActive ? "启用" : "禁用" }}
+            <Badge variant="outline">{{ row.group }}</Badge>
+            <Badge :variant="row.isActive ? 'success' : 'secondary'">
+              {{ row.isActive ? "启用" : "禁用" }}
             </Badge>
           </template>
           <template #meta>
-            <span>排序 {{ preset.sortOrder }}</span>
+            <span>排序 {{ row.sortOrder }}</span>
           </template>
           <template #actions>
-            <RowActions :actions="buildPresetActions(preset)" />
+            <RowActions :actions="buildPresetActions(row)" />
           </template>
         </RecordCard>
-      </div>
+      </template>
 
-      <div class="hidden md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>分组</TableHead>
-              <TableHead>别名</TableHead>
-              <TableHead class="hidden md:table-cell">模型名称</TableHead>
-              <TableHead class="hidden lg:table-cell">API 地址</TableHead>
-              <TableHead class="hidden xl:table-cell">描述</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead class="hidden lg:table-cell">排序</TableHead>
-              <TableHead class="sticky right-0 bg-card text-right">
-                操作
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="preset in presets" :key="preset.id">
-              <TableCell>
-                <Badge variant="outline">{{ preset.group }}</Badge>
-              </TableCell>
-              <TableCell class="font-medium">{{ preset.alias }}</TableCell>
-              <TableCell class="hidden md:table-cell">
-                {{ preset.modelName }}
-              </TableCell>
-              <TableCell
-                class="hidden max-w-[200px] truncate text-muted-foreground lg:table-cell"
-              >
-                {{ preset.apiUrl }}
-              </TableCell>
-              <TableCell
-                class="hidden max-w-[150px] truncate text-muted-foreground xl:table-cell"
-              >
-                {{ preset.description || "-" }}
-              </TableCell>
-              <TableCell>
-                <Badge :variant="preset.isActive ? 'success' : 'secondary'">
-                  {{ preset.isActive ? "启用" : "禁用" }}
-                </Badge>
-              </TableCell>
-              <TableCell class="hidden lg:table-cell">
-                {{ preset.sortOrder }}
-              </TableCell>
-              <TableCell class="sticky right-0 bg-inherit text-right">
-                <div class="flex items-center justify-end gap-1">
-                  <Button
-                    v-if="auth.hasPermission('ai_models.presets.edit')"
-                    variant="ghost"
-                    size="icon-sm"
-                    @click="handleEdit(preset)"
-                  >
-                    <Pencil />
-                    <span class="sr-only">编辑 {{ preset.alias }}</span>
-                  </Button>
-                  <Button
-                    v-if="auth.hasPermission('ai_models.presets.delete')"
-                    variant="ghost"
-                    size="icon-sm"
-                    @click="handleDelete(preset)"
-                  >
-                    <Trash2 />
-                    <span class="sr-only">删除 {{ preset.alias }}</span>
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    </template>
+      <template #cell-group="{ row }">
+        <Badge variant="outline">{{ row.group }}</Badge>
+      </template>
+      <template #cell-alias="{ row }">
+        <span class="font-medium">{{ row.alias }}</span>
+      </template>
+      <template #cell-modelName="{ row }">{{ row.modelName }}</template>
+      <template #cell-apiUrl="{ row }">{{ row.apiUrl }}</template>
+      <template #cell-description="{ row }">
+        {{ row.description || "-" }}
+      </template>
+      <template #cell-status="{ row }">
+        <Badge :variant="row.isActive ? 'success' : 'secondary'">
+          {{ row.isActive ? "启用" : "禁用" }}
+        </Badge>
+      </template>
+      <template #cell-sort="{ row }">{{ row.sortOrder }}</template>
+      <template #cell-actions="{ row }">
+        <div class="flex items-center justify-end gap-1">
+          <Button
+            v-if="auth.hasPermission('ai_models.presets.edit')"
+            variant="ghost"
+            size="icon-sm"
+            @click="handleEdit(row)"
+          >
+            <Pencil />
+            <span class="sr-only">编辑 {{ row.alias }}</span>
+          </Button>
+          <Button
+            v-if="auth.hasPermission('ai_models.presets.delete')"
+            variant="ghost"
+            size="icon-sm"
+            @click="handleDelete(row)"
+          >
+            <Trash2 />
+            <span class="sr-only">删除 {{ row.alias }}</span>
+          </Button>
+        </div>
+      </template>
+    </DataList>
   </ListShell>
 
   <FormDialog

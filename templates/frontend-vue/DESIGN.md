@@ -222,7 +222,14 @@
 
 ### 7.2 列表页
 
-`PageHeader` → `ListShell`（搜索 + 新增 + 次操作）→ 表格（≥768）或 `RecordCard`（<768）→ `TablePagination`。空态、错误态、加载态三件套齐全；表格操作列 `sticky right-0`。
+`PageHeader` → `ListShell`（搜索 + 列 + 新增 + 次操作）→ 表格（≥768）或 `RecordCard`（<768）→ `TablePagination`。空态、错误态、加载态三件套齐全；表格操作列 `sticky right-0`。
+
+- 表格由 `DataList` 的列定义驱动（`header / cell / hideable / headClass / cellClass / pinRight`），页面不再手写 `<Table>`；
+- 工具栏的「列」菜单控制可隐藏列，按表名记忆在 localStorage，名称列与操作列不可隐藏；
+- 分页栏提供每页条数（8/16/32 或 10/20/50），切换后回到第 1 页；
+- 表头吸顶：`Card` 用 `overflow-clip`（不建立滚动容器），桌面端表格容器不横向滚动（靠列优先级与 `truncate` 控制宽度），`html` 设 `scroll-padding-top: 5rem` 防止焦点被表头遮挡；
+- 手机端不显示表格，使用卡片；不要在手机端保留横向滚动表格作为主交互。
+
 
 ### 7.3 表单页
 

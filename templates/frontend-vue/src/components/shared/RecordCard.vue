@@ -16,6 +16,7 @@ defineProps<{
       )
     "
   >
+    <slot name="leading" />
     <div class="flex min-w-0 flex-1 flex-col gap-1">
       <div class="flex min-w-0 flex-wrap items-center gap-2">
         <span class="min-w-0 truncate text-sm font-medium">

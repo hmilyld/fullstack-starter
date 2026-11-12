@@ -6,6 +6,7 @@ import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PageFormSkeleton from "@/components/shared/PageFormSkeleton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
 import SettingsNav from "@/components/shared/SettingsNav.vue"
+import UnsavedChangesGuard from "@/components/shared/UnsavedChangesGuard.vue"
 import SystemSaveFooter from "@/pages/settings/System/SystemSaveFooter.vue"
 import {
   Card,
@@ -173,6 +174,15 @@ const smtpDirty = computed(
     smtpPassword.value.trim() !== ""
 )
 
+const pageDirty = computed(
+  () =>
+    siteDirty.value ||
+    maintenanceDirty.value ||
+    registrationDirty.value ||
+    defaultDirty.value ||
+    smtpDirty.value
+)
+
 const isWide = useMediaQuery("(min-width: 1024px)")
 
 const settingsTabs = [
@@ -300,6 +310,7 @@ function applySmtpPreset(name: string) {
 
 <template>
   <div class="flex flex-col gap-(--page-gap)">
+    <UnsavedChangesGuard :when="pageDirty" />
     <PageHeader
       title="系统设置"
       description="管理站点全局配置、注册策略与邮件服务。"

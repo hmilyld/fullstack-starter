@@ -17,7 +17,7 @@ type UsePagedListOptions<T, P extends ListParams> = {
   ) => Promise<ApiResponse<PaginatedData<T>>>
   /** 搜索条件等；值不变时不会因为对象重建而重复请求 */
   params: MaybeRefOrGetter<P>
-  pageSize?: number
+  pageSize?: MaybeRefOrGetter<number>
   /** 受控页码，通常来自 URL 状态 */
   page: MaybeRefOrGetter<number>
   onPageChange: (page: number) => void
@@ -42,8 +42,9 @@ export function usePagedList<T, P extends ListParams = ListParams>({
 
   const paramsKey = computed(() => JSON.stringify(toValue(params)))
   const currentPage = computed(() => toValue(page))
+  const currentPageSize = computed(() => toValue(pageSize))
   const totalPages = computed(() =>
-    Math.max(1, Math.ceil(total.value / pageSize))
+    Math.max(1, Math.ceil(total.value / currentPageSize.value))
   )
 
   async function load() {
@@ -55,7 +56,7 @@ export function usePagedList<T, P extends ListParams = ListParams>({
       const res = await fetcher({
         ...current,
         page: currentPage.value,
-        pageSize,
+        pageSize: currentPageSize.value,
       })
       if (id !== requestId) return
       if (res.code === 0) {
@@ -76,7 +77,7 @@ export function usePagedList<T, P extends ListParams = ListParams>({
   let lastParamsKey = paramsKey.value
 
   watch(
-    [paramsKey, currentPage],
+    [paramsKey, currentPage, currentPageSize],
     ([key, nextPage]) => {
       const paramsChanged = key !== lastParamsKey
       lastParamsKey = key

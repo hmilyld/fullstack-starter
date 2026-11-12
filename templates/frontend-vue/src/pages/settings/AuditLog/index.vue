@@ -9,14 +9,12 @@ import {
   SlidersHorizontal,
   X,
 } from "@lucide/vue"
-import EmptyState from "@/components/shared/EmptyState.vue"
-import ErrorState from "@/components/shared/ErrorState.vue"
-import InlineError from "@/components/shared/InlineError.vue"
+import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
 import RecordCard from "@/components/shared/RecordCard.vue"
 import TablePagination from "@/components/shared/TablePagination.vue"
-import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
 import AuditFilterFields from "@/pages/settings/AuditLog/AuditFilterFields.vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,21 +26,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { getAuditLogs } from "@/api/audit-log"
+import { useColumnVisibility } from "@/composables/use-column-visibility"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlPage } from "@/composables/use-url-list-state"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
-const PAGE_SIZE = 10
+const DEFAULT_PAGE_SIZE = 10
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 const EMPTY_FILTERS: AuditFilters = {
   userId: "",
@@ -85,6 +77,8 @@ const { page, setPage } = useUrlPage()
 const draft = ref<AuditFilters>({ ...query.value })
 const filterOpen = ref(false)
 
+const pageSize = ref(DEFAULT_PAGE_SIZE)
+
 const {
   items: logs,
   total,
@@ -97,7 +91,7 @@ const {
 } = usePagedList<AuditLog, AuditFilters>({
   fetcher: getAuditLogs,
   params: query,
-  pageSize: PAGE_SIZE,
+  pageSize,
   page,
   onPageChange: setPage,
 })
@@ -184,8 +178,44 @@ function statusLabel(status: AuditLog["status"]) {
   return STATUS_LABELS[status] ?? status
 }
 
+const columns: DataColumn[] = [
+  {
+    key: "createdAt",
+    header: "时间",
+    cellClass: "whitespace-nowrap text-muted-foreground",
+  },
+  {
+    key: "username",
+    header: "操作者",
+    hideable: true,
+    headClass: "hidden md:table-cell",
+    cellClass: "hidden md:table-cell",
+  },
+  { key: "action", header: "动作", cellClass: "font-mono text-xs" },
+  {
+    key: "ip",
+    header: "IP",
+    hideable: true,
+    headClass: "hidden lg:table-cell",
+    cellClass: "hidden text-muted-foreground lg:table-cell",
+  },
+  { key: "status", header: "状态" },
+  {
+    key: "detail",
+    header: "详情",
+    hideable: true,
+    headClass: "hidden xl:table-cell",
+    cellClass:
+      "hidden max-w-[240px] truncate text-muted-foreground xl:table-cell",
+  },
+]
+
+const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
+  "audit-logs",
+  columns
+)
+
 const hasLogs = computed(() => logs.value.length > 0)
-const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
 </script>
 
 <template>
@@ -202,7 +232,15 @@ const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
           :total-pages="totalPages"
           :total="total"
           item-label="条记录"
+          :page-size="pageSize"
+          :page-size-options="PAGE_SIZE_OPTIONS"
           @page-change="setListPage"
+          @page-size-change="
+            (size) => {
+              pageSize = size
+              setListPage(1)
+            }
+          "
         />
       </template>
 
@@ -218,6 +256,12 @@ const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
               <RotateCcw data-icon="inline-start" />
               重置
             </Button>
+            <ColumnToggle
+              :columns="columns"
+              :hidden="hidden"
+              @toggle="toggle"
+              @reset="reset"
+            />
           </div>
         </div>
         <div class="flex items-center gap-2 md:hidden">
@@ -276,31 +320,24 @@ const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
         </SheetContent>
       </Sheet>
 
-      <InlineError
-        v-if="listError && hasLogs"
-        :message="listError"
-        :on-retry="refreshList"
-      />
-
-      <TableSkeletonRow v-if="listLoading && !hasLogs" :col-span="6" />
-      <ErrorState
-        v-else-if="listError && !hasLogs"
-        :message="listError"
-        :on-retry="refreshList"
-      />
-      <EmptyState
-        v-else-if="showEmpty"
-        :icon="activeFilters.length > 0 ? SearchX : ShieldAlert"
-        :title="
-          activeFilters.length > 0 ? '没有符合条件的记录' : '还没有审计记录'
-        "
-        :description="
-          activeFilters.length > 0
-            ? '试着放宽筛选条件，或清除筛选后重试。'
-            : '系统的写操作和权限拦截会自动记录在这里。'
-        "
+      <DataList
+        :items="logs"
+        :loading="listLoading"
+        :error="listError"
+        :columns="visibleColumns"
+        :skeleton-col-span="6"
+        :empty="{
+          icon: activeFilters.length > 0 ? SearchX : ShieldAlert,
+          title:
+            activeFilters.length > 0 ? '没有符合条件的记录' : '还没有审计记录',
+          description:
+            activeFilters.length > 0
+              ? '试着放宽筛选条件，或清除筛选后重试。'
+              : '系统的写操作和权限拦截会自动记录在这里。',
+        }"
+        @retry="refreshList"
       >
-        <template v-if="activeFilters.length > 0" #action>
+        <template #empty-action>
           <Button
             v-if="activeFilters.length > 0"
             variant="outline"
@@ -309,72 +346,42 @@ const showEmpty = computed(() => !listLoading.value && !hasLogs.value)
             清除筛选
           </Button>
         </template>
-      </EmptyState>
 
-      <template v-else>
-        <div class="flex flex-col gap-2 md:hidden">
+        <template #card="{ row }">
           <RecordCard
-            v-for="log in logs"
-            :key="log.id"
-            :title="log.action"
-            :subtitle="formatDateTime(log.createdAt)"
+            :title="row.action"
+            :subtitle="formatDateTime(row.createdAt)"
           >
             <template #badges>
-              <Badge :variant="statusVariant(log.status)">
-                {{ statusLabel(log.status) }}
+              <Badge :variant="statusVariant(row.status)">
+                {{ statusLabel(row.status) }}
               </Badge>
             </template>
             <template #meta>
-              <span>{{ log.username || "未知" }}</span>
-              <span>{{ log.ip || "-" }}</span>
-              <span v-if="log.detail" class="w-full truncate">
-                {{ log.detail }}
+              <span>{{ row.username || "未知" }}</span>
+              <span>{{ row.ip || "-" }}</span>
+              <span v-if="row.detail" class="w-full truncate">
+                {{ row.detail }}
               </span>
             </template>
           </RecordCard>
-        </div>
+        </template>
 
-        <div class="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>时间</TableHead>
-                <TableHead class="hidden md:table-cell">操作者</TableHead>
-                <TableHead>动作</TableHead>
-                <TableHead class="hidden lg:table-cell">IP</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead class="hidden xl:table-cell">详情</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="log in logs" :key="log.id">
-                <TableCell class="whitespace-nowrap text-muted-foreground">
-                  {{ formatDateTime(log.createdAt) }}
-                </TableCell>
-                <TableCell class="hidden md:table-cell">
-                  {{ log.username || "未知" }}
-                </TableCell>
-                <TableCell class="font-mono text-xs">{{
-                  log.action
-                }}</TableCell>
-                <TableCell class="hidden text-muted-foreground lg:table-cell">
-                  {{ log.ip || "-" }}
-                </TableCell>
-                <TableCell>
-                  <Badge :variant="statusVariant(log.status)">
-                    {{ statusLabel(log.status) }}
-                  </Badge>
-                </TableCell>
-                <TableCell
-                  class="hidden max-w-[240px] truncate text-muted-foreground xl:table-cell"
-                >
-                  {{ log.detail || "-" }}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </template>
+        <template #cell-createdAt="{ row }">
+          {{ formatDateTime(row.createdAt) }}
+        </template>
+        <template #cell-username="{ row }">
+          {{ row.username || "未知" }}
+        </template>
+        <template #cell-action="{ row }">{{ row.action }}</template>
+        <template #cell-ip="{ row }">{{ row.ip || "-" }}</template>
+        <template #cell-status="{ row }">
+          <Badge :variant="statusVariant(row.status)">
+            {{ statusLabel(row.status) }}
+          </Badge>
+        </template>
+        <template #cell-detail="{ row }">{{ row.detail || "-" }}</template>
+      </DataList>
     </ListShell>
   </div>
 </template>

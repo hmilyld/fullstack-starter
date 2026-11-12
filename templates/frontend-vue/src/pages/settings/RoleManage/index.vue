@@ -2,17 +2,15 @@
 import { computed, onMounted, ref } from "vue"
 import { Lock, Pencil, Plus, Search, ShieldCheck, Trash2 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
-import EmptyState from "@/components/shared/EmptyState.vue"
-import ErrorState from "@/components/shared/ErrorState.vue"
+import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
-import InlineError from "@/components/shared/InlineError.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
 import RecordCard from "@/components/shared/RecordCard.vue"
 import RowActions from "@/components/shared/RowActions.vue"
 import type { RowAction } from "@/components/shared/row-action"
 import TablePagination from "@/components/shared/TablePagination.vue"
-import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,14 +26,6 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { getPermissions } from "@/api/permission"
 import {
   createRole,
@@ -44,6 +34,7 @@ import {
   updateRole,
 } from "@/api/role"
 import { useDebouncedValue } from "@/composables/use-debounced-value"
+import { useColumnVisibility } from "@/composables/use-column-visibility"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlListState } from "@/composables/use-url-list-state"
 import { useAuthStore } from "@/stores/auth"
@@ -52,11 +43,13 @@ import RolePermissionPicker from "@/pages/settings/RoleManage/RolePermissionPick
 import type { Permission } from "@/types/permission"
 import type { Role } from "@/types/role"
 
-const PAGE_SIZE = 8
+const DEFAULT_PAGE_SIZE = 8
+const PAGE_SIZE_OPTIONS = [8, 16, 32]
 
 const auth = useAuthStore()
 const toast = useToast()
 
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const { search, page, setSearch, setPage } = useUrlListState()
 const debouncedSearch = useDebouncedValue(search)
 
@@ -72,7 +65,7 @@ const {
 } = usePagedList<Role, { search: string }>({
   fetcher: getRoles,
   params: computed(() => ({ search: debouncedSearch.value })),
-  pageSize: PAGE_SIZE,
+  pageSize,
   page,
   onPageChange: setPage,
 })
@@ -184,8 +177,38 @@ function buildRoleActions(role: Role): RowAction[] {
   return actions
 }
 
+const columns: DataColumn[] = [
+  { key: "name", header: "角色名称" },
+  {
+    key: "description",
+    header: "描述",
+    hideable: true,
+    headClass: "hidden md:table-cell",
+    cellClass: "hidden text-muted-foreground md:table-cell",
+  },
+  {
+    key: "permissions",
+    header: "权限数",
+    hideable: true,
+    headClass: "hidden lg:table-cell",
+    cellClass: "hidden lg:table-cell",
+  },
+  { key: "type", header: "类型" },
+  {
+    key: "actions",
+    header: "操作",
+    pinRight: true,
+    headClass: "text-right",
+    cellClass: "text-right",
+  },
+]
+
+const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
+  "roles",
+  columns
+)
+
 const hasRoles = computed(() => roles.value.length > 0)
-const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
 </script>
 
 <template>
@@ -208,6 +231,12 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
             <Search />
           </InputGroupAddon>
         </InputGroup>
+        <ColumnToggle
+          :columns="columns"
+          :hidden="hidden"
+          @toggle="toggle"
+          @reset="reset"
+        />
         <Button
           v-if="auth.hasPermission('roles.create')"
           class="w-full md:w-auto"
@@ -224,36 +253,34 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
           :total-pages="totalPages"
           :total="total"
           item-label="个角色"
+          :page-size="pageSize"
+          :page-size-options="PAGE_SIZE_OPTIONS"
           @page-change="setListPage"
+          @page-size-change="
+            (size) => {
+              pageSize = size
+              setListPage(1)
+            }
+          "
         />
       </template>
 
-      <InlineError
-        v-if="listError && hasRoles"
-        :message="listError"
-        :on-retry="refreshList"
-      />
-
-      <TableSkeletonRow v-if="listLoading && !hasRoles" :col-span="5" />
-      <ErrorState
-        v-else-if="listError && !hasRoles"
-        :message="listError"
-        :on-retry="refreshList"
-      />
-      <EmptyState
-        v-else-if="showEmpty"
-        :icon="ShieldCheck"
-        :title="debouncedSearch ? '没有匹配的角色' : '还没有角色'"
-        :description="
-          debouncedSearch
+      <DataList
+        :items="roles"
+        :loading="listLoading"
+        :error="listError"
+        :columns="visibleColumns"
+        :skeleton-col-span="5"
+        :empty="{
+          icon: ShieldCheck,
+          title: debouncedSearch ? '没有匹配的角色' : '还没有角色',
+          description: debouncedSearch
             ? '换个关键词，或清空搜索条件后再试。'
-            : '创建角色并分配权限，再把角色授予用户。'
-        "
+            : '创建角色并分配权限，再把角色授予用户。',
+        }"
+        @retry="refreshList"
       >
-        <template
-          v-if="debouncedSearch || auth.hasPermission('roles.create')"
-          #action
-        >
+        <template #empty-action>
           <Button
             v-if="debouncedSearch"
             variant="outline"
@@ -269,89 +296,64 @@ const showEmpty = computed(() => !listLoading.value && !hasRoles.value)
             新增角色
           </Button>
         </template>
-      </EmptyState>
 
-      <template v-else>
-        <div class="flex flex-col gap-2 md:hidden">
+        <template #card="{ row }">
           <RecordCard
-            v-for="role in roles"
-            :key="role.id"
-            :title="role.name"
-            :subtitle="role.description || '暂无描述'"
+            :title="row.name"
+            :subtitle="row.description || '暂无描述'"
           >
             <template #badges>
-              <Badge v-if="role.isPreset" variant="outline">预设</Badge>
+              <Badge v-if="row.isPreset" variant="outline">预设</Badge>
               <Badge v-else variant="secondary">自定义</Badge>
               <Badge variant="secondary"
-                >{{ role.permissions.length }} 项权限</Badge
+                >{{ row.permissions.length }} 项权限</Badge
               >
             </template>
             <template #actions>
-              <RowActions :actions="buildRoleActions(role)" />
+              <RowActions :actions="buildRoleActions(row)" />
             </template>
           </RecordCard>
-        </div>
+        </template>
 
-        <div class="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>角色名称</TableHead>
-                <TableHead class="hidden md:table-cell">描述</TableHead>
-                <TableHead class="hidden lg:table-cell">权限数</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead class="sticky right-0 bg-card text-right">
-                  操作
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="role in roles" :key="role.id">
-                <TableCell class="font-medium">{{ role.name }}</TableCell>
-                <TableCell class="hidden text-muted-foreground md:table-cell">
-                  {{ role.description || "-" }}
-                </TableCell>
-                <TableCell class="hidden lg:table-cell">
-                  <Badge variant="secondary">{{
-                    role.permissions.length
-                  }}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge v-if="role.isPreset" variant="outline">
-                    <Lock />
-                    预设
-                  </Badge>
-                  <Badge v-else variant="secondary">自定义</Badge>
-                </TableCell>
-                <TableCell class="sticky right-0 bg-inherit text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <Button
-                      v-if="auth.hasPermission('roles.edit')"
-                      variant="ghost"
-                      size="icon-sm"
-                      @click="handleEdit(role)"
-                    >
-                      <Pencil />
-                      <span class="sr-only">编辑 {{ role.name }}</span>
-                    </Button>
-                    <Button
-                      v-if="
-                        !role.isPreset && auth.hasPermission('roles.delete')
-                      "
-                      variant="ghost"
-                      size="icon-sm"
-                      @click="handleDelete(role)"
-                    >
-                      <Trash2 />
-                      <span class="sr-only">删除 {{ role.name }}</span>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </template>
+        <template #cell-name="{ row }">
+          <span class="font-medium">{{ row.name }}</span>
+        </template>
+        <template #cell-description="{ row }">
+          {{ row.description || "-" }}
+        </template>
+        <template #cell-permissions="{ row }">
+          <Badge variant="secondary">{{ row.permissions.length }}</Badge>
+        </template>
+        <template #cell-type="{ row }">
+          <Badge v-if="row.isPreset" variant="outline">
+            <Lock />
+            预设
+          </Badge>
+          <Badge v-else variant="secondary">自定义</Badge>
+        </template>
+        <template #cell-actions="{ row }">
+          <div class="flex items-center justify-end gap-1">
+            <Button
+              v-if="auth.hasPermission('roles.edit')"
+              variant="ghost"
+              size="icon-sm"
+              @click="handleEdit(row)"
+            >
+              <Pencil />
+              <span class="sr-only">编辑 {{ row.name }}</span>
+            </Button>
+            <Button
+              v-if="!row.isPreset && auth.hasPermission('roles.delete')"
+              variant="ghost"
+              size="icon-sm"
+              @click="handleDelete(row)"
+            >
+              <Trash2 />
+              <span class="sr-only">删除 {{ row.name }}</span>
+            </Button>
+          </div>
+        </template>
+      </DataList>
     </ListShell>
 
     <FormDialog

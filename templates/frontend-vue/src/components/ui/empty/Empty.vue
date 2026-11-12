@@ -12,7 +12,7 @@ const props = defineProps<{
     data-slot="empty"
     :class="
       cn(
-        'flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-md border-dashed p-12 text-center text-balance',
+        'flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-3 rounded-2xl border-dashed p-10 text-center text-balance sm:p-12',
         props.class
       )
     "

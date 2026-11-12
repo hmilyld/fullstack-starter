@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import {
   KeyRound,
   Pencil,
@@ -12,10 +12,10 @@ import {
   Users,
 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
+import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
-import ErrorState from "@/components/shared/ErrorState.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
-import InlineError from "@/components/shared/InlineError.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
@@ -24,7 +24,6 @@ import RoleBadge from "@/components/shared/RoleBadge.vue"
 import RowActions from "@/components/shared/RowActions.vue"
 import type { RowAction } from "@/components/shared/row-action"
 import TablePagination from "@/components/shared/TablePagination.vue"
-import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -69,6 +68,7 @@ import {
   updateUser,
 } from "@/api/user"
 import { getRoles } from "@/api/role"
+import { useColumnVisibility } from "@/composables/use-column-visibility"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlListState } from "@/composables/use-url-list-state"
 import { useDebouncedValue } from "@/composables/use-debounced-value"
@@ -77,7 +77,8 @@ import { useToast } from "@/composables/use-toast"
 import type { Role } from "@/types/role"
 import type { User } from "@/types/user"
 
-const PAGE_SIZE = 8
+const DEFAULT_PAGE_SIZE = 8
+const PAGE_SIZE_OPTIONS = [8, 16, 32]
 
 function generatePassword(length = 12) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -90,6 +91,7 @@ const auth = useAuthStore()
 const toast = useToast()
 const roles = ref<Role[]>([])
 
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const { search, page, setSearch, setPage } = useUrlListState()
 const debouncedSearch = useDebouncedValue(search)
 
@@ -105,7 +107,7 @@ const {
 } = usePagedList<User, { search: string }>({
   fetcher: getUsers,
   params: computed(() => ({ search: debouncedSearch.value })),
-  pageSize: PAGE_SIZE,
+  pageSize,
   page,
   onPageChange: setPage,
 })
@@ -362,8 +364,88 @@ const pendingCheckboxState = computed(() => {
   if (somePendingSelected.value) return "indeterminate"
   return false
 })
+const selectedIds = ref<Set<string>>(new Set())
+const bulkRoleOpen = ref(false)
+const bulkRoleId = ref("user")
+const bulkSubmitting = ref(false)
+
+const pageIds = computed(() => users.value.map((user) => user.id))
+const allSelected = computed(
+  () =>
+    pageIds.value.length > 0 &&
+    pageIds.value.every((id) => selectedIds.value.has(id))
+)
+const someSelected = computed(
+  () =>
+    !allSelected.value && pageIds.value.some((id) => selectedIds.value.has(id))
+)
+
+watch([() => currentPage.value, debouncedSearch], () => {
+  selectedIds.value = new Set()
+})
+
+function toggleSelected(id: string) {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedIds.value = next
+}
+
+function toggleAll(checked: boolean) {
+  selectedIds.value = checked ? new Set(pageIds.value) : new Set()
+}
+
+async function handleBulkRoleSubmit() {
+  if (selectedIds.value.size === 0) return
+  bulkSubmitting.value = true
+  const res = await batchUpdateRole(
+    Array.from(selectedIds.value, Number),
+    bulkRoleId.value
+  )
+  bulkSubmitting.value = false
+  if (res.code !== 0) {
+    toast.error(res.message || "批量操作失败")
+    return
+  }
+  toast.success(`已更新 ${selectedIds.value.size} 位用户的角色`)
+  bulkRoleOpen.value = false
+  selectedIds.value = new Set()
+  refreshList()
+}
+
+const columns: DataColumn[] = [
+  { key: "select", header: "", headClass: "w-10" },
+  { key: "username", header: "用户名" },
+  {
+    key: "name",
+    header: "姓名",
+    hideable: true,
+    headClass: "hidden md:table-cell",
+    cellClass: "hidden md:table-cell",
+  },
+  {
+    key: "email",
+    header: "邮箱",
+    hideable: true,
+    headClass: "hidden lg:table-cell",
+    cellClass: "hidden text-muted-foreground lg:table-cell",
+  },
+  { key: "role", header: "角色" },
+  {
+    key: "actions",
+    header: "操作",
+    pinRight: true,
+    headClass: "text-right",
+    cellClass: "text-right",
+  },
+]
+
+const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
+  "users",
+  columns
+)
+
 const hasUsers = computed(() => users.value.length > 0)
-const showEmpty = computed(() => !listLoading.value && !hasUsers.value)
 </script>
 
 <template>
@@ -386,6 +468,12 @@ const showEmpty = computed(() => !listLoading.value && !hasUsers.value)
             <Search />
           </InputGroupAddon>
         </InputGroup>
+        <ColumnToggle
+          :columns="columns"
+          :hidden="hidden"
+          @toggle="toggle"
+          @reset="reset"
+        />
         <Button
           v-if="auth.hasPermission('users.create')"
           class="w-full md:w-auto"
@@ -410,36 +498,56 @@ const showEmpty = computed(() => !listLoading.value && !hasUsers.value)
           :total-pages="totalPages"
           :total="total"
           item-label="位用户"
+          :page-size="pageSize"
+          :page-size-options="PAGE_SIZE_OPTIONS"
           @page-change="setListPage"
+          @page-size-change="
+            (size) => {
+              pageSize = size
+              setListPage(1)
+            }
+          "
         />
       </template>
 
-      <InlineError
-        v-if="listError && hasUsers"
-        :message="listError"
-        :on-retry="refreshList"
-      />
-
-      <TableSkeletonRow v-if="listLoading && !hasUsers" :col-span="5" />
-      <ErrorState
-        v-else-if="listError && !hasUsers"
-        :message="listError"
-        :on-retry="refreshList"
-      />
-      <EmptyState
-        v-else-if="showEmpty"
-        :icon="Users"
-        :title="debouncedSearch ? '没有匹配的用户' : '还没有用户'"
-        :description="
-          debouncedSearch
-            ? '换个关键词，或清空搜索条件后再试。'
-            : '创建第一位用户，或等待注册审核通过。'
-        "
+      <div
+        v-if="selectedIds.size > 0"
+        class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2"
       >
-        <template
-          v-if="debouncedSearch || auth.hasPermission('users.create')"
-          #action
-        >
+        <span class="text-sm font-medium">
+          已选 {{ selectedIds.size }} 位用户
+        </span>
+        <div class="ml-auto flex items-center gap-2">
+          <Button
+            v-if="auth.hasPermission('users.assign_role')"
+            size="sm"
+            variant="outline"
+            @click="bulkRoleOpen = true"
+          >
+            批量维护角色
+          </Button>
+          <Button size="sm" variant="ghost" @click="selectedIds = new Set()">
+            清除选择
+          </Button>
+        </div>
+      </div>
+
+      <DataList
+        :items="users"
+        :loading="listLoading"
+        :error="listError"
+        :columns="visibleColumns"
+        :skeleton-col-span="6"
+        :empty="{
+          icon: Users,
+          title: debouncedSearch ? '没有匹配的用户' : '还没有用户',
+          description: debouncedSearch
+            ? '换个关键词，或清空搜索条件后再试。'
+            : '创建第一位用户，或等待注册审核通过。',
+        }"
+        @retry="refreshList"
+      >
+        <template #empty-action>
           <Button
             v-if="debouncedSearch"
             variant="outline"
@@ -455,129 +563,148 @@ const showEmpty = computed(() => !listLoading.value && !hasUsers.value)
             新增用户
           </Button>
         </template>
-      </EmptyState>
 
-      <template v-else>
-        <div class="flex flex-col gap-2 md:hidden">
-          <RecordCard
-            v-for="user in users"
-            :key="user.id"
-            :subtitle="`@${user.username} · ${user.email}`"
-          >
+        <template #card="{ row }">
+          <RecordCard :subtitle="`@${row.username} · ${row.email}`">
+            <template #leading>
+              <Checkbox
+                :model-value="selectedIds.has(row.id)"
+                :aria-label="`选择 ${row.name}`"
+                class="mt-0.5"
+                @update:model-value="toggleSelected(row.id)"
+              />
+            </template>
             <template #title>
               <span class="flex items-center gap-2">
                 <Avatar class="size-7">
                   <AvatarImage
-                    v-if="user.avatar"
-                    :src="user.avatar"
-                    :alt="user.name"
+                    v-if="row.avatar"
+                    :src="row.avatar"
+                    :alt="row.name"
                     :width="28"
                     :height="28"
                   />
-                  <AvatarFallback>{{ user.name.slice(0, 1) }}</AvatarFallback>
+                  <AvatarFallback>{{ row.name.slice(0, 1) }}</AvatarFallback>
                 </Avatar>
-                <span class="truncate">{{ user.name }}</span>
+                <span class="truncate">{{ row.name }}</span>
               </span>
             </template>
             <template #badges>
-              <RoleBadge :role-id="user.roleId" :roles="roles" />
+              <RoleBadge :role-id="row.roleId" :roles="roles" />
             </template>
             <template #actions>
-              <RowActions :actions="buildUserActions(user)" />
+              <RowActions :actions="buildUserActions(row)" />
             </template>
           </RecordCard>
-        </div>
+        </template>
 
-        <div class="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>用户名</TableHead>
-                <TableHead class="hidden md:table-cell">姓名</TableHead>
-                <TableHead class="hidden lg:table-cell">邮箱</TableHead>
-                <TableHead>角色</TableHead>
-                <TableHead class="sticky right-0 bg-card text-right">
-                  操作
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="user in users" :key="user.id">
-                <TableCell>
-                  <div class="flex items-center gap-3">
-                    <Avatar class="size-8">
-                      <AvatarImage
-                        v-if="user.avatar"
-                        :src="user.avatar"
-                        :alt="user.name"
-                        :width="32"
-                        :height="32"
-                      />
-                      <AvatarFallback>{{
-                        user.name.slice(0, 1)
-                      }}</AvatarFallback>
-                    </Avatar>
-                    <span class="text-sm font-medium">{{ user.username }}</span>
-                  </div>
-                </TableCell>
-                <TableCell class="hidden md:table-cell">
-                  {{ user.name }}
-                </TableCell>
-                <TableCell class="hidden text-muted-foreground lg:table-cell">
-                  {{ user.email }}
-                </TableCell>
-                <TableCell>
-                  <RoleBadge :role-id="user.roleId" :roles="roles" />
-                </TableCell>
-                <TableCell class="sticky right-0 bg-inherit text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <Button
-                      v-if="auth.hasPermission('users.edit')"
-                      variant="ghost"
-                      size="icon-sm"
-                      @click="handleEdit(user)"
-                    >
-                      <Pencil />
-                      <span class="sr-only">编辑 {{ user.name }}</span>
-                    </Button>
-                    <Button
-                      v-if="auth.hasPermission('users.assign_role')"
-                      variant="ghost"
-                      size="icon-sm"
-                      @click="handleRole(user)"
-                    >
-                      <Shield />
-                      <span class="sr-only">维护角色</span>
-                    </Button>
-                    <Button
-                      v-if="auth.hasPermission('users.edit')"
-                      variant="ghost"
-                      size="icon-sm"
-                      @click="openReset(user)"
-                    >
-                      <KeyRound />
-                      <span class="sr-only">重置密码</span>
-                    </Button>
-                    <Button
-                      v-if="
-                        auth.hasPermission('users.delete') &&
-                        user.id !== auth.user?.id
-                      "
-                      variant="ghost"
-                      size="icon-sm"
-                      @click="handleDelete(user)"
-                    >
-                      <Trash2 />
-                      <span class="sr-only">删除</span>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </template>
+        <template #head-select>
+          <Checkbox
+            :model-value="
+              allSelected ? true : someSelected ? 'indeterminate' : false
+            "
+            aria-label="全选当前页用户"
+            @update:model-value="(value) => toggleAll(value === true)"
+          />
+        </template>
+        <template #cell-select="{ row }">
+          <Checkbox
+            :model-value="selectedIds.has(row.id)"
+            :aria-label="`选择 ${row.name}`"
+            @update:model-value="toggleSelected(row.id)"
+          />
+        </template>
+
+        <template #cell-username="{ row }">
+          <div class="flex items-center gap-3">
+            <Avatar class="size-8">
+              <AvatarImage
+                v-if="row.avatar"
+                :src="row.avatar"
+                :alt="row.name"
+                :width="32"
+                :height="32"
+              />
+              <AvatarFallback>{{ row.name.slice(0, 1) }}</AvatarFallback>
+            </Avatar>
+            <span class="text-sm font-medium">{{ row.username }}</span>
+          </div>
+        </template>
+        <template #cell-name="{ row }">{{ row.name }}</template>
+        <template #cell-email="{ row }">{{ row.email }}</template>
+        <template #cell-role="{ row }">
+          <RoleBadge :role-id="row.roleId" :roles="roles" />
+        </template>
+        <template #cell-actions="{ row }">
+          <div class="flex items-center justify-end gap-1">
+            <Button
+              v-if="auth.hasPermission('users.edit')"
+              variant="ghost"
+              size="icon-sm"
+              @click="handleEdit(row)"
+            >
+              <Pencil />
+              <span class="sr-only">编辑 {{ row.name }}</span>
+            </Button>
+            <Button
+              v-if="auth.hasPermission('users.assign_role')"
+              variant="ghost"
+              size="icon-sm"
+              @click="handleRole(row)"
+            >
+              <Shield />
+              <span class="sr-only">维护角色</span>
+            </Button>
+            <Button
+              v-if="auth.hasPermission('users.edit')"
+              variant="ghost"
+              size="icon-sm"
+              @click="openReset(row)"
+            >
+              <KeyRound />
+              <span class="sr-only">重置密码</span>
+            </Button>
+            <Button
+              v-if="
+                auth.hasPermission('users.delete') && row.id !== auth.user?.id
+              "
+              variant="ghost"
+              size="icon-sm"
+              @click="handleDelete(row)"
+            >
+              <Trash2 />
+              <span class="sr-only">删除</span>
+            </Button>
+          </div>
+        </template>
+      </DataList>
     </ListShell>
+
+    <FormDialog
+      :open="bulkRoleOpen"
+      title="批量维护角色"
+      :description="`将为已选的 ${selectedIds.size} 位用户设置同一角色。`"
+      :submitting="bulkSubmitting"
+      submit-label="保存"
+      @update:open="bulkRoleOpen = $event"
+      @submit="handleBulkRoleSubmit"
+    >
+      <FieldGroup>
+        <Field>
+          <FieldLabel for="bulk-role">角色</FieldLabel>
+          <Select v-model="bulkRoleId">
+            <SelectTrigger id="bulk-role" class="w-full" aria-label="角色">
+              <SelectValue placeholder="请选择角色" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="role in roles" :key="role.id" :value="role.id">
+                {{ role.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+      </FieldGroup>
+    </FormDialog>
 
     <FormDialog
       :open="editOpen"

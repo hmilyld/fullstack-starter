@@ -2,6 +2,13 @@
 import { computed } from "vue"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "@lucide/vue"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const props = withDefaults(
   defineProps<{
@@ -9,15 +16,21 @@ const props = withDefaults(
     totalPages: number
     total: number
     itemLabel?: string
+    pageSize?: number
+    pageSizeOptions?: number[]
   }>(),
   {
     itemLabel: "条记录",
+    pageSizeOptions: () => [10, 20, 50],
   }
 )
 
 const emit = defineEmits<{
   (e: "page-change", page: number): void
+  (e: "page-size-change", pageSize: number): void
 }>()
+
+const showPageSize = computed(() => props.pageSize !== undefined)
 
 function getPageItems(page: number, totalPages: number) {
   if (totalPages <= 7) {
@@ -39,15 +52,43 @@ function getPageItems(page: number, totalPages: number) {
 }
 
 const pageItems = computed(() => getPageItems(props.page, props.totalPages))
+const pageSizeModel = computed({
+  get: () => String(props.pageSize ?? ""),
+  set: (value: string) => emit("page-size-change", Number(value)),
+})
 </script>
 
 <template>
   <div
     class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
   >
-    <p class="text-sm text-muted-foreground">
-      共 {{ total }} {{ itemLabel }}，第 {{ page }} / {{ totalPages }} 页
-    </p>
+    <div
+      class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground"
+    >
+      <p>共 {{ total }} {{ itemLabel }}，第 {{ page }} / {{ totalPages }} 页</p>
+      <label v-if="showPageSize" class="flex items-center gap-2 text-xs">
+        每页
+        <Select v-model="pageSizeModel">
+          <SelectTrigger
+            size="sm"
+            class="h-8 w-[76px]"
+            aria-label="每页显示条数"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="option in pageSizeOptions"
+              :key="option"
+              :value="String(option)"
+            >
+              {{ option }} 条
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </label>
+    </div>
+
     <nav
       aria-label="分页"
       class="mx-auto flex w-full justify-center md:mx-0 md:w-auto md:justify-end"
@@ -64,27 +105,30 @@ const pageItems = computed(() => getPageItems(props.page, props.totalPages))
             上一页
           </Button>
         </li>
-        <template v-for="(item, index) in pageItems" :key="`${item}-${index}`">
-          <li v-if="item === 'ellipsis'" class="hidden md:flex">
-            <span
-              aria-hidden="true"
-              class="flex size-8 items-center justify-center [&_svg:not([class*=size-])]:size-4"
-            >
-              <MoreHorizontal />
-              <span class="sr-only">更多页</span>
-            </span>
-          </li>
-          <li v-else class="hidden md:flex">
-            <Button
-              :variant="item === page ? 'outline' : 'ghost'"
-              size="icon-sm"
-              :aria-current="item === page ? 'page' : undefined"
-              @click="emit('page-change', Number(item))"
-            >
-              {{ item }}
-            </Button>
-          </li>
-        </template>
+        <li
+          v-for="(item, index) in pageItems"
+          :key="`${item}-${index}`"
+          class="hidden md:block"
+        >
+          <Button
+            v-if="item === 'ellipsis'"
+            variant="ghost"
+            size="icon-sm"
+            disabled
+            aria-hidden="true"
+          >
+            <MoreHorizontal />
+          </Button>
+          <Button
+            v-else
+            :variant="item === page ? 'outline' : 'ghost'"
+            size="icon-sm"
+            :aria-current="item === page ? 'page' : undefined"
+            @click="emit('page-change', item as number)"
+          >
+            {{ item }}
+          </Button>
+        </li>
         <li>
           <Button
             variant="ghost"

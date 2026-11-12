@@ -14,10 +14,9 @@ import {
   XCircle,
 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
-import EmptyState from "@/components/shared/EmptyState.vue"
-import ErrorState from "@/components/shared/ErrorState.vue"
+import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
-import InlineError from "@/components/shared/InlineError.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
 import PasswordInput from "@/components/shared/PasswordInput.vue"
@@ -25,7 +24,6 @@ import RecordCard from "@/components/shared/RecordCard.vue"
 import RowActions from "@/components/shared/RowActions.vue"
 import type { RowAction } from "@/components/shared/row-action"
 import TablePagination from "@/components/shared/TablePagination.vue"
-import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
 import PresetManager from "@/pages/settings/AiModel/PresetManager.vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -61,14 +59,6 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import {
   createAiModel,
@@ -79,6 +69,7 @@ import {
   updateAiModel,
 } from "@/api/ai-model"
 import { useDebouncedValue } from "@/composables/use-debounced-value"
+import { useColumnVisibility } from "@/composables/use-column-visibility"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlListState } from "@/composables/use-url-list-state"
 import { useAuthStore } from "@/stores/auth"
@@ -89,7 +80,8 @@ import type {
   AiModelTestResult,
 } from "@/types/ai-model"
 
-const PAGE_SIZE = 10
+const DEFAULT_PAGE_SIZE = 10
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 function maskApiKey(key: string): string {
   if (!key) return "-"
@@ -123,6 +115,7 @@ function setActiveTab(value: string) {
   void router.replace({ query: next })
 }
 
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const { search, page, setSearch, setPage } = useUrlListState()
 const debouncedSearch = useDebouncedValue(search)
 
@@ -138,7 +131,7 @@ const {
 } = usePagedList<AiModel, { search: string }>({
   fetcher: getAiModels,
   params: computed(() => ({ search: debouncedSearch.value })),
-  pageSize: PAGE_SIZE,
+  pageSize,
   page,
   onPageChange: setPage,
 })
@@ -327,8 +320,54 @@ function buildModelActions(model: AiModel): RowAction[] {
   return actions
 }
 
+const columns: DataColumn[] = [
+  { key: "alias", header: "别名" },
+  {
+    key: "modelName",
+    header: "模型名称",
+    hideable: true,
+    headClass: "hidden md:table-cell",
+    cellClass: "hidden md:table-cell",
+  },
+  {
+    key: "apiUrl",
+    header: "API 地址",
+    hideable: true,
+    headClass: "hidden lg:table-cell",
+    cellClass:
+      "hidden max-w-[200px] truncate text-muted-foreground lg:table-cell",
+  },
+  {
+    key: "apiKey",
+    header: "API Key",
+    hideable: true,
+    headClass: "hidden xl:table-cell",
+    cellClass: "hidden xl:table-cell",
+  },
+  {
+    key: "description",
+    header: "描述",
+    hideable: true,
+    headClass: "hidden xl:table-cell",
+    cellClass:
+      "hidden max-w-[150px] truncate text-muted-foreground xl:table-cell",
+  },
+  { key: "status", header: "状态" },
+  {
+    key: "actions",
+    header: "操作",
+    pinRight: true,
+    headClass: "text-right",
+    cellClass: "text-right",
+  },
+]
+
+const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
+  "ai-models",
+  columns
+)
+
 const hasModels = computed(() => models.value.length > 0)
-const showEmpty = computed(() => !listLoading.value && !hasModels.value)
 </script>
 
 <template>
@@ -365,6 +404,12 @@ const showEmpty = computed(() => !listLoading.value && !hasModels.value)
                 <Search />
               </InputGroupAddon>
             </InputGroup>
+            <ColumnToggle
+              :columns="columns"
+              :hidden="hidden"
+              @toggle="toggle"
+              @reset="reset"
+            />
             <Button
               v-if="auth.hasPermission('ai_models.create')"
               class="w-full md:w-auto"
@@ -381,36 +426,34 @@ const showEmpty = computed(() => !listLoading.value && !hasModels.value)
               :total-pages="totalPages"
               :total="total"
               item-label="个模型"
+              :page-size="pageSize"
+              :page-size-options="PAGE_SIZE_OPTIONS"
               @page-change="setListPage"
+              @page-size-change="
+                (size) => {
+                  pageSize = size
+                  setListPage(1)
+                }
+              "
             />
           </template>
 
-          <InlineError
-            v-if="listError && hasModels"
-            :message="listError"
-            :on-retry="refreshList"
-          />
-
-          <TableSkeletonRow v-if="listLoading && !hasModels" :col-span="7" />
-          <ErrorState
-            v-else-if="listError && !hasModels"
-            :message="listError"
-            :on-retry="refreshList"
-          />
-          <EmptyState
-            v-else-if="showEmpty"
-            :icon="Star"
-            :title="debouncedSearch ? '没有匹配的模型' : '还没有模型配置'"
-            :description="
-              debouncedSearch
+          <DataList
+            :items="models"
+            :loading="listLoading"
+            :error="listError"
+            :columns="visibleColumns"
+            :skeleton-col-span="7"
+            :empty="{
+              icon: Star,
+              title: debouncedSearch ? '没有匹配的模型' : '还没有模型配置',
+              description: debouncedSearch
                 ? '换个关键词，或清空搜索条件后再试。'
-                : '新增模型后，其他模块即可通过别名调用。'
-            "
+                : '新增模型后，其他模块即可通过别名调用。',
+            }"
+            @retry="refreshList"
           >
-            <template
-              v-if="debouncedSearch || auth.hasPermission('ai_models.create')"
-              #action
-            >
+            <template #empty-action>
               <Button
                 v-if="debouncedSearch"
                 variant="outline"
@@ -426,130 +469,92 @@ const showEmpty = computed(() => !listLoading.value && !hasModels.value)
                 新增模型
               </Button>
             </template>
-          </EmptyState>
 
-          <template v-else>
-            <div class="flex flex-col gap-2 md:hidden">
-              <RecordCard
-                v-for="model in models"
-                :key="model.id"
-                :title="model.alias"
-                :subtitle="model.modelName"
-              >
+            <template #card="{ row }">
+              <RecordCard :title="row.alias" :subtitle="row.modelName">
                 <template #badges>
-                  <Badge :variant="model.isDefault ? 'success' : 'secondary'">
-                    {{ model.isDefault ? "默认" : "普通" }}
+                  <Badge :variant="row.isDefault ? 'success' : 'secondary'">
+                    {{ row.isDefault ? "默认" : "普通" }}
                   </Badge>
                 </template>
                 <template #meta>
-                  <span class="max-w-[240px] truncate">{{ model.apiUrl }}</span>
+                  <span class="max-w-[240px] truncate">{{ row.apiUrl }}</span>
                 </template>
                 <template #actions>
-                  <RowActions :actions="buildModelActions(model)" />
+                  <RowActions :actions="buildModelActions(row)" />
                 </template>
               </RecordCard>
-            </div>
+            </template>
 
-            <div class="hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>别名</TableHead>
-                    <TableHead class="hidden md:table-cell">模型名称</TableHead>
-                    <TableHead class="hidden lg:table-cell">API 地址</TableHead>
-                    <TableHead class="hidden xl:table-cell">API Key</TableHead>
-                    <TableHead class="hidden xl:table-cell">描述</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead class="sticky right-0 bg-card text-right">
-                      操作
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="model in models" :key="model.id">
-                    <TableCell class="font-medium">{{ model.alias }}</TableCell>
-                    <TableCell class="hidden md:table-cell">
-                      {{ model.modelName }}
-                    </TableCell>
-                    <TableCell
-                      class="hidden max-w-[200px] truncate text-muted-foreground lg:table-cell"
-                    >
-                      {{ model.apiUrl }}
-                    </TableCell>
-                    <TableCell class="hidden xl:table-cell">
-                      <div class="flex items-center gap-2">
-                        <code class="text-xs">
-                          {{
-                            visibleKeys.has(model.id)
-                              ? model.apiKey
-                              : maskApiKey(model.apiKey)
-                          }}
-                        </code>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          :aria-label="
-                            visibleKeys.has(model.id)
-                              ? '隐藏 API Key'
-                              : '显示 API Key'
-                          "
-                          @click="toggleKeyVisibility(model.id)"
-                        >
-                          <EyeOff v-if="visibleKeys.has(model.id)" />
-                          <Eye v-else />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell
-                      class="hidden max-w-[150px] truncate text-muted-foreground xl:table-cell"
-                    >
-                      {{ model.description || "-" }}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        :variant="model.isDefault ? 'success' : 'secondary'"
-                      >
-                        {{ model.isDefault ? "默认" : "普通" }}
-                      </Badge>
-                    </TableCell>
-                    <TableCell class="sticky right-0 bg-inherit text-right">
-                      <div class="flex items-center justify-end gap-1">
-                        <Button
-                          v-if="auth.hasPermission('ai_models')"
-                          variant="ghost"
-                          size="icon-sm"
-                          :disabled="testingId === model.id"
-                          @click="handleTest(model)"
-                        >
-                          <Spinner v-if="testingId === model.id" />
-                          <TestTube v-else />
-                          <span class="sr-only">测试 {{ model.alias }}</span>
-                        </Button>
-                        <Button
-                          v-if="auth.hasPermission('ai_models.edit')"
-                          variant="ghost"
-                          size="icon-sm"
-                          @click="handleEdit(model)"
-                        >
-                          <Pencil />
-                          <span class="sr-only">编辑 {{ model.alias }}</span>
-                        </Button>
-                        <Button
-                          v-if="auth.hasPermission('ai_models.delete')"
-                          variant="ghost"
-                          size="icon-sm"
-                          @click="handleDelete(model)"
-                        >
-                          <Trash2 />
-                          <span class="sr-only">删除 {{ model.alias }}</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          </template>
+            <template #cell-alias="{ row }">
+              <span class="font-medium">{{ row.alias }}</span>
+            </template>
+            <template #cell-modelName="{ row }">{{ row.modelName }}</template>
+            <template #cell-apiUrl="{ row }">{{ row.apiUrl }}</template>
+            <template #cell-apiKey="{ row }">
+              <div class="flex items-center gap-2">
+                <code class="text-xs">
+                  {{
+                    visibleKeys.has(row.id)
+                      ? row.apiKey
+                      : maskApiKey(row.apiKey)
+                  }}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  :aria-label="
+                    visibleKeys.has(row.id) ? '隐藏 API Key' : '显示 API Key'
+                  "
+                  @click="toggleKeyVisibility(row.id)"
+                >
+                  <EyeOff v-if="visibleKeys.has(row.id)" />
+                  <Eye v-else />
+                </Button>
+              </div>
+            </template>
+            <template #cell-description="{ row }">
+              {{ row.description || "-" }}
+            </template>
+            <template #cell-status="{ row }">
+              <Badge :variant="row.isDefault ? 'success' : 'secondary'">
+                {{ row.isDefault ? "默认" : "普通" }}
+              </Badge>
+            </template>
+            <template #cell-actions="{ row }">
+              <div class="flex items-center justify-end gap-1">
+                <Button
+                  v-if="auth.hasPermission('ai_models')"
+                  variant="ghost"
+                  size="icon-sm"
+                  :disabled="testingId === row.id"
+                  @click="handleTest(row)"
+                >
+                  <Spinner v-if="testingId === row.id" />
+                  <TestTube v-else />
+                  <span class="sr-only">测试 {{ row.alias }}</span>
+                </Button>
+                <Button
+                  v-if="auth.hasPermission('ai_models.edit')"
+                  variant="ghost"
+                  size="icon-sm"
+                  @click="handleEdit(row)"
+                >
+                  <Pencil />
+                  <span class="sr-only">编辑 {{ row.alias }}</span>
+                </Button>
+                <Button
+                  v-if="auth.hasPermission('ai_models.delete')"
+                  variant="ghost"
+                  size="icon-sm"
+                  @click="handleDelete(row)"
+                >
+                  <Trash2 />
+                  <span class="sr-only">删除 {{ row.alias }}</span>
+                </Button>
+              </div>
+            </template>
+          </DataList>
         </ListShell>
       </TabsContent>
 

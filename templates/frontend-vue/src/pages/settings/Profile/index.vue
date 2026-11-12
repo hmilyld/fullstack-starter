@@ -6,6 +6,7 @@ import { useRoute, useRouter } from "vue-router"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
 import SettingsNav from "@/components/shared/SettingsNav.vue"
+import UnsavedChangesGuard from "@/components/shared/UnsavedChangesGuard.vue"
 import PasswordInput from "@/components/shared/PasswordInput.vue"
 import {
   Card,
@@ -109,6 +110,14 @@ async function handlePasswordSubmit() {
 
 <template>
   <div class="flex flex-col gap-(--page-gap)">
+    <UnsavedChangesGuard
+      :when="
+        profileDirty ||
+        currentPassword !== '' ||
+        newPassword !== '' ||
+        confirmPassword !== ''
+      "
+    />
     <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
 
     <Separator />
