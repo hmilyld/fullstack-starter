@@ -313,6 +313,7 @@ export function RolesPage() {
           onRetry={list.refresh}
           skeletonColSpan={5}
           getKey={(role) => role.id}
+          onHideColumn={table.toggle}
           empty={{
             icon: ShieldCheckIcon,
             title: debouncedSearch ? "没有匹配的角色" : "还没有角色",

@@ -332,6 +332,7 @@ const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
             : '预设在新增模型时用于快速填充模型名称和接口地址。',
       }"
       @retry="loadData"
+      @hide-column="toggle"
     >
       <template #empty-action>
         <Button

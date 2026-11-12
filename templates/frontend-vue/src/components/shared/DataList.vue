@@ -4,6 +4,14 @@ import EmptyState from "@/components/shared/EmptyState.vue"
 import ErrorState from "@/components/shared/ErrorState.vue"
 import InlineError from "@/components/shared/InlineError.vue"
 import TableSkeletonRow from "@/components/shared/TableSkeletonRow.vue"
+import { MoreHorizontal } from "@lucide/vue"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -36,7 +44,7 @@ withDefaults(
   { skeletonColSpan: 5 }
 )
 
-const emit = defineEmits<{ retry: [] }>()
+const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
 </script>
 
 <template>
@@ -88,7 +96,28 @@ const emit = defineEmits<{ retry: [] }>()
                 )
               "
             >
-              <slot :name="`head-${column.key}`">{{ column.header }}</slot>
+              <div class="group/col flex items-center gap-1">
+                <span class="min-w-0 truncate">
+                  <slot :name="`head-${column.key}`">{{ column.header }}</slot>
+                </span>
+                <DropdownMenu v-if="column.hideable">
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label="列选项"
+                      class="-mr-1 opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100"
+                    >
+                      <MoreHorizontal />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem @select="emit('hide-column', column.key)">
+                      隐藏此列
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </TableHead>
           </TableRow>
         </TableHeader>

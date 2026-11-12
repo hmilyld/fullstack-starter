@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "@lucide/vue"
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  MoreHorizontal,
+} from "@lucide/vue"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -94,6 +100,17 @@ const pageSizeModel = computed({
       class="mx-auto flex w-full justify-center md:mx-0 md:w-auto md:justify-end"
     >
       <ul class="flex items-center gap-1">
+        <li class="hidden md:block">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            :disabled="page <= 1"
+            aria-label="第一页"
+            @click="emit('page-change', 1)"
+          >
+            <ChevronsLeft />
+          </Button>
+        </li>
         <li>
           <Button
             variant="ghost"
@@ -138,6 +155,17 @@ const pageSizeModel = computed({
           >
             下一页
             <ChevronRight data-icon="inline-end" />
+          </Button>
+        </li>
+        <li class="hidden md:block">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            :disabled="page >= totalPages"
+            aria-label="最后一页"
+            @click="emit('page-change', totalPages)"
+          >
+            <ChevronsRight />
           </Button>
         </li>
       </ul>

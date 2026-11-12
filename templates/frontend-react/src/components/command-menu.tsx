@@ -165,6 +165,10 @@ export function CommandMenu() {
     }
   }
 
+  const activeOptionId = results[activeIndex]
+    ? `command-option-${activeIndex}`
+    : undefined
+
   let lastGroup = ""
 
   return (
@@ -189,6 +193,11 @@ export function CommandMenu() {
             onKeyDown={handleInputKeyDown}
             placeholder="搜索页面或菜单…"
             aria-label="搜索页面或菜单"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="command-menu-list"
+            aria-autocomplete="list"
+            aria-activedescendant={activeOptionId}
             className="h-12 border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
           />
           <kbd className="rounded-sm border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
@@ -196,8 +205,14 @@ export function CommandMenu() {
           </kbd>
         </div>
 
+        <span className="sr-only" aria-live="polite">
+          {results.length} 个结果
+        </span>
         <div
           ref={listRef}
+          id="command-menu-list"
+          role="listbox"
+          aria-label="搜索结果"
           className="max-h-[46svh] overflow-y-auto overscroll-contain p-2"
         >
           {results.length === 0 ? (
@@ -215,13 +230,15 @@ export function CommandMenu() {
                       {entry.group}
                     </p>
                   )}
-                  <button
-                    type="button"
+                  <div
+                    role="option"
+                    id={`command-option-${index}`}
+                    aria-selected={index === activeIndex}
                     data-command-index={index}
                     onClick={() => select(entry)}
                     onMouseMove={() => setActiveIndex(index)}
                     className={cn(
-                      "flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors outline-none",
+                      "flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors outline-none",
                       index === activeIndex
                         ? "bg-accent text-accent-foreground"
                         : "text-foreground/80 hover:bg-accent/60"
@@ -231,7 +248,7 @@ export function CommandMenu() {
                     <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
                       {entry.url ?? entry.hint}
                     </span>
-                  </button>
+                  </div>
                 </React.Fragment>
               )
             })

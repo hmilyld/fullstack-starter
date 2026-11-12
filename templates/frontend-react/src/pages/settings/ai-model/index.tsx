@@ -410,6 +410,7 @@ function AiModelPresetManager() {
           onRetry={loadData}
           skeletonColSpan={8}
           getKey={(preset) => preset.id}
+          onHideColumn={table.toggle}
           empty={{
             icon: StarIcon,
             title:
@@ -1008,6 +1009,7 @@ export function AiModelPage() {
               onRetry={list.refresh}
               skeletonColSpan={7}
               getKey={(model) => model.id}
+              onHideColumn={table.toggle}
               empty={{
                 icon: StarIcon,
                 title: debouncedSearch ? "没有匹配的模型" : "还没有模型配置",

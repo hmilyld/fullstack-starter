@@ -336,6 +336,7 @@ const hasLogs = computed(() => logs.value.length > 0)
               : '系统的写操作和权限拦截会自动记录在这里。',
         }"
         @retry="refreshList"
+        @hide-column="toggle"
       >
         <template #empty-action>
           <Button

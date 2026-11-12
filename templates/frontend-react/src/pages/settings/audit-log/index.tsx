@@ -425,6 +425,7 @@ export function AuditLogPage() {
           onRetry={list.refresh}
           skeletonColSpan={6}
           getKey={(log) => log.id}
+          onHideColumn={table.toggle}
           empty={{
             icon: activeFilters.length > 0 ? SearchXIcon : ShieldAlertIcon,
             title:

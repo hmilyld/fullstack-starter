@@ -85,6 +85,9 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
             >
               <Link
                 to={item.url}
+                aria-current={
+                  isActivePath(pathname, item.url) ? "page" : undefined
+                }
                 onClick={() => {
                   if (isMobile) setOpenMobile(false)
                 }}

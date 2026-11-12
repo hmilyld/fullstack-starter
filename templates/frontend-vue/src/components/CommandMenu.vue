@@ -105,6 +105,12 @@ const results = computed(() => {
   )
 })
 
+const activeOptionId = computed(() =>
+  results.value[activeIndex.value]
+    ? `command-option-${activeIndex.value}`
+    : undefined
+)
+
 function select(entry: CommandEntry) {
   open.value = false
   if (entry.run) {
@@ -180,6 +186,11 @@ onUnmounted(() => {
           spellcheck="false"
           placeholder="搜索页面或菜单…"
           aria-label="搜索页面或菜单"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls="command-menu-list"
+          aria-autocomplete="list"
+          :aria-activedescendant="activeOptionId"
           class="h-12 border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
           @keydown="handleKeydown"
         />
@@ -190,7 +201,15 @@ onUnmounted(() => {
         </kbd>
       </div>
 
-      <div class="max-h-[46svh] overflow-y-auto overscroll-contain p-2">
+      <span class="sr-only" aria-live="polite">
+        {{ results.length }} 个结果
+      </span>
+      <div
+        id="command-menu-list"
+        role="listbox"
+        aria-label="搜索结果"
+        class="max-h-[46svh] overflow-y-auto overscroll-contain p-2"
+      >
         <p
           v-if="results.length === 0"
           class="px-3 py-8 text-center text-sm text-muted-foreground"
@@ -205,10 +224,12 @@ onUnmounted(() => {
             >
               {{ entry.group }}
             </p>
-            <button
-              type="button"
+            <div
+              role="option"
+              :id="`command-option-${index}`"
+              :aria-selected="index === activeIndex"
               :class="[
-                'flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors outline-none',
+                'flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors outline-none',
                 index === activeIndex
                   ? 'bg-accent text-accent-foreground'
                   : 'text-foreground/80 hover:bg-accent/60',
@@ -222,7 +243,7 @@ onUnmounted(() => {
               >
                 {{ entry.url ?? entry.hint }}
               </span>
-            </button>
+            </div>
           </template>
         </template>
       </div>

@@ -1,10 +1,17 @@
 import * as React from "react"
-import type { LucideIcon } from "lucide-react"
+import { MoreHorizontalIcon, type LucideIcon } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
 import { ErrorState } from "@/components/shared/error-state"
 import { InlineError } from "@/components/shared/inline-error"
 import { TableSkeletonRow } from "@/components/shared/table-states"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -47,6 +54,8 @@ type DataListProps<T> = {
   renderCard: (item: T) => React.ReactNode
   /** 桌面端的列定义（已按显隐过滤） */
   columns: DataColumn<T>[]
+  /** 传了就会在可隐藏列的列头显示「隐藏此列」 */
+  onHideColumn?: (key: string) => void
   skeletonColSpan?: number
 }
 
@@ -63,6 +72,7 @@ export function DataList<T>({
   getKey,
   renderCard,
   columns,
+  onHideColumn,
   skeletonColSpan = 5,
 }: DataListProps<T>) {
   const hasItems = items.length > 0
@@ -103,7 +113,32 @@ export function DataList<T>({
                         column.pinRight && "sticky right-0 bg-card"
                       )}
                     >
-                      {column.header}
+                      <div className="group/col flex items-center gap-1">
+                        <span className="min-w-0 truncate">
+                          {column.header}
+                        </span>
+                        {column.hideable && onHideColumn && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                aria-label="列选项"
+                                className="-mr-1 opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100"
+                              >
+                                <MoreHorizontalIcon />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem
+                                onSelect={() => onHideColumn(column.key)}
+                              >
+                                隐藏此列
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </TableHead>
                   ))}
                 </TableRow>

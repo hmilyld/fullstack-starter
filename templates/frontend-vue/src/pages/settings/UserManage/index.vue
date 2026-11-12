@@ -12,6 +12,7 @@ import {
   Users,
 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
+import BulkActionsBar from "@/components/shared/BulkActionsBar.vue"
 import ColumnToggle from "@/components/shared/ColumnToggle.vue"
 import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
@@ -510,28 +511,6 @@ const hasUsers = computed(() => users.value.length > 0)
         />
       </template>
 
-      <div
-        v-if="selectedIds.size > 0"
-        class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2"
-      >
-        <span class="text-sm font-medium">
-          已选 {{ selectedIds.size }} 位用户
-        </span>
-        <div class="ml-auto flex items-center gap-2">
-          <Button
-            v-if="auth.hasPermission('users.assign_role')"
-            size="sm"
-            variant="outline"
-            @click="bulkRoleOpen = true"
-          >
-            批量维护角色
-          </Button>
-          <Button size="sm" variant="ghost" @click="selectedIds = new Set()">
-            清除选择
-          </Button>
-        </div>
-      </div>
-
       <DataList
         :items="users"
         :loading="listLoading"
@@ -546,6 +525,7 @@ const hasUsers = computed(() => users.value.length > 0)
             : '创建第一位用户，或等待注册审核通过。',
         }"
         @retry="refreshList"
+        @hide-column="toggle"
       >
         <template #empty-action>
           <Button
@@ -679,6 +659,20 @@ const hasUsers = computed(() => users.value.length > 0)
         </template>
       </DataList>
     </ListShell>
+
+    <BulkActionsBar
+      :count="selectedIds.size"
+      entity-name="位用户"
+      @clear="selectedIds = new Set()"
+    >
+      <Button
+        v-if="auth.hasPermission('users.assign_role')"
+        size="sm"
+        @click="bulkRoleOpen = true"
+      >
+        批量维护角色
+      </Button>
+    </BulkActionsBar>
 
     <FormDialog
       :open="bulkRoleOpen"

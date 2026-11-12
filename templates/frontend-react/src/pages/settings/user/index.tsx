@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
+import { BulkActionsBar } from "@/components/shared/bulk-actions-bar"
 import { ColumnToggle } from "@/components/shared/column-toggle"
 import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -583,32 +584,6 @@ export function UsersPage() {
           ) : null
         }
       >
-        {selectedIds.size > 0 && (
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
-            <span className="text-sm font-medium">
-              已选 {selectedIds.size} 位用户
-            </span>
-            <div className="ml-auto flex items-center gap-2">
-              {hasPermission("users.assign_role") && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setBulkRoleOpen(true)}
-                >
-                  批量维护角色
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setSelectedIds(new Set())}
-              >
-                清除选择
-              </Button>
-            </div>
-          </div>
-        )}
-
         <DataList
           items={list.items}
           loading={list.loading}
@@ -616,6 +591,7 @@ export function UsersPage() {
           onRetry={list.refresh}
           skeletonColSpan={6}
           getKey={(user) => user.id}
+          onHideColumn={table.toggle}
           empty={{
             icon: UsersIcon,
             title: debouncedSearch ? "没有匹配的用户" : "还没有用户",
@@ -666,6 +642,18 @@ export function UsersPage() {
           columns={table.visibleColumns}
         />
       </ListShell>
+
+      <BulkActionsBar
+        count={selectedIds.size}
+        entityName="位用户"
+        onClear={() => setSelectedIds(new Set())}
+      >
+        {hasPermission("users.assign_role") && (
+          <Button size="sm" onClick={() => setBulkRoleOpen(true)}>
+            批量维护角色
+          </Button>
+        )}
+      </BulkActionsBar>
 
       <FormDialog
         open={bulkRoleOpen}

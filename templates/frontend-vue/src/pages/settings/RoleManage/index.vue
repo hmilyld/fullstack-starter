@@ -279,6 +279,7 @@ const hasRoles = computed(() => roles.value.length > 0)
             : '创建角色并分配权限，再把角色授予用户。',
         }"
         @retry="refreshList"
+        @hide-column="toggle"
       >
         <template #empty-action>
           <Button

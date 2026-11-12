@@ -452,6 +452,7 @@ const hasModels = computed(() => models.value.length > 0)
                 : '新增模型后，其他模块即可通过别名调用。',
             }"
             @retry="refreshList"
+            @hide-column="toggle"
           >
             <template #empty-action>
               <Button

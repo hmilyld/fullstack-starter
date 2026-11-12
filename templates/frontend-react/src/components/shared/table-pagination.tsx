@@ -1,4 +1,9 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -92,6 +97,17 @@ export function TablePagination({
       </div>
       <Pagination className="mx-0 w-auto justify-end">
         <PaginationContent>
+          <PaginationItem className="hidden md:flex">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={page <= 1}
+              onClick={() => onPageChange(1)}
+              aria-label="第一页"
+            >
+              <ChevronsLeftIcon />
+            </Button>
+          </PaginationItem>
           <PaginationItem>
             <Button
               variant="ghost"
@@ -133,6 +149,17 @@ export function TablePagination({
             >
               下一页
               <ChevronRightIcon data-icon="inline-end" />
+            </Button>
+          </PaginationItem>
+          <PaginationItem className="hidden md:flex">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={page >= totalPages}
+              onClick={() => onPageChange(totalPages)}
+              aria-label="最后一页"
+            >
+              <ChevronsRightIcon />
             </Button>
           </PaginationItem>
         </PaginationContent>

@@ -117,7 +117,13 @@ function handleNavigate() {
               :is-active="isActivePath(route.path, item.url)"
               :tooltip="item.title"
             >
-              <RouterLink :to="item.url" @click="handleNavigate">
+              <RouterLink
+                :to="item.url"
+                :aria-current="
+                  isActivePath(route.path, item.url) ? 'page' : undefined
+                "
+                @click="handleNavigate"
+              >
                 <MenuIcon :name="item.icon" />
                 <span>{{ item.title }}</span>
               </RouterLink>
