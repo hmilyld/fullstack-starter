@@ -188,8 +188,9 @@
 | 组件 | 约定 |
 |---|---|
 | `AppSidebar` | 顶部品牌块：32px 方形 logo（`bg-sidebar-primary`）+ 站点名（Manrope 600）+ 一行副标题（12px muted）；中部菜单按分组，分组可折叠且记住展开状态；底部放版本/说明信息，**不放账户菜单** |
-| `Header` | 高 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、账户 |
-| `CommandMenu` | ⌘K / Ctrl+K 打开，搜索路由与菜单项，↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明 |
+| `Header` | 高 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、外观设置、账户 |
+| `CommandMenu` | ⌘K / Ctrl+K 打开，搜索路由、菜单项与外观动作；空查询时先列「最近」；↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明 |
+| `ConfigDrawer` | 外观设置抽屉：主题、侧栏样式（默认 / 浮动 / 内嵌）、折叠方式（图标栏 / 抽屉）；配置存 localStorage，侧栏与抽屉共用 |
 | `PageHeader` | H1 + 一行说明 + 右侧操作；Compact 下操作换行且主操作全宽 |
 | `ListShell` | 卡片外壳：标题/说明/工具栏 → 内容 → 底部分页；工具栏在 Compact 下纵向堆叠 |
 
@@ -226,6 +227,7 @@
 
 - 表格由 `DataList` 的列定义驱动（`header / cell / hideable / headClass / cellClass / pinRight`），页面不再手写 `<Table>`；单元格 `px-4 py-3`，表头 `h-11`，行高约 58px；
 - 工具栏的「列」菜单与列头的「隐藏此列」都控制同一份显隐状态，按表名记忆在 localStorage，名称列与操作列不可隐藏；
+- 工具栏的「密度」在舒适 / 紧凑之间切换，按表记忆；紧凑时单元格 `py-1.5`、表头 `h-9`；
 - 分页栏提供每页条数（8/16/32 或 10/20/50），切换后回到第 1 页；
 - 表头吸顶：`Card` 用 `overflow-clip`（不建立滚动容器），桌面端表格容器不横向滚动（靠列优先级与 `truncate` 控制宽度），`html` 设 `scroll-padding-top: 5rem` 防止焦点被表头遮挡；
 - 手机端不显示表格，使用卡片；不要在手机端保留横向滚动表格作为主交互。
@@ -320,7 +322,7 @@
 - 单元/组件测试：Vitest + `@testing-library/vue`（`npm test`、`npm run test:coverage`）。
 - E2E：Playwright（`npm run test:e2e`），覆盖登录、手机卡片/抽屉、URL 筛选恢复。
 - 新增共享组件或纯函数必须补单元测试；列表页/表单页至少一个渲染或交互 smoke test。
-- 图表面板以 `TrendChart.vue` 实现（纯 CSS 堆叠柱，无额外依赖）；React 侧使用 recharts，两者数据与文案保持一致。
+- 图表面板：React 用 `trend-chart.tsx`，Vue 用 `TrendChart.vue`，两者都是**自绘 SVG 面积图、无图表依赖**；坐标、配色、文案与无障碍数据表保持一致。
 
 ---
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
-import { useRouter } from "vue-router"
+import { useRoute, useRouter } from "vue-router"
 import { CornerDownLeft, Search } from "@lucide/vue"
 import {
   Dialog,
@@ -27,6 +27,34 @@ type CommandEntry = {
   hint?: string
 }
 
+const RECENT_KEY = "command-recent"
+const RECENT_LIMIT = 5
+
+function readRecent(): string[] {
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === "string")
+      : []
+  } catch {
+    return []
+  }
+}
+
+function rememberRecent(pathname: string) {
+  if (!pathname || pathname === "/login" || pathname === "/register") return
+  try {
+    const next = [
+      pathname,
+      ...readRecent().filter((value) => value !== pathname),
+    ].slice(0, RECENT_LIMIT)
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+  } catch {
+    // 隐私模式下不可写，忽略
+  }
+}
+
 const EXTRA_ENTRIES: CommandEntry[] = [
   { id: "profile", group: "账户", title: "个人设置", url: "/settings/profile" },
 ]
@@ -37,6 +65,13 @@ const auth = useAuthStore()
 const themeStore = useThemeStore()
 const { toggleSidebar } = useSidebar()
 const router = useRouter()
+const route = useRoute()
+
+watch(
+  () => route.path,
+  (pathname) => rememberRecent(pathname),
+  { immediate: true }
+)
 
 const query = ref("")
 const activeIndex = ref(0)
@@ -96,7 +131,21 @@ const entries = computed<CommandEntry[]>(() => {
     },
   ]
 
-  return [...navEntries, ...extra, ...actions]
+  const base = [...navEntries, ...extra, ...actions]
+  const recentUrls = readRecent().filter((url) => url !== route.path)
+  const recent = recentUrls
+    .map((url) => base.find((entry) => entry.url === url))
+    .filter((entry): entry is CommandEntry => Boolean(entry))
+    .map((entry) => ({
+      ...entry,
+      id: `recent-${entry.id}`,
+      group: "最近",
+    }))
+
+  return [
+    ...recent,
+    ...base.filter((entry) => !recent.some((item) => item.url === entry.url)),
+  ]
 })
 
 const results = computed(() => {

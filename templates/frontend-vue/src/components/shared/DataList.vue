@@ -43,9 +43,16 @@ withDefaults(
     stickyHeader?: boolean
     /** 表格外部边框容器（弹窗内关闭） */
     bordered?: boolean
+    /** 行密度，紧凑时压缩单元格上下留白 */
+    density?: "comfortable" | "compact"
     skeletonColSpan?: number
   }>(),
-  { skeletonColSpan: 5, stickyHeader: true, bordered: true }
+  {
+    skeletonColSpan: 5,
+    stickyHeader: true,
+    bordered: true,
+    density: "comfortable",
+  }
 )
 
 const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
@@ -87,16 +94,23 @@ const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
       </template>
     </div>
     <div
+      :data-density="density"
       :class="
         cn(
           'hidden md:block',
-          bordered && 'overflow-clip rounded-xl border bg-card'
+          bordered && 'overflow-clip rounded-xl border bg-card',
+          density === 'compact' && '[&_td]:py-1.5 [&_th]:h-9'
         )
       "
     >
       <Table sticky>
         <TableHeader
-          class="[&_th]:sticky [&_th]:top-16 [&_th]:z-10 [&_th]:border-b [&_th]:border-border [&_th]:bg-card"
+          :class="
+            cn(
+              '[&_th]:border-b [&_th]:border-border [&_th]:bg-card',
+              stickyHeader && '[&_th]:sticky [&_th]:top-16 [&_th]:z-10'
+            )
+          "
         >
           <TableRow>
             <TableHead

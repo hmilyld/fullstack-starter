@@ -15,6 +15,7 @@ import {
 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
 import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DensityToggle from "@/components/shared/DensityToggle.vue"
 import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
 import ListShell from "@/components/shared/ListShell.vue"
@@ -69,6 +70,7 @@ import {
 } from "@/api/ai-model"
 import { useDebouncedValue } from "@/composables/use-debounced-value"
 import { useColumnVisibility } from "@/composables/use-column-visibility"
+import { useTableDensity } from "@/composables/use-table-density"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlListState } from "@/composables/use-url-list-state"
 import { useAuthStore } from "@/stores/auth"
@@ -365,6 +367,7 @@ const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
   "ai-models",
   columns
 )
+const { density, setDensity } = useTableDensity("ai-models")
 
 const hasModels = computed(() => models.value.length > 0)
 </script>
@@ -409,6 +412,7 @@ const hasModels = computed(() => models.value.length > 0)
               @toggle="toggle"
               @reset="reset"
             />
+            <DensityToggle :density="density" @change="setDensity" />
             <Button
               v-if="auth.hasPermission('ai_models.create')"
               class="w-full md:w-auto"
@@ -442,6 +446,7 @@ const hasModels = computed(() => models.value.length > 0)
             :loading="listLoading"
             :error="listError"
             :columns="visibleColumns"
+            :density="density"
             :skeleton-col-span="7"
             :empty="{
               icon: Star,

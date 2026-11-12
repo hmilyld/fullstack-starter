@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useNavigate } from "react-router"
+import { useLocation, useNavigate } from "react-router"
 import { CornerDownLeftIcon, SearchIcon } from "lucide-react"
 
 import { useTheme } from "@/components/theme-provider"
@@ -16,6 +16,33 @@ import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 
 const COMMAND_MENU_EVENT = "command-menu-open"
+const RECENT_KEY = "command-recent"
+const RECENT_LIMIT = 5
+
+function readRecent(): string[] {
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === "string")
+      : []
+  } catch {
+    return []
+  }
+}
+
+function rememberRecent(pathname: string) {
+  if (!pathname || pathname === "/login" || pathname === "/register") return
+  try {
+    const next = [
+      pathname,
+      ...readRecent().filter((value) => value !== pathname),
+    ].slice(0, RECENT_LIMIT)
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+  } catch {
+    // 隐私模式下不可写，忽略
+  }
+}
 
 /** 顶栏、侧边栏底部与快捷键共用的入口 */
 export function openCommandMenu() {
@@ -43,6 +70,7 @@ export function CommandMenu() {
   const [query, setQuery] = React.useState("")
   const [activeIndex, setActiveIndex] = React.useState(0)
   const navigate = useNavigate()
+  const location = useLocation()
   const { groups } = useNavigation()
   const { hasPermission } = useAuth()
   const { theme, setTheme } = useTheme()
@@ -102,8 +130,18 @@ export function CommandMenu() {
       },
     ]
 
-    return [...navEntries, ...extra, ...actions]
-  }, [groups, hasPermission, theme, setTheme, toggleSidebar])
+    const base = [...navEntries, ...extra, ...actions]
+    const recentUrls = readRecent().filter((url) => url !== location.pathname)
+    const recent = recentUrls
+      .map((url) => base.find((entry) => entry.url === url))
+      .filter((entry): entry is CommandEntry => Boolean(entry))
+      .map((entry) => ({ ...entry, id: `recent-${entry.id}`, group: "最近" }))
+
+    return [
+      ...recent,
+      ...base.filter((entry) => !recent.some((item) => item.url === entry.url)),
+    ]
+  }, [groups, hasPermission, theme, setTheme, toggleSidebar, location.pathname])
 
   const results = React.useMemo(() => {
     const keyword = query.trim().toLowerCase()
@@ -115,6 +153,10 @@ export function CommandMenu() {
         entry.url?.toLowerCase().includes(keyword)
     )
   }, [entries, query])
+
+  React.useEffect(() => {
+    rememberRecent(location.pathname)
+  }, [location.pathname])
 
   React.useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

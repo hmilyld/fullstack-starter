@@ -97,3 +97,51 @@ test("warns before leaving a dirty settings form", async ({ page }) => {
   await expect(page).toHaveURL(/\/settings\/system$/)
   await expect(page.locator("#site-name")).toHaveValue("新的站点名称")
 })
+
+test("switches sidebar variant from the appearance drawer", async ({
+  page,
+}) => {
+  await page.goto("/dashboard")
+  await page.getByRole("button", { name: "外观设置" }).click()
+  await page.getByRole("button", { name: "内嵌", exact: true }).click()
+  await page.keyboard.press("Escape")
+
+  await expect(page.locator('[data-variant="inset"]').first()).toBeAttached()
+  await page.reload()
+  await expect(page.locator('[data-variant="inset"]').first()).toBeAttached()
+})
+
+test("switches table density and keeps it after reload", async ({ page }) => {
+  await page.goto("/settings/user")
+  await expect(page.locator('[data-density="comfortable"]')).toBeVisible()
+
+  await page.getByRole("button", { name: "表格密度" }).click()
+  await page.getByRole("menuitem", { name: "紧凑" }).click()
+
+  await expect(page.locator('[data-density="compact"]')).toBeVisible()
+  expect(
+    await page.evaluate(() => localStorage.getItem("table-density:users"))
+  ).toBe("compact")
+
+  await page.reload()
+  await expect(page.locator('[data-density="compact"]')).toBeVisible()
+})
+
+test("shows recently visited pages in the command palette", async ({
+  page,
+}) => {
+  await page.goto("/settings/user")
+  await expect(
+    page.getByRole("heading", { level: 1, name: "用户管理" })
+  ).toBeVisible()
+  await page.goto("/dashboard")
+  await expect(
+    page.getByRole("heading", { level: 1, name: "仪表盘" })
+  ).toBeVisible()
+
+  await page.keyboard.press("Control+K")
+  await expect(page.getByText("最近", { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole("option", { name: /用户管理/ })
+  ).toBeVisible()
+})

@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router"
 import { SearchIcon } from "lucide-react"
 
 import { openCommandMenu } from "@/components/command-menu"
+import { ConfigDrawer } from "@/components/config-drawer"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
 import {
@@ -100,6 +101,7 @@ export function Header() {
             <SearchIcon />
           </Button>
           <ThemeToggle />
+          <ConfigDrawer />
           <Separator
             orientation="vertical"
             className="mx-1 hidden h-5 self-center sm:block"

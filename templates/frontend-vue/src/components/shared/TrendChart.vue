@@ -65,7 +65,11 @@ const successDots = computed(() =>
   <div class="flex h-full flex-col gap-2">
     <div class="relative flex-1">
       <div class="absolute inset-0 flex flex-col justify-between">
-        <div v-for="tick in ticks" :key="tick" class="flex items-center gap-2">
+        <div
+          v-for="(tick, index) in ticks"
+          :key="`${tick}-${index}`"
+          class="flex items-center gap-2"
+        >
           <span
             class="w-7 shrink-0 text-right text-[10px] text-muted-foreground tabular-nums"
           >

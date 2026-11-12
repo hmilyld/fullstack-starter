@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import type { TableDensity } from "@/hooks/use-table-density"
 import { cn } from "@/lib/utils"
 
 export type DataColumn<T> = {
@@ -60,6 +61,8 @@ type DataListProps<T> = {
   stickyHeader?: boolean
   /** 表格外部边框容器（弹窗内关闭） */
   bordered?: boolean
+  /** 行密度，紧凑时压缩单元格上下留白 */
+  density?: TableDensity
   skeletonColSpan?: number
 }
 
@@ -79,6 +82,7 @@ export function DataList<T>({
   onHideColumn,
   stickyHeader = true,
   bordered = true,
+  density = "comfortable",
   skeletonColSpan = 5,
 }: DataListProps<T>) {
   const hasItems = items.length > 0
@@ -110,9 +114,11 @@ export function DataList<T>({
             ))}
           </div>
           <div
+            data-density={density}
             className={cn(
               "hidden md:block",
-              bordered && "overflow-clip rounded-xl border bg-card"
+              bordered && "overflow-clip rounded-xl border bg-card",
+              density === "compact" && "[&_td]:py-1.5 [&_th]:h-9"
             )}
           >
             <Table sticky>

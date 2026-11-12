@@ -15,6 +15,7 @@ import { useSearchParams } from "react-router"
 
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { ColumnToggle } from "@/components/shared/column-toggle"
+import { DensityToggle } from "@/components/shared/density-toggle"
 import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { ListShell } from "@/components/shared/list-shell"
@@ -72,6 +73,7 @@ import {
 } from "@/api/ai-model"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
+import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
@@ -340,6 +342,7 @@ function AiModelPresetManager() {
   ]
 
   const table = useColumnVisibility("ai-presets", columns)
+  const { density, setDensity } = useTableDensity("ai-presets")
 
   return (
     <>
@@ -387,6 +390,7 @@ function AiModelPresetManager() {
               onToggle={table.toggle}
               onReset={table.reset}
             />
+            <DensityToggle density={density} onChange={setDensity} />
             {hasPermission("ai_models.presets.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
@@ -450,6 +454,7 @@ function AiModelPresetManager() {
             />
           )}
           columns={table.visibleColumns}
+          density={density}
         />
       </ListShell>
 
@@ -914,6 +919,7 @@ export function AiModelPage() {
   ]
 
   const table = useColumnVisibility("ai-models", columns)
+  const { density, setDensity } = useTableDensity("ai-models")
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
@@ -952,6 +958,7 @@ export function AiModelPage() {
                   onToggle={table.toggle}
                   onReset={table.reset}
                 />
+                <DensityToggle density={density} onChange={setDensity} />
                 {hasPermission("ai_models.create") && (
                   <Button onClick={handleAdd} className="w-full md:w-auto">
                     <PlusIcon data-icon="inline-start" />
@@ -1022,6 +1029,7 @@ export function AiModelPage() {
                 />
               )}
               columns={table.visibleColumns}
+              density={density}
             />
           </ListShell>
         </TabsContent>

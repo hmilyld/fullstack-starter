@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 
 import { ColumnToggle } from "@/components/shared/column-toggle"
+import { DensityToggle } from "@/components/shared/density-toggle"
 import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { ListShell } from "@/components/shared/list-shell"
 import { PageHeader } from "@/components/shared/page-header"
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/select"
 import { getAuditLogs } from "@/api/audit-log"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
+import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlPage } from "@/hooks/use-url-list-state"
 import { formatDateTime } from "@/lib/format"
@@ -294,6 +296,7 @@ export function AuditLogPage() {
   ]
 
   const table = useColumnVisibility("audit-logs", columns)
+  const { density, setDensity } = useTableDensity("audit-logs")
 
   return (
     <div className="flex flex-col gap-(--page-gap)">
@@ -340,6 +343,7 @@ export function AuditLogPage() {
                 onToggle={table.toggle}
                 onReset={table.reset}
               />
+              <DensityToggle density={density} onChange={setDensity} />
             </div>
           </div>
           <div className="flex items-center gap-2 md:hidden">
@@ -460,6 +464,7 @@ export function AuditLogPage() {
             />
           )}
           columns={table.visibleColumns}
+          density={density}
         />
       </ListShell>
     </div>

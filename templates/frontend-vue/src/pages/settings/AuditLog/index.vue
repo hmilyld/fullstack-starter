@@ -10,6 +10,7 @@ import {
   X,
 } from "@lucide/vue"
 import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DensityToggle from "@/components/shared/DensityToggle.vue"
 import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import ListShell from "@/components/shared/ListShell.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/sheet"
 import { getAuditLogs } from "@/api/audit-log"
 import { useColumnVisibility } from "@/composables/use-column-visibility"
+import { useTableDensity } from "@/composables/use-table-density"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlPage } from "@/composables/use-url-list-state"
 import { formatDateTime } from "@/lib/format"
@@ -214,6 +216,7 @@ const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
   "audit-logs",
   columns
 )
+const { density, setDensity } = useTableDensity("audit-logs")
 
 const hasLogs = computed(() => logs.value.length > 0)
 </script>
@@ -262,6 +265,7 @@ const hasLogs = computed(() => logs.value.length > 0)
               @toggle="toggle"
               @reset="reset"
             />
+            <DensityToggle :density="density" @change="setDensity" />
           </div>
         </div>
         <div class="flex items-center gap-2 md:hidden">
@@ -325,6 +329,7 @@ const hasLogs = computed(() => logs.value.length > 0)
         :loading="listLoading"
         :error="listError"
         :columns="visibleColumns"
+        :density="density"
         :skeleton-col-span="6"
         :empty="{
           icon: activeFilters.length > 0 ? SearchX : ShieldAlert,

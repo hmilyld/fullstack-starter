@@ -14,6 +14,7 @@ import {
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
 import BulkActionsBar from "@/components/shared/BulkActionsBar.vue"
 import ColumnToggle from "@/components/shared/ColumnToggle.vue"
+import DensityToggle from "@/components/shared/DensityToggle.vue"
 import DataList, { type DataColumn } from "@/components/shared/DataList.vue"
 import FormDialog from "@/components/shared/FormDialog.vue"
 import ListShell from "@/components/shared/ListShell.vue"
@@ -60,6 +61,7 @@ import {
 } from "@/api/user"
 import { getRoles } from "@/api/role"
 import { useColumnVisibility } from "@/composables/use-column-visibility"
+import { useTableDensity } from "@/composables/use-table-density"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlListState } from "@/composables/use-url-list-state"
 import { useDebouncedValue } from "@/composables/use-debounced-value"
@@ -435,6 +437,7 @@ const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
   "users",
   columns
 )
+const { density, setDensity } = useTableDensity("users")
 
 const pendingColumns: DataColumn[] = [
   { key: "select", header: "", headClass: "w-12" },
@@ -472,6 +475,7 @@ const hasUsers = computed(() => users.value.length > 0)
           @toggle="toggle"
           @reset="reset"
         />
+        <DensityToggle :density="density" @change="setDensity" />
         <Button
           v-if="auth.hasPermission('users.create')"
           class="w-full md:w-auto"
@@ -513,6 +517,7 @@ const hasUsers = computed(() => users.value.length > 0)
         :loading="listLoading"
         :error="listError"
         :columns="visibleColumns"
+        :density="density"
         :skeleton-col-span="6"
         :empty="{
           icon: Users,

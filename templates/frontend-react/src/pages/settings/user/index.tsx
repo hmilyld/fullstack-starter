@@ -14,6 +14,7 @@ import {
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog"
 import { BulkActionsBar } from "@/components/shared/bulk-actions-bar"
 import { ColumnToggle } from "@/components/shared/column-toggle"
+import { DensityToggle } from "@/components/shared/density-toggle"
 import { DataList, type DataColumn } from "@/components/shared/data-list"
 import { FormDialog } from "@/components/shared/form-dialog"
 import { ListShell } from "@/components/shared/list-shell"
@@ -59,6 +60,7 @@ import {
 } from "@/api/user"
 import { getRoles } from "@/api/role"
 import { useColumnVisibility } from "@/hooks/use-column-visibility"
+import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
@@ -484,6 +486,7 @@ export function UsersPage() {
   ]
 
   const table = useColumnVisibility("users", columns)
+  const { density, setDensity } = useTableDensity("users")
 
   const pendingColumns: DataColumn<User>[] = [
     {
@@ -543,6 +546,7 @@ export function UsersPage() {
               onToggle={table.toggle}
               onReset={table.reset}
             />
+            <DensityToggle density={density} onChange={setDensity} />
             {hasPermission("users.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
@@ -634,6 +638,7 @@ export function UsersPage() {
             />
           )}
           columns={table.visibleColumns}
+          density={density}
         />
       </ListShell>
 

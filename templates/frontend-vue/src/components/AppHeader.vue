@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { Search } from "@lucide/vue"
+import ConfigDrawer from "@/components/ConfigDrawer.vue"
 import ThemeToggle from "@/components/ThemeToggle.vue"
 import UserMenu from "@/components/UserMenu.vue"
 import { openCommandMenu } from "@/composables/use-command-menu"
@@ -108,6 +109,7 @@ onUnmounted(() => {
           <Search />
         </Button>
         <ThemeToggle />
+        <ConfigDrawer />
         <Separator
           orientation="vertical"
           class="mx-1 hidden h-5 self-center sm:block"

@@ -13,6 +13,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { openCommandMenu } from "@/composables/use-command-menu"
+import { useLayoutConfig } from "@/composables/use-layout-config"
 import {
   onNavigationRefresh,
   useNavigation,
@@ -23,6 +24,7 @@ import { useSiteConfigStore } from "@/stores/site-config"
 const siteConfig = useSiteConfigStore()
 const { isMobile, setOpenMobile } = useSidebar()
 const { groups: navGroups, load } = useNavigation()
+const { variant, collapsible } = useLayoutConfig()
 
 const siteName = computed(
   () => siteConfig.config?.siteName || DEFAULT_SITE_NAME
@@ -61,7 +63,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Sidebar collapsible="icon">
+  <Sidebar :variant="variant" :collapsible="collapsible">
     <SidebarHeader class="gap-2 p-2">
       <RouterLink
         to="/dashboard"

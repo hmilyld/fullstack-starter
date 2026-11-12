@@ -13,6 +13,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { openCommandMenu } from "@/components/command-menu"
+import { useLayoutConfig } from "@/components/layout-config"
 import { useNavigation } from "@/hooks/use-navigation"
 import { useSiteConfig } from "@/lib/site-config"
 
@@ -20,6 +21,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { config } = useSiteConfig()
   const { isMobile, setOpenMobile } = useSidebar()
   const { groups: navGroups } = useNavigation()
+  const { variant, collapsible } = useLayoutConfig()
 
   const siteName = config?.siteName || "管理系统"
   const siteDescription = config?.siteDescription || "运营管理后台"
@@ -35,7 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }))
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar variant={variant} collapsible={collapsible} {...props}>
       <SidebarHeader className="gap-2 p-2">
         <Link
           to="/dashboard"
