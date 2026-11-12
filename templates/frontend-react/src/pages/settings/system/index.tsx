@@ -1,11 +1,12 @@
 import * as React from "react"
-import { MailIcon, SaveIcon } from "lucide-react"
+import { MailIcon, SaveIcon, Settings2Icon, UserPlusIcon } from "lucide-react"
 import { useSearchParams } from "react-router"
 
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
+import { SettingsNav } from "@/components/shared/settings-nav"
 import { PageFormSkeleton } from "@/components/shared/table-states"
 import {
   Card,
@@ -32,7 +33,7 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { getRoles } from "@/api/role"
 import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { useSiteConfig } from "@/lib/site-config"
@@ -40,6 +41,12 @@ import { appToast } from "@/lib/toast"
 import type { SystemConfig } from "@/types/system"
 
 type SaveKey = "site" | "maintenance" | "registration" | "default" | "smtp"
+
+const SETTINGS_TABS = [
+  { value: "site", title: "站点设置", icon: Settings2Icon },
+  { value: "register", title: "注册设置", icon: UserPlusIcon },
+  { value: "smtp", title: "邮件配置", icon: MailIcon },
+]
 
 const SMTP_PRESETS = [
   {
@@ -340,23 +347,21 @@ export function SystemPage() {
   const activePreset = SMTP_PRESETS.find((preset) => preset.name === smtpPreset)
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-(--page-gap)">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
         title="系统设置"
         description="管理站点全局配置、注册策略与邮件服务。"
       />
 
+      <Separator />
+
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         orientation={isDesktop ? "vertical" : "horizontal"}
-        className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
+        className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
       >
-        <TabsList className="w-full lg:sticky lg:top-20 lg:w-56 lg:shrink-0">
-          <TabsTrigger value="site">站点设置</TabsTrigger>
-          <TabsTrigger value="register">注册设置</TabsTrigger>
-          <TabsTrigger value="smtp">邮件配置</TabsTrigger>
-        </TabsList>
+        <SettingsNav items={SETTINGS_TABS} />
 
         <TabsContent
           value="site"

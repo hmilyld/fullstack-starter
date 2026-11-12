@@ -1,10 +1,12 @@
 import * as React from "react"
 import { useSearchParams } from "react-router"
+import { KeyRoundIcon, UserRoundIcon } from "lucide-react"
 
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 import { LoadingButton } from "@/components/shared/loading-button"
 import { PageHeader } from "@/components/shared/page-header"
+import { SettingsNav } from "@/components/shared/settings-nav"
 import { PasswordInput } from "@/components/shared/password-input"
 import {
   Card,
@@ -21,10 +23,16 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { changePassword, updateMe } from "@/api/user"
 import { useAuth } from "@/lib/auth-context"
 import { appToast } from "@/lib/toast"
+
+const PROFILE_TABS = [
+  { value: "profile", title: "基本资料", icon: UserRoundIcon },
+  { value: "security", title: "密码修改", icon: KeyRoundIcon },
+]
 
 export function ProfilePage() {
   const { user, updateUser } = useAuth()
@@ -93,19 +101,18 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-(--page-gap)">
+    <div className="flex flex-col gap-(--page-gap)">
       <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
+
+      <Separator />
 
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         orientation={isDesktop ? "vertical" : "horizontal"}
-        className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
+        className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
       >
-        <TabsList className="w-full lg:sticky lg:top-20 lg:w-52 lg:shrink-0">
-          <TabsTrigger value="profile">基本资料</TabsTrigger>
-          <TabsTrigger value="security">密码修改</TabsTrigger>
-        </TabsList>
+        <SettingsNav items={PROFILE_TABS} />
 
         <TabsContent
           value="profile"

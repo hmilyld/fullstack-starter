@@ -5,6 +5,7 @@ import { Mail } from "@lucide/vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PageFormSkeleton from "@/components/shared/PageFormSkeleton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
+import SettingsNav from "@/components/shared/SettingsNav.vue"
 import SystemSaveFooter from "@/pages/settings/System/SystemSaveFooter.vue"
 import {
   Card,
@@ -30,8 +31,9 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useMediaQuery } from "@vueuse/core"
+import { Settings2, UserPlus } from "@lucide/vue"
 import { getRoles } from "@/api/role"
 import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { useSiteConfigStore } from "@/stores/site-config"
@@ -173,6 +175,12 @@ const smtpDirty = computed(
 
 const isDesktop = useMediaQuery("(min-width: 1024px)")
 
+const settingsTabs = [
+  { value: "site", title: "站点设置", icon: Settings2 },
+  { value: "register", title: "注册设置", icon: UserPlus },
+  { value: "smtp", title: "邮件配置", icon: Mail },
+]
+
 const activePreset = computed(() =>
   SMTP_PRESETS.find((preset) => preset.name === smtpPreset.value)
 )
@@ -291,25 +299,23 @@ function applySmtpPreset(name: string) {
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-5xl flex-col gap-(--page-gap)">
+  <div class="flex flex-col gap-(--page-gap)">
     <PageHeader
       title="系统设置"
       description="管理站点全局配置、注册策略与邮件服务。"
     />
+
+    <Separator />
 
     <PageFormSkeleton v-if="loading" />
     <template v-else-if="config">
       <Tabs
         :model-value="activeTab"
         :orientation="isDesktop ? 'vertical' : 'horizontal'"
-        class="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
+        class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
         @update:model-value="setActiveTab(String($event))"
       >
-        <TabsList class="w-full lg:sticky lg:top-20 lg:w-56 lg:shrink-0">
-          <TabsTrigger value="site">站点设置</TabsTrigger>
-          <TabsTrigger value="register">注册设置</TabsTrigger>
-          <TabsTrigger value="smtp">邮件配置</TabsTrigger>
-        </TabsList>
+        <SettingsNav :items="settingsTabs" />
 
         <TabsContent
           value="site"

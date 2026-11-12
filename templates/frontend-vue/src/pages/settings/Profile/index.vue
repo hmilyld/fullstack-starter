@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
 import { useMediaQuery } from "@vueuse/core"
+import { KeyRound, UserRound } from "@lucide/vue"
 import { useRoute, useRouter } from "vue-router"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import PageHeader from "@/components/shared/PageHeader.vue"
+import SettingsNav from "@/components/shared/SettingsNav.vue"
 import PasswordInput from "@/components/shared/PasswordInput.vue"
 import {
   Card,
@@ -20,7 +22,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { changePassword, updateMe } from "@/api/user"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
@@ -31,6 +34,11 @@ const router = useRouter()
 const toast = useToast()
 
 const isDesktop = useMediaQuery("(min-width: 1024px)")
+
+const profileTabs = [
+  { value: "profile", title: "基本资料", icon: UserRound },
+  { value: "security", title: "密码修改", icon: KeyRound },
+]
 const activeTab = computed(() =>
   route.query.tab === "security" ? "security" : "profile"
 )
@@ -100,19 +108,18 @@ async function handlePasswordSubmit() {
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-4xl flex-col gap-(--page-gap)">
+  <div class="flex flex-col gap-(--page-gap)">
     <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
+
+    <Separator />
 
     <Tabs
       :model-value="activeTab"
       :orientation="isDesktop ? 'vertical' : 'horizontal'"
-      class="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10"
+      class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10"
       @update:model-value="setActiveTab(String($event))"
     >
-      <TabsList class="w-full lg:sticky lg:top-20 lg:w-52 lg:shrink-0">
-        <TabsTrigger value="profile">基本资料</TabsTrigger>
-        <TabsTrigger value="security">密码修改</TabsTrigger>
-      </TabsList>
+      <SettingsNav :items="profileTabs" />
 
       <TabsContent
         value="profile"
