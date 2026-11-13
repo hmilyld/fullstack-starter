@@ -47,7 +47,7 @@
     "eslint": "^10",
     "eslint-plugin-vue": "^10",
     "globals": "^17",
-    "jsdom": "^29.1.1",
+    "jsdom": "^31.0.0",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "shadcn-vue": "2.9.0",
