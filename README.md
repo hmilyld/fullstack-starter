@@ -112,7 +112,9 @@ Template directories are the product: editing `templates/<name>/` is how you cha
 # Generator
 pnpm run format:check
 pnpm run lint
+pnpm run typecheck:test
 pnpm run build
+pnpm test
 pnpm run sync:permissions:catalog
 pnpm run sync:design:check
 

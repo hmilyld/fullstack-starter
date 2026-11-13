@@ -48,14 +48,16 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
-    "lint": "eslint src scripts",
-    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\"",
+    "lint": "eslint src scripts tests",
+    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
     "sync:permissions": "tsx scripts/sync-permission-docs.ts",
     "sync:permissions:check": "tsx scripts/sync-permission-docs.ts --check",
     "sync:permissions:catalog": "tsx scripts/sync-permission-docs.ts --catalog-only",
     "sync:design:check": "tsx scripts/check-design-sync.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.1",

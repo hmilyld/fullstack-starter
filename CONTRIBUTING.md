@@ -88,7 +88,9 @@ least the root checks and the checks for every template you changed.
 # Generator
 pnpm run format:check
 pnpm run lint
+pnpm run typecheck:test
 pnpm run build
+pnpm test
 pnpm run sync:permissions:catalog
 pnpm run sync:design:check
 

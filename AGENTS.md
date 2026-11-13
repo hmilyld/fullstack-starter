@@ -23,9 +23,10 @@ fullstack-starter/
 ## Build & Development Commands
 
 ```bash
-npm install           # Install dependencies
-npm run build         # Compile TypeScript to dist/
-npm run dev           # Run CLI directly via tsx (skip compilation)
+pnpm install          # Install dependencies
+pnpm run build        # Compile TypeScript to dist/
+pnpm run dev          # Run CLI directly via tsx (skip compilation)
+pnpm test             # Generate all six stacks and assert the output
 node dist/index.js    # Run compiled CLI
 ```
 
@@ -134,7 +135,12 @@ Generated projects use a **single Docker image** containing Nginx + backend:
 
 ## Testing
 
-The scaffolding CLI has no automated tests; all three frontend templates include Vitest and Playwright (React/Vue use Testing Library, Svelte uses Vitest browser mode):
+The scaffolding CLI has generated-project tests (`pnpm test`); all three frontend templates include Vitest and Playwright (React/Vue use Testing Library, Svelte uses Vitest browser mode):
+
+```bash
+pnpm test                 # generate all six stacks and assert the output
+pnpm run typecheck:test
+```
 
 ```bash
 cd templates/frontend-react   # or templates/frontend-vue / templates/frontend-svelte

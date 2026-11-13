@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generator:
+    name: Generator
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type-check tests
+        run: pnpm run typecheck:test
+
+      - name: Build generator
+        run: pnpm run build
+
+      - name: Generated project tests
+        run: pnpm test
+
+      - name: Verify permission catalogs match across backends
+        run: pnpm run sync:permissions:catalog
+
+      - name: Verify design spec matches templates
+        run: pnpm run sync:design:check
+
+  frontend:
+    name: Frontend (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: react
+          - name: vue
+          - name: svelte
+            check: true
+    defaults:
+      run:
+        working-directory: templates/frontend-${{ matrix.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: templates/frontend-${{ matrix.name }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Svelte check
+        if: matrix.check
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+  backend-python:
+    name: Backend (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: templates/backend-python
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --extra dev --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Contract tests
+        run: uv run pytest -q
+
+  backend-java:
+    name: Backend (Java)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: templates/backend-java
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Format check
+        run: mvn -B spotless:check
+
+      - name: Contract tests
+        run: mvn -B test
