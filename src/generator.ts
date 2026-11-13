@@ -353,7 +353,8 @@ ENV TZ=Asia/Shanghai
 
 # 复制前端构建产物到 Nginx
 COPY --from=frontend-builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Alpine 的 apk nginx 从 http.d 读取站点配置，conf.d 只在根上下文加载片段
+COPY nginx.conf /etc/nginx/http.d/default.conf
 
 # 复制后端 JAR
 COPY --from=backend-builder /app/target/*.jar /app/app.jar
