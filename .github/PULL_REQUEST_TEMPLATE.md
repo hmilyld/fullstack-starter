@@ -18,7 +18,7 @@
 ## Checklist
 
 - [ ] `pnpm run build`, `pnpm run lint`, and `pnpm run format:check` pass
-- [ ] `pnpm run sync:permissions:catalog` and `pnpm run sync:design:check` pass
+- [ ] `pnpm run sync:permissions:catalog`, `pnpm run sync:design:check`, and `pnpm run sync:version:check` pass
 - [ ] Changed template tests pass, and I generated a project to smoke-test it
 - [ ] Documentation updated: root `README.md`, `docs/zh/`, and `docs/en/` when behaviour changes
 - [ ] UI changes include a screenshot or recording

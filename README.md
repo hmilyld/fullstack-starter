@@ -8,7 +8,7 @@
 
 English ｜ [简体中文](https://github.com/hmilyld/fullstack-starter/blob/main/docs/zh/README.md)
 
-[`create-fullstack-app`](https://github.com/hmilyld/fullstack-starter) is both the generator and the maintenance repository for the templates. Every template is a complete project that can run and deploy on its own.
+[`Fullstack Forge`](https://github.com/hmilyld/fullstack-starter) is both the generator and the maintenance repository for the templates. Every template is a complete project that can run and deploy on its own.
 
 ![Dashboard](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/dashboard.webp)
 
