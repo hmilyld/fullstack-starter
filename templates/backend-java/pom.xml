@@ -22,7 +22,7 @@
           Boot 3.2.x 对应 springdoc 2.3.x–2.5.x（官方兼容矩阵）。
           2.5.0 基于 Boot 3.2.4 构建，Swagger UI 5.13.0。
         -->
-        <springdoc.version>2.5.0</springdoc.version>
+        <springdoc.version>3.2.0</springdoc.version>
     </properties>
     <dependencies>
         <dependency>
