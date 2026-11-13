@@ -3,8 +3,8 @@
 本文件是 `templates/backend-python` 与 `templates/backend-java` 必须共同遵守的接口契约。
 
 **唯一事实来源是前端**：`templates/frontend-react/src/types/` 与 `templates/frontend-vue/src/types/` 字节一致，
-它们定义了客户端期望的字段名与类型。本文件把这份期望翻译成后端约束，
-`templates/backend-python/tests/test_contract.py` 把它固化成可执行断言。
+Svelte 模板在 `templates/frontend-svelte/src/lib/types/` 保持同一套字段与导出签名。它们定义了客户端期望的字段名与类型。
+本文件把这份期望翻译成后端约束，`templates/backend-python/tests/test_contract.py` 把它固化成可执行断言。
 
 任何一端要改契约，必须同时改：前端 `types/`、两个后端实现、本文件、以及两侧的契约测试。
 

@@ -134,7 +134,7 @@ Generated projects use a **single Docker image** containing Nginx + backend:
 
 ## Testing
 
-The scaffolding CLI has no automated tests; both frontend templates include Vitest, Testing Library and Playwright:
+The scaffolding CLI has no automated tests; all three frontend templates include Vitest and Playwright (React/Vue use Testing Library, Svelte uses Vitest browser mode):
 
 ```bash
 cd templates/frontend-react   # or templates/frontend-vue / templates/frontend-svelte

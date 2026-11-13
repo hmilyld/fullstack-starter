@@ -108,10 +108,11 @@ my-project/
 │   ├── src/
 │   │   ├── api/             # API layer (http.ts infrastructure + client.ts + per-domain call files)
 │   │   ├── types/           # Type definitions (split by domain)
-│   │   ├── pages/           # auth, dashboard, settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
-│   │   ├── components/      # Shared components (shared/; React also has ui/)
-│   │   ├── router(.tsx or /index.ts)  # Routes (protected routes)
-│   │   └── stores/(Vue) or lib/(React) # Global state such as auth
+│   │   ├── pages/           # React/Vue pages: auth, dashboard, settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
+│   │   ├── components/      # Shared components (shared/ + the ui/ library)
+│   │   ├── router(.tsx or /index.ts)  # React/Vue routes (protected routes)
+│   │   └── stores/ or lib/  # Global state (React: lib/, Vue: stores/)
+│   │   # Svelte: pages under src/routes/, shared code/hooks/stores under src/lib/
 │   ├── vite.config.ts       # Dev proxy /api → localhost:8088
 │   └── package.json
 ├── backend/                 # Backend project
@@ -199,7 +200,7 @@ All three frontends follow one design spec (`templates/frontend-react/DESIGN.md`
 - **Radius**: 6 / 8 / 10 / 14 / 18 for sm / md / lg / xl / 2xl — no one-off magic values
 - **Sizing**: controls 36px (44px on touch), icon buttons 32px (40px on touch)
 - **Breakpoints**: Compact `< 768px`, Medium `768–1279px`, Expanded `≥ 1280px`; content max width 1536px
-- **Components**: `DataList` (column-driven table + cards + states), `PageHeader`, `ListShell`, `ColumnToggle`, `DensityToggle`, `DateTimeField`, `ConfigDrawer`, `CommandMenu`, kept in sync across both stacks
+- **Components**: `DataList` (column-driven table + cards + states), `PageHeader`, `ListShell`, `ColumnToggle`, `DensityToggle`, `DateTimeField`, `ConfigDrawer`, `CommandMenu`, kept in sync across all three templates
 
 ## API Reference
 

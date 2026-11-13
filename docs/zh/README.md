@@ -106,10 +106,11 @@ my-project/
 │   ├── src/
 │   │   ├── api/             # API 调用层（http.ts 基础设施 + client.ts + 按业务域拆分的调用文件）
 │   │   ├── types/           # 类型定义（按业务域拆分）
-│   │   ├── pages/           # auth、dashboard、settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
-│   │   ├── components/      # 共享组件（shared/，React 另含 ui/ 组件库）
-│   │   ├── router(.tsx 或 /index.ts)  # 路由（受保护路由）
-│   │   └── stores/(Vue) 或 lib/(React) # 认证等全局状态
+│   │   ├── pages/           # React/Vue 页面：auth、dashboard、settings/{user,role,permission,menu,system,ai-model,audit-log,data-management,profile}
+│   │   ├── components/      # 共享组件（shared/ + ui/ 组件库）
+│   │   ├── router(.tsx 或 /index.ts)  # React/Vue 路由（受保护路由）
+│   │   └── stores/ 或 lib/  # 全局状态（React: lib/，Vue: stores/）
+│   │   # Svelte：页面在 src/routes/，共享代码、hooks、stores 在 src/lib/
 │   ├── vite.config.ts       # 开发代理 /api → localhost:8088
 │   └── package.json
 ├── backend/                 # 后端项目

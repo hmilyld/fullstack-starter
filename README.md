@@ -118,7 +118,7 @@ MIT
 
 ## English
 
-**Fullstack Forge** generates a production-ready admin system in one command: pick React or Vue for the frontend, FastAPI or Spring Boot for the backend. All four combinations share one API contract, one permission catalog and one visual spec, so either side can be swapped without touching the other.
+**Fullstack Forge** generates a production-ready admin system in one command: pick React, Vue or Svelte for the frontend, FastAPI or Spring Boot for the backend. All six combinations share one API contract, one permission catalog and one visual spec, so either side can be swapped without touching the other.
 
 Everything below is generated, not scaffolded as an empty shell: authentication, RBAC, menu management, audit logs, encrypted import/export, AI model presets, a dashboard, a ⌘K command palette, PWA support and single-image Docker deployment.
 

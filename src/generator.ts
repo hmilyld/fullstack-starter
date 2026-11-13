@@ -507,6 +507,33 @@ function generateReadme(
   } as const;
   const frontendName = frontendMeta[frontend].name;
   const backendName = backend === 'python' ? 'Python (FastAPI)' : 'Java (Spring Boot)';
+  const secretNote =
+    backend === 'python'
+      ? `> 本地开发无需手动配置密钥：\`dev.sh\` 会在未设置 \`JWT_SECRET_KEY\`（环境变量或 \`backend/.env\`）时自动生成随机密钥。
+> 若通过其它方式启动后端，请先设置强随机 \`JWT_SECRET_KEY\`（例如 \`openssl rand -base64 48\`），否则后端会因安全校验拒绝启动。
+`
+      : `> 本地开发无需额外密钥：Java 后端使用 Sa-Token 服务端会话令牌。
+`;
+  const migrationNote =
+    backend === 'python'
+      ? `> 数据库结构由 Alembic 迁移管理，后端启动时自动升级到最新版本。新增表或字段请使用
+> \`cd backend && uv run alembic revision --autogenerate -m "说明"\` 生成迁移，不要手工改库。
+`
+      : `> 数据库结构由 Flyway 迁移管理，后端启动时自动升级到最新版本。新增迁移请放在
+> \`backend/src/main/resources/db/migration/\`，不要手工改库。
+`;
+  const dockerRun =
+    backend === 'python'
+      ? `# 运行（必须设置强随机 JWT_SECRET_KEY，例如: openssl rand -base64 48）
+docker run -d -p 5173:5173 -e JWT_SECRET_KEY=$(openssl rand -base64 48) ${projectName}
+
+# 或使用 docker compose（未设置 JWT_SECRET_KEY 时会直接报错提示）
+JWT_SECRET_KEY=$(openssl rand -base64 48) docker compose up -d`
+      : `# 运行
+docker run -d -p 5173:5173 ${projectName}
+
+# 或使用 docker compose
+docker compose up -d`;
 
   const content = `# ${projectName}
 
@@ -524,7 +551,7 @@ function generateReadme(
 
 ## 功能模块
 
-- ✅ 用户登录 / JWT 认证（登录、注册、登出）
+- ✅ 用户登录 / ${backend === 'python' ? 'JWT 认证' : 'Sa-Token 会话认证'}（登录、注册、登出）
 - ✅ 仪表盘（统计卡片、近 7 天操作趋势、最近动态、快捷入口）
 - ✅ 用户管理（增删改查 + 分页 + 搜索 + 重置密码 + 批量改角色）
 - ✅ 角色管理（增删改查 + 分页 + 搜索）
@@ -551,23 +578,15 @@ cd frontend && npm install && cd ..
 - 前端: http://localhost:5173
 - 后端: http://localhost:8088
 
-> 本地开发无需手动配置密钥：\`dev.sh\` 会在未设置 \`JWT_SECRET_KEY\`（环境变量或 \`backend/.env\`）时自动生成随机密钥。
-> 若通过其它方式启动后端，请先设置强随机 \`JWT_SECRET_KEY\`（例如 \`openssl rand -base64 48\`），否则后端会因安全校验拒绝启动。
-
-> 数据库结构由 Alembic 迁移管理，后端启动时自动升级到最新版本。新增表或字段请使用
-> \`cd backend && uv run alembic revision --autogenerate -m "说明"\` 生成迁移，不要手工改库。
-
+${secretNote}
+${migrationNote}
 ### Docker 部署（单镜像）
 
 \`\`\`bash
 # 构建镜像
 docker build -t ${projectName} .
 
-# 运行（必须设置强随机 JWT_SECRET_KEY，例如: openssl rand -base64 48）
-docker run -d -p 5173:5173 -e JWT_SECRET_KEY=$(openssl rand -base64 48) ${projectName}
-
-# 或使用 docker compose（未设置 JWT_SECRET_KEY 时会直接报错提示）
-JWT_SECRET_KEY=$(openssl rand -base64 48) docker compose up -d
+${dockerRun}
 \`\`\`
 
 访问 http://localhost:5173
