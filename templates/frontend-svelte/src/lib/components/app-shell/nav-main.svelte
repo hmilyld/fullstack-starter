@@ -97,6 +97,7 @@
             <SidebarMenuItem>
               <SidebarMenuButton isActive={active} tooltipContent={item.title}>
                 {#snippet child({ props })}
+                  <!-- eslint-disable svelte/no-navigation-without-resolve -- 菜单路由来自后端，运行时才能确定 -->
                   <a
                     {...props}
                     href={item.url}
@@ -106,6 +107,7 @@
                     <MenuIcon name={item.icon} />
                     <span>{item.title}</span>
                   </a>
+                  <!-- eslint-enable svelte/no-navigation-without-resolve -->
                 {/snippet}
               </SidebarMenuButton>
             </SidebarMenuItem>

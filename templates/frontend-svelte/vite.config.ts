@@ -99,7 +99,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: "127.0.0.1",
+    host: "localhost",
     proxy: {
       "/api": {
         target: apiTarget,
@@ -108,7 +108,7 @@ export default defineConfig({
     },
   },
   preview: {
-    host: "127.0.0.1",
+    host: "localhost",
   },
   test: {
     projects: [

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte"
   import { goto } from "$app/navigation"
+  import { resolve } from "$app/paths"
   import AuthShell from "#lib/components/shared/auth-shell.svelte"
   import LoadingButton from "#lib/components/shared/loading-button.svelte"
   import PasswordInput from "#lib/components/shared/password-input.svelte"
@@ -34,7 +35,7 @@
   )
 
   onMount(() => {
-    if (auth.isAuthenticated) void goto("/dashboard", { replace: true })
+    if (auth.isAuthenticated) void goto(resolve("dashboard"), { replace: true })
   })
 
   async function handleSubmit() {
@@ -49,7 +50,7 @@
     if (res.code === 0) {
       auth.login(res.data.token, res.data.user)
       toast.success("登录成功")
-      await goto("/dashboard", { replace: true })
+      await goto(resolve("dashboard"), { replace: true })
       return
     }
 
@@ -116,7 +117,10 @@
           </LoadingButton>
           <FieldDescription class="text-center">
             还没有账号？
-            <a href="/register" class="underline-offset-4 hover:underline">
+            <a
+              href={resolve("register")}
+              class="underline-offset-4 hover:underline"
+            >
               立即注册
             </a>
           </FieldDescription>

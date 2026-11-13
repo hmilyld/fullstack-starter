@@ -9,6 +9,7 @@ export function parsePage(value: unknown): number {
 function navigate(mutate: (url: URL) => void) {
   const url = new URL(page.url.href)
   mutate(url)
+  // eslint-disable-next-line svelte/no-navigation-without-resolve -- URL 对象由当前地址构造
   void goto(url, { replace: true, reset: false })
 }
 

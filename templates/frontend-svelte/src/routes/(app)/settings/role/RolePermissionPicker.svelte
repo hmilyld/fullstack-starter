@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable svelte/prefer-svelte-reactivity -- Set/Map/Date 只用于不可变副本或纯计算，不承载响应式状态 */
   import { ChevronRight, Search } from "@lucide/svelte"
   import { Badge } from "#lib/components/ui/badge/index.js"
   import { Button } from "#lib/components/ui/button/index.js"

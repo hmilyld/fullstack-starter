@@ -7,6 +7,7 @@
 </script>
 
 <EmptyState icon={CircleAlert} title="加载失败" description={message}>
+  <!-- eslint-disable-next-line svelte/no-useless-children-snippet -->
   {#snippet children()}
     <Button variant="outline" onclick={onRetry}>
       <RefreshCw data-icon="inline-start" />

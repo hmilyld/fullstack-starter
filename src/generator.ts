@@ -98,7 +98,7 @@ function generateDevSh(
 ): Promise<void> {
   const backendStart =
     backend === 'python'
-      ? 'cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8088'
+      ? 'cd backend && uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8088'
       : 'cd backend && mvn spring-boot:run';
 
   const content = `#!/bin/bash
@@ -291,7 +291,7 @@ mkdir -p /app/data
 
 # 启动后端
 cd /app
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8088 &
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8088 &
 BACKEND_PID=$!
 
 # 启动 Nginx

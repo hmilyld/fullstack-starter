@@ -16,6 +16,7 @@
       ? "你访问的页面可能已被移动或删除。"
       : "页面遇到问题，请返回仪表盘后重试。"}
   >
+    <!-- eslint-disable-next-line svelte/no-useless-children-snippet -->
     {#snippet children()}
       <Button href="/dashboard">返回仪表盘</Button>
     {/snippet}

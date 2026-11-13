@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation"
+  import { resolve } from "$app/paths"
   import {
     ChevronsUpDown,
     KeyRound,
@@ -40,7 +41,7 @@
       auth.logout()
       await siteConfig.refresh()
       loggingOut = false
-      await goto("/login")
+      await goto(resolve("login"))
     }
   }
 </script>
@@ -100,19 +101,21 @@
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuItem
-          onSelect={() => goto("/settings/profile?tab=profile")}
+          onSelect={() => goto(resolve("settings/profile?tab=profile"))}
         >
           <UserCog />
           个人设置
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => goto("/settings/profile?tab=security")}
+          onSelect={() => goto(resolve("settings/profile?tab=security"))}
         >
           <KeyRound />
           密码修改
         </DropdownMenuItem>
         {#if auth.hasPermission("permissions")}
-          <DropdownMenuItem onSelect={() => goto("/settings/permission")}>
+          <DropdownMenuItem
+            onSelect={() => goto(resolve("settings/permission"))}
+          >
             <ShieldCheck />
             权限总览
           </DropdownMenuItem>

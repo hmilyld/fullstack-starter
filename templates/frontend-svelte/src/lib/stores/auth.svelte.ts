@@ -1,3 +1,4 @@
+import { resetNavigation } from "#lib/hooks/use-navigation.svelte.js"
 import type { AuthUser } from "#lib/types/auth.js"
 
 function loadUser(): AuthUser | null {
@@ -50,6 +51,7 @@ export const auth = {
     localStorage.removeItem("user")
     token = null
     user = null
+    resetNavigation()
   },
   updateUser(patch: Partial<AuthUser>) {
     if (!user) return

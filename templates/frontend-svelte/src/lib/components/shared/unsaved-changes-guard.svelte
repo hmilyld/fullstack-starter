@@ -36,6 +36,7 @@
     pending = null
     if (!target) return
     allowNext = true
+    // eslint-disable-next-line svelte/no-navigation-without-resolve -- 目标是导航拦截到的 URL 对象
     void goto(target)
   }
 

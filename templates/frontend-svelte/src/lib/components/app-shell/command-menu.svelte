@@ -182,6 +182,7 @@
       entry.run()
       return
     }
+    // eslint-disable-next-line svelte/no-navigation-without-resolve -- 菜单路由来自后端，运行时才能确定
     if (entry.url) void goto(entry.url)
   }
 

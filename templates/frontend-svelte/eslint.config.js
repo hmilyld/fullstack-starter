@@ -34,15 +34,6 @@ export default defineConfig(
     },
   },
   {
-    rules: {
-      // 菜单路由来自后端配置，无法全部写成 Kit 的静态 route id
-      "svelte/no-navigation-without-resolve": "off",
-      // Set/Map/Date 多数是请求去重与数据计算，不是响应式状态
-      "svelte/prefer-svelte-reactivity": "off",
-      "svelte/no-useless-children-snippet": "off",
-    },
-  },
-  {
     files: ["**/*.svelte"],
     rules: {
       "@typescript-eslint/no-unused-vars": [

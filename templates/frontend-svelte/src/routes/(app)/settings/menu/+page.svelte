@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable svelte/prefer-svelte-reactivity -- Set/Map/Date 只用于不可变副本或纯计算，不承载响应式状态 */
   import { onMount } from "svelte"
   import {
     ChevronRight,
@@ -46,6 +47,7 @@
   import {
     Table,
     TableBody,
+    TableCell,
     TableHead,
     TableHeader,
     TableRow,
@@ -322,6 +324,7 @@
     if (!reorderEnabled) return
     event.preventDefault()
     dragMoved = false
+    const snapshot = config ? cloneMenuConfig(config) : null
 
     const onMove = (moveEvent: PointerEvent) => {
       const element = document.elementFromPoint(
@@ -361,11 +364,16 @@
       }
     }
 
-    const onUp = () => {
+    const onUp = (upEvent?: Event) => {
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("pointerup", onUp)
       window.removeEventListener("pointercancel", onUp)
-      if (dragMoved && config) void persistLayout(config)
+      if (upEvent?.type === "pointercancel") {
+        // 触屏手势取消时回滚，不保存半途排序
+        if (snapshot) config = snapshot
+      } else if (dragMoved && config) {
+        void persistLayout(config)
+      }
       dragMoved = false
     }
 
@@ -1078,8 +1086,11 @@
           </TableHeader>
           <TableBody>
             {#each visibleGroups as group (group.id)}
-              <tr data-menu-group={group.id} class="border-b bg-muted/30">
-                <td class="p-3">
+              <tr
+                data-menu-group={group.id}
+                class="border-b bg-muted/40 transition-colors hover:bg-muted/60"
+              >
+                <TableCell class="p-2">
                   <div class="flex items-center gap-1">
                     <Button
                       variant="ghost"
@@ -1095,17 +1106,17 @@
                     </Button>
                     <span class="font-medium">{group.name}</span>
                   </div>
-                </td>
-                <td class="p-3"><Badge variant="secondary">分组</Badge></td>
-                <td class="p-3 font-mono text-xs text-muted-foreground"
-                  >{group.id}</td
+                </TableCell>
+                <TableCell><Badge variant="secondary">分组</Badge></TableCell>
+                <TableCell class="font-mono text-xs text-muted-foreground"
+                  >{group.id}</TableCell
                 >
-                <td
-                  class="hidden p-3 text-xs text-muted-foreground lg:table-cell"
+                <TableCell
+                  class="hidden text-xs text-muted-foreground lg:table-cell"
                 >
                   {group.isSystem ? "内置" : "自定义"}
-                </td>
-                <td class="sticky right-0 bg-muted/30 p-3 text-right">
+                </TableCell>
+                <TableCell class="sticky right-0 bg-muted/40 text-right">
                   <div class="flex items-center justify-end gap-1">
                     {#if reorderEnabled}
                       <Button
@@ -1135,7 +1146,7 @@
                       label={`${group.name} 的操作`}
                     />
                   </div>
-                </td>
+                </TableCell>
               </tr>
 
               {#if !tableCollapsedGroups.has(group.id)}
@@ -1143,9 +1154,9 @@
                   <tr
                     data-menu-item={item.permissionCode}
                     data-group-id={group.id}
-                    class="border-b"
+                    class="border-b transition-colors hover:bg-muted/50"
                   >
-                    <td class="p-3">
+                    <TableCell class="p-2">
                       <div class="flex items-center gap-1 pl-4">
                         <Button
                           variant="ghost"
@@ -1161,9 +1172,9 @@
                         </Button>
                         <span class="text-sm font-medium">{item.name}</span>
                       </div>
-                    </td>
-                    <td class="p-3"><Badge>菜单</Badge></td>
-                    <td class="p-3">
+                    </TableCell>
+                    <TableCell><Badge>菜单</Badge></TableCell>
+                    <TableCell>
                       <div class="flex flex-col gap-0.5">
                         <span class="text-sm">{item.route}</span>
                         <span
@@ -1171,14 +1182,14 @@
                           >{item.permissionCode}</span
                         >
                       </div>
-                    </td>
-                    <td class="hidden p-3 lg:table-cell">
+                    </TableCell>
+                    <TableCell class="hidden lg:table-cell">
                       {#if item.hidden}<Badge variant="outline">已隐藏</Badge
                         >{:else}<span class="text-xs text-muted-foreground"
                           >—</span
                         >{/if}
-                    </td>
-                    <td class="sticky right-0 bg-card p-3 text-right">
+                    </TableCell>
+                    <TableCell class="sticky right-0 bg-card text-right">
                       <div class="flex items-center justify-end gap-1">
                         {#if reorderEnabled}
                           <Button
@@ -1214,20 +1225,27 @@
                           label={`${item.name} 的操作`}
                         />
                       </div>
-                    </td>
+                    </TableCell>
                   </tr>
                   {#if expanded.has(item.permissionCode)}
                     {#each item.operations as operation (operation.code)}
-                      <tr class="border-b bg-muted/10">
-                        <td class="p-3 pl-12 text-sm">{operation.name}</td>
-                        <td class="p-3"
-                          ><Badge variant="secondary">操作</Badge></td
+                      <tr
+                        class="border-b bg-muted/10 transition-colors last:border-0 hover:bg-muted/20"
+                      >
+                        <TableCell class="p-2 pl-12 text-sm"
+                          >{operation.name}</TableCell
                         >
-                        <td class="p-3 font-mono text-xs text-muted-foreground"
-                          >{operation.code}</td
+                        <TableCell
+                          ><Badge variant="secondary">操作</Badge></TableCell
                         >
-                        <td class="hidden p-3 lg:table-cell"></td>
-                        <td class="sticky right-0 bg-muted/10 p-3 text-right">
+                        <TableCell
+                          class="font-mono text-xs text-muted-foreground"
+                          >{operation.code}</TableCell
+                        >
+                        <TableCell class="hidden lg:table-cell"></TableCell>
+                        <TableCell
+                          class="sticky right-0 bg-muted/10 text-right"
+                        >
                           <div class="flex items-center justify-end gap-1">
                             {#if canEditOperation}
                               <Button
@@ -1252,7 +1270,7 @@
                               </Button>
                             {/if}
                           </div>
-                        </td>
+                        </TableCell>
                       </tr>
                     {/each}
                   {/if}

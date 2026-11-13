@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
+  import { resolve } from "$app/paths"
   import { Search } from "@lucide/svelte"
   import BrandMark from "#lib/components/brand-mark.svelte"
   import NavMain from "#lib/components/app-shell/nav-main.svelte"
@@ -55,7 +56,7 @@
 <Sidebar variant={layout.variant} collapsible={layout.collapsible}>
   <SidebarHeader class="gap-2 p-2">
     <a
-      href="/dashboard"
+      href={resolve("dashboard")}
       class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors outline-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:bg-sidebar-accent focus-visible:ring-[3px] focus-visible:ring-sidebar-ring max-md:pr-10"
       onclick={handleHeaderClick}
     >

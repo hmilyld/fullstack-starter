@@ -1,5 +1,7 @@
 <script lang="ts">
+  /* eslint-disable svelte/prefer-svelte-reactivity -- Set/Map/Date 只用于不可变副本或纯计算，不承载响应式状态 */
   import { onMount } from "svelte"
+  import { resolve } from "$app/paths"
   import {
     Activity,
     ArrowRight,
@@ -392,7 +394,7 @@
         </CardContent>
         <CardFooter class="mt-auto border-t pt-4">
           <a
-            href="/settings/audit-log"
+            href={resolve("settings/audit-log")}
             class="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring"
           >
             查看全部审计日志
@@ -412,6 +414,7 @@
           <div class="grid gap-2 sm:grid-cols-2">
             {#each quickLinks as link (link.href)}
               {@const Icon = link.icon}
+              <!-- eslint-disable svelte/no-navigation-without-resolve -- 快捷入口路由来自权限数据 -->
               <a
                 href={link.href}
                 class={cn(
@@ -432,6 +435,7 @@
                 </div>
                 <ChevronRight class="size-4 shrink-0 text-muted-foreground" />
               </a>
+              <!-- eslint-enable svelte/no-navigation-without-resolve -->
             {/each}
           </div>
         </CardContent>
