@@ -93,6 +93,7 @@ pnpm run build
 pnpm test
 pnpm run sync:permissions:catalog
 pnpm run sync:design:check
+pnpm run sync:version:check
 
 # Python backend
 cd templates/backend-python
@@ -126,6 +127,7 @@ docker build -t fullstack-smoke . && docker run --rm -p 5173:5173 fullstack-smok
 - Keep a pull request focused on one concern.
 - Fill in the pull request template. UI changes need a screenshot or recording.
 - Do not force-push a shared branch after review has started.
+- The release process is documented in [RELEASING.md](RELEASING.md).
 
 ## Language and documentation
 

@@ -131,7 +131,7 @@ Generated projects use a **single Docker image** containing Nginx + backend:
    - `generateReadme()` in `src/generator.ts` (the generated project's README)
    - Screenshots: `docs/images/` and the docs site's `public/shots/` hold the same set (README and the site share them); re-capture both after UI changes
    - The Astro Starlight site lives in the sibling repository `../fullstack-starter-docs`; its pages must match the templates just like `docs/`
-4. Test: `npm run dev` → select option → verify generated project builds
+4. Test: `pnpm run dev` → select option → verify generated project builds; `pnpm test` covers all six combinations
 
 ## Testing
 
@@ -172,9 +172,18 @@ uv run pytest -q        # 32 contract assertions in tests/test_contract.py
 The permission docs table is generated, not hand-written:
 
 ```bash
-npm run sync:permissions        # regenerate reference/permissions.md (zh + en)
-npm run sync:permissions:check  # CI: fail if catalogs drift or docs are stale
-npm run sync:permissions:catalog # CI without the docs repo: catalogs only
+pnpm run sync:permissions        # regenerate reference/permissions.md (zh + en)
+pnpm run sync:permissions:check  # CI: fail if catalogs drift or docs are stale
+pnpm run sync:permissions:catalog # CI without the docs repo: catalogs only
+```
+
+The version in the root `package.json` is the source of truth. `sync:version`
+writes it into the three frontends, both backends and the lock files; CI runs
+the check mode:
+
+```bash
+pnpm run sync:version
+pnpm run sync:version:check
 ```
 
 ```bash

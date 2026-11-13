@@ -1,0 +1,81 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: npm
+    directory: '/templates/frontend-react'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: npm
+    directory: '/templates/frontend-vue'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: npm
+    directory: '/templates/frontend-svelte'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: pip
+    directory: '/templates/backend-python'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+
+  - package-ecosystem: maven
+    directory: '/templates/backend-java'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'chore(deps)'
+
+  # The generated Dockerfiles are strings in src/generator.ts; Dependabot only
+  # sees the demo image, so update the template base images by hand as well.
+  - package-ecosystem: docker
+    directory: '/.github/demo'
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'chore(deps)'

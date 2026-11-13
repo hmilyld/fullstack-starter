@@ -53,11 +53,13 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
     "test": "tsx --test tests/*.test.ts",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
+    "sync:version": "tsx scripts/sync-version.ts",
+    "sync:version:check": "tsx scripts/sync-version.ts --check",
     "sync:permissions": "tsx scripts/sync-permission-docs.ts",
     "sync:permissions:check": "tsx scripts/sync-permission-docs.ts --check",
     "sync:permissions:catalog": "tsx scripts/sync-permission-docs.ts --catalog-only",
     "sync:design:check": "tsx scripts/check-design-sync.ts",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test && npm run sync:version:check"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.1",

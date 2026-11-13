@@ -117,6 +117,7 @@ pnpm run build
 pnpm test
 pnpm run sync:permissions:catalog
 pnpm run sync:design:check
+pnpm run sync:version:check
 
 # Frontend templates
 cd templates/frontend-react && npm test && npm run build
@@ -135,6 +136,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup and pull request check
 - [Contributing](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md)
+- [Release process](RELEASING.md)
 - [Discussions](https://github.com/hmilyld/fullstack-starter/discussions) and [issues](https://github.com/hmilyld/fullstack-starter/issues)
 
 ## License

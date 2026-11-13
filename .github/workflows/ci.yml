@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -54,6 +55,9 @@ jobs:
 
       - name: Verify design spec matches templates
         run: pnpm run sync:design:check
+
+      - name: Verify version consistency
+        run: pnpm run sync:version:check
 
   frontend:
     name: Frontend (${{ matrix.name }})
