@@ -15,7 +15,7 @@ from app.core.database import engine
 
 FORMAT_VERSION = 1
 SCHEMA_VERSION = 2
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.0.1"
 BACKEND_TYPE = "python"
 
 DATABASE_TABLES = [

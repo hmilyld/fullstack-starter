@@ -44,7 +44,7 @@ public class DataManagementService {
 
   public static final int FORMAT_VERSION = 1;
   public static final int SCHEMA_VERSION = 2;
-  public static final String APP_VERSION = "2.0.0";
+  public static final String APP_VERSION = "2.0.1";
   public static final String BACKEND_TYPE = "java";
 
   private static final List<String> TABLES =
