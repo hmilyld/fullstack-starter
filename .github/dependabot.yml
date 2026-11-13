@@ -1,81 +1,127 @@
+# Template dependencies ship to generated projects. Version updates are grouped
+# to minor/patch changes; major upgrades are handled manually. Security updates
+# are not affected by ignore.update-types and still open immediately.
+
 version: 2
 updates:
   - package-ecosystem: npm
     directory: '/'
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
     groups:
       minor-and-patch:
         patterns: ['*']
         update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: npm
     directory: '/templates/frontend-react'
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
     groups:
       minor-and-patch:
         patterns: ['*']
         update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: npm
     directory: '/templates/frontend-vue'
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
     groups:
       minor-and-patch:
         patterns: ['*']
         update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: npm
     directory: '/templates/frontend-svelte'
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
     groups:
       minor-and-patch:
         patterns: ['*']
         update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: uv
     directory: '/templates/backend-python'
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: maven
     directory: '/templates/backend-java'
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   # The generated Dockerfiles are strings in src/generator.ts; Dependabot only
   # sees the demo image, so update the template base images by hand as well.
   - package-ecosystem: docker
     directory: '/.github/demo'
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 2
     commit-message:
       prefix: 'chore(deps)'
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
