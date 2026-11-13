@@ -4,9 +4,9 @@
 
 视觉方向参照 [satnaing/shadcn-admin](https://github.com/satnaing/shadcn-admin)：**蓝灰中性色 + 深藏蓝主色 + 克制的高饱和图表色**，密集但可扫读的运营后台。目标不是"花哨"，而是"精密工具"：层级清楚、边界明确、数字对齐、状态一眼可辨。
 
-`frontend-react` 必须与本文件保持同一套 Token 与页面结构（允许组件实现不同）。
+其余两套前端必须与本文件保持同一套 Token 与页面结构（允许组件实现不同）。
 
-**新增模块时的使用顺序**：先查 §6 有没有可复用组件（能组合就不新建）→ 按 §7 的页面配方搭骨架 → 用 §10 决定列优先级 → 用 §11 自检 → 两栈同步实现与验证。Token 与结构不允许只有一侧。
+**新增模块时的使用顺序**：先查 §6 有没有可复用组件（能组合就不新建）→ 按 §7 的页面配方搭骨架 → 用 §10 决定列优先级 → 用 §11 自检 → 三套同步实现与验证。Token 与结构不允许只有一侧。
 
 ---
 
@@ -24,29 +24,29 @@
 
 ## 2. 色彩
 
-所有颜色以 OKLCH 定义于 `src/assets/main.css`。**中性色一律带蓝相（hue ≈ 256–265）**，不使用 chroma = 0 的纯灰——纯灰在屏幕上显脏、显廉价。
+所有颜色以 OKLCH 定义于全局 CSS。**中性色一律带蓝相（hue ≈ 256–265）**，不使用 chroma = 0 的纯灰——纯灰在屏幕上显脏、显廉价。
 
 ### 2.1 语义 Token（亮色）
 
-| Token | 值 | 用途 |
-|---|---|---|
-| `--background` | `oklch(1 0 0)` | 页面底色 |
-| `--foreground` | `oklch(0.129 0.042 264.695)` | 主文本 |
-| `--card` | `oklch(1 0 0)` | 卡片 |
-| `--popover` | `oklch(1 0 0)` | 浮层 |
-| `--primary` | `oklch(0.208 0.042 265.755)` | 主按钮、品牌块 |
-| `--primary-foreground` | `oklch(0.984 0.003 247.858)` | 主色上的文字 |
-| `--secondary` | `oklch(0.968 0.007 247.896)` | 次级按钮、标签底 |
-| `--muted` | `oklch(0.968 0.007 247.896)` | 弱化底、骨架屏 |
-| `--muted-foreground` | `oklch(0.554 0.046 257.417)` | 辅助文本（≥ 4.5:1） |
-| `--accent` | `oklch(0.968 0.007 247.896)` | hover / 选中底 |
-| `--destructive` | `oklch(0.577 0.245 27.325)` | 删除、失败 |
-| `--success` | `oklch(0.52 0.13 152)` | 成功、在线 |
-| `--warning` | `oklch(0.666 0.157 74.3)` | 待处理、告警 |
-| `--info` | `oklch(0.546 0.157 258)` | 提示、审核中 |
-| `--border` | `oklch(0.929 0.013 255.508)` | 边框、分隔线 |
-| `--input` | `oklch(0.929 0.013 255.508)` | 表单描边 |
-| `--ring` | `oklch(0.62 0.035 257)` | 焦点环（≥ 3:1） |
+| Token                  | 值                           | 用途                |
+| ---------------------- | ---------------------------- | ------------------- |
+| `--background`         | `oklch(1 0 0)`               | 页面底色            |
+| `--foreground`         | `oklch(0.129 0.042 264.695)` | 主文本              |
+| `--card`               | `oklch(1 0 0)`               | 卡片                |
+| `--popover`            | `oklch(1 0 0)`               | 浮层                |
+| `--primary`            | `oklch(0.208 0.042 265.755)` | 主按钮、品牌块      |
+| `--primary-foreground` | `oklch(0.984 0.003 247.858)` | 主色上的文字        |
+| `--secondary`          | `oklch(0.968 0.007 247.896)` | 次级按钮、标签底    |
+| `--muted`              | `oklch(0.968 0.007 247.896)` | 弱化底、骨架屏      |
+| `--muted-foreground`   | `oklch(0.554 0.046 257.417)` | 辅助文本（≥ 4.5:1） |
+| `--accent`             | `oklch(0.968 0.007 247.896)` | hover / 选中底      |
+| `--destructive`        | `oklch(0.577 0.245 27.325)`  | 删除、失败          |
+| `--success`            | `oklch(0.52 0.13 152)`       | 成功、在线          |
+| `--warning`            | `oklch(0.666 0.157 74.3)`    | 待处理、告警        |
+| `--info`               | `oklch(0.546 0.157 258)`     | 提示、审核中        |
+| `--border`             | `oklch(0.929 0.013 255.508)` | 边框、分隔线        |
+| `--input`              | `oklch(0.929 0.013 255.508)` | 表单描边            |
+| `--ring`               | `oklch(0.62 0.035 257)`      | 焦点环（≥ 3:1）     |
 
 ### 2.2 语义 Token（暗色）
 
@@ -58,13 +58,13 @@
 
 图表是仪表盘的第一视觉，必须成体系，不能是灰阶。
 
-| Token | 亮色 | 暗色 |
-|---|---|---|
-| `--chart-1` | `oklch(0.646 0.222 41.116)` 橙 | `oklch(0.488 0.243 264.376)` 靛 |
-| `--chart-2` | `oklch(0.6 0.118 184.704)` 青 | `oklch(0.696 0.17 162.48)` 绿 |
-| `--chart-3` | `oklch(0.398 0.07 227.392)` 深蓝 | `oklch(0.769 0.188 70.08)` 黄 |
-| `--chart-4` | `oklch(0.828 0.189 84.429)` 明黄 | `oklch(0.627 0.265 303.9)` 紫 |
-| `--chart-5` | `oklch(0.769 0.188 70.08)` 琥珀 | `oklch(0.645 0.246 16.439)` 红 |
+| Token       | 亮色                             | 暗色                            |
+| ----------- | -------------------------------- | ------------------------------- |
+| `--chart-1` | `oklch(0.646 0.222 41.116)` 橙   | `oklch(0.488 0.243 264.376)` 靛 |
+| `--chart-2` | `oklch(0.6 0.118 184.704)` 青    | `oklch(0.696 0.17 162.48)` 绿   |
+| `--chart-3` | `oklch(0.398 0.07 227.392)` 深蓝 | `oklch(0.769 0.188 70.08)` 黄   |
+| `--chart-4` | `oklch(0.828 0.189 84.429)` 明黄 | `oklch(0.627 0.265 303.9)` 紫   |
+| `--chart-5` | `oklch(0.769 0.188 70.08)` 琥珀  | `oklch(0.645 0.246 16.439)` 红  |
 
 规则：
 
@@ -83,21 +83,21 @@
 
 ## 3. 字体与字阶
 
-| 角色 | 字体 | 说明 |
-|---|---|---|
-| 正文 / UI | `Inter Variable`（`@fontsource-variable/inter`） | 自托管，无外链 |
+| 角色        | 字体                                                 | 说明                           |
+| ----------- | ---------------------------------------------------- | ------------------------------ |
+| 正文 / UI   | `Inter Variable`（`@fontsource-variable/inter`）     | 自托管，无外链                 |
 | 标题 / 数字 | `Manrope Variable`（`@fontsource-variable/manrope`） | 用于页面标题、统计数值、品牌名 |
 
 中文由系统字体回退，因此 Manrope 只作用于拉丁字符与数字，不会破坏中文排版。
 
-| 层级 | 规格 | 使用位置 |
-|---|---|---|
-| Display | 30/36, 600, `tracking-tight` | 统计卡数值 |
-| H1 | 24/32, 600, `tracking-tight`, `text-balance` | `PageHeader` |
-| H2 | 16/24, 600 | `CardTitle`、区块标题 |
-| Body | 14/20, 400 | 表格、表单、正文 |
-| Small | 13/18, 400 | 辅助说明、表头 |
-| Micro | 12/16, 500 | 徽标、时间戳、`kbd` |
+| 层级    | 规格                                         | 使用位置              |
+| ------- | -------------------------------------------- | --------------------- |
+| Display | 30/36, 600, `tracking-tight`                 | 统计卡数值            |
+| H1      | 24/32, 600, `tracking-tight`, `text-balance` | `PageHeader`          |
+| H2      | 16/24, 600                                   | `CardTitle`、区块标题 |
+| Body    | 14/20, 400                                   | 表格、表单、正文      |
+| Small   | 13/18, 400                                   | 辅助说明、表头        |
+| Micro   | 12/16, 500                                   | 徽标、时间戳、`kbd`   |
 
 规则：
 
@@ -115,35 +115,35 @@
 
 基准 4px。页面节奏只有三档：
 
-| Token | 值 | 用途 |
-|---|---|---|
-| `--layout-gutter` | 16px（Compact）/ 24px（≥768） | 页面左右留白 |
-| `--page-gap` | 16px | 页面区块间距 |
-| `--card-spacing` | 24px | 卡片内边距与卡片内元素间距 |
+| Token             | 值                            | 用途                       |
+| ----------------- | ----------------------------- | -------------------------- |
+| `--layout-gutter` | 16px（Compact）/ 24px（≥768） | 页面左右留白               |
+| `--page-gap`      | 16px                          | 页面区块间距               |
+| `--card-spacing`  | 24px                          | 卡片内边距与卡片内元素间距 |
 
 字段组间距 24px（`FieldGroup` 的 `gap-6`），标签与控件 12px（`Field` 的 `gap-3`）；表格单元格 `px-4 py-3`，行高由内容决定；按钮组间距 8px。标题与其下方内容的间距必须小于区块之间的间距。
 
 ### 4.2 圆角（单一体系，`--radius: 0.625rem`）
 
-| 类 | 值 | 使用 |
-|---|---|---|
-| `rounded-sm` | 6px | 徽标内的小块、`kbd` |
-| `rounded-md` | 8px | **按钮、输入框、下拉项、标签** |
-| `rounded-lg` | 10px | 分段控件、提示条 |
-| `rounded-xl` | 14px | **卡片、弹窗、浮层容器** |
-| `rounded-2xl` | 18px | 品牌块、登录卡片 |
-| `rounded-full` | — | 头像、状态点 |
+| 类             | 值   | 使用                           |
+| -------------- | ---- | ------------------------------ |
+| `rounded-sm`   | 6px  | 徽标内的小块、`kbd`            |
+| `rounded-md`   | 8px  | **按钮、输入框、下拉项、标签** |
+| `rounded-lg`   | 10px | 分段控件、提示条               |
+| `rounded-xl`   | 14px | **卡片、弹窗、浮层容器**       |
+| `rounded-2xl`  | 18px | 品牌块、登录卡片               |
+| `rounded-full` | —    | 头像、状态点                   |
 
 `--radius` 到 `--radius-4xl` 的映射为 `r-4 / r-2 / r / r+4 / r+8 / r+12 / r+16`。**禁止**再写 `rounded-[min(var(--radius-4xl),24px)]` 这类一次性魔法值。
 
 ### 4.3 高度与层级
 
-| Token | 桌面（pointer: fine） | 触屏（`pointer: coarse` 或 < 768px） |
-|---|---|---|
-| `--control-h` | 36px | 44px |
-| `--icon-btn` | 32px | 40px |
-| `--icon-btn-xs` | 28px | 36px |
-| `--dialog-inset` | 24px | 16px |
+| Token            | 桌面（pointer: fine） | 触屏（`pointer: coarse` 或 < 768px） |
+| ---------------- | --------------------- | ------------------------------------ |
+| `--control-h`    | 36px                  | 44px                                 |
+| `--icon-btn`     | 32px                  | 40px                                 |
+| `--icon-btn-xs`  | 28px                  | 36px                                 |
+| `--dialog-inset` | 24px                  | 16px                                 |
 
 阴影：卡片 `shadow-sm`；下拉/选择器 `shadow-lg`；弹窗 `shadow-xl`；按钮 `shadow-xs`。**同一个元素只用一种边界手段**：卡片用 1px border，不再叠 `ring-foreground/5`。
 
@@ -155,11 +155,11 @@
 
 ## 5. 三端模式
 
-| 模式 | 断点 | 导航 | 列表 | 筛选 | 弹窗 |
-|---|---|---|---|---|---|
-| Compact | `< 768px` | 左侧 Sheet 抽屉 | 卡片 + “更多”菜单 | 底部筛选 Sheet | 居中、内部滚动 |
-| Medium | `768–1279px` | 48px 图标栏 | 表格 + 优先列 | 2–3 列内联 | 居中 |
-| Expanded | `≥ 1280px` | 256px 完整侧边栏 | 表格 + 全部列 | 多列内联 | 居中 |
+| 模式     | 断点         | 导航             | 列表              | 筛选           | 弹窗           |
+| -------- | ------------ | ---------------- | ----------------- | -------------- | -------------- |
+| Compact  | `< 768px`    | 左侧 Sheet 抽屉  | 卡片 + “更多”菜单 | 底部筛选 Sheet | 居中、内部滚动 |
+| Medium   | `768–1279px` | 48px 图标栏      | 表格 + 优先列     | 2–3 列内联     | 居中           |
+| Expanded | `≥ 1280px`   | 256px 完整侧边栏 | 表格 + 全部列     | 多列内联       | 居中           |
 
 - **布局按宽度切换，控件密度按输入方式切换**：触屏通过 `pointer: coarse` 放大控件，Compact 宽度下始终使用触控尺寸。
 - Medium（<1280）默认收起为图标栏，Expanded 默认展开，用户切换后写入 cookie。**低于 1280 时忽略已保存的展开状态**：平板打开就是图标栏，用户本次仍可手动展开。
@@ -173,65 +173,65 @@
 
 ### 6.1 基础件
 
-| 组件 | 形态 |
-|---|---|
-| `Button` | 高 `--control-h`，`rounded-md`，`text-sm font-medium`，`gap-2`，`shadow-xs`；主按钮 `bg-primary`，次按钮 `border + bg-background`，危险操作 `bg-destructive/10 + text-destructive` |
-| `Input` / `Select` / `Textarea` | `rounded-md`，`border-input`，`bg-transparent`，`shadow-xs`；聚焦时 `border-ring + ring-[3px] ring-ring` |
-| `DateTimeField` | 输入框外观（同 `--control-h`、同宽）＋中文月历浮层：周一为首、今天用 `ring` 标记、方向键移动（整个日历只占一个 Tab 落点）、时分两位数字输入且失焦即提交。值为 `YYYY-MM-DDTHH:mm`，展示 `YYYY/MM/DD HH:mm`（与表格、筛选 chip 一致）。格子 32px，`pointer: coarse` 下 44px、面板 352px。**不使用原生 `datetime-local`**：中文界面下它固定显示 `mm/dd/yyyy, --:-- --`，且各浏览器盒模型不一致，会比其他输入框更高更宽 |
-| `Card` | `rounded-xl border bg-card shadow-sm`，内边距 24px，内部间距 24px；标题 16/600，说明 13/muted |
-| `Badge` | `rounded-md`，`h-5`，`text-xs font-medium`；语义变体 `success / warning / info / destructive / secondary / outline` |
-| `Sonner` | 语义色写在 `main.css` 的 `[data-sonner-theme]` 规则里，深浅色各一套；**不要用 `color-mix` 与白色混合**，浏览器会把白色的 hue 当作 0 参与插值，绿色会偏成品红 |
-| `Table` | 表头 `h-11 px-4 text-[13px] text-muted-foreground`，单元格 `px-4 py-3`，行 `border-b` + hover `bg-muted/50`；紧凑密度下表头 `h-9`、单元格 `py-1.5` |
-| `Dialog` | `rounded-xl border shadow-xl`，标题 18/600，底部操作右对齐 |
-| `DropdownMenu` / `Select` 内容 | `rounded-xl border shadow-lg`，选项 `rounded-md` |
-| `Tabs` | 轨道 `rounded-lg bg-muted p-[3px]`，触发器 `rounded-md`，选中 `bg-background shadow-xs`；设置页的 `SettingsNav` 用 `variant="line"`（无底色轨道） |
-| `Skeleton` | `bg-muted` + 1.6s 微光，不做彩色脉冲 |
-| `EmptyState` | 虚线边框容器 + 图标底块 + 标题 + 说明 + 主操作，垂直居中 |
+| 组件                            | 形态                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`                        | 高 `--control-h`，`rounded-md`，`text-sm font-medium`，`gap-2`，`shadow-xs`；主按钮 `bg-primary`，次按钮 `border + bg-background`，危险操作 `bg-destructive/10 + text-destructive`                                                                                                                                                                                                                                  |
+| `Input` / `Select` / `Textarea` | `rounded-md`，`border-input`，`bg-transparent`，`shadow-xs`；聚焦时 `border-ring + ring-[3px] ring-ring`                                                                                                                                                                                                                                                                                                            |
+| `DateTimeField`                 | 输入框外观（同 `--control-h`、同宽）＋中文月历浮层：周一为首、今天用 `ring` 标记、方向键移动（整个日历只占一个 Tab 落点）、时分两位数字输入且失焦即提交。值为 `YYYY-MM-DDTHH:mm`，展示 `YYYY/MM/DD HH:mm`（与表格、筛选 chip 一致）。格子 32px，`pointer: coarse` 下 44px、面板 352px。**不使用原生 `datetime-local`**：中文界面下它固定显示 `mm/dd/yyyy, --:-- --`，且各浏览器盒模型不一致，会比其他输入框更高更宽 |
+| `Card`                          | `rounded-xl border bg-card shadow-sm`，内边距 24px，内部间距 24px；标题 16/600，说明 13/muted                                                                                                                                                                                                                                                                                                                       |
+| `Badge`                         | `rounded-md`，`h-5`，`text-xs font-medium`；语义变体 `success / warning / info / destructive / secondary / outline`                                                                                                                                                                                                                                                                                                 |
+| `Sonner`                        | 语义色写在全局 CSS 的 `[data-sonner-theme]` 规则里，深浅色各一套；**不要用 `color-mix` 与白色混合**，浏览器会把白色的 hue 当作 0 参与插值，绿色会偏成品红                                                                                                                                                                                                                                                           |
+| `Table`                         | 表头 `h-11 px-4 text-[13px] text-muted-foreground`，单元格 `px-4 py-3`，行 `border-b` + hover `bg-muted/50`；紧凑密度下表头 `h-9`、单元格 `py-1.5`                                                                                                                                                                                                                                                                  |
+| `Dialog`                        | `rounded-xl border shadow-xl`，标题 18/600，底部操作右对齐                                                                                                                                                                                                                                                                                                                                                          |
+| `DropdownMenu` / `Select` 内容  | `rounded-xl border shadow-lg`，选项 `rounded-md`                                                                                                                                                                                                                                                                                                                                                                    |
+| `Tabs`                          | 轨道 `rounded-lg bg-muted p-[3px]`，触发器 `rounded-md`，选中 `bg-background shadow-xs`；设置页的 `SettingsNav` 用 `variant="line"`（无底色轨道）                                                                                                                                                                                                                                                                   |
+| `Skeleton`                      | `bg-muted` + 1.6s 微光，不做彩色脉冲                                                                                                                                                                                                                                                                                                                                                                                |
+| `EmptyState`                    | 虚线边框容器 + 图标底块 + 标题 + 说明 + 主操作，垂直居中                                                                                                                                                                                                                                                                                                                                                            |
 
 ### 6.2 结构件
 
-| 组件 | 约定 |
-|---|---|
-| `AppSidebar` | 顶部品牌块：32px 方形 logo（`bg-sidebar-primary`）+ 站点名（Manrope 600）+ 一行副标题（12px muted）；中部菜单按分组，分组可折叠且记住展开状态；底部只放「快速查找」入口，不放版本号（与页脚重复），**不放账户菜单** |
-| `Header` | Compact 56px / ≥768px 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、外观设置、账户 |
-| `CommandMenu` | ⌘K / Ctrl+K 打开，搜索路由、菜单项与外观动作；空查询时先列「最近」；↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明 |
-| `ConfigDrawer` | 外观设置抽屉：主题、侧栏样式（默认 / 浮动 / 内嵌）、折叠方式（图标栏 / 抽屉）；配置存 localStorage，侧栏与抽屉共用 |
-| 侧栏变体 | `默认` 通栏；`浮动` 侧栏本体 `m-2 rounded-2xl shadow-sm`；`内嵌` 内容面板 `m-2 ml-0 rounded-2xl ring-1 ring-border` 且 **`overflow-clip`**——否则顶栏等子元素的底色会盖住面板的圆角，角落里看不到弧线。用 `clip` 不用 `hidden`，避免打断表头吸顶 |
-| `PageHeader` | H1 + 一行说明 + 右侧操作；Compact 下操作换行且主操作全宽 |
-| `ListShell` | 卡片外壳：标题/说明/工具栏 → 内容 → 底部分页；工具栏在 Compact 下纵向堆叠 |
+| 组件           | 约定                                                                                                                                                                                                                                            |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AppSidebar`   | 顶部品牌块：32px 方形 logo（`bg-sidebar-primary`）+ 站点名（Manrope 600）+ 一行副标题（12px muted）；中部菜单按分组，分组可折叠且记住展开状态；底部只放「快速查找」入口，不放版本号（与页脚重复），**不放账户菜单**                             |
+| `Header`       | Compact 56px / ≥768px 64px，`border-b`，滚动超过 10px 出现轻阴影；左：`SidebarTrigger` + 面包屑（Compact 下换成当前页标题）；右：搜索（⌘K）、主题、外观设置、账户                                                                               |
+| `CommandMenu`  | ⌘K / Ctrl+K 打开，搜索路由、菜单项与外观动作；空查询时先列「最近」；↑↓ 选择、Enter 跳转、Esc 关闭；无结果给说明                                                                                                                                 |
+| `ConfigDrawer` | 外观设置抽屉：主题、侧栏样式（默认 / 浮动 / 内嵌）、折叠方式（图标栏 / 抽屉）；配置存 localStorage，侧栏与抽屉共用                                                                                                                              |
+| 侧栏变体       | `默认` 通栏；`浮动` 侧栏本体 `m-2 rounded-2xl shadow-sm`；`内嵌` 内容面板 `m-2 ml-0 rounded-2xl ring-1 ring-border` 且 **`overflow-clip`**——否则顶栏等子元素的底色会盖住面板的圆角，角落里看不到弧线。用 `clip` 不用 `hidden`，避免打断表头吸顶 |
+| `PageHeader`   | H1 + 一行说明 + 右侧操作；Compact 下操作换行且主操作全宽                                                                                                                                                                                        |
+| `ListShell`    | 卡片外壳：标题/说明/工具栏 → 内容 → 底部分页；工具栏在 Compact 下纵向堆叠                                                                                                                                                                       |
 
 ### 6.3 状态色映射
 
-| 场景 | 变体 |
-|---|---|
-| 管理员角色 | `default`（primary） |
-| 内置角色 | `secondary` |
-| 自定义角色 | `outline` |
-| 成功 / 启用 / 在线 | `success` |
-| 待审核 / 待处理 / 预警 | `warning` |
-| 审核中 / 提示 | `info` |
-| 失败 / 禁用 / 删除 | `destructive` |
+| 场景                   | 变体                 |
+| ---------------------- | -------------------- |
+| 管理员角色             | `default`（primary） |
+| 内置角色               | `secondary`          |
+| 自定义角色             | `outline`            |
+| 成功 / 启用 / 在线     | `success`            |
+| 待审核 / 待处理 / 预警 | `warning`            |
+| 审核中 / 提示          | `info`               |
+| 失败 / 禁用 / 删除     | `destructive`        |
 
 ### 6.4 共享组件清单
 
-新增页面只能组合下列组件，不要另起一套。路径以 React 为准，Vue 为同目录下的 PascalCase `.vue`。
+新增页面只能组合下列组件，不要另起一套。路径按各栈惯例；组件名与职责必须一致。
 
-| 场景 | 组件 | 说明 |
-|---|---|---|
-| 页面壳 | `AdminLayout` / `AppSidebar` / `Header` | 布局与导航，页面里不重写 |
-| 标题区 | `PageHeader` | H1 + 说明 + 右侧操作 |
-| 列表 | `DataList` | 列驱动表格 + 手机卡片 + 加载/错误/空态的唯一入口 |
-| 列表 | `ListShell` / `TablePagination` | 卡片外壳与分页（含每页条数） |
-| 列表 | `ColumnToggle` / `DensityToggle` | 列显隐与表格密度，按表记忆 |
-| 列表 | `RowActions` / `BulkActionsBar` | 行操作菜单、多选悬浮操作栏 |
-| 卡片 | `RecordCard` | 手机端的记录卡片 |
-| 表单 | `FormDialog` / `ConfirmDeleteDialog` / `ConfirmHideDialog` | 新建编辑、删除确认、隐藏确认 |
-| 表单 | `Field` + `FieldLabel` | 标签与控件成组，错误就地显示 |
-| 表单 | `DateTimeField` | 日期时间，规则见 6.1 |
-| 表单 | `PasswordInput` / `IconPicker` / `InlineError` | 密码、图标、字段级错误 |
-| 反馈 | `EmptyState` / `ErrorState` / `LoadingButton` | 空、错、提交中 |
-| 导航 | `SettingsNav` / `CommandMenu` / `ConfigDrawer` | 设置左栏、⌘K 面板、外观抽屉 |
-| 展示 | `TrendChart` / `Badge` / `RoleBadge` | 趋势图与状态标识 |
+| 场景   | 组件                                                       | 说明                                             |
+| ------ | ---------------------------------------------------------- | ------------------------------------------------ |
+| 页面壳 | `AdminLayout` / `AppSidebar` / `Header`                    | 布局与导航，页面里不重写                         |
+| 标题区 | `PageHeader`                                               | H1 + 说明 + 右侧操作                             |
+| 列表   | `DataList`                                                 | 列驱动表格 + 手机卡片 + 加载/错误/空态的唯一入口 |
+| 列表   | `ListShell` / `TablePagination`                            | 卡片外壳与分页（含每页条数）                     |
+| 列表   | `ColumnToggle` / `DensityToggle`                           | 列显隐与表格密度，按表记忆                       |
+| 列表   | `RowActions` / `BulkActionsBar`                            | 行操作菜单、多选悬浮操作栏                       |
+| 卡片   | `RecordCard`                                               | 手机端的记录卡片                                 |
+| 表单   | `FormDialog` / `ConfirmDeleteDialog` / `ConfirmHideDialog` | 新建编辑、删除确认、隐藏确认                     |
+| 表单   | `Field` + `FieldLabel`                                     | 标签与控件成组，错误就地显示                     |
+| 表单   | `DateTimeField`                                            | 日期时间，规则见 6.1                             |
+| 表单   | `PasswordInput` / `IconPicker` / `InlineError`             | 密码、图标、字段级错误                           |
+| 反馈   | `EmptyState` / `ErrorState` / `LoadingButton`              | 空、错、提交中                                   |
+| 导航   | `SettingsNav` / `CommandMenu` / `ConfigDrawer`             | 设置左栏、⌘K 面板、外观抽屉                      |
+| 展示   | `TrendChart` / `Badge` / `RoleBadge`                       | 趋势图与状态标识                                 |
 
 ---
 
@@ -252,13 +252,12 @@
 
 `PageHeader` → `ListShell` 工具栏（左侧计数、右侧搜索 + 列 + 主操作）→ 表格容器 → `TablePagination`。**不要再套一层卡片、也不要重复页面标题**：表格自带独立边框容器。≥768 用表格，<768 用 `RecordCard`；空态、错误态、加载态齐全；操作列 `sticky right-0`。
 
-- 表格由 `DataList` 的列定义驱动（`header / cell / hideable / pinRight`；列宽样式为 React `headClassName / cellClassName`、Vue `headClass / cellClass`），页面不再手写 `<Table>`；单元格 `px-4 py-3`，表头 `h-11`，行高约 58px；
+- 表格由 `DataList` 的列定义驱动（`header / cell / hideable / pinRight`；列宽样式由各栈列定义字段控制），页面不再手写 `<Table>`；单元格 `px-4 py-3`，表头 `h-11`，行高约 58px；
 - 工具栏的「列」菜单与列头的「隐藏此列」都控制同一份显隐状态，按表名记忆在 localStorage，名称列与操作列不可隐藏；
 - 工具栏的「密度」在舒适 / 紧凑之间切换，按表记忆；紧凑时单元格 `py-1.5`、表头 `h-9`；
 - 分页栏提供每页条数（8/16/32 或 10/20/50），切换后回到第 1 页；
 - 表头吸顶：`Card` 用 `overflow-clip`（不建立滚动容器），桌面端表格容器不横向滚动（靠列优先级与 `truncate` 控制宽度），`html` 设 `scroll-padding-top: 5rem` 防止焦点被表头遮挡；
 - 手机端不显示表格，使用卡片；不要在手机端保留横向滚动表格作为主交互。
-
 
 ### 7.3 表单页
 
@@ -283,15 +282,15 @@
 
 ## 8. 动效
 
-| 场景 | 规格 |
-|---|---|
-| 浮层进入 | `fade-in` + `zoom-in-95`，150ms |
-| 折叠展开 | 高度过渡 200ms `ease-out` |
-| 悬停 / 聚焦 | 颜色与阴影 150ms |
-| 页面切换 | 只做 140ms 淡入 + 4px 上移（`content-in`），不做整页位移动画 |
-| 骨架屏 | 透明度微光 1.6s 循环 |
+| 场景        | 规格                                                         |
+| ----------- | ------------------------------------------------------------ |
+| 浮层进入    | `fade-in` + `zoom-in-95`，150ms                              |
+| 折叠展开    | 高度过渡 200ms `ease-out`                                    |
+| 悬停 / 聚焦 | 颜色与阴影 150ms                                             |
+| 页面切换    | 只做 140ms 淡入 + 4px 上移（`content-in`），不做整页位移动画 |
+| 骨架屏      | 透明度微光 1.6s 循环                                         |
 
-`prefers-reduced-motion: reduce` 下动画时长降至 0.01ms（已在 `main.css` 全局处理），不依赖动画结束才可见。
+`prefers-reduced-motion: reduce` 下动画时长降至 0.01ms（已在全局 CSS 处理），不依赖动画结束才可见。
 
 ---
 
@@ -310,14 +309,14 @@
 
 ## 10. 列优先级
 
-| 表 | 始终显示 | `≥768` | `≥1024` | `≥1280` |
-|---|---|---|---|---|
-| 用户 | 用户名、角色、操作 | 姓名 | 邮箱 | — |
-| 角色 | 名称、类型、操作 | 描述 | 权限数 | — |
-| AI 模型 | 别名、状态、操作 | 模型名称 | API 地址 | Key、描述 |
-| AI 预设 | 分组、别名、状态、操作 | 模型名称 | API 地址、排序 | 描述 |
-| 审计 | 时间、动作、状态 | 操作者 | IP | 详情 |
-| 权限总览 | 名称、编码、类型 | — | — | — |
+| 表       | 始终显示               | `≥768`   | `≥1024`        | `≥1280`   |
+| -------- | ---------------------- | -------- | -------------- | --------- |
+| 用户     | 用户名、角色、操作     | 姓名     | 邮箱           | —         |
+| 角色     | 名称、类型、操作       | 描述     | 权限数         | —         |
+| AI 模型  | 别名、状态、操作       | 模型名称 | API 地址       | Key、描述 |
+| AI 预设  | 分组、别名、状态、操作 | 模型名称 | API 地址、排序 | 描述      |
+| 审计     | 时间、动作、状态       | 操作者   | IP             | 详情      |
+| 权限总览 | 名称、编码、类型       | —        | —              | —         |
 
 菜单与权限页使用三级树形表格：分组 → 菜单 → 操作权限；分组和菜单可拖拽，操作权限按编码排序、不参与拖拽；`<768px` 使用缩进卡片。
 
@@ -346,17 +345,17 @@
 
 ## 12. PWA 与测试
 
-- PWA manifest 由 `src/lib/pwa.ts` 运行时生成（站点名称/描述 + 当前主题），`PwaManifest` 挂在 `SiteConfigProvider` 内；静态 `manifest.webmanifest` 仅作首屏回退。
-- 图标位于 `public/icons/`：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步 `index.html`、`vite.config.ts`、`src/lib/pwa.ts` 与本文件。
+- PWA manifest 由 `src/lib/pwa.ts` 运行时生成（站点名称/描述 + 当前主题），应用入口在站点配置加载后同步 manifest；静态 `manifest.webmanifest` 仅作首屏回退。
+- 图标位于各栈的静态目录（React/Vue `public/icons/`，Svelte `static/icons/`）：`icon.svg`、`icon-192.png`、`icon-512.png`、`icon-512-maskable.png`、`apple-touch-icon.png`（180）。替换品牌图标时同步应用入口 HTML、Vite 配置、`src/lib/pwa.ts` 与本文件。
 - 单元/组件测试：Vitest + `@testing-library/vue`（`npm test`、`npm run test:coverage`）。
 - E2E：Playwright（`npm run test:e2e`），覆盖登录、手机卡片/抽屉、平板默认收起与跨断点收起、URL 筛选恢复、列显隐与表格密度持久化、命令面板最近访问、日期时间选择器。
 - 新增共享组件或纯函数必须补单元测试；列表页/表单页至少一个渲染或交互 smoke test。
 
 ---
 
-## 13. React / Vue 对齐契约
+## 13. 前端对齐契约
 
-- Token：`templates/frontend-react/src/index.css` 与本文件第 2、4 节逐项一致（颜色、圆角映射、字体、高度、最大宽）。
+- Token：各模板的全局 CSS 与本文件第 2、4 节逐项一致（颜色、圆角映射、字体、高度、最大宽）。
 - 结构：三端断点、页面壳、列优先级、卡片/表格切换、弹窗与筛选模式保持一致。
 - **URL 状态键**：
   - 列表：`q`、`page`（第 1 页省略 `page`）。
@@ -364,9 +363,9 @@
   - AI 模型：`tab=models|presets`、`page`、`presetQ`、`presetGroup`。
 - 搜索输入以 URL 为唯一来源；输入用 `replace`，请求侧 300ms 防抖；搜索变化时删除 `page`。
 - 表单：可见 Label + `id/htmlFor`；控件补 `name`；非登录字段 `autoComplete="off"`；邮箱/编码/URL `spellCheck={false}`。
-- 导航：页面跳转用链接语义（`RouterLink` / `<a>`），不用按钮 `@click` 模拟跳转。
+- 导航：页面跳转用链接语义（`<a>` 或框架 Link），不用按钮点击模拟跳转。
 - 主题：`class="dark"` + `color-scheme`；`meta theme-color` 随主题更新。
-- 图表：两栈都是自绘 SVG（`trend-chart.tsx` / `TrendChart.vue`），无图表依赖；坐标、配色、文案、`sr-only` 数据表逐项一致。
-- 日期时间：两栈共用同一套 `lib/date-time.ts`（解析 / 组合 / 展示），值格式 `YYYY-MM-DDTHH:mm`、展示 `YYYY/MM/DD HH:mm`。
-- 本文件的两份副本必须结构一致：平台差异只允许出现在标题、CSS 路径、测试库、路由 API 和组件文件名上。
-- 一致性有脚本兜底：在仓库根目录运行 `npm run sync:design:check`，会比对两份 `DESIGN.md` 的结构，以及第 2.1 节的 Token 与 `index.css` / `main.css` 是否相同。改了 Token 或组件规格后必须跑一次。
+- 图表：三套都是自绘 SVG，无图表依赖；坐标、配色、文案、`sr-only` 数据表逐项一致。
+- 日期时间：三套共用同一套 `lib/date-time.ts`（解析 / 组合 / 展示），值格式 `YYYY-MM-DDTHH:mm`、展示 `YYYY/MM/DD HH:mm`。
+- 本文件的三份副本必须结构一致：平台差异只允许出现在标题、CSS 路径、测试库和路由 API 上。
+- 一致性有脚本兜底：在仓库根目录运行 `npm run sync:design:check`，会比对三份 `DESIGN.md` 的结构，以及第 2.1 节的 Token 与三个全局 CSS 是否相同。改了 Token 或组件规格后必须跑一次。

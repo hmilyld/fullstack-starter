@@ -1,0 +1,368 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn-svelte/tailwind.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/manrope";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading:
+    "Manrope Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* === 色彩：蓝灰中性 + 深藏蓝主色 + 语义图表色 ===
+ * 中性色带蓝相（hue 256–265），不要改成 chroma 0 的纯灰。
+ */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  --primary: oklch(0.208 0.042 265.755);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --success: oklch(0.52 0.13 152);
+  --warning: oklch(0.666 0.157 74.3);
+  --info: oklch(0.546 0.157 258);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.62 0.035 257);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+
+  /* 侧边栏全部引用语义色：主题切换时不再换相 */
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.14 0.04 259.21);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.72 0.14 152);
+  --warning: oklch(0.78 0.13 78);
+  --info: oklch(0.72 0.12 255);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.704 0.04 256.788);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  html {
+    @apply font-sans;
+    @apply overflow-x-hidden;
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+    /* 固定顶栏 64px + 呼吸位，避免焦点落在表头下方 */
+    scroll-padding-top: 5rem;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply min-h-svh bg-background text-foreground antialiased;
+  }
+  /* 侧边栏与内容共用底色时，inset 变体需要露出 sidebar 底 */
+  body:has([data-variant="inset"]) {
+    @apply bg-sidebar;
+  }
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 18%, transparent);
+    color: var(--foreground);
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(
+      in oklch,
+      var(--muted-foreground) 45%,
+      transparent
+    );
+    background-clip: content-box;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  /* 数字对齐：表格、统计、金额 */
+  [data-slot="table-cell"],
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* 移动端避免聚焦时自动放大 */
+  @media screen and (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+  /* 表格内的可聚焦控件在滚动定位时避开吸顶表头 */
+  [data-slot="table"] [data-slot="checkbox"],
+  [data-slot="table"] button {
+    scroll-margin-top: 7rem;
+  }
+  /* 弹窗/抽屉滚动不传递给页面 */
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"] {
+    overscroll-behavior: contain;
+  }
+}
+
+/* === 三端布局 Token ===
+ * Compact < 768px | Medium 768–1279px | Expanded >= 1280px
+ * 密度按输入方式（pointer: coarse）切换，布局按宽度切换。
+ */
+:root {
+  --layout-gutter: 1rem;
+  --layout-max: 100%;
+  --page-gap: 1rem;
+  --card-spacing: 1.5rem;
+  --control-h: 2.25rem;
+  --icon-btn: 2rem;
+  --icon-btn-xs: 1.75rem;
+  --dialog-inset: 1rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --layout-gutter: 1.5rem;
+    --dialog-inset: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --layout-max: 96rem;
+  }
+}
+
+/* 手机上始终使用触控尺寸；平板/桌面触屏设备由 pointer: coarse 触发 */
+@media (max-width: 767px) {
+  :root {
+    --control-h: 2.75rem;
+    --icon-btn: 2.5rem;
+    --icon-btn-xs: 2.25rem;
+  }
+}
+
+@media (pointer: coarse) {
+  :root {
+    --control-h: 2.75rem;
+    --icon-btn: 2.5rem;
+    --icon-btn-xs: 2.25rem;
+  }
+}
+
+/* === Toast 语义色 ===
+ * 不用 color-mix 与白色混合：浏览器会把白色的 hue 当作 0 参与插值，
+ * 导致绿/蓝等色相偏移。这里直接给出结果色，深浅色各一套。
+ */
+@layer base {
+  [data-sonner-toaster] {
+    --normal-bg: var(--popover);
+    --normal-text: var(--popover-foreground);
+    --normal-border: var(--border);
+    --border-radius: var(--radius);
+  }
+  html [data-sonner-toaster][data-sonner-theme="light"] {
+    --success-bg: oklch(0.968 0.021 152);
+    --success-border: oklch(0.902 0.05 152);
+    --success-text: oklch(0.45 0.12 152);
+    --error-bg: oklch(0.968 0.018 25);
+    --error-border: oklch(0.9 0.05 25);
+    --error-text: oklch(0.5 0.19 27);
+    --warning-bg: oklch(0.972 0.03 80);
+    --warning-border: oklch(0.91 0.06 80);
+    --warning-text: oklch(0.5 0.11 70);
+    --info-bg: oklch(0.968 0.018 258);
+    --info-border: oklch(0.9 0.05 258);
+    --info-text: oklch(0.48 0.15 258);
+  }
+  html [data-sonner-toaster][data-sonner-theme="dark"] {
+    --success-bg: oklch(0.26 0.045 152);
+    --success-border: oklch(0.36 0.06 152);
+    --success-text: oklch(0.85 0.13 152);
+    --error-bg: oklch(0.26 0.05 25);
+    --error-border: oklch(0.36 0.07 25);
+    --error-text: oklch(0.85 0.11 25);
+    --warning-bg: oklch(0.27 0.04 80);
+    --warning-border: oklch(0.37 0.06 80);
+    --warning-text: oklch(0.88 0.11 85);
+    --info-bg: oklch(0.26 0.045 258);
+    --info-border: oklch(0.36 0.06 258);
+    --info-text: oklch(0.85 0.09 258);
+  }
+}
+
+/* 侧边栏分组折叠：高度过渡，避免布局跳动 */
+[data-slot="collapsible-content"] {
+  overflow: hidden;
+}
+
+[data-slot="collapsible-content"][data-state="open"] {
+  animation: collapsible-down 200ms ease-out;
+}
+
+[data-slot="collapsible-content"][data-state="closed"] {
+  animation: collapsible-up 200ms ease-out;
+}
+
+@keyframes collapsible-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--bits-collapsible-content-height);
+  }
+}
+
+@keyframes collapsible-up {
+  from {
+    height: var(--bits-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes skeleton-sheen {
+  0% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+@utility skeleton-sheen {
+  animation: skeleton-sheen 1.6s ease-in-out infinite;
+}
+
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility content-in {
+  animation: content-in 140ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

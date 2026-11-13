@@ -2,7 +2,7 @@
 
 # Fullstack Forge
 
-A full-stack scaffolder — generate a system with a complete admin panel in one command. Pick React or Vue for the frontend, FastAPI or Spring Boot for the backend: all four combinations share one API contract and one visual spec. The generator itself is published as the npm package `create-fullstack-app`.
+A full-stack scaffolder — generate a system with a complete admin panel in one command. Pick React, Vue or Svelte for the frontend, FastAPI or Spring Boot for the backend: all six combinations share one API contract and one visual spec. The generator itself is published as the npm package `create-fullstack-app`.
 
 ![Dashboard](../images/dashboard.webp)
 
@@ -10,14 +10,14 @@ More screens (login, user management, settings, audit logs) are in the [root REA
 
 ## Features
 
-- 🎨 **Choose a frontend**: React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui, with PWA; name, description and theme color adapt to site settings) or Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI, with PWA; name, description and theme color adapt to site settings)
+- 🎨 **Choose a frontend**: React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui, with PWA; name, description and theme color adapt to site settings) or Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI, with PWA; name, description and theme color adapt to site settings) or Svelte 5 (SvelteKit 3 + Vite + TypeScript + Tailwind CSS v4 + shadcn-svelte + Bits UI, with PWA; name, description and theme color adapt to site settings)
 - ⚙️ **Choose a backend**: Python (FastAPI) or Java (Spring Boot)
 - 🔐 **Authentication built in**: login, registration, logout (Python uses JWT, Java uses Sa-Token), maintenance mode, and manual review
 - 🧩 **Complete modules**: users, roles, permissions, menus, system settings, AI models and presets, audit logs, data management, dashboard
 - 🐳 **Docker ready**: single-image deployment with an Nginx reverse proxy
 - 📊 **Works out of the box**: dashboard stats, user/role/permission CRUD, paginated search, personal settings
 - 🧭 **List experience**: per-table column visibility and row density (remembered), page size, sticky headers, multi-select bulk actions, a ⌘K command palette (with recent pages), an appearance drawer (theme / sidebar variant), and an unsaved-changes warning
-- 🎛 **Design spec**: blue-grey neutrals with a deep navy primary, Inter / Manrope, a 6/8/10/14/18 radius scale; tokens and component rules live in `templates/frontend-react/DESIGN.md` (the Vue template is identical)
+- 🎛 **Design spec**: blue-grey neutrals with a deep navy primary, Inter / Manrope, a 6/8/10/14/18 radius scale; tokens and component rules live in `templates/frontend-react/DESIGN.md` (the Vue and Svelte templates are identical)
 - 🗓 **Date-time control**: a custom Chinese calendar with hour/minute inputs (native `datetime-local` renders English `mm/dd/yyyy` and has an inconsistent box model across browsers)
 
 ## Features of the Generated Project
@@ -57,6 +57,7 @@ fullstack-starter/
     ├── base/                   # Base template (.gitignore)
     ├── frontend-react/         # Complete React frontend template
     ├── frontend-vue/           # Complete Vue frontend template
+    ├── frontend-svelte/        # Complete Svelte frontend template
     ├── backend-python/         # Complete Python FastAPI backend template
     └── backend-java/           # Complete Java Spring Boot backend template
 ```
@@ -88,6 +89,7 @@ The CLI prompts are currently in Chinese.
 ? 请选择前端框架: (Use arrow keys)
   ❯ React
     Vue
+    Svelte
 
 ? 请选择后端框架: (Use arrow keys)
   ❯ Python (FastAPI)
@@ -169,16 +171,16 @@ cd <generated project>/backend && start the backend
 
 ## Tech Stack
 
-| Component | React template | Vue template |
-|-----------|----------------|--------------|
-| Framework | React 19 | Vue 3.5+ (Composition API) |
-| Build | Vite | Vite |
-| Language | TypeScript | TypeScript |
-| Styling | Tailwind CSS v4 + shadcn/ui (with PWA) | Tailwind CSS v4 + shadcn-vue + Reka UI (with PWA) |
-| HTTP | Native fetch wrapper (auto logout on 401) | Native fetch wrapper (auto logout on 401) |
-| Routing | react-router v7 | vue-router v5 |
-| State | React Context (lib/) | Pinia (stores/) |
-| Icons | lucide-react | @lucide/vue |
+| Component | React template | Vue template | Svelte template |
+|-----------|----------------|--------------|-----------------|
+| Framework | React 19 | Vue 3.5+ (Composition API) | Svelte 5 (runes) |
+| Build | Vite | Vite | SvelteKit 3 + Vite |
+| Language | TypeScript | TypeScript | TypeScript |
+| Styling | Tailwind CSS v4 + shadcn/ui (with PWA) | Tailwind CSS v4 + shadcn-vue + Reka UI (with PWA) | Tailwind CSS v4 + shadcn-svelte + Bits UI (with PWA) |
+| HTTP | Native fetch wrapper (auto logout on 401) | Native fetch wrapper (auto logout on 401) | Native fetch wrapper (auto logout on 401) |
+| Routing | react-router v7 | vue-router v5 | SvelteKit file routing |
+| State | React Context (lib/) | Pinia (stores/) | runes (stores/) |
+| Icons | lucide-react | @lucide/vue | @lucide/svelte |
 
 | Component | Python template | Java template |
 |-----------|-----------------|---------------|
@@ -190,7 +192,7 @@ cd <generated project>/backend && start the backend
 
 ## Design Spec
 
-Both frontends follow one design spec (`templates/frontend-react/DESIGN.md`, `templates/frontend-vue/DESIGN.md`):
+All three frontends follow one design spec (`templates/frontend-react/DESIGN.md`, `templates/frontend-vue/DESIGN.md`, `templates/frontend-svelte/DESIGN.md`):
 
 - **Color**: neutrals carry a blue hue (`oklch` 256–265) with a deep navy primary and five semantic chart colors; separate light and dark token sets
 - **Type**: Inter for body text, Manrope for headings, monospace for codes and action names

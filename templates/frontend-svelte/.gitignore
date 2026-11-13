@@ -1,0 +1,29 @@
+# 依赖
+node_modules/
+
+# 构建产物
+.svelte-kit/
+build/
+dist/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+# 日志
+*.log
+npm-debug.log*
+
+# 编辑器
+.vscode/
+.idea/
+*.sw?
+
+# 操作系统
+.DS_Store
+Thumbs.db

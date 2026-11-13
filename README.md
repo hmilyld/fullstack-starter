@@ -1,23 +1,24 @@
 # 全栈工坊 · Fullstack Forge
 
-**一行命令，生成一套能直接上线的后台系统。** 前端 React / Vue 任选，后端 FastAPI / Spring Boot 任选，四种组合得到同一套界面、同一套接口约定。
+**一行命令，生成一套能直接上线的后台系统。** 前端 React / Vue / Svelte 任选，后端 FastAPI / Spring Boot 任选，六种组合得到同一套界面、同一套接口约定。
 
-[create-fullstack-app](https://github.com/hmilyld/fullstack-starter) 是生成器，也是这四个模板的维护仓库 —— 模板本身就是一个个可独立运行、可独立部署的完整项目。
+[create-fullstack-app](https://github.com/hmilyld/fullstack-starter) 是生成器，也是这些模板的维护仓库 —— 模板本身就是一个个可独立运行、可独立部署的完整项目。
 
 ![仪表盘](docs/images/dashboard.webp)
 
-## 四种组合，自由选择
+## 六种组合，自由选择
 
 | | Python · FastAPI | Java · Spring Boot |
 |---|---|---|
 | **React 19** | React + Vite + Tailwind v4 + shadcn/ui ／ FastAPI + SQLAlchemy 2 + Alembic | React + Vite + Tailwind v4 + shadcn/ui ／ Spring Boot 3 + JPA + Flyway |
 | **Vue 3** | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ FastAPI + SQLAlchemy 2 + Alembic | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ Spring Boot 3 + JPA + Flyway |
+| **Svelte 5** | SvelteKit 3 + Vite + Tailwind v4 + shadcn-svelte ／ FastAPI + SQLAlchemy 2 + Alembic | SvelteKit 3 + Vite + Tailwind v4 + shadcn-svelte ／ Spring Boot 3 + JPA + Flyway |
 
-四条路线共用**同一份接口契约**（`docs/contract/api.md`）、同一套权限目录、同一套视觉规范。所以：
+六条路线共用**同一份接口契约**（`docs/contract/api.md`）、同一套权限目录、同一套视觉规范。所以：
 
-- 换前端不换后端：同一份 FastAPI 服务可以接 React 或 Vue 模板，接口、字段、错误码完全一致
+- 换前端不换后端：同一份 FastAPI 服务可以接 React、Vue 或 Svelte 模板，接口、字段、错误码完全一致
 - 换后端不换前端：前端只认 `{ code, message, data }` 信封，Python 与 Java 实现可互换
-- 两套前端保持像素级、交互级同步：同样的布局、同样的组件、同样的键盘操作
+- 三套前端保持像素级、交互级同步：同样的布局、同样的组件、同样的键盘操作
 
 ## 生成出来的是什么
 
@@ -62,7 +63,7 @@ npm run dev
 按提示选择前端与后端：
 
 ```
-? 请选择前端框架: React / Vue
+? 请选择前端框架: React / Vue / Svelte
 ? 请选择后端框架: Python (FastAPI) / Java (Spring Boot)
 ? 请输入项目名称: my-project
 ```
@@ -85,6 +86,7 @@ fullstack-starter/
 ├── templates/
 │   ├── frontend-react/        # React 19 完整前端（含 e2e 与单测）
 │   ├── frontend-vue/          # Vue 3 完整前端（含 e2e 与单测）
+│   ├── frontend-svelte/       # Svelte 5 完整前端（含 e2e 与单测）
 │   ├── backend-python/        # FastAPI 完整后端（含契约测试）
 │   └── backend-java/          # Spring Boot 完整后端（含契约测试）
 └── docs/                      # 使用文档、接口契约、截图
@@ -101,6 +103,7 @@ npm run dev
 # 前端模板
 cd templates/frontend-react && npm test && npm run build
 cd templates/frontend-vue && npm test && npm run build
+cd templates/frontend-svelte && npm test && npm run build
 
 # 后端模板
 cd templates/backend-python && uv run pytest -q

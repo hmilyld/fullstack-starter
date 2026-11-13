@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 const TEMPLATES_DIR = path.join(__dirname, '..', 'templates');
 
-export type FrontendType = 'react' | 'vue';
+export type FrontendType = 'react' | 'vue' | 'svelte';
 export type BackendType = 'python' | 'java';
 
 export async function generateProject(
@@ -68,6 +68,11 @@ async function copyTemplate(templateName: string, destination: string): Promise<
         '.pytest_cache',
         '.venv',
         'venv',
+        '.svelte-kit',
+        'coverage',
+        'test-results',
+        'playwright-report',
+        'blob-report',
       ]);
       if (segments.some((segment) => ignored.has(segment))) return false;
       if (src.endsWith('.pyc')) return false;
@@ -485,7 +490,22 @@ function generateReadme(
   frontend: FrontendType,
   backend: BackendType
 ): Promise<void> {
-  const frontendName = frontend === 'react' ? 'React' : 'Vue';
+  const frontendMeta = {
+    react: {
+      name: 'React',
+      stack: 'React + Vite + TypeScript + Tailwind CSS + shadcn/ui (Radix UI) + PWA',
+    },
+    vue: {
+      name: 'Vue',
+      stack: 'Vue 3 + Vite + TypeScript + Tailwind CSS + shadcn-vue (Reka UI) + Pinia + PWA',
+    },
+    svelte: {
+      name: 'Svelte',
+      stack:
+        'Svelte 5 + SvelteKit 3 + Vite + TypeScript + Tailwind CSS + shadcn-svelte (Bits UI) + PWA',
+    },
+  } as const;
+  const frontendName = frontendMeta[frontend].name;
   const backendName = backend === 'python' ? 'Python (FastAPI)' : 'Java (Spring Boot)';
 
   const content = `# ${projectName}
@@ -496,7 +516,7 @@ function generateReadme(
 
 | 层级 | 技术 |
 |------|------|
-| 前端 | ${frontendName} + Vite + TypeScript + Tailwind CSS${frontend === 'vue' ? ' + shadcn-vue (Reka UI) + PWA' : ' + shadcn/ui + PWA'} |
+| 前端 | ${frontendMeta[frontend].stack} |
 | 后端 | ${backendName} |
 | 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite，Alembic 迁移)' : 'SQLite 文件 (Flyway 迁移)'} |
 | 认证 | ${backend === 'python' ? 'JWT (PyJWT + bcrypt，登出即失效)' : 'Sa-Token + BCrypt'} |

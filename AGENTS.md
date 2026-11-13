@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**create-fullstack-app** is a scaffolding tool that generates fullstack admin panel projects. Users select a frontend framework (React/Vue) and a backend framework (Python/Java), and the tool generates a complete project with authentication, user/role/permission/menu management, system settings, AI model management, audit logging, full-data import/export, a dashboard, and Docker deployment.
+**create-fullstack-app** is a scaffolding tool that generates fullstack admin panel projects. Users select a frontend framework (React/Vue/Svelte) and a backend framework (Python/Java), and the tool generates a complete project with authentication, user/role/permission/menu management, system settings, AI model management, audit logging, full-data import/export, a dashboard, and Docker deployment.
 
 ## Project Structure
 
@@ -15,6 +15,7 @@ fullstack-starter/
     ├── base/                 # Shared files (.gitignore)
     ├── frontend-react/       # React 19 (Vite + TS + Tailwind CSS v4 + shadcn/ui + PWA)
     ├── frontend-vue/         # Vue 3 (Vite + TS + Tailwind CSS v4 + shadcn-vue + Reka UI + Pinia + PWA)
+    ├── frontend-svelte/      # Svelte 5 (SvelteKit 3 SPA + TS + Tailwind CSS v4 + shadcn-svelte + Bits UI + PWA)
     ├── backend-python/       # Python (FastAPI + SQLAlchemy async + SQLite, JWT via PyJWT)
     └── backend-java/         # Java (Spring Boot + JPA + SQLite/Flyway, auth via Sa-Token)
 ```
@@ -84,9 +85,9 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 
 - **backend-python/** — domain modules: `app/core/` (infrastructure: config, runtime state, database, security, deps, pagination, exceptions, audit middleware, seed, permission/menu catalogs) + one package per business domain (`auth/`, `user/`, `role/`, `permission/`, `menu/`, `system/`, `ai_model/`, `audit/`, `data_management/`, `dashboard/`, `public/`), each containing `models.py` / `schemas.py` / `crud.py` / `service.py` / `router.py` as needed. `ApiResponse` / `PaginatedData` live in `app/core/schemas.py`. Routers do HTTP mapping only; business rules and transaction boundaries live in `service.py`. Schema changes go through Alembic (`migrations/`), never `create_all`. Do not commit `uv.lock` — it is gitignored and filtered out of generated projects; users resolve their own dependency versions on first `uv sync`.
 - **backend-java/** — package-by-layer: `controller/`, `service/`, `repository/`, `entity/`, `dto/`, plus infrastructure packages `common/` (envelope, page result, exceptions, global handler), `config/` (Spring `@Configuration` classes only), `catalog/` (permission/menu data, no framework deps), `bootstrap/` (startup sync runners), `web/` (interceptors and filters), `data/` (import runtime state), `security/` (rate limiter, Sa-Token permission source). Keep those boundaries: a data catalog must not live in `config/`, or `service/` ends up importing the config package. Responses are typed records in `dto/` (`*Response`), never `Map<String, Object>`. Business failures throw `AppException` / `NotFoundException` / `ConflictException` / `InvalidOperationException` / `ForbiddenException`; `GlobalExceptionHandler` maps them to the envelope, so `@Transactional` rolls back. Schema changes go through Flyway (`db/migration`).
-- **frontend-react/ & frontend-vue/** — 新增或修改页面前先读 `templates/frontend-react/DESIGN.md`（Vue 版同构）：它是这两套前端的唯一视觉真源，也是新增模块的验收标准。feature-based: pages under `pages/settings/<Domain>/index.tsx` (React) or `index.vue` (Vue), API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), and (Vue) `stores/` + `composables/`. No duplicate type definitions across files.
+- **frontend-react/ & frontend-vue/ & frontend-svelte/** — 新增或修改页面前先读 `templates/frontend-react/DESIGN.md`（三套同构）：它是这三套前端的唯一视觉真源，也是新增模块的验收标准。feature-based: pages under `pages/settings/<Domain>/index.tsx` (React) or `index.vue` (Vue); Svelte uses SvelteKit routes under `src/routes/(app)/settings/<domain>/+page.svelte` with colocated subcomponents. API calls split by domain under `api/` (`client.ts` + `auth.ts`, `user.ts`, ...), types split by domain under `types/` (`common.ts` + per-domain). Shared technical code stays in `components/` (`shared/`, `ui/`), `lib/`, `hooks/` (React), `stores/` + `composables/` (Vue), and Svelte uses `src/lib/{api,types,components,stores,hooks}` with `#lib` subpath imports. No duplicate type definitions across files.
 
-### API layer rules (frontend-react / frontend-vue)
+### API layer rules (frontend-react / frontend-vue / frontend-svelte)
 
 - `api/http.ts` is infrastructure only (`BASE_URL`, query string, auth headers, `Content-Disposition` filename parsing, JSON/raw request). Only `api/client.ts` imports it; pages and domain files never do.
 - `api/client.ts` exposes `apiClient` (`get` / `post` / `put` / `delete` / `download` / `upload` / `getWithHeaders`). The `get`/`post`/`put`/`delete` family returns `{ code, message, data }` and does not throw on network or HTTP errors; the raw family throws and keeps response headers.
@@ -94,9 +95,9 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Request/response/query-parameter types live in `types/<domain>.ts`; `api/` imports them with `import type`. Never declare a payload type inside `api/`.
 - Domain files must not import each other; shared behaviour belongs in `lib/`, `hooks/` (React) or `composables/` (Vue).
 - Keep `api/` flat by default. Only when one domain exceeds ~150 lines or needs a second file, promote `api/<domain>.ts` to `api/<domain>/index.ts` plus siblings. Do not nest ahead of need.
-- React and Vue share byte-identical `src/api/` and `src/types/`; keep them in sync when changing either.
+- React and Vue share byte-identical `src/api/` and `src/types/`; keep them in sync when changing either. The Svelte template keeps the same domain files and export signatures under `src/lib/api` and `src/lib/types`, using `#lib` imports with `.js` extensions.
 
-## Frontend Responsive Rules (frontend-react / frontend-vue)
+## Frontend Responsive Rules (frontend-react / frontend-vue / frontend-svelte)
 
 - Three modes: **Compact `< 768px`**, **Medium `768–1279px`**, **Expanded `≥ 1280px`**. Content max width is `1536px` (`--layout-max: 96rem`); below that the content fills the available width, so a collapsed sidebar widens it. Below 1280 the sidebar starts collapsed (icon rail) and any stored expanded state is ignored on load; dropping below 1280 at runtime collapses it too, without overwriting the saved desktop preference.
 - Layout switches **by width**; control density switches by **input modality** (`pointer: coarse`) and compact width. Do not tie touch sizing only to a breakpoint.
@@ -104,10 +105,10 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Medium: icon rail, tables with priority columns, inline filters.
 - Expanded: full sidebar, all columns.
 - New list pages must provide cards below `md` and a table with column priorities above; reuse `PageHeader`, `ListShell`, `DataList` (column-driven table + cards + states), `ColumnToggle`, `RecordCard`, `RowActions`, `FormDialog`, `TablePagination`, `EmptyState`, `DateTimeField` (never the native `datetime-local`, which renders English `mm/dd/yyyy` inside the Chinese UI). The table header sticks under the app header; `Card` uses `overflow-clip` so sticky keeps working, and desktop tables must not need horizontal scrolling.
-- Layout tokens live in `src/index.css` (React) / `src/assets/main.css` (Vue) (`--layout-gutter`, `--layout-max`, `--page-gap`, `--control-h`, `--icon-btn`, `--dialog-inset`). See `templates/frontend-react/DESIGN.md` and `templates/frontend-vue/DESIGN.md` for the full spec and page checklist.
-- PWA icons live in `templates/frontend-react/public/icons/` and `templates/frontend-vue/public/icons/` (SVG, 192/512 PNG, 512 maskable, 180 apple-touch). When changing the brand mark, regenerate all sizes and keep `index.html`, `vite.config.ts`, `src/lib/pwa.ts` and `DESIGN.md` in sync for both templates.
-- List URL state uses `q` / `page`; audit filters use their own keys; AI presets use `presetQ` / `presetGroup`. Keep this contract when refactoring the Vue template so both frontends behave the same.
-- The account menu (`UserMenu`) belongs in the header top-right, not in the sidebar footer. Keep this location in the Vue template.
+- Layout tokens live in `src/index.css` (React) / `src/assets/main.css` (Vue) / `src/routes/layout.css` (Svelte) (`--layout-gutter`, `--layout-max`, `--page-gap`, `--control-h`, `--icon-btn`, `--dialog-inset`). See `templates/frontend-react/DESIGN.md`, `templates/frontend-vue/DESIGN.md` and `templates/frontend-svelte/DESIGN.md` for the full spec and page checklist.
+- PWA icons live in `templates/frontend-react/public/icons/`, `templates/frontend-vue/public/icons/` and `templates/frontend-svelte/static/icons/` (SVG, 192/512 PNG, 512 maskable, 180 apple-touch). When changing the brand mark, regenerate all sizes and keep the app entry HTML, `vite.config.ts`, `src/lib/pwa.ts` and `DESIGN.md` in sync for all three templates.
+- List URL state uses `q` / `page`; audit filters use their own keys; AI presets use `presetQ` / `presetGroup`. Keep this contract in all three templates.
+- The account menu (`UserMenu`) belongs in the header top-right, not in the sidebar footer. Keep this location in all templates.
 
 ## Docker Architecture
 
@@ -136,19 +137,19 @@ Generated projects use a **single Docker image** containing Nginx + backend:
 The scaffolding CLI has no automated tests; both frontend templates include Vitest, Testing Library and Playwright:
 
 ```bash
-cd templates/frontend-react   # or templates/frontend-vue
+cd templates/frontend-react   # or templates/frontend-vue / templates/frontend-svelte
 npm test
 npm run test:coverage
 npm run typecheck:e2e
 npm run test:e2e        # first run: npx playwright install chromium
 ```
 
-Vue uses `vue-tsc --noEmit -p tsconfig.app.json` for type checking and `@testing-library/vue` for component tests.
+Vue uses `vue-tsc --noEmit -p tsconfig.app.json` for type checking and `@testing-library/vue` for component tests. Svelte uses `svelte-check` and Vitest browser mode (`vitest-browser-svelte`).
 
 Design spec consistency is checked by a script (the docs site is not involved):
 
 ```bash
-npm run sync:design:check   # 两份 DESIGN.md 结构一致；DESIGN.md 第 2.1 节的 Token 与 index.css / main.css 相同
+npm run sync:design:check   # 三份 DESIGN.md 结构一致；DESIGN.md 第 2.1 节的 Token 与三份全局 CSS 相同
 ```
 
 The Python backend template carries the executable API contract:

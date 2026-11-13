@@ -2,7 +2,7 @@
 
 # 全栈工坊 · Fullstack Forge
 
-全栈应用脚手架 —— 一条命令生成包含完整后台管理功能的系统。前端 React / Vue 任选，后端 FastAPI / Spring Boot 任选，四种组合共用同一份接口契约与视觉规范。生成器本身发布为 npm 包 `create-fullstack-app`。
+全栈应用脚手架 —— 一条命令生成包含完整后台管理功能的系统。前端 React / Vue / Svelte 任选，后端 FastAPI / Spring Boot 任选，六种组合共用同一份接口契约与视觉规范。生成器本身发布为 npm 包 `create-fullstack-app`。
 
 ![仪表盘](../images/dashboard.webp)
 
@@ -10,14 +10,14 @@
 
 ## 功能
 
-- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA，站点名/描述/主题色自动适配) 或 Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI，含 PWA，站点名/描述/主题色自动适配)
+- 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA，站点名/描述/主题色自动适配) 、Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI，含 PWA，站点名/描述/主题色自动适配) 或 Svelte 5 (SvelteKit 3 + Vite + TypeScript + Tailwind CSS v4 + shadcn-svelte + Bits UI，含 PWA，站点名/描述/主题色自动适配)
 - ⚙️ **后端可选**：Python (FastAPI) 或 Java (Spring Boot)
 - 🔐 **内置认证**：登录、注册、登出（Python 走 JWT，Java 走 Sa-Token）、维护模式与人工审核
 - 🧩 **完整模块**：用户、角色、权限、菜单、系统设置、AI 模型与预设、审计日志、数据管理、仪表盘
 - 🐳 **Docker 就绪**：单镜像部署，Nginx 反代
 - 📊 **开箱即用**：仪表盘统计、用户/角色/权限 CRUD、分页搜索、个人设置
 - 🧭 **列表与交互**：列显隐与表格密度（按表记忆）、每页条数、表头吸顶、多选批量、⌘K 命令面板（含最近访问）、外观抽屉（主题 / 侧栏样式 / 折叠方式）、表单未保存离开提示
-- 🎛 **界面规范**：蓝灰中性色 + 深藏蓝主色、Inter / Manrope 字体、6/8/10/14/18 圆角阶梯，设计令牌与组件规范见 `templates/frontend-react/DESIGN.md`（Vue 版同构）
+- 🎛 **界面规范**：蓝灰中性色 + 深藏蓝主色、Inter / Manrope 字体、6/8/10/14/18 圆角阶梯，设计令牌与组件规范见 `templates/frontend-react/DESIGN.md`（三套同构）
 - 🗓 **日期时间控件**：自绘中文月历 + 时分输入（不用原生 `datetime-local`，避免英文格式与跨浏览器盒模型差异）
 
 ## 生成的项目功能
@@ -57,6 +57,7 @@ fullstack-starter/
     ├── base/                   # 基础模板（.gitignore）
     ├── frontend-react/         # React 前端完整模板
     ├── frontend-vue/           # Vue 前端完整模板
+    ├── frontend-svelte/        # Svelte 前端完整模板
     ├── backend-python/         # Python FastAPI 后端完整模板
     └── backend-java/           # Java Spring Boot 后端完整模板
 ```
@@ -86,6 +87,7 @@ node dist/index.js
 ? 请选择前端框架: (Use arrow keys)
   ❯ React
     Vue
+    Svelte
 
 ? 请选择后端框架: (Use arrow keys)
   ❯ Python (FastAPI)
@@ -167,16 +169,16 @@ cd <生成的项目>/backend && 启动后端
 
 ## 技术栈
 
-| 组件 | React 模板 | Vue 模板 |
-|------|-----------|---------|
-| 框架 | React 19 | Vue 3.5+ (Composition API) |
-| 构建 | Vite | Vite |
-| 语言 | TypeScript | TypeScript |
-| 样式 | Tailwind CSS v4 + shadcn/ui（含 PWA） | Tailwind CSS v4 + shadcn-vue + Reka UI（含 PWA） |
-| HTTP | 原生 fetch 封装（401 自动登出） | 原生 fetch 封装（401 自动登出） |
-| 路由 | react-router v7 | vue-router v5 |
-| 状态 | React Context (lib/) | Pinia (stores/) |
-| 图标 | lucide-react | @lucide/vue |
+| 组件 | React 模板 | Vue 模板 | Svelte 模板 |
+|------|-----------|---------|------------|
+| 框架 | React 19 | Vue 3.5+ (Composition API) | Svelte 5 (runes) |
+| 构建 | Vite | Vite | SvelteKit 3 + Vite |
+| 语言 | TypeScript | TypeScript | TypeScript |
+| 样式 | Tailwind CSS v4 + shadcn/ui（含 PWA） | Tailwind CSS v4 + shadcn-vue + Reka UI（含 PWA） | Tailwind CSS v4 + shadcn-svelte + Bits UI（含 PWA） |
+| HTTP | 原生 fetch 封装（401 自动登出） | 原生 fetch 封装（401 自动登出） | 原生 fetch 封装（401 自动登出） |
+| 路由 | react-router v7 | vue-router v5 | SvelteKit 文件路由 |
+| 状态 | React Context (lib/) | Pinia (stores/) | runes (stores/) |
+| 图标 | lucide-react | @lucide/vue | @lucide/svelte |
 
 | 组件 | Python 模板 | Java 模板 |
 |------|------------|----------|
@@ -188,14 +190,14 @@ cd <生成的项目>/backend && 启动后端
 
 ## 界面规范
 
-两套前端共用同一份设计规范（`templates/frontend-react/DESIGN.md`、`templates/frontend-vue/DESIGN.md`），要点：
+三套前端共用同一份设计规范（`templates/frontend-react/DESIGN.md`、`templates/frontend-vue/DESIGN.md`、`templates/frontend-svelte/DESIGN.md`），要点：
 
 - **色彩**：中性色带蓝相（`oklch` hue 256–265），主色深藏蓝，图表使用 5 个语义色；深浅色各一套令牌
 - **字体**：正文 Inter，标题 Manrope，等宽用于编码与动作名
 - **圆角**：6 / 8 / 10 / 14 / 18，分别对应 sm / md / lg / xl / 2xl，不写一次性魔法值
 - **高度**：控件 36px（触屏 44px），图标按钮 32px（触屏 40px）
 - **断点**：Compact `< 768px`、Medium `768–1279px`、Expanded `≥ 1280px`；正文最大宽 1536px
-- **组件**：`DataList`（列驱动表格 + 卡片 + 状态）、`PageHeader`、`ListShell`、`ColumnToggle`、`DensityToggle`、`DateTimeField`、`ConfigDrawer`、`CommandMenu` 等，两栈保持同构
+- **组件**：`DataList`（列驱动表格 + 卡片 + 状态）、`PageHeader`、`ListShell`、`ColumnToggle`、`DensityToggle`、`DateTimeField`、`ConfigDrawer`、`CommandMenu` 等，三栈保持同构
 
 ## API 接口
 

@@ -1,10 +1,10 @@
 /**
  * 校验设计规约与实现是否仍然一致。
  *
- * 1. React / Vue 两份 `DESIGN.md` 除平台差异外必须逐字一致；
- * 2. `DESIGN.md` 第 2.1 节列出的语义 Token 必须与两个模板 CSS 中的变量一致。
+ * 1. React / Vue / Svelte 三份 `DESIGN.md` 除平台差异外必须逐字一致；
+ * 2. `DESIGN.md` 第 2.1 节列出的语义 Token 必须与三个模板的全局 CSS 一致。
  *
- * 平台差异只允许出现在：栈名、CSS 路径、测试库、路由与事件 API。
+ * 平台差异只允许出现在：栈名、CSS 路径、测试库。
  *
  * 用法：`npm run sync:design:check`
  */
@@ -16,25 +16,33 @@ import { fileURLToPath } from 'url';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const TEMPLATES = path.join(REPO_ROOT, 'templates');
-const REACT_DESIGN = path.join(TEMPLATES, 'frontend-react/DESIGN.md');
-const VUE_DESIGN = path.join(TEMPLATES, 'frontend-vue/DESIGN.md');
-const REACT_CSS = path.join(TEMPLATES, 'frontend-react/src/index.css');
-const VUE_CSS = path.join(TEMPLATES, 'frontend-vue/src/assets/main.css');
 
-/** 把两栈允许存在的差异归一，便于逐字比对 */
+const STACKS = [
+  {
+    name: 'React',
+    design: path.join(TEMPLATES, 'frontend-react/DESIGN.md'),
+    css: path.join(TEMPLATES, 'frontend-react/src/index.css'),
+  },
+  {
+    name: 'Vue',
+    design: path.join(TEMPLATES, 'frontend-vue/DESIGN.md'),
+    css: path.join(TEMPLATES, 'frontend-vue/src/assets/main.css'),
+  },
+  {
+    name: 'Svelte',
+    design: path.join(TEMPLATES, 'frontend-svelte/DESIGN.md'),
+    css: path.join(TEMPLATES, 'frontend-svelte/src/routes/layout.css'),
+  },
+] as const;
+
+/** 把三栈允许存在的差异归一，便于逐字比对 */
 const PLATFORM_PATTERNS: Array<[RegExp, string]> = [
   [/frontend-react/g, '<stack>'],
   [/frontend-vue/g, '<stack>'],
-  [/src\/assets\/main\.css/g, '<css>'],
-  [/src\/index\.css/g, '<css>'],
-  [/`index\.css`/g, '`<css>`'],
-  [/`main\.css`/g, '`<css>`'],
+  [/frontend-svelte/g, '<stack>'],
   [/Vitest \+ React Testing Library/g, '<test-lib>'],
   [/Vitest \+ `@testing-library\/vue`/g, '<test-lib>'],
-  [/（`RouterLink` \/ `<a>`）/g, '（<link>）'],
-  [/（`Link` \/ `<a>`）/g, '（<link>）'],
-  [/`@click`/g, '`<handler>`'],
-  [/`onClick`/g, '`<handler>`'],
+  [/Vitest \+ `vitest-browser-svelte`/g, '<test-lib>'],
 ];
 
 function normalize(markdown: string): string {
@@ -68,19 +76,30 @@ function readCssTokens(css: string): Map<string, string> {
 }
 
 async function main(): Promise<void> {
-  const [reactDesign, vueDesign, reactCss, vueCss] = await Promise.all([
-    fs.readFile(REACT_DESIGN, 'utf8'),
-    fs.readFile(VUE_DESIGN, 'utf8'),
-    fs.readFile(REACT_CSS, 'utf8'),
-    fs.readFile(VUE_CSS, 'utf8'),
+  const [reactDesign, vueDesign, svelteDesign] = await Promise.all([
+    fs.readFile(STACKS[0].design, 'utf8'),
+    fs.readFile(STACKS[1].design, 'utf8'),
+    fs.readFile(STACKS[2].design, 'utf8'),
   ]);
+
+  const cssFiles = await Promise.all(
+    STACKS.map(async (stack) => [stack, await fs.readFile(stack.css, 'utf8')] as const)
+  );
 
   const problems: string[] = [];
 
-  if (normalize(reactDesign) !== normalize(vueDesign)) {
-    problems.push(
-      '两份 DESIGN.md 不一致：平台差异以外的内容必须逐字相同（templates/frontend-{react,vue}/DESIGN.md）'
-    );
+  const normalized = {
+    React: normalize(reactDesign),
+    Vue: normalize(vueDesign),
+    Svelte: normalize(svelteDesign),
+  };
+
+  for (const name of ['Vue', 'Svelte'] as const) {
+    if (normalized.React !== normalized[name]) {
+      problems.push(
+        `React 与 ${name} 的 DESIGN.md 不一致：平台差异以外的内容必须逐字相同（templates/frontend-{react,vue,svelte}/DESIGN.md）`
+      );
+    }
   }
 
   const documented = readDocumentedTokens(reactDesign);
@@ -88,19 +107,16 @@ async function main(): Promise<void> {
     problems.push('DESIGN.md 第 2.1 节没有解析到任何 Token，检查表格格式');
   }
 
-  for (const [name, cssPath, css] of [
-    ['React', REACT_CSS, reactCss],
-    ['Vue', VUE_CSS, vueCss],
-  ] as const) {
+  for (const [stack, css] of cssFiles) {
     const implemented = readCssTokens(css);
     for (const [token, expected] of documented) {
       const actual = implemented.get(token);
       if (actual === undefined) {
-        problems.push(`${name}: ${path.relative(REPO_ROOT, cssPath)} 缺少 ${token}`);
+        problems.push(`${stack.name}: ${path.relative(REPO_ROOT, stack.css)} 缺少 ${token}`);
         continue;
       }
       if (actual.replace(/\s+/g, ' ') !== expected) {
-        problems.push(`${name}: ${token} 文档为 ${expected}，代码为 ${actual}`);
+        problems.push(`${stack.name}: ${token} 文档为 ${expected}，代码为 ${actual}`);
       }
     }
   }
@@ -111,7 +127,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`✓ 设计规约一致（${documented.size} 个语义 Token，两份 DESIGN.md 结构相同）`);
+  console.log(`✓ 设计规约一致（${documented.size} 个语义 Token，三份 DESIGN.md 结构相同）`);
 }
 
 await main();
