@@ -1,9 +1,9 @@
-name: Build demo image
+name: Build demo image (React/Vue/Svelte + Java)
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -52,25 +52,43 @@ jobs:
         id: version
         run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Generate demo project (React + Python)
-        run: pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated" demo react python
+      # 镜像内的三套前端和一套 Java 后端都来自生成结果，
+      # 这样 CI 镜像始终等同于用户拿到手的项目。
+      - name: Generate demo projects (React / Vue / Svelte + Java)
+        run: |
+          pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated-react" demo-react react java
+          pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated-vue" demo-vue vue java
+          pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated-svelte" demo-svelte svelte java
 
-      - name: Lint generated frontend
-        working-directory: ${{ runner.temp }}/generated/demo/frontend
+      - name: Lint generated React frontend
+        working-directory: ${{ runner.temp }}/generated-react/demo-react/frontend
         run: |
           npm ci
           npm run lint
 
-      - name: Generate demo project (Svelte + Python)
-        run: pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated-svelte" demo-svelte svelte python
+      - name: Lint generated Vue frontend
+        working-directory: ${{ runner.temp }}/generated-vue/demo-vue/frontend
+        run: |
+          npm ci
+          npm run lint
 
-      - name: Check and build generated Svelte frontend
+      - name: Lint and check generated Svelte frontend
         working-directory: ${{ runner.temp }}/generated-svelte/demo-svelte/frontend
         run: |
           npm ci
           npm run lint
           npm run check
-          npm run build
+
+      # 把三套前端和一套 Java 后端拼成镜像构建上下文：
+      # react/ vue/ svelte/ backend/ Dockerfile nginx.conf .dockerignore
+      - name: Assemble demo image context
+        run: |
+          mkdir -p "$RUNNER_TEMP/image"
+          cp -a "$RUNNER_TEMP/generated-react/demo-react/frontend" "$RUNNER_TEMP/image/react"
+          cp -a "$RUNNER_TEMP/generated-vue/demo-vue/frontend" "$RUNNER_TEMP/image/vue"
+          cp -a "$RUNNER_TEMP/generated-svelte/demo-svelte/frontend" "$RUNNER_TEMP/image/svelte"
+          cp -a "$RUNNER_TEMP/generated-react/demo-react/backend" "$RUNNER_TEMP/image/backend"
+          cp .github/demo/Dockerfile .github/demo/nginx.conf .github/demo/.dockerignore "$RUNNER_TEMP/image/"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -85,7 +103,7 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: ${{ runner.temp }}/generated/demo
+          context: ${{ runner.temp }}/image
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
