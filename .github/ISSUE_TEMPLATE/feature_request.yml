@@ -1,0 +1,68 @@
+name: Feature request
+description: Suggest a capability or an improvement.
+title: '[feature] '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping shape the project. Describe the problem first; the
+        proposed solution is easier to evaluate in that context.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the repository would this change?
+      options:
+        - Generator CLI
+        - React template
+        - Vue template
+        - Svelte template
+        - Python backend
+        - Java backend
+        - Docker / demo image
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behaviour you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches, workarounds, or prior art.
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to work on this?
+      options:
+        - 'Yes'
+        - 'Maybe'
+        - 'No'
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, links, or constraints that would help.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and discussions.
+          required: true

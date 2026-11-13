@@ -1,0 +1,103 @@
+name: Bug report
+description: Report a reproducible problem in the generator, a template, or the demo image.
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. Reports that include the
+        exact stack and version are much faster to reproduce.
+
+        Do not include secrets, tokens, or personal data. Security issues must be
+        reported privately: https://github.com/hmilyld/fullstack-starter/security/advisories/new
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the repository is affected?
+      options:
+        - Generator CLI
+        - React template
+        - Vue template
+        - Svelte template
+        - Python backend
+        - Java backend
+        - Docker / demo image
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The release tag or package version you used.
+      placeholder: '2.0.2'
+    validations:
+      required: true
+  - type: dropdown
+    id: stack
+    attributes:
+      label: Generated stack
+      description: Required for template bugs; choose "Not applicable" for the generator or docs.
+      options:
+        - Not applicable
+        - React + FastAPI
+        - React + Spring Boot
+        - Vue + FastAPI
+        - Vue + Spring Boot
+        - Svelte + FastAPI
+        - Svelte + Spring Boot
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node, Python, Java, Docker, and browser versions.
+      placeholder: |
+        OS: macOS 15
+        Node: 22.14.0
+        Python: 3.12.8
+        Java: 21
+        Browser: Chrome 133
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the command or prompt answers that led to the problem.
+      placeholder: |
+        1. Run ...
+        2. Choose ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste relevant output. Remove secrets first.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and discussions.
+          required: true
+        - label: I removed secrets, tokens, and personal data from this report.
+          required: true

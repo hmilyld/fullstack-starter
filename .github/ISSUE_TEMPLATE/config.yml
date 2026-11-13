@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://fullstack.hmilyld.com
+    about: Guides, module reference, deployment notes, and the API contract.
+  - name: Questions and ideas
+    url: https://github.com/hmilyld/fullstack-starter/discussions
+    about: Ask usage questions or discuss an idea before opening a feature request.
+  - name: Security report
+    url: https://github.com/hmilyld/fullstack-starter/security/advisories/new
+    about: Report vulnerabilities privately. Do not open a public issue.
