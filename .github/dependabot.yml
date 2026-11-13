@@ -109,19 +109,6 @@ updates:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
 
-  # The generated Dockerfiles are strings in src/generator.ts; Dependabot only
-  # sees the demo image, so update the template base images by hand as well.
-  - package-ecosystem: docker
-    directory: '/.github/demo'
-    schedule:
-      interval: monthly
-    open-pull-requests-limit: 2
-    commit-message:
-      prefix: 'chore(deps)'
-    groups:
-      minor-and-patch:
-        patterns: ['*']
-        update-types: ['minor', 'patch']
-    ignore:
-      - dependency-name: '*'
-        update-types: ['version-update:semver-major']
+  # Docker base images are updated manually: the generated Dockerfiles are
+  # strings in src/generator.ts, and Dependabot's Docker updater cannot update
+  # them reliably (the apk/eclipse-temurin tags are not semver).
