@@ -44,17 +44,16 @@ git push origin main
 git push origin vX.Y.Z
 ```
 
-The tag starts two workflows:
+The tag runs the CI workflow in order:
 
-- **CI** runs the full checks for the tagged commit. After all jobs pass, its
-  release job verifies that the tag equals `v$(jq -r .version package.json)`
-  and creates the GitHub Release with generated notes.
-- **Build demo image** publishes
-  `ghcr.io/hmilyld/fullstack-starter:X.Y.Z`,
-  `:vX.Y.Z` and `:latest`.
+1. **Checks** — generator, three frontends and both backends.
+2. **Build demo image** — verifies the tag matches `package.json` and publishes
+   `ghcr.io/hmilyld/fullstack-starter:X.Y.Z`,
+   `:vX.Y.Z` and `:latest`.
+3. **Release** — creates the GitHub Release only after the image push succeeds.
 
-The image build also refuses a tag that does not match `package.json`, so the
-release and its image always share the same version.
+On `main` pushes the same workflow runs the checks and publishes `:latest`; it
+does not create a release.
 
 ## npm
 

@@ -1,22 +1,17 @@
-name: Build demo image (React/Vue/Svelte + Java)
+name: Build demo image
 
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
   packages: write
 
-concurrency:
-  group: build-demo
-  cancel-in-progress: true
-
 jobs:
   build-and-push:
+    name: Build and push
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -33,21 +28,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Format check
-        run: pnpm run format:check
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Build generator
-        run: pnpm run build
-
-      - name: Verify permission catalogs match across backends
-        run: pnpm run sync:permissions:catalog
-
-      - name: Verify design spec matches templates
-        run: pnpm run sync:design:check
-
       - name: Read release version
         id: version
         run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
@@ -61,31 +41,12 @@ jobs:
           fi
 
       # 镜像内的三套前端和一套 Java 后端都来自生成结果，
-      # 这样 CI 镜像始终等同于用户拿到手的项目。
+      # 这样镜像始终等同于用户拿到手的项目。
       - name: Generate demo projects (React / Vue / Svelte + Java)
         run: |
           pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated-react" demo-react react java
           pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated-vue" demo-vue vue java
           pnpm exec tsx scripts/generate-demo.ts "$RUNNER_TEMP/generated-svelte" demo-svelte svelte java
-
-      - name: Lint generated React frontend
-        working-directory: ${{ runner.temp }}/generated-react/demo-react/frontend
-        run: |
-          npm ci
-          npm run lint
-
-      - name: Lint generated Vue frontend
-        working-directory: ${{ runner.temp }}/generated-vue/demo-vue/frontend
-        run: |
-          npm ci
-          npm run lint
-
-      - name: Lint and check generated Svelte frontend
-        working-directory: ${{ runner.temp }}/generated-svelte/demo-svelte/frontend
-        run: |
-          npm ci
-          npm run lint
-          npm run check
 
       # 把三套前端和一套 Java 后端拼成镜像构建上下文：
       # react/ vue/ svelte/ backend/ Dockerfile nginx.conf .dockerignore
@@ -106,7 +67,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Build and push image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
