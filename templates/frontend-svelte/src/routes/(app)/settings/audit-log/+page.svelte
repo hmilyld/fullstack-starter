@@ -3,7 +3,6 @@
   import { goto } from "$app/navigation"
   import { resolve } from "$app/paths"
   import {
-    MoreHorizontal,
     RotateCcw,
     Search,
     SearchX,
@@ -13,23 +12,15 @@
   } from "@lucide/svelte"
   import AuditFilterFields from "./AuditFilterFields.svelte"
   import ColumnToggle from "#lib/components/shared/column-toggle.svelte"
+  import DataList from "#lib/components/shared/data-list.svelte"
   import DensityToggle from "#lib/components/shared/density-toggle.svelte"
-  import EmptyState from "#lib/components/shared/empty-state.svelte"
-  import ErrorState from "#lib/components/shared/error-state.svelte"
-  import InlineError from "#lib/components/shared/inline-error.svelte"
   import ListShell from "#lib/components/shared/list-shell.svelte"
   import PageHeader from "#lib/components/shared/page-header.svelte"
   import RecordCard from "#lib/components/shared/record-card.svelte"
   import TablePagination from "#lib/components/shared/table-pagination.svelte"
-  import TableSkeletonRow from "#lib/components/shared/table-skeleton-row.svelte"
+  import type { DataColumn } from "#lib/components/shared/data-column.js"
   import { Badge } from "#lib/components/ui/badge/index.js"
   import { Button } from "#lib/components/ui/button/index.js"
-  import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-  } from "#lib/components/ui/dropdown-menu/index.js"
   import {
     Sheet,
     SheetContent,
@@ -38,14 +29,6 @@
     SheetHeader,
     SheetTitle,
   } from "#lib/components/ui/sheet/index.js"
-  import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-  } from "#lib/components/ui/table/index.js"
   import { getAuditLogs } from "#lib/api/audit-log.js"
   import { formatDateTimeInput } from "#lib/date-time.js"
   import { formatDateTime } from "#lib/format.js"
@@ -58,7 +41,6 @@
     AuditFilters,
     AuditLog,
   } from "#lib/types/audit-log.js"
-  import { cn } from "#lib/utils.js"
 
   const DEFAULT_PAGE_SIZE = 10
   const PAGE_SIZE_OPTIONS = [10, 20, 50]
@@ -92,14 +74,6 @@
     "startTime",
     "endTime",
   ]
-
-  type DataColumn = {
-    key: string
-    header: string
-    hideable?: boolean
-    headClass?: string
-    cellClass?: string
-  }
 
   type AuditLogPath = "settings/audit-log" | `settings/audit-log?${string}`
 
@@ -256,26 +230,17 @@
 
   function statusBadgeVariant(
     status: AuditLog["status"]
-  ): "destructive" | "outline" {
-    return status === "fail" ? "destructive" : "outline"
-  }
-
-  function statusBadgeClass(status: AuditLog["status"]) {
-    if (status === "success")
-      return "border-transparent bg-success/10 text-success"
-    if (status === "permission_denied")
-      return "border-transparent bg-warning/10 text-warning"
-    return undefined
+  ): "success" | "destructive" | "warning" {
+    if (status === "success") return "success"
+    if (status === "fail") return "destructive"
+    return "warning"
   }
 </script>
 
 <svelte:head><title>审计日志 · 管理系统</title></svelte:head>
 
 {#snippet statusBadge(row: AuditLog)}
-  <Badge
-    variant={statusBadgeVariant(row.status)}
-    class={statusBadgeClass(row.status)}
-  >
+  <Badge variant={statusBadgeVariant(row.status)}>
     {statusLabel(row.status)}
   </Badge>
 {/snippet}
@@ -385,124 +350,61 @@
       </SheetContent>
     </Sheet>
 
-    {#if listError && logs.length > 0}
-      <InlineError message={listError} onRetry={() => list.refresh()} />
-    {/if}
-
-    {#if listLoading && logs.length === 0}
-      <div
-        class="overflow-clip rounded-xl border bg-card max-md:rounded-none max-md:border-0"
-      >
-        <TableSkeletonRow colSpan={6} />
-      </div>
-    {:else if listError && logs.length === 0}
-      <ErrorState message={listError} onRetry={() => list.refresh()} />
-    {:else if logs.length === 0}
-      {#if activeFilters.length > 0}
-        <EmptyState
-          icon={SearchX}
-          title="没有符合条件的记录"
-          description="试着放宽筛选条件，或清除筛选后重试。"
-        >
+    <DataList
+      items={logs}
+      loading={listLoading}
+      error={listError}
+      columns={columnState.visibleColumns}
+      density={densityState.density}
+      skeletonColSpan={6}
+      empty={{
+        icon: activeFilters.length > 0 ? SearchX : ShieldAlert,
+        title:
+          activeFilters.length > 0 ? "没有符合条件的记录" : "还没有审计记录",
+        description:
+          activeFilters.length > 0
+            ? "试着放宽筛选条件，或清除筛选后重试。"
+            : "系统的写操作和权限拦截会自动记录在这里。",
+      }}
+      onRetry={() => list.refresh()}
+      onHideColumn={columnState.toggle}
+    >
+      {#snippet emptyAction()}
+        {#if activeFilters.length > 0}
           <Button variant="outline" onclick={handleReset}>清除筛选</Button>
-        </EmptyState>
-      {:else}
-        <EmptyState
-          icon={ShieldAlert}
-          title="还没有审计记录"
-          description="系统的写操作和权限拦截会自动记录在这里。"
-        />
-      {/if}
-    {:else}
-      <div class="flex flex-col gap-2 md:hidden">
-        {#each logs as log (log.id)}
-          <RecordCard
-            title={log.action}
-            subtitle={formatDateTime(log.createdAt)}
-          >
-            {#snippet badges()}
-              {@render statusBadge(log)}
-            {/snippet}
-            {#snippet meta()}
-              <span>{log.username || "未知"}</span>
-              <span>{log.ip || "-"}</span>
-              {#if log.detail}
-                <span class="w-full truncate">{log.detail}</span>
-              {/if}
-            {/snippet}
-          </RecordCard>
-        {/each}
-      </div>
+        {/if}
+      {/snippet}
 
-      <div
-        class={cn(
-          "hidden overflow-clip rounded-xl border bg-card md:block",
-          densityState.density === "compact" && "[&_td]:py-1.5 [&_th]:h-9"
-        )}
-      >
-        <Table>
-          <TableHeader
-            class="[&_th]:sticky [&_th]:top-16 [&_th]:z-10 [&_th]:border-b [&_th]:border-border [&_th]:bg-card"
-          >
-            <TableRow>
-              {#each columnState.visibleColumns as column (column.key)}
-                <TableHead class={column.headClass}>
-                  <div class="group/col flex items-center gap-1">
-                    <span class="min-w-0 truncate">{column.header}</span>
-                    {#if column.hideable}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          {#snippet child({ props })}
-                            <Button
-                              {...props}
-                              variant="ghost"
-                              size="icon-xs"
-                              aria-label="列选项"
-                              class="-mr-1 opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100"
-                            >
-                              <MoreHorizontal />
-                            </Button>
-                          {/snippet}
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          <DropdownMenuItem
-                            onSelect={() => columnState.toggle(column.key)}
-                          >
-                            隐藏此列
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    {/if}
-                  </div>
-                </TableHead>
-              {/each}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {#each logs as log (log.id)}
-              <TableRow>
-                {#each columnState.visibleColumns as column (column.key)}
-                  <TableCell class={column.cellClass}>
-                    {#if column.key === "createdAt"}
-                      {formatDateTime(log.createdAt)}
-                    {:else if column.key === "username"}
-                      {log.username || "未知"}
-                    {:else if column.key === "action"}
-                      {log.action}
-                    {:else if column.key === "ip"}
-                      {log.ip || "-"}
-                    {:else if column.key === "status"}
-                      {@render statusBadge(log)}
-                    {:else if column.key === "detail"}
-                      {log.detail || "-"}
-                    {/if}
-                  </TableCell>
-                {/each}
-              </TableRow>
-            {/each}
-          </TableBody>
-        </Table>
-      </div>
-    {/if}
+      {#snippet card(log: AuditLog)}
+        <RecordCard title={log.action} subtitle={formatDateTime(log.createdAt)}>
+          {#snippet badges()}
+            {@render statusBadge(log)}
+          {/snippet}
+          {#snippet meta()}
+            <span>{log.username || "未知"}</span>
+            <span>{log.ip || "-"}</span>
+            {#if log.detail}
+              <span class="w-full truncate">{log.detail}</span>
+            {/if}
+          {/snippet}
+        </RecordCard>
+      {/snippet}
+
+      {#snippet cell(key: string, log: AuditLog)}
+        {#if key === "createdAt"}
+          {formatDateTime(log.createdAt)}
+        {:else if key === "username"}
+          {log.username || "未知"}
+        {:else if key === "action"}
+          {log.action}
+        {:else if key === "ip"}
+          {log.ip || "-"}
+        {:else if key === "status"}
+          {@render statusBadge(log)}
+        {:else if key === "detail"}
+          {log.detail || "-"}
+        {/if}
+      {/snippet}
+    </DataList>
   </ListShell>
 </div>

@@ -6,6 +6,7 @@
     KeyRound,
     Plus,
     Search,
+    Trash2,
   } from "@lucide/svelte"
   import ConfirmDeleteDialog from "#lib/components/shared/confirm-delete-dialog.svelte"
   import ConfirmHideDialog from "#lib/components/shared/confirm-hide-dialog.svelte"
@@ -158,6 +159,17 @@
     search.trim() ? new Set<string>() : collapsedGroups
   )
 
+  const groupItems = $derived(
+    (config?.groups ?? []).map((group) => ({
+      value: group.id,
+      label: group.name,
+    }))
+  )
+  const operationVerbItems = OPERATION_PRESETS.map((preset) => ({
+    value: preset.verb,
+    label: preset.label,
+  }))
+
   const menuStats = $derived.by(() => {
     const groups = config?.groups ?? []
     const menus = groups.reduce((sum, group) => sum + group.items.length, 0)
@@ -304,13 +316,11 @@
     | { type: "group"; groupId: string }
     | { type: "item"; groupId: string; permissionCode: string }
 
-  let dragState = $state<DragState | null>(null)
   let dragMoved = false
 
   function startDrag(event: PointerEvent, state: DragState) {
     if (!reorderEnabled) return
     event.preventDefault()
-    dragState = state
     dragMoved = false
 
     const onMove = (moveEvent: PointerEvent) => {
@@ -354,13 +364,14 @@
     const onUp = () => {
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("pointerup", onUp)
-      dragState = null
+      window.removeEventListener("pointercancel", onUp)
       if (dragMoved && config) void persistLayout(config)
       dragMoved = false
     }
 
     window.addEventListener("pointermove", onMove)
     window.addEventListener("pointerup", onUp)
+    window.addEventListener("pointercancel", onUp)
   }
 
   function moveItemTo(
@@ -394,13 +405,6 @@
         : Math.min(to, targetGroup.items.length)
     targetGroup.items.splice(insertAt, 0, item)
     config = normalizeMenuConfig(next)
-  }
-
-  function moveItemToGroupEnd(
-    state: { groupId: string; permissionCode: string },
-    targetGroupId: string
-  ) {
-    moveItemTo(state, targetGroupId, null)
   }
 
   function moveGroupTo(groupId: string, targetGroupId: string) {
@@ -730,7 +734,7 @@
         onSelect: () => openEditGroup(group),
       })
     }
-    if (canReorder) {
+    if (reorderEnabled) {
       actions.push({
         label: "上移",
         disabled:
@@ -785,7 +789,7 @@
         onSelect: () => void toggleHidden(item),
       })
     }
-    if (canReorder) {
+    if (reorderEnabled) {
       actions.push({
         label: "上移",
         disabled: index <= 0,
@@ -917,7 +921,7 @@
               <span class="font-medium">{group.name}</span>
               <Badge variant="secondary">{group.items.length} 个菜单</Badge>
               <div class="ml-auto flex items-center gap-1">
-                {#if canReorder}
+                {#if reorderEnabled}
                   <Button
                     variant="ghost"
                     size="icon-xs"
@@ -936,7 +940,7 @@
             </div>
             {#if !collapsedGroups.has(group.id)}
               <div class="flex flex-col gap-2 p-3">
-                {#each group.items as item (item.permissionCode)}
+                {#each group.items as item, itemIndex (item.permissionCode)}
                   <div class="rounded-lg border p-3">
                     <div class="flex items-start gap-2">
                       <Button
@@ -966,7 +970,7 @@
                           {item.route} · {item.permissionCode}
                         </p>
                       </div>
-                      {#if canReorder}
+                      {#if reorderEnabled}
                         <Button
                           variant="ghost"
                           size="icon-xs"
@@ -981,16 +985,14 @@
                           <GripVertical />
                         </Button>
                       {/if}
-                      {#if canEdit}
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          aria-label={`编辑 ${item.name}`}
-                          onclick={() => openEditItem(item)}
-                        >
-                          <KeyRound />
-                        </Button>
-                      {/if}
+                      <RowActions
+                        actions={buildMenuActions(
+                          item,
+                          itemIndex,
+                          group.items.length
+                        )}
+                        label={`${item.name} 的操作`}
+                      />
                     </div>
                     {#if expanded.has(item.permissionCode)}
                       <div class="mt-2 flex flex-col gap-1 border-t pt-2">
@@ -1001,20 +1003,45 @@
                             <span class="font-mono text-muted-foreground"
                               >{operation.code}</span
                             >
-                            <Button
-                              variant="ghost"
-                              size="icon-xs"
-                              aria-label={`编辑 ${operation.name}`}
-                              onclick={() => openEditOperation(item, operation)}
-                            >
-                              <KeyRound />
-                            </Button>
+                            {#if canEditOperation}
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                aria-label={`编辑 ${operation.name}`}
+                                onclick={() =>
+                                  openEditOperation(item, operation)}
+                              >
+                                <KeyRound />
+                              </Button>
+                            {/if}
+                            {#if canDeleteOperation}
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                aria-label={`删除 ${operation.name}`}
+                                onclick={() =>
+                                  handleDeleteOperation(item, operation)}
+                              >
+                                <Trash2 />
+                              </Button>
+                            {/if}
                           </div>
                         {/each}
                         {#if item.operations.length === 0}
                           <span class="text-xs text-muted-foreground"
                             >暂无操作权限</span
                           >
+                        {/if}
+                        {#if canCreateOperation}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            class="mt-1 justify-start"
+                            onclick={() => openCreateOperation(item)}
+                          >
+                            <Plus data-icon="inline-start" />
+                            新增操作权限
+                          </Button>
                         {/if}
                       </div>
                     {/if}
@@ -1050,7 +1077,7 @@
             </TableRow>
           </TableHeader>
           <TableBody>
-            {#each visibleGroups as group, groupIndex (group.id)}
+            {#each visibleGroups as group (group.id)}
               <tr data-menu-group={group.id} class="border-b bg-muted/30">
                 <td class="p-3">
                   <div class="flex items-center gap-1">
@@ -1080,7 +1107,7 @@
                 </td>
                 <td class="sticky right-0 bg-muted/30 p-3 text-right">
                   <div class="flex items-center justify-end gap-1">
-                    {#if canReorder}
+                    {#if reorderEnabled}
                       <Button
                         variant="ghost"
                         size="icon-xs"
@@ -1153,7 +1180,7 @@
                     </td>
                     <td class="sticky right-0 bg-card p-3 text-right">
                       <div class="flex items-center justify-end gap-1">
-                        {#if canReorder}
+                        {#if reorderEnabled}
                           <Button
                             variant="ghost"
                             size="icon-xs"
@@ -1295,6 +1322,7 @@
         <FieldLabel>所属分组</FieldLabel>
         <Select
           type="single"
+          items={groupItems}
           value={itemForm.groupId}
           onValueChange={(value) => {
             if (value) itemForm.groupId = value
@@ -1371,6 +1399,7 @@
           <FieldLabel>常用动作</FieldLabel>
           <Select
             type="single"
+            items={operationVerbItems}
             value={operationForm.verb}
             onValueChange={(value) => value && handleOperationVerbChange(value)}
           >

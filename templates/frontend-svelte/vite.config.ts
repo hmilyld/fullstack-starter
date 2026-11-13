@@ -84,6 +84,7 @@ export default defineConfig({
           globPatterns: [
             "client/**/*.{js,css,html,ico,png,svg,woff2,webmanifest}",
           ],
+          globIgnores: ["prerendered/**"],
         },
         kit: {
           adapterFallback: "index.html",
@@ -98,7 +99,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true,
+    host: "127.0.0.1",
     proxy: {
       "/api": {
         target: apiTarget,
@@ -107,7 +108,7 @@ export default defineConfig({
     },
   },
   preview: {
-    host: true,
+    host: "127.0.0.1",
   },
   test: {
     projects: [

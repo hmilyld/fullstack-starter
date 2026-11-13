@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Snippet } from "svelte"
   import { Eye, EyeOff } from "@lucide/svelte"
   import {
     InputGroup,
@@ -10,11 +9,9 @@
 
   let {
     value = $bindable(""),
-    children,
     ...restProps
   }: {
     value?: string
-    children?: Snippet
     [key: string]: unknown
   } = $props()
 

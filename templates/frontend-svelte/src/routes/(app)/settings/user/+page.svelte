@@ -426,6 +426,10 @@
     },
   ]
 
+  const roleItems = $derived(
+    roles.map((role) => ({ value: role.id, label: role.name }))
+  )
+
   const columnState = useColumnVisibility("users", () => columns)
   const densityState = useTableDensity("users")
 
@@ -486,6 +490,7 @@
     {/snippet}
 
     {#if list.items.length > 0}
+      <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
       {#snippet footer()}
         <TablePagination
           page={list.page}
@@ -658,6 +663,7 @@
         <FieldLabel for="bulk-role">角色</FieldLabel>
         <Select
           type="single"
+          items={roleItems}
           value={bulkRoleId}
           onValueChange={(value) => {
             if (value) bulkRoleId = value
@@ -728,6 +734,7 @@
           <FieldLabel>角色</FieldLabel>
           <Select
             type="single"
+            items={roleItems}
             value={editForm.roleId}
             onValueChange={(value) => {
               if (value) editForm.roleId = value
@@ -770,6 +777,7 @@
         <FieldLabel>新角色</FieldLabel>
         <Select
           type="single"
+          items={roleItems}
           value={roleValue}
           onValueChange={(value) => {
             if (value) roleValue = value

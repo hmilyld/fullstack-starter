@@ -247,6 +247,7 @@
     {/snippet}
 
     {#if list.items.length > 0}
+      <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
       {#snippet footer()}
         <TablePagination
           page={list.page}

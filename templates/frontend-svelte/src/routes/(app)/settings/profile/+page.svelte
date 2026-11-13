@@ -67,9 +67,6 @@
   let passwordError = $state<string | null>(null)
   let passwordSaving = $state(false)
 
-  const plainCardClass =
-    "max-w-2xl gap-5 overflow-visible border-0 bg-transparent py-0 shadow-none ring-0 [--card-spacing:0px] [&>[data-slot=card-header]]:border-b [&>[data-slot=card-header]]:pb-4 [&_[data-slot=card-title]]:text-lg"
-
   function clearPasswordError() {
     if (passwordError) passwordError = null
   }
@@ -139,7 +136,7 @@
       value="profile"
       class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
     >
-      <Card class={plainCardClass}>
+      <Card variant="plain">
         <CardHeader>
           <CardTitle>基本资料</CardTitle>
           <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
@@ -196,7 +193,7 @@
       value="security"
       class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
     >
-      <Card class={plainCardClass}>
+      <Card variant="plain">
         <CardHeader>
           <CardTitle>密码修改</CardTitle>
           <CardDescription>

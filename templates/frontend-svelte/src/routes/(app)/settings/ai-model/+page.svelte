@@ -486,12 +486,7 @@
           {#snippet card(row: AiModel)}
             <RecordCard title={row.alias} subtitle={row.modelName}>
               {#snippet badges()}
-                <Badge
-                  class={row.isDefault
-                    ? "bg-success/10 text-success dark:bg-success/20"
-                    : undefined}
-                  variant={row.isDefault ? "default" : "secondary"}
-                >
+                <Badge variant={row.isDefault ? "success" : "secondary"}>
                   {row.isDefault ? "默认" : "普通"}
                 </Badge>
               {/snippet}
@@ -536,12 +531,7 @@
             {:else if key === "description"}
               {row.description || "-"}
             {:else if key === "status"}
-              <Badge
-                class={row.isDefault
-                  ? "bg-success/10 text-success dark:bg-success/20"
-                  : undefined}
-                variant={row.isDefault ? "default" : "secondary"}
-              >
+              <Badge variant={row.isDefault ? "success" : "secondary"}>
                 {row.isDefault ? "默认" : "普通"}
               </Badge>
             {:else if key === "actions"}

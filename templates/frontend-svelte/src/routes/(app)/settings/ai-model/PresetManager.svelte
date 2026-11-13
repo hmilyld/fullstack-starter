@@ -357,12 +357,7 @@
       <RecordCard title={row.alias} subtitle={row.modelName}>
         {#snippet badges()}
           <Badge variant="outline">{row.group}</Badge>
-          <Badge
-            class={row.isActive
-              ? "bg-success/10 text-success dark:bg-success/20"
-              : undefined}
-            variant={row.isActive ? "default" : "secondary"}
-          >
+          <Badge variant={row.isActive ? "success" : "secondary"}>
             {row.isActive ? "启用" : "禁用"}
           </Badge>
         {/snippet}
@@ -387,12 +382,7 @@
       {:else if key === "description"}
         {row.description || "-"}
       {:else if key === "status"}
-        <Badge
-          class={row.isActive
-            ? "bg-success/10 text-success dark:bg-success/20"
-            : undefined}
-          variant={row.isActive ? "default" : "secondary"}
-        >
+        <Badge variant={row.isActive ? "success" : "secondary"}>
           {row.isActive ? "启用" : "禁用"}
         </Badge>
       {:else if key === "sort"}

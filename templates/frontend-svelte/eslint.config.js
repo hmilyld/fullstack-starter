@@ -45,8 +45,14 @@ export default defineConfig(
   {
     files: ["**/*.svelte"],
     rules: {
-      // Svelte 5 的 snippet 作为隐式 prop 传递时会被误判为未使用
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   },
   {

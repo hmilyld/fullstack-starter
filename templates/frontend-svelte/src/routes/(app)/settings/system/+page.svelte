@@ -45,7 +45,6 @@
   import { useMediaQuery } from "#lib/hooks/use-media-query.svelte.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { siteConfig } from "#lib/stores/site-config.svelte.js"
-  import { cn } from "#lib/utils.js"
   import type { SystemConfig } from "#lib/types/system.js"
 
   type SaveKey = "site" | "maintenance" | "registration" | "default" | "smtp"
@@ -108,13 +107,6 @@
       tip: "Foxmail 使用 QQ 邮箱 SMTP 服务器",
     },
   ]
-
-  /** 设置页的扁平分区：去掉卡片边框与底色，仅保留内容间距 */
-  const PLAIN_CARD = cn(
-    "gap-5 overflow-visible bg-transparent py-0 shadow-none ring-0 [--card-spacing:0px]",
-    "[&>[data-slot=card-header]]:border-b [&>[data-slot=card-header]]:pb-4",
-    "[&_[data-slot=card-title]]:text-lg"
-  )
 
   const toast = useToast()
 
@@ -359,7 +351,7 @@
         value="site"
         class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
       >
-        <Card class={cn(PLAIN_CARD, "max-w-3xl")}>
+        <Card variant="plain" class="max-w-3xl">
           <CardHeader>
             <CardTitle>基本信息</CardTitle>
             <CardDescription>配置站点名称、描述等基本信息。</CardDescription>
@@ -408,7 +400,7 @@
           />
         </Card>
 
-        <Card class={cn(PLAIN_CARD, "max-w-3xl")}>
+        <Card variant="plain" class="max-w-3xl">
           <CardHeader>
             <CardTitle>维护模式</CardTitle>
             <CardDescription>
@@ -453,7 +445,7 @@
         value="register"
         class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
       >
-        <Card class={cn(PLAIN_CARD, "max-w-3xl")}>
+        <Card variant="plain" class="max-w-3xl">
           <CardHeader>
             <CardTitle>注册策略</CardTitle>
             <CardDescription>控制用户注册方式和验证流程。</CardDescription>
@@ -494,7 +486,7 @@
           />
         </Card>
 
-        <Card class={cn(PLAIN_CARD, "max-w-3xl")}>
+        <Card variant="plain" class="max-w-3xl">
           <CardHeader>
             <CardTitle>默认配置</CardTitle>
             <CardDescription>新注册用户的默认角色和欢迎信息。</CardDescription>
@@ -547,7 +539,7 @@
         value="smtp"
         class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
       >
-        <Card class={cn(PLAIN_CARD, "max-w-3xl")}>
+        <Card variant="plain" class="max-w-3xl">
           <CardHeader>
             <CardTitle>SMTP 邮件配置</CardTitle>
             <CardDescription>
@@ -705,7 +697,7 @@
           />
         </Card>
 
-        <Card class={cn(PLAIN_CARD, "max-w-3xl")}>
+        <Card variant="plain" class="max-w-3xl">
           <CardHeader>
             <CardTitle>测试邮件</CardTitle>
             <CardDescription>

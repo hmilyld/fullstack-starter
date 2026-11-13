@@ -45,7 +45,7 @@
   }
 
   onMount(() => {
-    void navigation.load()
+    void navigation.load(true)
     return onNavigationRefresh(() => {
       void navigation.load(true)
     })

@@ -24,10 +24,14 @@
       items: iconOptions.filter((item) => item.group === group),
     }))
   )
+  const items = $derived(
+    iconOptions.map((item) => ({ value: item.value, label: item.label }))
+  )
 </script>
 
 <Select
   type="single"
+  {items}
   {value}
   onValueChange={(next) => {
     if (next) value = next

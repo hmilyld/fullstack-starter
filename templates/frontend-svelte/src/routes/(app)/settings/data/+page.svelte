@@ -176,16 +176,10 @@
 
   function importBadgeVariant(
     status: ImportStatus["status"]
-  ): "destructive" | "outline" | "secondary" {
-    if (status === "success") return "outline"
+  ): "success" | "destructive" | "secondary" {
+    if (status === "success") return "success"
     if (status === "failed") return "destructive"
     return "secondary"
-  }
-
-  function importBadgeClass(status: ImportStatus["status"]) {
-    if (status === "success")
-      return "border-transparent bg-success/10 text-success"
-    return undefined
   }
 
   function handleImportOpenChange(open: boolean) {
@@ -348,10 +342,7 @@
           <div class="flex flex-col gap-2 rounded-xl border p-3">
             <div class="flex items-center justify-between gap-2 text-sm">
               <div class="flex items-center gap-2">
-                <Badge
-                  variant={importBadgeVariant(importJob.status.status)}
-                  class={importBadgeClass(importJob.status.status)}
-                >
+                <Badge variant={importBadgeVariant(importJob.status.status)}>
                   {IMPORT_STATUS_LABELS[importJob.status.status]}
                 </Badge>
                 <span class="text-muted-foreground">
