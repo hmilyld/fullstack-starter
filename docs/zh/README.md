@@ -2,7 +2,7 @@
 
 # 全栈工坊 · Fullstack Forge
 
-全栈应用脚手架 —— 一条命令生成包含完整后台管理功能的系统。前端 React / Vue / Svelte 任选，后端 FastAPI / Spring Boot 任选，六种组合共用同一份接口契约与视觉规范。生成器本身发布为 npm 包 `create-fullstack-app`。
+全栈应用脚手架 —— 一条命令生成包含完整后台管理功能的系统。前端 React / Vue / Svelte 任选，后端 FastAPI / Spring Boot 任选，六种组合共用同一份接口契约与视觉规范。生成器以 npm 包 `@hmilyld/create-fullstack-app` 发布；首个公开版本尚未发布，当前请从源码检出运行（见下文）。
 
 ![仪表盘](../images/dashboard.webp)
 
@@ -41,6 +41,8 @@
 
 默认账号：`admin / 123456`（唯一管理员）；`zhangsan / lisi / wangwu / zhaoliu` 密码均为 `123456`（普通用户）。注册新账号时根据系统设置进入「待审核」或「普通用户」角色。
 
+> 将生成项目暴露到网络前，请修改所有种子密码与后端密钥，详见 [SECURITY.md](../../SECURITY.md)。
+
 接口鉴权基于权限点（RBAC）：默认 `admin` 角色拥有全部权限；`user`（普通用户）角色仅有 `dashboard`、`users`、`settings` 三个菜单查看权限；`pending_review`（待审核）无任何权限。
 
 ## 本项目结构
@@ -67,15 +69,15 @@ fullstack-starter/
 ### 安装 & 构建
 
 ```bash
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 ### 运行
 
 ```bash
 # 开发模式（跳过编译，直接运行 TypeScript）
-npm run dev
+pnpm run dev
 
 # 或者编译后运行
 node dist/index.js
@@ -161,7 +163,7 @@ mkdir -p templates/frontend-svelte
 ### 测试
 
 ```bash
-npm run dev
+pnpm run dev
 # 选择前端/后端/项目名，生成后验证：
 cd <生成的项目>/frontend && npm install && npm run build
 cd <生成的项目>/frontend && npm test && npx playwright install chromium && npm run test:e2e
@@ -312,6 +314,13 @@ cd <生成的项目>/backend && 启动后端
 > 注 2：创建非默认角色的用户还需 `users.assign_role` 权限。
 > 注 3：以权限 API 对 `menu` 类型权限执行创建/更新/删除会被拒绝（返回 `code: -1`），菜单权限请通过上文的「菜单与权限」接口维护。`menu_items.hidden` 只控制侧边栏显示，不改变权限。
 
+## 参与贡献
+
+- [贡献指南](../../CONTRIBUTING.md)
+- [行为准则](../../CODE_OF_CONDUCT.md)
+- [安全策略](../../SECURITY.md)
+- [讨论区](https://github.com/hmilyld/fullstack-starter/discussions) 与 [Issues](https://github.com/hmilyld/fullstack-starter/issues)
+
 ## 许可证
 
-MIT
+[MIT](../../LICENSE)

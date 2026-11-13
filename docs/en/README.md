@@ -2,7 +2,7 @@
 
 # Fullstack Forge
 
-A full-stack scaffolder — generate a system with a complete admin panel in one command. Pick React, Vue or Svelte for the frontend, FastAPI or Spring Boot for the backend: all six combinations share one API contract and one visual spec. The generator itself is published as the npm package `create-fullstack-app`.
+A full-stack scaffolder — generate a system with a complete admin panel in one command. Pick React, Vue or Svelte for the frontend, FastAPI or Spring Boot for the backend: all six combinations share one API contract and one visual spec. The generator is packaged as the scoped npm package `@hmilyld/create-fullstack-app`; the first public npm release is pending, so use the source checkout below until it ships.
 
 ![Dashboard](../images/dashboard.webp)
 
@@ -41,6 +41,8 @@ More screens (login, user management, settings, audit logs) are in the [root REA
 
 Default accounts: `admin / 123456` (the only administrator); `zhangsan / lisi / wangwu / zhaoliu` all use the password `123456` (regular users). New accounts are assigned the "pending review" or "regular user" role according to system settings.
 
+> Change every seeded password and the backend secret before exposing a generated project to a network. See [SECURITY.md](../../SECURITY.md).
+
 API authorization is based on permission points (RBAC): the default `admin` role has all permissions; the `user` (regular user) role has view permission only for the `dashboard`, `users`, and `settings` menus; `pending_review` has no permissions.
 
 ## Repository Structure
@@ -67,15 +69,15 @@ fullstack-starter/
 ### Install & Build
 
 ```bash
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 ### Run
 
 ```bash
 # Development mode (skip compilation, run TypeScript directly)
-npm run dev
+pnpm run dev
 
 # Or run the compiled version
 node dist/index.js
@@ -163,7 +165,7 @@ mkdir -p templates/frontend-svelte
 ### Testing
 
 ```bash
-npm run dev
+pnpm run dev
 # Choose frontend/backend/project name, then verify the generated project:
 cd <generated project>/frontend && npm install && npm run build
 cd <generated project>/frontend && npm test && npx playwright install chromium && npm run test:e2e
@@ -314,6 +316,13 @@ Export packages can only be restored on the same backend, same application versi
 > Note 2: Creating a user with a non-default role also requires the `users.assign_role` permission.
 > Note 3: Creating/updating/deleting a `menu`-type permission through the permission API is rejected (returns `code: -1`); maintain menu permissions through the Menu & Permissions endpoints above. `menu_items.hidden` only controls sidebar visibility and does not change authorization.
 
+## Community
+
+- [Contributing](../../CONTRIBUTING.md)
+- [Code of Conduct](../../CODE_OF_CONDUCT.md)
+- [Security policy](../../SECURITY.md)
+- [Discussions](https://github.com/hmilyld/fullstack-starter/discussions) and [issues](https://github.com/hmilyld/fullstack-starter/issues)
+
 ## License
 
-MIT
+[MIT](../../LICENSE)

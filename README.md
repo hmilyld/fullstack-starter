@@ -1,129 +1,140 @@
-# 全栈工坊 · Fullstack Forge
+# Fullstack Forge
 
-**一行命令，生成一套能直接上线的后台系统。** 前端 React / Vue / Svelte 任选，后端 FastAPI / Spring Boot 任选，六种组合得到同一套界面、同一套接口约定。
+**One command, a production-ready admin system.** Pick React, Vue or Svelte for the frontend and FastAPI or Spring Boot for the backend — all six combinations share one API contract and one visual spec.
 
-[create-fullstack-app](https://github.com/hmilyld/fullstack-starter) 是生成器，也是这些模板的维护仓库 —— 模板本身就是一个个可独立运行、可独立部署的完整项目。
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
+[![Docs](https://img.shields.io/badge/docs-fullstack.hmilyld.com-blue)](https://fullstack.hmilyld.com)
 
-![仪表盘](docs/images/dashboard.webp)
+English ｜ [简体中文](docs/zh/README.md)
 
-## 六种组合，自由选择
+[`create-fullstack-app`](https://github.com/hmilyld/fullstack-starter) is both the generator and the maintenance repository for the templates. Every template is a complete project that can run and deploy on its own.
 
-| | Python · FastAPI | Java · Spring Boot |
-|---|---|---|
-| **React 19** | React + Vite + Tailwind v4 + shadcn/ui ／ FastAPI + SQLAlchemy 2 + Alembic | React + Vite + Tailwind v4 + shadcn/ui ／ Spring Boot 3 + JPA + Flyway |
-| **Vue 3** | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ FastAPI + SQLAlchemy 2 + Alembic | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ Spring Boot 3 + JPA + Flyway |
+![Dashboard](docs/images/dashboard.webp)
+
+## Six combinations
+
+|              | Python · FastAPI                                                                     | Java · Spring Boot                                                               |
+| ------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **React 19** | React + Vite + Tailwind v4 + shadcn/ui ／ FastAPI + SQLAlchemy 2 + Alembic           | React + Vite + Tailwind v4 + shadcn/ui ／ Spring Boot 3 + JPA + Flyway           |
+| **Vue 3**    | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ FastAPI + SQLAlchemy 2 + Alembic          | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ Spring Boot 3 + JPA + Flyway          |
 | **Svelte 5** | SvelteKit 3 + Vite + Tailwind v4 + shadcn-svelte ／ FastAPI + SQLAlchemy 2 + Alembic | SvelteKit 3 + Vite + Tailwind v4 + shadcn-svelte ／ Spring Boot 3 + JPA + Flyway |
 
-六条路线共用**同一份接口契约**（`docs/contract/api.md`）、同一套权限目录、同一套视觉规范。所以：
+All six routes share **one API contract** ([`docs/contract/api.md`](docs/contract/api.md)), one permission catalog and one visual spec:
 
-- 换前端不换后端：同一份 FastAPI 服务可以接 React、Vue 或 Svelte 模板，接口、字段、错误码完全一致
-- 换后端不换前端：前端只认 `{ code, message, data }` 信封，Python 与 Java 实现可互换
-- 三套前端保持像素级、交互级同步：同样的布局、同样的组件、同样的键盘操作
+- Swap the frontend, keep the backend: the same FastAPI service can serve the React, Vue and Svelte templates with identical paths, fields and error codes.
+- Swap the backend, keep the frontend: the frontend only understands the `{ code, message, data }` envelope, so the Python and Java implementations are interchangeable.
+- The three frontends stay aligned at the pixel and interaction level: the same layout, components and keyboard shortcuts.
 
-## 生成出来的是什么
+## What you get
 
-不是空壳。每个项目开箱就有认证、RBAC 权限、菜单管理、审计、数据管理与仪表盘，默认账号 `admin / 123456` 即可登录。
+This is not an empty shell. Every generated project ships with authentication, RBAC, menu management, audit logs, data management and a dashboard.
 
-| 登录 | 用户管理 |
-|---|---|
-| ![登录](docs/images/login.webp) | ![用户管理](docs/images/users.webp) |
+> The seeded local administrator is `admin / 123456`, and the sample users share the same password. This is only for a fresh local project — change every seeded password and the backend secret before exposing a generated project to a network. See [SECURITY.md](SECURITY.md).
 
-| 系统设置（左侧导航 + 表单） | 审计日志（中文日期选择器） |
-|---|---|
-| ![系统设置](docs/images/settings.webp) | ![审计日志](docs/images/datepicker.webp) |
+| Login                            | User management                            |
+| -------------------------------- | ------------------------------------------ |
+| ![Login](docs/images/login.webp) | ![User management](docs/images/users.webp) |
 
-深色模式与多端适配都是内置的，不是附加项：
+| System settings                               | Audit logs                                 |
+| --------------------------------------------- | ------------------------------------------ |
+| ![System settings](docs/images/settings.webp) | ![Audit logs](docs/images/datepicker.webp) |
 
-| 深色模式 | 平板（图标栏） | 手机（卡片列表） |
-|---|---|---|
-| ![深色](docs/images/dashboard-dark.webp) | ![平板](docs/images/tablet.webp) | ![手机](docs/images/mobile.webp) |
+Dark mode and responsive layouts are built in, not an add-on:
 
-## 内置能力
+| Dark mode                                     | Tablet (icon rail)                 | Phone (card lists)                |
+| --------------------------------------------- | ---------------------------------- | --------------------------------- |
+| ![Dark mode](docs/images/dashboard-dark.webp) | ![Tablet](docs/images/tablet.webp) | ![Phone](docs/images/mobile.webp) |
 
-- **认证与安全**：登录 / 注册 / 登出（Python 走 JWT 且登出即失效，Java 走 Sa-Token 会话）、登录注册限流、维护模式、人工审核、401 自动登出
-- **RBAC 权限**：权限码驱动，支持菜单级与操作级授权；权限与菜单由代码目录（catalog）同步，Python / Java 两份目录内置校验防止漂移
-- **菜单管理**：树形维护、跨组拖拽、拖拽即保存、显示/隐藏、按权限动态生成侧边栏
-- **用户 / 角色**：CRUD、分页搜索、批量改角色、重置密码、删除角色时用户自动转交默认角色
-- **系统设置**：站点配置、邮件测试、开放注册、维护模式、人工审核
-- **AI 模型**：模型与预设管理、连接测试、按别名查询默认模型
-- **审计日志**：写操作与权限拦截留痕，按用户 / 状态 / 动作 / 时间筛选
-- **数据管理**：AES 加密完整导出、同版本完整导入、导入期冻结、导入后强制重新登录
-- **列表体验**：列显隐与表格密度按表记忆、每页条数、表头吸顶、多选批量操作、手机卡片列表
-- **交互细节**：⌘K 命令面板（含最近访问）、外观抽屉（主题 / 侧栏样式）、表单未保存离开提示
-- **PWA + Docker**：前端可直接安装，单镜像部署（Nginx + 后端），一个端口对外
+## Built-in capabilities
 
-## 快速开始
+- **Authentication and security**: login / registration / logout (JWT for Python with revocation on logout, Sa-Token for Java), login and registration rate limiting, maintenance mode, manual review, automatic logout on 401
+- **RBAC**: permission codes for both menus and operations; permission and menu catalogs are the source of truth and are checked for drift across Python and Java
+- **Menu management**: tree structure, cross-group dragging, save on drop, show/hide, permission-filtered sidebar
+- **Users and roles**: CRUD, paginated search, batch role assignment, password reset, automatic handover of users when a role is deleted
+- **System settings**: site configuration, email test, open registration, maintenance mode, manual review
+- **AI models**: model and preset management, connection tests, default model lookup by alias
+- **Audit logs**: write operations and permission denials, filtered by user / status / action / time
+- **Data management**: AES-encrypted full export, same-version full import, global freeze during import, forced re-login afterwards
+- **List experience**: per-table column visibility and density (remembered), page size, sticky headers, multi-select bulk actions, card lists on phones
+- **Interaction details**: ⌘K command palette (with recent pages), appearance drawer (theme / sidebar variant), unsaved-changes warning
+- **PWA + Docker**: installable frontend; single-image deployment with Nginx and the backend
+
+## Quick start
+
+The CLI is packaged as [`@hmilyld/create-fullstack-app`](https://github.com/hmilyld/fullstack-starter). The first public npm release is pending, so run it from a source checkout today:
 
 ```bash
-npm install
-npm run build
-npm run dev
+git clone https://github.com/hmilyld/fullstack-starter.git
+cd fullstack-starter
+pnpm install
+pnpm run build
+pnpm run dev
 ```
 
-按提示选择前端与后端：
+Choose a frontend and backend when prompted:
 
+```text
+? Select a frontend: React / Vue / Svelte
+? Select a backend: Python (FastAPI) / Java (Spring Boot)
+? Project name: my-project
 ```
-? 请选择前端框架: React / Vue / Svelte
-? 请选择后端框架: Python (FastAPI) / Java (Spring Boot)
-? 请输入项目名称: my-project
-```
 
-生成的项目自带 `dev.sh`（开发）、`build.sh`（构建）、`Dockerfile` 与 `docker-compose.yml`，按它自己的 README 即可跑起来。
+Generated projects include `dev.sh`, `build.sh`, `Dockerfile` and `docker-compose.yml`; follow the generated `README.md` to run and deploy them.
 
-## 文档
+## Documentation
 
-- **简体中文**：[docs/zh/README.md](docs/zh/README.md)
-- **English**: [docs/en/README.md](docs/en/README.md)
-- **在线文档站**：<https://fullstack.hmilyld.com> —— 分模块的功能说明、接口参考、部署与二次开发
-- **接口契约**：[docs/contract/api.md](docs/contract/api.md)
+- **English**: [`docs/en/README.md`](docs/en/README.md)
+- **简体中文**: [`docs/zh/README.md`](docs/zh/README.md)
+- **Online documentation**: <https://fullstack.hmilyld.com>
+- **API contract**: [`docs/contract/api.md`](docs/contract/api.md)
 
-## 仓库结构
+## Repository structure
 
-```
+```text
 fullstack-starter/
-├── src/                       # 生成器 CLI（交互式选择 + 模板复制 + 动态文件生成）
-├── scripts/                   # 权限文档同步等维护脚本
+├── src/                       # Generator CLI (prompts, template copy, generated files)
+├── scripts/                   # Maintenance scripts and CI helpers
 ├── templates/
-│   ├── frontend-react/        # React 19 完整前端（含 e2e 与单测）
-│   ├── frontend-vue/          # Vue 3 完整前端（含 e2e 与单测）
-│   ├── frontend-svelte/       # Svelte 5 完整前端（含 e2e 与单测）
-│   ├── backend-python/        # FastAPI 完整后端（含契约测试）
-│   └── backend-java/          # Spring Boot 完整后端（含契约测试）
-└── docs/                      # 使用文档、接口契约、截图
+│   ├── frontend-react/        # Complete React 19 frontend (unit + e2e tests)
+│   ├── frontend-vue/          # Complete Vue 3 frontend (unit + e2e tests)
+│   ├── frontend-svelte/       # Complete Svelte 5 frontend (unit + e2e tests)
+│   ├── backend-python/        # Complete FastAPI backend (contract tests)
+│   └── backend-java/          # Complete Spring Boot backend (contract tests)
+└── docs/                      # Guides, API contract, screenshots
 ```
 
-模板目录就是用户最终拿到的文件：改模板即改产出，不需要额外的同步步骤。
+Template directories are the product: editing `templates/<name>/` is how you change what users receive. There is no second copy to synchronise.
 
-## 开发与验证
+## Development and validation
 
 ```bash
-# 生成器本身
-npm run dev
+# Generator
+pnpm run format:check
+pnpm run lint
+pnpm run build
+pnpm run sync:permissions:catalog
+pnpm run sync:design:check
 
-# 前端模板
+# Frontend templates
 cd templates/frontend-react && npm test && npm run build
 cd templates/frontend-vue && npm test && npm run build
 cd templates/frontend-svelte && npm test && npm run build
 
-# 后端模板
-cd templates/backend-python && uv run pytest -q
-cd templates/backend-java && mvn test
+# Backend templates
+cd templates/backend-python && uv run ruff check . && uv run pytest -q
+cd templates/backend-java && mvn spotless:check && mvn test
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup and pull request checklist.
+
+## Community
+
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Discussions](https://github.com/hmilyld/fullstack-starter/discussions) and [issues](https://github.com/hmilyld/fullstack-starter/issues)
 
 ## License
 
-MIT
-
----
-
-## English
-
-**Fullstack Forge** generates a production-ready admin system in one command: pick React, Vue or Svelte for the frontend, FastAPI or Spring Boot for the backend. All six combinations share one API contract, one permission catalog and one visual spec, so either side can be swapped without touching the other.
-
-Everything below is generated, not scaffolded as an empty shell: authentication, RBAC, menu management, audit logs, encrypted import/export, AI model presets, a dashboard, a ⌘K command palette, PWA support and single-image Docker deployment.
-
-```bash
-npm install && npm run build && npm run dev
-```
-
-Full documentation: [docs/en/README.md](docs/en/README.md) · Online docs: <https://fullstack.hmilyld.com/en/>
+[MIT](LICENSE)
