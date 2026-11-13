@@ -2,7 +2,7 @@
 
 # 全栈工坊 · Fullstack Forge
 
-全栈应用脚手架 —— 一条命令生成包含完整后台管理功能的系统。前端 React / Vue / Svelte 任选，后端 FastAPI / Spring Boot 任选，六种组合共用同一份接口契约与视觉规范。生成器以 npm 包 `@hmilyld/create-fullstack-app` 发布；首个公开版本尚未发布，当前请从源码检出运行（见下文）。
+全栈应用脚手架 —— 一条命令生成包含完整后台管理功能的系统。前端 React / Vue / Svelte 任选，后端 FastAPI / Spring Boot 任选，六种组合共用同一份接口契约与视觉规范。生成器以 npm 包 `@hmilyld/create-fullstack-app` 分发；首个公开版本尚未发布，当前请从源码检出运行（见下文）。
 
 ![仪表盘](../images/dashboard.webp)
 

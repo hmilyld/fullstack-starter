@@ -6,11 +6,11 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
 [![Docs](https://img.shields.io/badge/docs-fullstack.hmilyld.com-blue)](https://fullstack.hmilyld.com)
 
-English ｜ [简体中文](docs/zh/README.md)
+English ｜ [简体中文](https://github.com/hmilyld/fullstack-starter/blob/main/docs/zh/README.md)
 
 [`create-fullstack-app`](https://github.com/hmilyld/fullstack-starter) is both the generator and the maintenance repository for the templates. Every template is a complete project that can run and deploy on its own.
 
-![Dashboard](docs/images/dashboard.webp)
+![Dashboard](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/dashboard.webp)
 
 ## Six combinations
 
@@ -20,7 +20,7 @@ English ｜ [简体中文](docs/zh/README.md)
 | **Vue 3**    | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ FastAPI + SQLAlchemy 2 + Alembic          | Vue 3 + Vite + Tailwind v4 + shadcn-vue ／ Spring Boot 3 + JPA + Flyway          |
 | **Svelte 5** | SvelteKit 3 + Vite + Tailwind v4 + shadcn-svelte ／ FastAPI + SQLAlchemy 2 + Alembic | SvelteKit 3 + Vite + Tailwind v4 + shadcn-svelte ／ Spring Boot 3 + JPA + Flyway |
 
-All six routes share **one API contract** ([`docs/contract/api.md`](docs/contract/api.md)), one permission catalog and one visual spec:
+All six routes share **one API contract** ([`docs/contract/api.md`](https://github.com/hmilyld/fullstack-starter/blob/main/docs/contract/api.md)), one permission catalog and one visual spec:
 
 - Swap the frontend, keep the backend: the same FastAPI service can serve the React, Vue and Svelte templates with identical paths, fields and error codes.
 - Swap the backend, keep the frontend: the frontend only understands the `{ code, message, data }` envelope, so the Python and Java implementations are interchangeable.
@@ -30,21 +30,21 @@ All six routes share **one API contract** ([`docs/contract/api.md`](docs/contrac
 
 This is not an empty shell. Every generated project ships with authentication, RBAC, menu management, audit logs, data management and a dashboard.
 
-> The seeded local administrator is `admin / 123456`, and the sample users share the same password. This is only for a fresh local project — change every seeded password and the backend secret before exposing a generated project to a network. See [SECURITY.md](SECURITY.md).
+> The seeded local administrator is `admin / 123456`, and the sample users share the same password. This is only for a fresh local project — change every seeded password and the backend secret before exposing a generated project to a network. See [SECURITY.md](https://github.com/hmilyld/fullstack-starter/blob/main/SECURITY.md).
 
-| Login                            | User management                            |
-| -------------------------------- | ------------------------------------------ |
-| ![Login](docs/images/login.webp) | ![User management](docs/images/users.webp) |
+| Login                                                                                             | User management                                                                                             |
+| ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| ![Login](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/login.webp) | ![User management](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/users.webp) |
 
-| System settings                               | Audit logs                                 |
-| --------------------------------------------- | ------------------------------------------ |
-| ![System settings](docs/images/settings.webp) | ![Audit logs](docs/images/datepicker.webp) |
+| System settings                                                                                                | Audit logs                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| ![System settings](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/settings.webp) | ![Audit logs](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/datepicker.webp) |
 
 Dark mode and responsive layouts are built in, not an add-on:
 
-| Dark mode                                     | Tablet (icon rail)                 | Phone (card lists)                |
-| --------------------------------------------- | ---------------------------------- | --------------------------------- |
-| ![Dark mode](docs/images/dashboard-dark.webp) | ![Tablet](docs/images/tablet.webp) | ![Phone](docs/images/mobile.webp) |
+| Dark mode                                                                                                      | Tablet (icon rail)                                                                                  | Phone (card lists)                                                                                 |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ![Dark mode](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/dashboard-dark.webp) | ![Tablet](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/tablet.webp) | ![Phone](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/mobile.webp) |
 
 ## Built-in capabilities
 
@@ -72,22 +72,22 @@ pnpm run build
 pnpm run dev
 ```
 
-Choose a frontend and backend when prompted:
+Choose a frontend and backend when prompted. The CLI prompts are currently in Chinese:
 
 ```text
-? Select a frontend: React / Vue / Svelte
-? Select a backend: Python (FastAPI) / Java (Spring Boot)
-? Project name: my-project
+? 请选择前端框架: React / Vue / Svelte
+? 请选择后端框架: Python (FastAPI) / Java (Spring Boot)
+? 请输入项目名称: my-project
 ```
 
 Generated projects include `dev.sh`, `build.sh`, `Dockerfile` and `docker-compose.yml`; follow the generated `README.md` to run and deploy them.
 
 ## Documentation
 
-- **English**: [`docs/en/README.md`](docs/en/README.md)
-- **简体中文**: [`docs/zh/README.md`](docs/zh/README.md)
+- **English**: [`docs/en/README.md`](https://github.com/hmilyld/fullstack-starter/blob/main/docs/en/README.md)
+- **简体中文**: [`docs/zh/README.md`](https://github.com/hmilyld/fullstack-starter/blob/main/docs/zh/README.md)
 - **Online documentation**: <https://fullstack.hmilyld.com>
-- **API contract**: [`docs/contract/api.md`](docs/contract/api.md)
+- **API contract**: [`docs/contract/api.md`](https://github.com/hmilyld/fullstack-starter/blob/main/docs/contract/api.md)
 
 ## Repository structure
 
@@ -129,14 +129,16 @@ cd templates/backend-python && uv run ruff check . && uv run pytest -q
 cd templates/backend-java && mvn spotless:check && mvn test
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup and pull request checklist.
+Svelte browser-mode tests need Chromium once: `npx playwright install chromium`.
+
+See [CONTRIBUTING.md](https://github.com/hmilyld/fullstack-starter/blob/main/CONTRIBUTING.md) for the full setup and pull request checklist.
 
 ## Community
 
-- [Contributing](CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Security policy](SECURITY.md)
-- [Release process](RELEASING.md)
+- [Contributing](https://github.com/hmilyld/fullstack-starter/blob/main/CONTRIBUTING.md)
+- [Code of Conduct](https://github.com/hmilyld/fullstack-starter/blob/main/CODE_OF_CONDUCT.md)
+- [Security policy](https://github.com/hmilyld/fullstack-starter/blob/main/SECURITY.md)
+- [Release process](https://github.com/hmilyld/fullstack-starter/blob/main/RELEASING.md)
 - [Discussions](https://github.com/hmilyld/fullstack-starter/discussions) and [issues](https://github.com/hmilyld/fullstack-starter/issues)
 
 ## License

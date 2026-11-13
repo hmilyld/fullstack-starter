@@ -106,10 +106,13 @@ mvn spotless:apply
 mvn test
 
 # Frontends (run only the ones you changed)
-cd templates/frontend-react && npm ci && npm run lint && npm run build
-cd templates/frontend-vue && npm ci && npm run lint && npm run build
-cd templates/frontend-svelte && npm ci && npm run lint && npm run check && npm run build
+cd templates/frontend-react && npm ci && npm run lint && npm test && npm run build
+cd templates/frontend-vue && npm ci && npm run lint && npm test && npm run build
+cd templates/frontend-svelte && npm ci && npm run lint && npm test && npm run check && npm run build
 ```
+
+The Svelte browser-mode tests need Chromium once:
+`npx playwright install chromium`.
 
 For a template change, also generate a project and smoke-test it:
 
@@ -117,7 +120,10 @@ For a template change, also generate a project and smoke-test it:
 pnpm run dev
 cd <generated project>/frontend && npm install && npm run build
 cd <generated project>/backend && <start the backend>
-docker build -t fullstack-smoke . && docker run --rm -p 5173:5173 fullstack-smoke
+docker build -t fullstack-smoke .
+# Python images require JWT_SECRET_KEY; Java ignores the variable.
+docker run --rm -p 5173:5173 \
+  -e JWT_SECRET_KEY="$(openssl rand -base64 48)" fullstack-smoke
 ```
 
 ## Commits and pull requests
