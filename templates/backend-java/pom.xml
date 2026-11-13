@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version>
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
     <groupId>com.hmilyld</groupId>
@@ -16,13 +16,13 @@
     <description>Spring Boot backend scaffold</description>
     <properties>
         <java.version>21</java.version>
-        <sa-token.version>1.37.0</sa-token.version>
+        <sa-token.version>1.46.0</sa-token.version>
         <!--
           springdoc 与 Spring Boot 版本必须匹配：
           Boot 3.2.x 对应 springdoc 2.3.x–2.5.x（官方兼容矩阵）。
           2.5.0 基于 Boot 3.2.4 构建，Swagger UI 5.13.0。
         -->
-        <springdoc.version>2.5.0</springdoc.version>
+        <springdoc.version>2.10.0</springdoc.version>
     </properties>
     <dependencies>
         <dependency>
@@ -101,7 +101,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>2.43.0</version>
+                <version>2.46.1</version>
                 <configuration>
                     <java>
                         <googleJavaFormat>
@@ -116,7 +116,7 @@
                     <dependency>
                         <groupId>com.google.googlejavaformat</groupId>
                         <artifactId>google-java-format</artifactId>
-                        <version>1.19.2</version>
+                        <version>1.37.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
