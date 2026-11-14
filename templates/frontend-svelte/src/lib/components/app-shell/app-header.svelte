@@ -19,9 +19,12 @@
   import { buildBreadcrumbs } from "#lib/routes.js"
   import { cn } from "#lib/utils.js"
   import { page } from "$app/state"
-  import { t } from "#lib/i18n.js"
+  import { locale, t } from "#lib/i18n.js"
 
-  const crumbs = $derived(buildBreadcrumbs(page.url.pathname))
+  const crumbs = $derived.by(() => {
+    void $locale
+    return buildBreadcrumbs(page.url.pathname)
+  })
   const currentCrumb = $derived(crumbs[crumbs.length - 1])
   let scrolled = $state(false)
 
