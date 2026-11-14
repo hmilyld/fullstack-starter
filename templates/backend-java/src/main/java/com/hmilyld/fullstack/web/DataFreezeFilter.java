@@ -1,5 +1,7 @@
 package com.hmilyld.fullstack.web;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hmilyld.fullstack.common.ApiResponse;
 import com.hmilyld.fullstack.common.i18n.MessageResolver;
 import com.hmilyld.fullstack.data.DataOperationState;
 import jakarta.servlet.FilterChain;
@@ -24,6 +26,7 @@ public class DataFreezeFilter extends OncePerRequestFilter {
 
   @Autowired private DataOperationState state;
   @Autowired private MessageResolver messageResolver;
+  @Autowired private ObjectMapper objectMapper;
 
   @Override
   protected void doFilterInternal(
@@ -36,7 +39,7 @@ public class DataFreezeFilter extends OncePerRequestFilter {
       response.setCharacterEncoding(StandardCharsets.UTF_8.name());
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       String message = messageResolver.localize("系统正在导入数据，请稍后重试");
-      response.getWriter().write("{\"code\":-1,\"message\":\"" + message + "\",\"data\":null}");
+      response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.error(message)));
       return;
     }
     filterChain.doFilter(request, response);

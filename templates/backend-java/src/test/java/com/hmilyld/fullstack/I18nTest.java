@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hmilyld.fullstack.common.i18n.LocaleContext;
 import com.hmilyld.fullstack.common.i18n.LocaleResolver;
 import com.hmilyld.fullstack.common.i18n.MessageResolver;
+import com.hmilyld.fullstack.data.DataOperationState;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ class I18nTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private MessageResolver messageResolver;
+  @Autowired private DataOperationState operationState;
 
   private String token;
 
@@ -166,6 +168,25 @@ class I18nTest {
     assertThat(result.getResponse().getStatus()).isEqualTo(200);
     assertThat(json(result).get("message").asText())
         .isEqualTo("Access to metadata endpoints is forbidden.");
+  }
+
+  @Test
+  void freezeResponseFollowsAcceptLanguage() throws Exception {
+    DataOperationState.ImportJob job = operationState.beginJob(1L);
+    assertThat(job).isNotNull();
+    try {
+      MvcResult english = perform(get("/api/public/config"), ENGLISH);
+      assertThat(english.getResponse().getStatus()).isEqualTo(503);
+      assertThat(json(english).get("message").asText())
+          .isEqualTo("Data import is in progress. Please try again later.");
+
+      MvcResult chinese = perform(get("/api/public/config"), null);
+      assertThat(chinese.getResponse().getStatus()).isEqualTo(503);
+      assertThat(json(chinese).get("message").asText()).isEqualTo("系统正在导入数据，请稍后重试");
+      assertThat(json(chinese).get("data").isNull()).isTrue();
+    } finally {
+      operationState.finishJob(job, "failed", "test cleanup");
+    }
   }
 
   private MvcResult perform(MockHttpServletRequestBuilder builder, String language)
