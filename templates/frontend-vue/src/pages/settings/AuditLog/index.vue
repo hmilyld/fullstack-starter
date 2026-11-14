@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 import {
   RotateCcw,
@@ -32,7 +33,7 @@ import { useColumnVisibility } from "@/composables/use-column-visibility"
 import { useTableDensity } from "@/composables/use-table-density"
 import { usePagedList } from "@/composables/use-paged-list"
 import { useUrlPage } from "@/composables/use-url-list-state"
-import { formatDateTimeInput } from "@/lib/date-time"
+import { formatDateTimeInput, type DateTimeLocale } from "@/lib/date-time"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
@@ -47,19 +48,11 @@ const EMPTY_FILTERS: AuditFilters = {
   endTime: "",
 }
 
-const FILTER_LABELS: Record<AuditFilterKey, string> = {
-  userId: "用户 ID",
-  status: "状态",
-  action: "动作",
-  startTime: "开始时间",
-  endTime: "结束时间",
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  success: "成功",
-  fail: "失败",
-  permission_denied: "权限不足",
-}
+const { t, locale } = useI18n()
+const dateLocale = computed<DateTimeLocale>(() =>
+  String(locale.value).startsWith("en") ? "en" : "zh-CN"
+)
+const filterLabel = (key: AuditFilterKey) => t(`auditLogPage.filters.${key}`)
 
 function readQuery(value: unknown): string {
   return typeof value === "string" ? value : ""
@@ -155,10 +148,14 @@ function removeFilter(key: AuditFilterKey) {
   void router.replace({ query: next })
 }
 
+function statusLabel(status: string) {
+  return t(`auditLogPage.status.${status}`, status)
+}
+
 function formatFilterValue(key: AuditFilterKey, value: string) {
-  if (key === "status") return STATUS_LABELS[value] ?? value
+  if (key === "status") return statusLabel(value)
   if (key === "startTime" || key === "endTime")
-    return formatDateTimeInput(value)
+    return formatDateTimeInput(value, dateLocale.value)
   return value
 }
 
@@ -167,7 +164,7 @@ const activeFilters = computed(() =>
     .filter((key) => query.value[key] !== "")
     .map((key) => ({
       key,
-      label: FILTER_LABELS[key],
+      label: filterLabel(key),
       value: formatFilterValue(key, query.value[key]),
     }))
 )
@@ -178,41 +175,41 @@ function statusVariant(status: AuditLog["status"]) {
   return "warning"
 }
 
-function statusLabel(status: AuditLog["status"]) {
-  return STATUS_LABELS[status] ?? status
-}
-
-const columns: DataColumn[] = [
+const columns = computed<DataColumn[]>(() => [
   {
     key: "createdAt",
-    header: "时间",
+    header: t("auditLogPage.columns.time"),
     cellClass: "whitespace-nowrap text-muted-foreground",
   },
   {
     key: "username",
-    header: "操作者",
+    header: t("auditLogPage.columns.username"),
     hideable: true,
     headClass: "hidden md:table-cell",
     cellClass: "hidden md:table-cell",
   },
-  { key: "action", header: "动作", cellClass: "font-mono text-xs" },
+  {
+    key: "action",
+    header: t("auditLogPage.columns.action"),
+    cellClass: "font-mono text-xs",
+  },
   {
     key: "ip",
-    header: "IP",
+    header: t("auditLogPage.columns.ip"),
     hideable: true,
     headClass: "hidden lg:table-cell",
     cellClass: "hidden text-muted-foreground lg:table-cell",
   },
-  { key: "status", header: "状态" },
+  { key: "status", header: t("auditLogPage.columns.status") },
   {
     key: "detail",
-    header: "详情",
+    header: t("auditLogPage.columns.detail"),
     hideable: true,
     headClass: "hidden xl:table-cell",
     cellClass:
       "hidden max-w-[240px] truncate text-muted-foreground xl:table-cell",
   },
-]
+])
 
 const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
   "audit-logs",
@@ -226,17 +223,17 @@ const hasLogs = computed(() => logs.value.length > 0)
 <template>
   <div class="flex flex-col gap-(--page-gap)">
     <PageHeader
-      title="审计日志"
-      description="查看系统的写操作与权限拦截记录。"
+      :title="t('auditLogPage.title')"
+      :description="t('auditLogPage.description')"
     />
 
-    <ListShell :description="`共 ${total} 条记录`">
+    <ListShell :description="t('auditLogPage.listDescription', { total })">
       <template v-if="hasLogs" #footer>
         <TablePagination
           :page="currentPage"
           :total-pages="totalPages"
           :total="total"
-          item-label="条记录"
+          :item-label="t('auditLogPage.entityName')"
           :page-size="pageSize"
           :page-size-options="PAGE_SIZE_OPTIONS"
           @page-change="setListPage"
@@ -255,11 +252,11 @@ const hasLogs = computed(() => logs.value.length > 0)
           <div class="flex items-center gap-2">
             <Button @click="handleSearch">
               <Search data-icon="inline-start" />
-              查询
+              {{ t("auditLogPage.search") }}
             </Button>
             <Button variant="outline" @click="handleReset">
               <RotateCcw data-icon="inline-start" />
-              重置
+              {{ t("auditLogPage.reset") }}
             </Button>
             <ColumnToggle
               :columns="columns"
@@ -273,32 +270,36 @@ const hasLogs = computed(() => logs.value.length > 0)
         <div class="flex items-center gap-2 md:hidden">
           <Button variant="outline" class="flex-1" @click="filterOpen = true">
             <SlidersHorizontal data-icon="inline-start" />
-            筛选
+            {{ t("auditLogPage.filterButton") }}
             {{ activeFilters.length > 0 ? ` · ${activeFilters.length}` : "" }}
           </Button>
           <Button class="flex-1" @click="handleSearch">
             <Search data-icon="inline-start" />
-            查询
+            {{ t("auditLogPage.search") }}
           </Button>
         </div>
         <div
           v-if="activeFilters.length > 0"
           class="flex flex-wrap items-center gap-2"
         >
-          <span class="text-xs text-muted-foreground">当前筛选：</span>
+          <span class="text-xs text-muted-foreground">{{
+            t("auditLogPage.currentFilters")
+          }}</span>
           <Button
             v-for="filter in activeFilters"
             :key="filter.key"
             variant="secondary"
             size="xs"
-            :aria-label="`移除筛选：${filter.label}`"
+            :aria-label="
+              t('auditLogPage.removeFilterAria', { label: filter.label })
+            "
             @click="removeFilter(filter.key)"
           >
             {{ filter.label }}：{{ filter.value }}
             <X data-icon="inline-end" />
           </Button>
           <Button variant="ghost" size="xs" @click="handleReset">
-            清除全部
+            {{ t("auditLogPage.clearAll") }}
           </Button>
         </div>
       </div>
@@ -309,9 +310,9 @@ const hasLogs = computed(() => logs.value.length > 0)
           class="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0"
         >
           <SheetHeader class="border-b p-4 pr-14">
-            <SheetTitle>筛选条件</SheetTitle>
+            <SheetTitle>{{ t("auditLogPage.sheetTitle") }}</SheetTitle>
             <SheetDescription>
-              按用户、状态、动作或时间范围筛选审计记录。
+              {{ t("auditLogPage.sheetDescription") }}
             </SheetDescription>
           </SheetHeader>
           <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
@@ -319,9 +320,11 @@ const hasLogs = computed(() => logs.value.length > 0)
           </div>
           <SheetFooter class="flex-row gap-2 border-t p-4">
             <Button variant="outline" class="flex-1" @click="resetAndClose">
-              重置
+              {{ t("auditLogPage.reset") }}
             </Button>
-            <Button class="flex-1" @click="searchAndClose">应用筛选</Button>
+            <Button class="flex-1" @click="searchAndClose">{{
+              t("auditLogPage.apply")
+            }}</Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
@@ -336,11 +339,13 @@ const hasLogs = computed(() => logs.value.length > 0)
         :empty="{
           icon: activeFilters.length > 0 ? SearchX : ShieldAlert,
           title:
-            activeFilters.length > 0 ? '没有符合条件的记录' : '还没有审计记录',
+            activeFilters.length > 0
+              ? t('auditLogPage.emptySearchTitle')
+              : t('auditLogPage.emptyTitle'),
           description:
             activeFilters.length > 0
-              ? '试着放宽筛选条件，或清除筛选后重试。'
-              : '系统的写操作和权限拦截会自动记录在这里。',
+              ? t('auditLogPage.emptySearchDescription')
+              : t('auditLogPage.emptyDescription'),
         }"
         @retry="refreshList"
         @hide-column="toggle"
@@ -351,14 +356,14 @@ const hasLogs = computed(() => logs.value.length > 0)
             variant="outline"
             @click="handleReset"
           >
-            清除筛选
+            {{ t("auditLogPage.clearFilter") }}
           </Button>
         </template>
 
         <template #card="{ row }">
           <RecordCard
             :title="row.action"
-            :subtitle="formatDateTime(row.createdAt)"
+            :subtitle="formatDateTime(row.createdAt, dateLocale)"
           >
             <template #badges>
               <Badge :variant="statusVariant(row.status)">
@@ -366,7 +371,7 @@ const hasLogs = computed(() => logs.value.length > 0)
               </Badge>
             </template>
             <template #meta>
-              <span>{{ row.username || "未知" }}</span>
+              <span>{{ row.username || t("auditLogPage.unknown") }}</span>
               <span>{{ row.ip || "-" }}</span>
               <span v-if="row.detail" class="w-full truncate">
                 {{ row.detail }}
@@ -376,10 +381,10 @@ const hasLogs = computed(() => logs.value.length > 0)
         </template>
 
         <template #cell-createdAt="{ row }">
-          {{ formatDateTime(row.createdAt) }}
+          {{ formatDateTime(row.createdAt, dateLocale) }}
         </template>
         <template #cell-username="{ row }">
-          {{ row.username || "未知" }}
+          {{ row.username || t("auditLogPage.unknown") }}
         </template>
         <template #cell-action="{ row }">{{ row.action }}</template>
         <template #cell-ip="{ row }">{{ row.ip || "-" }}</template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { useI18n } from "vue-i18n"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import DateTimeField from "@/components/shared/DateTimeField.vue"
@@ -22,6 +23,8 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: AuditFilters): void
 }>()
 
+const { t } = useI18n()
+
 const statusValue = computed({
   get: () => props.modelValue.status || "all",
   set: (value: string) => update("status", value === "all" ? "" : value),
@@ -35,47 +38,64 @@ function update(key: keyof AuditFilters, value: string) {
 <template>
   <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
     <Field>
-      <FieldLabel :for="`${prefix}-user`">用户 ID</FieldLabel>
+      <FieldLabel :for="`${prefix}-user`">{{
+        t("auditLogPage.filters.userId")
+      }}</FieldLabel>
       <Input
         :id="`${prefix}-user`"
         name="audit-user"
         autocomplete="off"
         :spellcheck="false"
         :model-value="modelValue.userId"
-        placeholder="例如：1"
+        :placeholder="t('auditLogPage.userPlaceholder')"
         @update:model-value="update('userId', String($event))"
       />
     </Field>
     <Field>
-      <FieldLabel>状态</FieldLabel>
+      <FieldLabel>{{ t("auditLogPage.filters.status") }}</FieldLabel>
       <Select v-model="statusValue">
-        <SelectTrigger class="w-full" aria-label="状态">
-          <SelectValue placeholder="全部状态" />
+        <SelectTrigger
+          class="w-full"
+          :aria-label="t('auditLogPage.filters.status')"
+        >
+          <SelectValue :placeholder="t('auditLogPage.allStatuses')" />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectItem value="all">全部状态</SelectItem>
-            <SelectItem value="success">成功</SelectItem>
-            <SelectItem value="fail">失败</SelectItem>
-            <SelectItem value="permission_denied">权限不足</SelectItem>
+            <SelectItem value="all">{{
+              t("auditLogPage.allStatuses")
+            }}</SelectItem>
+            <SelectItem value="success">{{
+              t("auditLogPage.status.success")
+            }}</SelectItem>
+            <SelectItem value="fail">{{
+              t("auditLogPage.status.fail")
+            }}</SelectItem>
+            <SelectItem value="permission_denied">{{
+              t("auditLogPage.status.permission_denied")
+            }}</SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
     </Field>
     <Field>
-      <FieldLabel :for="`${prefix}-action`">动作</FieldLabel>
+      <FieldLabel :for="`${prefix}-action`">{{
+        t("auditLogPage.filters.action")
+      }}</FieldLabel>
       <Input
         :id="`${prefix}-action`"
         name="audit-action"
         autocomplete="off"
         :spellcheck="false"
         :model-value="modelValue.action"
-        placeholder="例如：users.create"
+        :placeholder="t('auditLogPage.actionPlaceholder')"
         @update:model-value="update('action', String($event))"
       />
     </Field>
     <Field>
-      <FieldLabel :for="`${prefix}-start`">开始时间</FieldLabel>
+      <FieldLabel :for="`${prefix}-start`">{{
+        t("auditLogPage.filters.startTime")
+      }}</FieldLabel>
       <DateTimeField
         :id="`${prefix}-start`"
         name="audit-start"
@@ -84,7 +104,9 @@ function update(key: keyof AuditFilters, value: string) {
       />
     </Field>
     <Field>
-      <FieldLabel :for="`${prefix}-end`">结束时间</FieldLabel>
+      <FieldLabel :for="`${prefix}-end`">{{
+        t("auditLogPage.filters.endTime")
+      }}</FieldLabel>
       <DateTimeField
         :id="`${prefix}-end`"
         name="audit-end"
