@@ -35,6 +35,7 @@
     startImport,
   } from "#lib/api/data-management.js"
   import { saveBlob } from "#lib/download.js"
+  import { t } from "#lib/i18n.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import type {
@@ -51,11 +52,8 @@
     status: ImportStatus
   }
 
-  const IMPORT_STATUS_LABELS: Record<ImportStatus["status"], string> = {
-    queued: "排队中",
-    running: "导入中",
-    success: "导入完成",
-    failed: "导入失败",
+  function importStatusLabel(status: ImportStatus["status"]) {
+    return $t(`dataPage.status.${status}`, { defaultValue: status })
   }
 
   const toast = useToast()
@@ -90,7 +88,7 @@
         password: result.password,
       }
     } catch (error) {
-      toast.error((error as Error).message || "导出失败")
+      toast.error((error as Error).message || $t("dataPage.export.failed"))
     }
     exportLoading = false
   }
@@ -100,7 +98,7 @@
     if (!current) return
     await navigator.clipboard.writeText(current.password)
     passwordCopied = true
-    toast.success("密码已复制")
+    toast.success($t("dataPage.exportDialog.copied"))
   }
 
   function closeExport() {
@@ -127,12 +125,12 @@
       job.status = response.data
       if (response.data.status === "success") {
         stopPolling()
-        toast.success(response.data.message || "导入完成")
+        toast.success(response.data.message || $t("dataPage.import.success"))
         auth.logout()
         await goto(resolve("login"), { replace: true })
       } else if (response.data.status === "failed") {
         stopPolling()
-        toast.error(response.data.message || "导入失败")
+        toast.error(response.data.message || $t("dataPage.import.failed"))
         importJob = null
         importOpen = false
       }
@@ -149,7 +147,7 @@
     try {
       const response = await startImport(file, password)
       if (response.code !== 0) {
-        toast.error(response.message || "导入任务创建失败")
+        toast.error(response.message || $t("dataPage.import.createFailed"))
         return
       }
       importJob = {
@@ -158,7 +156,7 @@
         status: {
           id: response.data.jobId,
           status: "queued",
-          message: "等待导入",
+          message: $t("dataPage.import.waiting"),
           progress: 0,
         },
       }
@@ -168,7 +166,9 @@
       }, 1000)
       await pollImport()
     } catch (error) {
-      toast.error((error as Error).message || "导入任务创建失败")
+      toast.error(
+        (error as Error).message || $t("dataPage.import.createFailed")
+      )
     } finally {
       importLoading = false
     }
@@ -187,10 +187,15 @@
   }
 </script>
 
-<svelte:head><title>数据管理 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title>{$t("dataPage.title")} · {$t("pwa.defaultName")}</title></svelte:head
+>
 
 <div class="flex flex-col gap-(--page-gap)">
-  <PageHeader title="数据管理" description="导出或恢复当前系统的完整数据。" />
+  <PageHeader
+    title={$t("dataPage.title")}
+    description={$t("dataPage.description")}
+  />
 
   <div class="grid gap-6 md:grid-cols-2">
     {#if auth.hasPermission("data_management.export")}
@@ -203,10 +208,10 @@
               <Download class="size-5 text-primary" />
             </div>
             <div>
-              <CardTitle>导出数据</CardTitle>
-              <CardDescription>
-                生成加密压缩包并下载到当前设备。
-              </CardDescription>
+              <CardTitle>{$t("dataPage.export.title")}</CardTitle>
+              <CardDescription
+                >{$t("dataPage.export.description")}</CardDescription
+              >
             </div>
           </div>
         </CardHeader>
@@ -217,7 +222,7 @@
             onclick={() => void handleExport()}
           >
             <Download data-icon="inline-start" />
-            生成并下载
+            {$t("dataPage.export.action")}
           </LoadingButton>
         </CardContent>
       </Card>
@@ -233,10 +238,10 @@
               <Upload class="size-5 text-destructive" />
             </div>
             <div>
-              <CardTitle>导入数据</CardTitle>
-              <CardDescription>
-                使用同版本导出包覆盖当前系统数据。
-              </CardDescription>
+              <CardTitle>{$t("dataPage.import.title")}</CardTitle>
+              <CardDescription
+                >{$t("dataPage.import.description")}</CardDescription
+              >
             </div>
           </div>
         </CardHeader>
@@ -247,7 +252,7 @@
             onclick={disposeImport}
           >
             <Upload data-icon="inline-start" />
-            选择导入包
+            {$t("dataPage.import.open")}
           </Button>
         </CardContent>
       </Card>
@@ -262,10 +267,10 @@
   >
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>导出完成</DialogTitle>
-        <DialogDescription>
-          该密码只显示一次，关闭后无法再次查看。请先复制并妥善保存。
-        </DialogDescription>
+        <DialogTitle>{$t("dataPage.exportDialog.title")}</DialogTitle>
+        <DialogDescription
+          >{$t("dataPage.exportDialog.description")}</DialogDescription
+        >
       </DialogHeader>
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-2 rounded-xl border bg-muted/40 p-3">
@@ -275,7 +280,9 @@
           </span>
         </div>
         <Field>
-          <FieldLabel for="export-password">压缩密码</FieldLabel>
+          <FieldLabel for="export-password"
+            >{$t("dataPage.exportDialog.password")}</FieldLabel
+          >
           <div class="flex items-center gap-2">
             <Input
               id="export-password"
@@ -288,7 +295,7 @@
             <Button
               variant="outline"
               size="icon"
-              aria-label="复制压缩密码"
+              aria-label={$t("dataPage.exportDialog.copyAria")}
               onclick={() => void copyPassword()}
             >
               {#if passwordCopied}<Check />{:else}<Copy />{/if}
@@ -297,7 +304,9 @@
         </Field>
       </div>
       <DialogFooter>
-        <Button onclick={closeExport}>我已保存</Button>
+        <Button onclick={closeExport}
+          >{$t("dataPage.exportDialog.saved")}</Button
+        >
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -305,15 +314,16 @@
   <Dialog open={importOpen} onOpenChange={handleImportOpenChange}>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>导入完整数据</DialogTitle>
-        <DialogDescription>
-          导入会覆盖用户、角色、配置、AI
-          密钥、审计日志和菜单数据，并使所有登录会话失效。
-        </DialogDescription>
+        <DialogTitle>{$t("dataPage.importDialog.title")}</DialogTitle>
+        <DialogDescription
+          >{$t("dataPage.importDialog.description")}</DialogDescription
+        >
       </DialogHeader>
       <div class="flex flex-col gap-4">
         <Field>
-          <FieldLabel for="import-file">导出包</FieldLabel>
+          <FieldLabel for="import-file"
+            >{$t("dataPage.importDialog.file")}</FieldLabel
+          >
           <Input
             id="import-file"
             name="import-file"
@@ -325,7 +335,9 @@
           />
         </Field>
         <Field>
-          <FieldLabel for="import-password">压缩密码</FieldLabel>
+          <FieldLabel for="import-password"
+            >{$t("dataPage.importDialog.password")}</FieldLabel
+          >
           <Input
             id="import-password"
             bind:value={importPassword}
@@ -334,16 +346,16 @@
             autocomplete="off"
             disabled={!!importJob}
           />
-          <FieldDescription>
-            密码遗失后无法恢复，只能重新导出。
-          </FieldDescription>
+          <FieldDescription
+            >{$t("dataPage.importDialog.passwordHint")}</FieldDescription
+          >
         </Field>
         {#if importJob}
           <div class="flex flex-col gap-2 rounded-xl border p-3">
             <div class="flex items-center justify-between gap-2 text-sm">
               <div class="flex items-center gap-2">
                 <Badge variant={importBadgeVariant(importJob.status.status)}>
-                  {IMPORT_STATUS_LABELS[importJob.status.status]}
+                  {importStatusLabel(importJob.status.status)}
                 </Badge>
                 <span class="text-muted-foreground">
                   {importJob.status.message}
@@ -361,7 +373,7 @@
           disabled={!!importJob}
           onclick={() => (importOpen = false)}
         >
-          取消
+          {$t("dataPage.importDialog.cancel")}
         </Button>
         <LoadingButton
           variant="destructive"
@@ -369,7 +381,7 @@
           disabled={!importFile || !importPassword || !!importJob}
           onclick={() => void handleStartImport()}
         >
-          确认导入
+          {$t("dataPage.importDialog.confirm")}
         </LoadingButton>
       </DialogFooter>
     </DialogContent>
