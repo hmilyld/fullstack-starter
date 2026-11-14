@@ -1,4 +1,4 @@
-import { computed, ref } from "vue"
+import { computed, ref, toValue, type MaybeRefOrGetter } from "vue"
 
 const STORAGE_PREFIX = "table-columns:"
 
@@ -46,9 +46,10 @@ function readHidden<T extends ColumnLike>(
  */
 export function useColumnVisibility<T extends ColumnLike>(
   tableId: string,
-  columns: T[]
+  columns: MaybeRefOrGetter<T[]>
 ) {
-  const hidden = ref<string[]>(readHidden(tableId, columns))
+  const columnList = computed(() => toValue(columns))
+  const hidden = ref<string[]>(readHidden(tableId, columnList.value))
 
   function persist(next: string[]) {
     hidden.value = next
@@ -74,15 +75,15 @@ export function useColumnVisibility<T extends ColumnLike>(
     } catch {
       // 隐私模式下不可写，忽略
     }
-    hidden.value = defaultHiddenKeys(columns)
+    hidden.value = defaultHiddenKeys(columnList.value)
   }
 
   const hideableColumns = computed(() =>
-    columns.filter((column) => column.hideable)
+    columnList.value.filter((column) => column.hideable)
   )
 
   const visibleColumns = computed(() =>
-    columns.filter((column) => !hidden.value.includes(column.key))
+    columnList.value.filter((column) => !hidden.value.includes(column.key))
   )
 
   return { hidden, hideableColumns, visibleColumns, toggle, reset }

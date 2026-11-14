@@ -217,6 +217,7 @@ const en = {
       resetFailed: "Reset failed",
       resetSuccess: "Password reset",
       passwordCopied: "Password copied to clipboard",
+      copyFailed: "Copy failed. Copy it manually.",
     },
     bulkRole: {
       action: "Manage roles",
