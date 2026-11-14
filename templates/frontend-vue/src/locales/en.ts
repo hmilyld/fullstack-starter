@@ -532,6 +532,7 @@ const en = {
       saveFailed: "Save failed",
       createFailed: "Create failed",
       testFailed: "Test failed",
+      loadFailed: "Failed to load preset models",
     },
     model: {
       listDescription: "{total} model configurations",

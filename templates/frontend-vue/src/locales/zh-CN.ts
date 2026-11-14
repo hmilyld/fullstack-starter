@@ -488,6 +488,7 @@ const zhCN = {
       saveFailed: "保存失败",
       createFailed: "创建失败",
       testFailed: "测试失败",
+      loadFailed: "加载预设模型失败",
     },
     model: {
       listDescription: "共 {total} 个模型配置",
