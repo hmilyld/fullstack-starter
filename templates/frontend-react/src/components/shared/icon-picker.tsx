@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import {
   Select,
   SelectContent,
@@ -7,11 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { iconOptions, menuIcons, type MenuIconGroup } from "@/lib/icons"
+import { iconGroupOrder, iconOptions, menuIcons } from "@/lib/icons"
 
 export { MenuIcon } from "@/lib/icons"
-
-const GROUP_ORDER: MenuIconGroup[] = ["常用", "数据", "系统", "内容"]
 
 export function IconPicker({
   value,
@@ -20,25 +20,29 @@ export function IconPicker({
   value: string
   onChange: (value: string) => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full" aria-label="选择图标">
+      <SelectTrigger className="w-full" aria-label={t("iconPicker.aria")}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent className="max-h-72">
-        {GROUP_ORDER.map((group) => {
+        {iconGroupOrder.map((group) => {
           const items = iconOptions.filter((item) => item.group === group)
           if (items.length === 0) return null
           return (
             <SelectGroup key={group}>
-              <SelectLabel>{group}</SelectLabel>
+              <SelectLabel>
+                {t(`iconPicker.groups.${group}`, { defaultValue: group })}
+              </SelectLabel>
               {items.map((item) => {
                 const Icon = menuIcons[item.value]
                 return (
                   <SelectItem key={item.value} value={item.value}>
                     <span className="flex items-center gap-2">
                       <Icon className="size-4" />
-                      {item.label}
+                      {t(`icons.${item.value}`, { defaultValue: item.label })}
                     </span>
                   </SelectItem>
                 )

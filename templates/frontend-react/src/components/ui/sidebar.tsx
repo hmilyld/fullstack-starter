@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
@@ -179,6 +180,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
+  const { t } = useTranslation()
   const { state, isMobile, openMobile, setOpenMobile } = useSidebar()
 
   const sidebarContent = (
@@ -218,8 +220,8 @@ function Sidebar({
           side={side}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>导航菜单</SheetTitle>
-            <SheetDescription>系统功能导航</SheetDescription>
+            <SheetTitle>{t("sidebar.title")}</SheetTitle>
+            <SheetDescription>{t("sidebar.description")}</SheetDescription>
           </SheetHeader>
           {sidebarContent}
         </SheetContent>
@@ -272,6 +274,7 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
+  const { t } = useTranslation()
   const { toggleSidebar, isMobile, openMobile, setOpenMobile } = useSidebar()
 
   return (
@@ -289,12 +292,13 @@ function SidebarTrigger({
       {...props}
     >
       <PanelLeftIcon />
-      <span className="sr-only">切换侧边栏</span>
+      <span className="sr-only">{t("sidebar.toggle")}</span>
     </Button>
   )
 }
 
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
+  const { t } = useTranslation()
   const { toggleSidebar, isMobile } = useSidebar()
 
   if (isMobile) return null
@@ -303,10 +307,10 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
     <button
       data-sidebar="rail"
       data-slot="sidebar-rail"
-      aria-label="切换侧边栏"
+      aria-label={t("sidebar.toggle")}
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="切换侧边栏"
+      title={t("sidebar.toggle")}
       className={cn(
         "absolute inset-y-0 z-20 hidden w-4 transition-transform ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",

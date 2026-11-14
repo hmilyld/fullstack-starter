@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
@@ -9,10 +10,11 @@ import {
 } from "lucide-react"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+  const { t } = useTranslation()
   return (
     <nav
       role="navigation"
-      aria-label="分页"
+      aria-label={t("common.pagination.navigation")}
       data-slot="pagination"
       className={cn("mx-auto flex w-full justify-center", className)}
       {...props}
@@ -67,35 +69,39 @@ function PaginationLink({
 
 function PaginationPrevious({
   className,
-  text = "上一页",
+  text,
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
+  const { t } = useTranslation()
+  const label = text ?? t("common.pagination.previous")
   return (
     <PaginationLink
-      aria-label="上一页"
+      aria-label={label}
       size="default"
       className={cn("pl-1.5!", className)}
       {...props}
     >
       <ChevronLeftIcon data-icon="inline-start" />
-      <span className="hidden sm:block">{text}</span>
+      <span className="hidden sm:block">{label}</span>
     </PaginationLink>
   )
 }
 
 function PaginationNext({
   className,
-  text = "下一页",
+  text,
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
+  const { t } = useTranslation()
+  const label = text ?? t("common.pagination.next")
   return (
     <PaginationLink
-      aria-label="下一页"
+      aria-label={label}
       size="default"
       className={cn("pr-1.5!", className)}
       {...props}
     >
-      <span className="hidden sm:block">{text}</span>
+      <span className="hidden sm:block">{label}</span>
       <ChevronRightIcon data-icon="inline-end" />
     </PaginationLink>
   )
@@ -105,6 +111,7 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const { t } = useTranslation()
   return (
     <span
       aria-hidden
@@ -116,7 +123,7 @@ function PaginationEllipsis({
       {...props}
     >
       <MoreHorizontalIcon />
-      <span className="sr-only">更多页</span>
+      <span className="sr-only">{t("common.pagination.more")}</span>
     </span>
   )
 }

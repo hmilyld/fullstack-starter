@@ -98,6 +98,8 @@ export type MenuIconName = keyof typeof menuIcons
 
 export type MenuIconGroup = "常用" | "数据" | "系统" | "内容"
 
+export const iconGroupOrder: MenuIconGroup[] = ["常用", "数据", "系统", "内容"]
+
 export const iconOptions: {
   value: MenuIconName
   label: string
