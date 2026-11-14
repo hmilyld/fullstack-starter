@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { MailIcon, SaveIcon, Settings2Icon, UserPlusIcon } from "lucide-react"
 import { useSearchParams } from "react-router"
 
@@ -44,68 +45,39 @@ import type { SystemConfig } from "@/types/system"
 type SaveKey = "site" | "maintenance" | "registration" | "default" | "smtp"
 
 const SETTINGS_TABS = [
-  { value: "site", title: "站点设置", icon: Settings2Icon },
-  { value: "register", title: "注册设置", icon: UserPlusIcon },
-  { value: "smtp", title: "邮件配置", icon: MailIcon },
-]
+  {
+    value: "site",
+    titleKey: "systemPage.tabs.site",
+    icon: Settings2Icon,
+  },
+  {
+    value: "register",
+    titleKey: "systemPage.tabs.register",
+    icon: UserPlusIcon,
+  },
+  {
+    value: "smtp",
+    titleKey: "systemPage.tabs.smtp",
+    icon: MailIcon,
+  },
+] as const
 
-const SMTP_PRESETS = [
-  {
-    name: "QQ 邮箱",
-    host: "smtp.qq.com",
-    port: 465,
-    ssl: true,
-    fromName: "QQ邮箱",
-    tip: "需要开启 SMTP 服务并获取授权码",
-  },
-  {
-    name: "163 邮箱",
-    host: "smtp.163.com",
-    port: 465,
-    ssl: true,
-    fromName: "163邮箱",
-    tip: "需要开启 SMTP 服务并设置授权码",
-  },
-  {
-    name: "Gmail",
-    host: "smtp.gmail.com",
-    port: 587,
-    ssl: true,
-    fromName: "Gmail",
-    tip: "需要开启两步验证并生成应用专用密码",
-  },
-  {
-    name: "Outlook",
-    host: "smtp.office365.com",
-    port: 587,
-    ssl: true,
-    fromName: "Outlook",
-    tip: "使用 Outlook 或 Hotmail 账号",
-  },
-  {
-    name: "企业微信邮箱",
-    host: "smtp.exmail.qq.com",
-    port: 465,
-    ssl: true,
-    fromName: "企业微信邮箱",
-    tip: "使用企业微信邮箱账号",
-  },
-  {
-    name: "阿里企业邮箱",
-    host: "smtp.mxhichina.com",
-    port: 465,
-    ssl: true,
-    fromName: "阿里企业邮箱",
-    tip: "使用阿里企业邮箱账号",
-  },
-  {
-    name: "Foxmail",
-    host: "smtp.qq.com",
-    port: 465,
-    ssl: true,
-    fromName: "Foxmail",
-    tip: "Foxmail 使用 QQ 邮箱 SMTP 服务器",
-  },
+type SmtpPresetId =
+  "qq" | "net163" | "gmail" | "outlook" | "wecom" | "aliyun" | "foxmail"
+
+const SMTP_PRESETS: {
+  id: SmtpPresetId
+  host: string
+  port: number
+  ssl: boolean
+}[] = [
+  { id: "qq", host: "smtp.qq.com", port: 465, ssl: true },
+  { id: "net163", host: "smtp.163.com", port: 465, ssl: true },
+  { id: "gmail", host: "smtp.gmail.com", port: 587, ssl: true },
+  { id: "outlook", host: "smtp.office365.com", port: 587, ssl: true },
+  { id: "wecom", host: "smtp.exmail.qq.com", port: 465, ssl: true },
+  { id: "aliyun", host: "smtp.mxhichina.com", port: 465, ssl: true },
+  { id: "foxmail", host: "smtp.qq.com", port: 465, ssl: true },
 ]
 
 function SaveFooter({
@@ -119,6 +91,7 @@ function SaveFooter({
   onSave: () => void
   children: React.ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <CardFooter className="flex flex-wrap items-center gap-3">
       <LoadingButton
@@ -131,19 +104,24 @@ function SaveFooter({
         {children}
       </LoadingButton>
       <span className="text-xs text-muted-foreground">
-        {dirty ? "有未保存的修改" : "已保存"}
+        {dirty ? t("systemPage.unsaved") : t("systemPage.saved")}
       </span>
     </CardFooter>
   )
 }
 
 export function SystemPage() {
+  const { t } = useTranslation()
   const { refresh: refreshSiteConfig } = useSiteConfig()
   const [searchParams, setSearchParams] = useSearchParams()
   const isWide = useMediaQuery("(min-width: 1024px)")
   const tabParam = searchParams.get("tab")
   const activeTab =
     tabParam === "register" || tabParam === "smtp" ? tabParam : "site"
+  const tabs = SETTINGS_TABS.map((tab) => ({
+    ...tab,
+    title: t(tab.titleKey),
+  }))
 
   function setActiveTab(value: string) {
     setSearchParams(value === "site" ? {} : { tab: value }, { replace: true })
@@ -173,7 +151,7 @@ export function SystemPage() {
         setSavedConfig(res.data)
         setSmtpPort(String(res.data.smtpPort ?? ""))
       } else if (res.message !== "请求已取消") {
-        appToast.error(res.message || "数据加载失败")
+        appToast.error(res.message || t("systemPage.loadFailed"))
       }
       setLoading(false)
     }
@@ -184,14 +162,14 @@ export function SystemPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   if (loading) {
     return (
       <div className="flex flex-col gap-(--page-gap)">
         <PageHeader
-          title="系统设置"
-          description="管理站点全局配置、注册策略与邮件服务。"
+          title={t("systemPage.title")}
+          description={t("systemPage.description")}
         />
         <PageFormSkeleton />
       </div>
@@ -240,13 +218,13 @@ export function SystemPage() {
   async function savePatch(
     key: SaveKey,
     patch: Partial<SystemConfig>,
-    successMessage = "保存成功"
+    successMessage = t("systemPage.saveSuccess")
   ) {
     setSaving(key)
     const res = await updateSystemConfig(patch)
     setSaving(null)
     if (res.code !== 0) {
-      appToast.error(res.message || "保存失败")
+      appToast.error(res.message || t("systemPage.saveFailed"))
       return false
     }
 
@@ -261,7 +239,7 @@ export function SystemPage() {
 
   async function handleSaveSite() {
     if (!config!.siteName.trim()) {
-      appToast.error("请输入站点名称")
+      appToast.error(t("systemPage.site.nameRequired"))
       return
     }
     const ok = await savePatch("site", {
@@ -299,12 +277,12 @@ export function SystemPage() {
       !config!.smtpUsername.trim() ||
       !config!.smtpFromEmail.trim()
     ) {
-      appToast.error("请填写 SMTP 服务器、用户名和发件人邮箱")
+      appToast.error(t("systemPage.smtp.required"))
       return
     }
     const port = Number(smtpPort)
     if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-      appToast.error("请输入 1-65535 之间的端口号")
+      appToast.error(t("systemPage.smtp.invalidPort"))
       return
     }
     const patch: Partial<SystemConfig> = {
@@ -330,13 +308,13 @@ export function SystemPage() {
     setTestEmailSending(true)
     const res = await testEmail(testEmailAddr)
     setTestEmailSending(false)
-    if (res.code === 0) appToast.success("测试邮件发送成功")
-    else appToast.error(res.message || "测试邮件发送失败")
+    if (res.code === 0) appToast.success(t("systemPage.testEmail.success"))
+    else appToast.error(res.message || t("systemPage.testEmail.failed"))
   }
 
-  function applySmtpPreset(name: string) {
-    setSmtpPreset(name)
-    const preset = SMTP_PRESETS.find((item) => item.name === name)
+  function applySmtpPreset(id: string) {
+    setSmtpPreset(id)
+    const preset = SMTP_PRESETS.find((item) => item.id === id)
     if (!preset) return
     setConfig((current) =>
       current
@@ -345,21 +323,21 @@ export function SystemPage() {
             smtpHost: preset.host,
             smtpPort: preset.port,
             smtpUseSsl: preset.ssl,
-            smtpFromName: preset.fromName,
+            smtpFromName: t(`systemPage.smtp.presets.${preset.id}.name`),
           }
         : current
     )
     setSmtpPort(String(preset.port))
   }
 
-  const activePreset = SMTP_PRESETS.find((preset) => preset.name === smtpPreset)
+  const activePreset = SMTP_PRESETS.find((preset) => preset.id === smtpPreset)
 
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <UnsavedChangesGuard when={pageDirty} />
       <PageHeader
-        title="系统设置"
-        description="管理站点全局配置、注册策略与邮件服务。"
+        title={t("systemPage.title")}
+        description={t("systemPage.description")}
       />
 
       <Separator />
@@ -370,7 +348,7 @@ export function SystemPage() {
         orientation={isWide ? "vertical" : "horizontal"}
         className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-12"
       >
-        <SettingsNav items={SETTINGS_TABS} />
+        <SettingsNav items={tabs} />
 
         <TabsContent
           value="site"
@@ -378,13 +356,17 @@ export function SystemPage() {
         >
           <Card variant="plain" className="max-w-3xl">
             <CardHeader>
-              <CardTitle>基本信息</CardTitle>
-              <CardDescription>配置站点名称、描述等基本信息。</CardDescription>
+              <CardTitle>{t("systemPage.site.title")}</CardTitle>
+              <CardDescription>
+                {t("systemPage.site.description")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="site-name">站点名称</FieldLabel>
+                  <FieldLabel htmlFor="site-name">
+                    {t("systemPage.site.name")}
+                  </FieldLabel>
                   <Input
                     name="site-name"
                     autoComplete="off"
@@ -396,7 +378,9 @@ export function SystemPage() {
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="site-desc">站点描述</FieldLabel>
+                  <FieldLabel htmlFor="site-desc">
+                    {t("systemPage.site.descriptionLabel")}
+                  </FieldLabel>
                   <Input
                     name="site-desc"
                     autoComplete="off"
@@ -407,11 +391,13 @@ export function SystemPage() {
                     }
                   />
                   <FieldDescription>
-                    显示在浏览器标签和搜索结果中。
+                    {t("systemPage.site.descriptionHint")}
                   </FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="site-keywords">关键词</FieldLabel>
+                  <FieldLabel htmlFor="site-keywords">
+                    {t("systemPage.site.keywords")}
+                  </FieldLabel>
                   <Input
                     name="site-keywords"
                     autoComplete="off"
@@ -423,7 +409,7 @@ export function SystemPage() {
                     }
                   />
                   <FieldDescription>
-                    多个关键词用英文逗号分隔。
+                    {t("systemPage.site.keywordsHint")}
                   </FieldDescription>
                 </Field>
               </FieldGroup>
@@ -433,30 +419,30 @@ export function SystemPage() {
               loading={saving === "site"}
               onSave={handleSaveSite}
             >
-              保存基本信息
+              {t("systemPage.site.save")}
             </SaveFooter>
           </Card>
 
           <Card variant="plain" className="max-w-3xl">
             <CardHeader>
-              <CardTitle>维护模式</CardTitle>
+              <CardTitle>{t("systemPage.maintenance.title")}</CardTitle>
               <CardDescription>
-                开启后除管理员以外的用户将无法登录。
+                {t("systemPage.maintenance.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
                   <FieldLabel htmlFor="maintenance-enabled">
-                    开启维护模式
+                    {t("systemPage.maintenance.enabled")}
                   </FieldLabel>
                   <FieldDescription>
-                    其他用户会看到维护提示，管理员仍可登录。
+                    {t("systemPage.maintenance.enabledHint")}
                   </FieldDescription>
                 </div>
                 <Switch
                   id="maintenance-enabled"
-                  aria-label="开启维护模式"
+                  aria-label={t("systemPage.maintenance.enabled")}
                   checked={config.maintenanceEnabled}
                   onCheckedChange={(checked) =>
                     updateField("maintenanceEnabled", checked)
@@ -466,7 +452,7 @@ export function SystemPage() {
               <Separator />
               <Field>
                 <FieldLabel htmlFor="maintenance-message">
-                  维护提示信息
+                  {t("systemPage.maintenance.message")}
                 </FieldLabel>
                 <Input
                   name="maintenance-message"
@@ -484,7 +470,7 @@ export function SystemPage() {
               loading={saving === "maintenance"}
               onSave={handleSaveMaintenance}
             >
-              保存维护设置
+              {t("systemPage.maintenance.save")}
             </SaveFooter>
           </Card>
         </TabsContent>
@@ -495,18 +481,24 @@ export function SystemPage() {
         >
           <Card variant="plain" className="max-w-3xl">
             <CardHeader>
-              <CardTitle>注册策略</CardTitle>
-              <CardDescription>控制用户注册方式和验证流程。</CardDescription>
+              <CardTitle>{t("systemPage.registration.title")}</CardTitle>
+              <CardDescription>
+                {t("systemPage.registration.description")}
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
-                  <FieldLabel htmlFor="open-registration">开放注册</FieldLabel>
-                  <FieldDescription>允许新用户自行注册账号。</FieldDescription>
+                  <FieldLabel htmlFor="open-registration">
+                    {t("systemPage.registration.open")}
+                  </FieldLabel>
+                  <FieldDescription>
+                    {t("systemPage.registration.openHint")}
+                  </FieldDescription>
                 </div>
                 <Switch
                   id="open-registration"
-                  aria-label="开放注册"
+                  aria-label={t("systemPage.registration.open")}
                   checked={config.openRegistration}
                   onCheckedChange={(checked) =>
                     updateField("openRegistration", checked)
@@ -516,14 +508,16 @@ export function SystemPage() {
               <Separator />
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
-                  <FieldLabel htmlFor="manual-review">人工审核</FieldLabel>
+                  <FieldLabel htmlFor="manual-review">
+                    {t("systemPage.registration.manual")}
+                  </FieldLabel>
                   <FieldDescription>
-                    新注册用户需要管理员审核后才能使用系统。
+                    {t("systemPage.registration.manualHint")}
                   </FieldDescription>
                 </div>
                 <Switch
                   id="manual-review"
-                  aria-label="人工审核"
+                  aria-label={t("systemPage.registration.manual")}
                   checked={config.manualReview}
                   onCheckedChange={(checked) =>
                     updateField("manualReview", checked)
@@ -537,29 +531,34 @@ export function SystemPage() {
               loading={saving === "registration"}
               onSave={handleSaveRegistration}
             >
-              保存注册策略
+              {t("systemPage.registration.save")}
             </SaveFooter>
           </Card>
 
           <Card variant="plain" className="max-w-3xl">
             <CardHeader>
-              <CardTitle>默认配置</CardTitle>
+              <CardTitle>{t("systemPage.defaults.title")}</CardTitle>
               <CardDescription>
-                新注册用户的默认角色和欢迎信息。
+                {t("systemPage.defaults.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <FieldGroup>
                 <Field>
-                  <FieldLabel>默认角色</FieldLabel>
+                  <FieldLabel>{t("systemPage.defaults.role")}</FieldLabel>
                   <Select
                     value={config.defaultRoleId}
                     onValueChange={(value) =>
                       updateField("defaultRoleId", value)
                     }
                   >
-                    <SelectTrigger className="w-full" aria-label="默认角色">
-                      <SelectValue placeholder="请选择默认角色" />
+                    <SelectTrigger
+                      className="w-full"
+                      aria-label={t("systemPage.defaults.role")}
+                    >
+                      <SelectValue
+                        placeholder={t("systemPage.defaults.selectRole")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -572,11 +571,13 @@ export function SystemPage() {
                     </SelectContent>
                   </Select>
                   <FieldDescription>
-                    新注册用户自动分配的角色。
+                    {t("systemPage.defaults.roleHint")}
                   </FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="welcome-message">欢迎消息</FieldLabel>
+                  <FieldLabel htmlFor="welcome-message">
+                    {t("systemPage.defaults.welcome")}
+                  </FieldLabel>
                   <Input
                     name="welcome-message"
                     autoComplete="off"
@@ -594,7 +595,7 @@ export function SystemPage() {
               loading={saving === "default"}
               onSave={handleSaveDefault}
             >
-              保存默认配置
+              {t("systemPage.defaults.save")}
             </SaveFooter>
           </Card>
         </TabsContent>
@@ -605,22 +606,24 @@ export function SystemPage() {
         >
           <Card variant="plain" className="max-w-3xl">
             <CardHeader>
-              <CardTitle>SMTP 邮件配置</CardTitle>
+              <CardTitle>{t("systemPage.smtp.title")}</CardTitle>
               <CardDescription>
-                配置邮件服务器，用于发送系统通知邮件。
+                {t("systemPage.smtp.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div className="flex flex-1 flex-col gap-1">
-                  <FieldLabel htmlFor="smtp-enabled">启用邮件</FieldLabel>
+                  <FieldLabel htmlFor="smtp-enabled">
+                    {t("systemPage.smtp.enabled")}
+                  </FieldLabel>
                   <FieldDescription>
-                    开启后系统将通过 SMTP 发送邮件。
+                    {t("systemPage.smtp.enabledHint")}
                   </FieldDescription>
                 </div>
                 <Switch
                   id="smtp-enabled"
-                  aria-label="启用邮件"
+                  aria-label={t("systemPage.smtp.enabled")}
                   checked={config.smtpEnabled}
                   onCheckedChange={(checked) =>
                     updateField("smtpEnabled", checked)
@@ -630,16 +633,22 @@ export function SystemPage() {
               <Separator />
 
               <Field>
-                <FieldLabel>快捷配置</FieldLabel>
+                <FieldLabel>{t("systemPage.smtp.preset")}</FieldLabel>
                 <Select value={smtpPreset} onValueChange={applySmtpPreset}>
-                  <SelectTrigger className="w-full" aria-label="快捷配置">
-                    <SelectValue placeholder="选择常用邮箱快速配置…" />
+                  <SelectTrigger
+                    className="w-full"
+                    aria-label={t("systemPage.smtp.preset")}
+                  >
+                    <SelectValue
+                      placeholder={t("systemPage.smtp.presetPlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {SMTP_PRESETS.map((preset) => (
-                        <SelectItem key={preset.name} value={preset.name}>
-                          {preset.name} - {preset.host}
+                        <SelectItem key={preset.id} value={preset.id}>
+                          {t(`systemPage.smtp.presets.${preset.id}.name`)} -{" "}
+                          {preset.host}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -647,8 +656,8 @@ export function SystemPage() {
                 </Select>
                 <FieldDescription>
                   {activePreset
-                    ? activePreset.tip
-                    : "选择后会自动填充服务器、端口和 SSL 配置。"}
+                    ? t(`systemPage.smtp.presets.${activePreset.id}.tip`)
+                    : t("systemPage.smtp.presetHint")}
                 </FieldDescription>
               </Field>
 
@@ -657,13 +666,15 @@ export function SystemPage() {
               <FieldGroup>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="smtp-host">SMTP 服务器</FieldLabel>
+                    <FieldLabel htmlFor="smtp-host">
+                      {t("systemPage.smtp.host")}
+                    </FieldLabel>
                     <Input
                       name="smtp-host"
                       autoComplete="off"
                       spellCheck={false}
                       id="smtp-host"
-                      placeholder="例如：smtp.qq.com"
+                      placeholder={t("systemPage.smtp.hostPlaceholder")}
                       value={config.smtpHost}
                       onChange={(event) =>
                         updateField("smtpHost", event.target.value)
@@ -672,7 +683,9 @@ export function SystemPage() {
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="smtp-port">端口</FieldLabel>
+                    <FieldLabel htmlFor="smtp-port">
+                      {t("systemPage.smtp.port")}
+                    </FieldLabel>
                     <Input
                       name="smtp-port"
                       autoComplete="off"
@@ -680,7 +693,7 @@ export function SystemPage() {
                       type="number"
                       min={1}
                       max={65535}
-                      placeholder="例如：587"
+                      placeholder={t("systemPage.smtp.portPlaceholder")}
                       value={smtpPort}
                       onChange={(event) => setSmtpPort(event.target.value)}
                       required
@@ -689,13 +702,15 @@ export function SystemPage() {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="smtp-username">用户名</FieldLabel>
+                    <FieldLabel htmlFor="smtp-username">
+                      {t("systemPage.smtp.username")}
+                    </FieldLabel>
                     <Input
                       name="smtp-username"
                       autoComplete="off"
                       spellCheck={false}
                       id="smtp-username"
-                      placeholder="例如：your@email.com"
+                      placeholder={t("systemPage.smtp.usernamePlaceholder")}
                       value={config.smtpUsername}
                       onChange={(event) =>
                         updateField("smtpUsername", event.target.value)
@@ -705,13 +720,13 @@ export function SystemPage() {
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="smtp-password">
-                      密码 / 授权码
+                      {t("systemPage.smtp.password")}
                     </FieldLabel>
                     <Input
                       name="smtp-password"
                       id="smtp-password"
                       type="password"
-                      placeholder="留空保持不变"
+                      placeholder={t("systemPage.smtp.passwordPlaceholder")}
                       value={smtpPassword}
                       onChange={(event) => setSmtpPassword(event.target.value)}
                       autoComplete="new-password"
@@ -720,12 +735,14 @@ export function SystemPage() {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="smtp-from-name">发件人名称</FieldLabel>
+                    <FieldLabel htmlFor="smtp-from-name">
+                      {t("systemPage.smtp.fromName")}
+                    </FieldLabel>
                     <Input
                       name="smtp-from-name"
                       autoComplete="off"
                       id="smtp-from-name"
-                      placeholder="例如：管理系统"
+                      placeholder={t("systemPage.smtp.fromNamePlaceholder")}
                       value={config.smtpFromName}
                       onChange={(event) =>
                         updateField("smtpFromName", event.target.value)
@@ -734,7 +751,7 @@ export function SystemPage() {
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="smtp-from-email">
-                      发件人邮箱
+                      {t("systemPage.smtp.fromEmail")}
                     </FieldLabel>
                     <Input
                       name="smtp-from-email"
@@ -742,7 +759,7 @@ export function SystemPage() {
                       spellCheck={false}
                       id="smtp-from-email"
                       type="email"
-                      placeholder="例如：noreply@example.com"
+                      placeholder={t("systemPage.smtp.fromEmailPlaceholder")}
                       value={config.smtpFromEmail}
                       onChange={(event) =>
                         updateField("smtpFromEmail", event.target.value)
@@ -753,14 +770,16 @@ export function SystemPage() {
                 </div>
                 <Field orientation="horizontal">
                   <div className="flex flex-1 flex-col gap-1">
-                    <FieldLabel htmlFor="smtp-ssl">使用 SSL</FieldLabel>
+                    <FieldLabel htmlFor="smtp-ssl">
+                      {t("systemPage.smtp.ssl")}
+                    </FieldLabel>
                     <FieldDescription>
-                      大多数邮件服务器需要开启 SSL。
+                      {t("systemPage.smtp.sslHint")}
                     </FieldDescription>
                   </div>
                   <Switch
                     id="smtp-ssl"
-                    aria-label="使用 SSL"
+                    aria-label={t("systemPage.smtp.ssl")}
                     checked={config.smtpUseSsl}
                     onCheckedChange={(checked) =>
                       updateField("smtpUseSsl", checked)
@@ -774,15 +793,15 @@ export function SystemPage() {
               loading={saving === "smtp"}
               onSave={handleSaveSmtp}
             >
-              保存邮件配置
+              {t("systemPage.smtp.save")}
             </SaveFooter>
           </Card>
 
           <Card variant="plain" className="max-w-3xl">
             <CardHeader>
-              <CardTitle>测试邮件</CardTitle>
+              <CardTitle>{t("systemPage.testEmail.title")}</CardTitle>
               <CardDescription>
-                发送测试邮件以验证邮件配置是否正确。
+                {t("systemPage.testEmail.description")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -795,14 +814,16 @@ export function SystemPage() {
               >
                 <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="test-email">收件人邮箱</FieldLabel>
+                    <FieldLabel htmlFor="test-email">
+                      {t("systemPage.testEmail.recipient")}
+                    </FieldLabel>
                     <Input
                       name="test-email"
                       autoComplete="off"
                       spellCheck={false}
                       id="test-email"
                       type="email"
-                      placeholder="请输入测试收件人邮箱"
+                      placeholder={t("systemPage.testEmail.placeholder")}
                       value={testEmailAddr}
                       onChange={(event) => setTestEmailAddr(event.target.value)}
                       required
@@ -820,11 +841,11 @@ export function SystemPage() {
                 className="w-full md:w-auto"
               >
                 <MailIcon data-icon="inline-start" />
-                发送测试邮件
+                {t("systemPage.testEmail.send")}
               </LoadingButton>
               {!config.smtpEnabled && (
                 <span className="text-xs text-muted-foreground">
-                  请先开启“启用邮件”并保存 SMTP 配置。
+                  {t("systemPage.testEmail.disabledHint")}
                 </span>
               )}
             </CardFooter>
