@@ -2,6 +2,7 @@ import type { MessageCatalog } from "./zh-CN"
 
 const en = {
   common: {
+    more: "More",
     admin: "Admin",
     adminDescription: "Operations console",
     language: "Language",
@@ -200,6 +201,7 @@ const en = {
     },
     editSrOnly: "Edit {{name}}",
     toasts: {
+      copyFailed: "Copy failed",
       operationFailed: "Operation failed",
       saveSuccess: "Saved",
       createSuccess: "Created",
@@ -582,6 +584,7 @@ const en = {
       },
     },
     preset: {
+      loadFailed: "Failed to load preset models",
       listDescription: "{{total}} preset models",
       entityName: "preset models",
       groupFilterAria: "Filter by group",
@@ -633,6 +636,7 @@ const en = {
     },
   },
   auditLogPage: {
+    filterSeparator: ": ",
     title: "Audit logs",
     description: "Review write operations and permission denials.",
     listDescription: "{{total}} records",
@@ -963,6 +967,40 @@ const en = {
     date: "Date",
     success: "Success",
     failed: "Failed or blocked",
+  },
+  permissionNames: {
+    dashboard: "Dashboard",
+    users: "Users",
+    roles: "Roles",
+    permissions: "Permissions",
+    menus: "Menus & permissions",
+    settings: "Settings",
+    ai_models: "AI models",
+    audit_logs: "Audit logs",
+    data_management: "Data management",
+    users_create: "Add user",
+    users_edit: "Edit user",
+    users_delete: "Delete user",
+    users_assign_role: "Manage role",
+    roles_create: "Add role",
+    roles_edit: "Edit role",
+    roles_delete: "Delete role",
+    permissions_create: "Add permission",
+    permissions_edit: "Edit permission",
+    permissions_delete: "Delete permission",
+    menus_create: "Add menu",
+    menus_edit: "Edit menu",
+    menus_delete: "Delete menu",
+    menus_reorder: "Reorder menus",
+    settings_edit: "Edit system settings",
+    ai_models_create: "Add AI model",
+    ai_models_edit: "Edit AI model",
+    ai_models_delete: "Delete AI model",
+    ai_models_presets_create: "Add preset model",
+    ai_models_presets_edit: "Edit preset model",
+    ai_models_presets_delete: "Delete preset model",
+    data_management_export: "Export data",
+    data_management_import: "Import data",
   },
   nav: {
     groups: {

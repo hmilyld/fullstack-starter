@@ -35,6 +35,7 @@ import { exportData, getImportStatus, startImport } from "@/api/data-management"
 import type { ExportResult, ImportStatus } from "@/types/data-management"
 import { useAuth } from "@/lib/auth-context"
 import { saveBlob } from "@/lib/download"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 
 /** 导出成功后展示给用户的信息（文件已保存到本地） */
@@ -140,12 +141,14 @@ export function DataManagementPage() {
         )
         if (response.data.status === "success") {
           appToast.success(
-            response.data.message || t("dataPage.import.success")
+            response.data.message || translate("dataPage.import.success")
           )
           logout()
           navigate("/login", { replace: true })
         } else if (response.data.status === "failed") {
-          appToast.error(response.data.message || t("dataPage.import.failed"))
+          appToast.error(
+            response.data.message || translate("dataPage.import.failed")
+          )
           setImportJob(null)
           setImportOpen(false)
         }
@@ -159,7 +162,7 @@ export function DataManagementPage() {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [jobId, jobToken, logout, navigate, t])
+  }, [jobId, jobToken, logout, navigate])
 
   return (
     <div className="flex flex-col gap-(--page-gap)">

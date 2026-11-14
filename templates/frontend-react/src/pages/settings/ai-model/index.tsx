@@ -78,6 +78,7 @@ import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import type {
   AiModel,
@@ -167,10 +168,11 @@ function AiModelPresetManager() {
     ])
     if (id !== requestId.current) return
     if (presetsRes.code === 0) setPresets(presetsRes.data)
-    else setError(presetsRes.message || t("aiModelPage.toasts.operationFailed"))
+    else
+      setError(presetsRes.message || translate("aiModelPage.preset.loadFailed"))
     if (groupsRes.code === 0) setGroups(groupsRes.data)
     setLoading(false)
-  }, [debouncedSearch, selectedGroup, t])
+  }, [debouncedSearch, selectedGroup])
 
   React.useEffect(() => {
     void loadData()

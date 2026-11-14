@@ -39,6 +39,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { getRoles } from "@/api/role"
 import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { useSiteConfig } from "@/lib/site-config"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import type { SystemConfig } from "@/types/system"
 
@@ -151,7 +152,7 @@ export function SystemPage() {
         setSavedConfig(res.data)
         setSmtpPort(String(res.data.smtpPort ?? ""))
       } else if (res.message !== "请求已取消") {
-        appToast.error(res.message || t("systemPage.loadFailed"))
+        appToast.error(res.message || translate("systemPage.loadFailed"))
       }
       setLoading(false)
     }
@@ -162,7 +163,7 @@ export function SystemPage() {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [])
 
   if (loading) {
     return (

@@ -35,9 +35,11 @@ import { useUrlListState } from "@/hooks/use-url-list-state"
 import {
   buildPermissionTree,
   filterPermissionTree,
+  permissionNameKey,
   type PermissionTreeNode,
 } from "@/lib/access-tree"
 import { useAuth } from "@/lib/auth-context"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
@@ -63,20 +65,31 @@ export function PermissionPage() {
       getPermissions({ type: "operation" }),
     ])
     if (menuRes.code === 0) setMenuPermissions(menuRes.data)
-    else setError(menuRes.message || t("permissionPage.loadMenuFailed"))
+    else setError(menuRes.message || translate("permissionPage.loadMenuFailed"))
     if (opRes.code === 0) setOperationPermissions(opRes.data)
-    else setError(opRes.message || t("permissionPage.loadOperationFailed"))
+    else
+      setError(opRes.message || translate("permissionPage.loadOperationFailed"))
     setTableLoading(false)
-  }, [t])
+  }, [])
 
   React.useEffect(() => {
     void loadData()
   }, [loadData])
 
   const tree = React.useMemo(() => {
-    const fullTree = buildPermissionTree(menuPermissions, operationPermissions)
+    const fullTree = buildPermissionTree(
+      menuPermissions,
+      operationPermissions
+    ).map((node) => ({
+      ...node,
+      name: t(permissionNameKey(node.code), { defaultValue: node.name }),
+      children: node.children.map((child) => ({
+        ...child,
+        name: t(permissionNameKey(child.code), { defaultValue: child.name }),
+      })),
+    }))
     return filterPermissionTree(fullTree, search)
-  }, [menuPermissions, operationPermissions, search])
+  }, [menuPermissions, operationPermissions, search, t])
 
   React.useEffect(() => {
     if (search) {

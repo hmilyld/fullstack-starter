@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getAuditLogs } from "@/api/audit-log"
 import { getDashboardActivity, getDashboardStats } from "@/api/dashboard"
 import { useAuth } from "@/lib/auth-context"
+import { translate } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import type { AuditLog } from "@/types/audit-log"
 import type { ActivityItem, DashboardStats } from "@/types/dashboard"
@@ -149,12 +150,14 @@ export function DashboardPage() {
     if (auditRes && auditRes.code === 0) setLogs(auditRes.data.list)
     if (statsRes.code !== 0 || activityRes.code !== 0) {
       setError(
-        statsRes.message || activityRes.message || t("dashboard.loadFailed")
+        statsRes.message ||
+          activityRes.message ||
+          translate("dashboard.loadFailed")
       )
     }
     setLoading(false)
     setTrendLoading(false)
-  }, [canReadAudit, t])
+  }, [canReadAudit])
 
   React.useEffect(() => {
     void load()

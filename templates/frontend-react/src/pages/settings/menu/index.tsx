@@ -88,6 +88,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { OPERATION_PRESETS, buildOperationCode } from "@/lib/access-tree"
 import { groupSortableId, itemSortableId, type DragData } from "@/lib/menu-tree"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -797,10 +798,10 @@ export function MenuPage() {
       setLoading(false)
       return true
     }
-    setError(response.message || t("menuPage.loadFailed"))
+    setError(response.message || translate("menuPage.loadFailed"))
     setLoading(false)
     return false
-  }, [t])
+  }, [])
 
   React.useEffect(() => {
     void load()
@@ -812,10 +813,13 @@ export function MenuPage() {
     if (!query) return config.groups
     return config.groups
       .map((group) => {
-        const groupMatch = group.name.toLowerCase().includes(query)
+        const groupMatch =
+          group.name.toLowerCase().includes(query) ||
+          groupLabel(group).toLowerCase().includes(query)
         const items = group.items.filter((item) => {
           const itemMatch =
             item.name.toLowerCase().includes(query) ||
+            menuLabel(item).toLowerCase().includes(query) ||
             item.permissionCode.toLowerCase().includes(query) ||
             item.route.toLowerCase().includes(query)
           const operationMatch = item.operations.some(
@@ -829,7 +833,7 @@ export function MenuPage() {
         return { ...group, items: groupMatch ? group.items : items }
       })
       .filter((group): group is MenuGroup => group !== null)
-  }, [config, search])
+  }, [config, search, groupLabel, menuLabel])
 
   React.useEffect(() => {
     const query = search.trim().toLowerCase()

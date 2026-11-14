@@ -47,6 +47,7 @@ import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlListState } from "@/hooks/use-url-list-state"
 import { useAuth } from "@/lib/auth-context"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import { RolePermissionPicker } from "@/pages/settings/role/RolePermissionPicker"
 import type { Permission } from "@/types/permission"
@@ -90,15 +91,15 @@ export function RolesPage() {
     if (menuRes.code === 0) setMenuPermissions(menuRes.data)
     else
       setPermissionsError(
-        menuRes.message || t("rolePermissions.loadMenuFailed")
+        menuRes.message || translate("rolePermissions.loadMenuFailed")
       )
     if (opRes.code === 0) setOperationPermissions(opRes.data)
     else
       setPermissionsError(
-        opRes.message || t("rolePermissions.loadOperationFailed")
+        opRes.message || translate("rolePermissions.loadOperationFailed")
       )
     setPermissionsLoading(false)
-  }, [t])
+  }, [])
 
   React.useEffect(() => {
     void loadPermissions()
@@ -199,7 +200,7 @@ export function RolesPage() {
     {
       key: "name",
       header: t("rolesPage.headers.name"),
-      cell: (role) => <span className="font-medium">{role.name}</span>,
+      cell: (role) => <span className="font-medium">{roleLabel(role)}</span>,
     },
     {
       key: "description",

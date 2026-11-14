@@ -152,7 +152,7 @@ export function AuditLogPage() {
   }
 
   function statusLabel(status: string) {
-    return t(`auditLogPage.status.${status}`)
+    return t(`auditLogPage.status.${status}`, { defaultValue: status })
   }
 
   function getStatusBadge(status: AuditLog["status"]) {
@@ -395,7 +395,9 @@ export function AuditLogPage() {
                     label: filter.label,
                   })}
                 >
-                  {filter.label}：{filter.value}
+                  {filter.label}
+                  {t("auditLogPage.filterSeparator")}
+                  {filter.value}
                   <XIcon data-icon="inline-end" />
                 </Button>
               ))}

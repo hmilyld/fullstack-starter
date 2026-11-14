@@ -19,7 +19,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { buildPermissionTree, filterPermissionTree } from "@/lib/access-tree"
+import {
+  buildPermissionTree,
+  filterPermissionTree,
+  permissionNameKey,
+} from "@/lib/access-tree"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
 
@@ -94,14 +98,20 @@ export function RolePermissionPicker({
     [selected, catalogCodes]
   )
 
-  const tree = React.useMemo(
-    () =>
-      filterPermissionTree(
-        buildPermissionTree(menuPermissions, operationPermissions),
-        search
-      ),
-    [menuPermissions, operationPermissions, search]
-  )
+  const tree = React.useMemo(() => {
+    const fullTree = buildPermissionTree(
+      menuPermissions,
+      operationPermissions
+    ).map((node) => ({
+      ...node,
+      name: t(permissionNameKey(node.code), { defaultValue: node.name }),
+      children: node.children.map((child) => ({
+        ...child,
+        name: t(permissionNameKey(child.code), { defaultValue: child.name }),
+      })),
+    }))
+    return filterPermissionTree(fullTree, search)
+  }, [menuPermissions, operationPermissions, search, t])
 
   React.useEffect(() => {
     setCollapsed(new Set())
