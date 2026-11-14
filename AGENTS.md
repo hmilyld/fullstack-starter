@@ -59,7 +59,7 @@ The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`
 ## Coding Style
 
 - **Language**: TypeScript (ESM, `"type": "module"`)
-- **Templates**: Default UI text is **Chinese (zh-CN)**. New user-facing text in the React template goes through `src/locales/{zh-CN,en}.ts`; the auth/admin shell is migrated and the remaining pages are being migrated. Vue and Svelte remain Chinese-only until their i18n migration. API responses use `{ code: 0, message: "success", data }`
+- **Templates**: Default UI text is **Chinese (zh-CN)**. New user-facing text in the React template goes through `src/locales/{zh-CN,en}.ts`; the whole React UI, including settings pages and error surfaces, is migrated. Vue and Svelte remain Chinese-only until their i18n migration. API responses use `{ code: 0, message: "success", data }`
 - **Naming**: TS/JS uses `camelCase` variables, `PascalCase` components. Python schemas use `camelCase` (roleId), ORM uses `snake_case` (role_id)
 
 ## Business Logic Conventions
@@ -100,7 +100,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 
 ### Internationalization (React pilot)
 
-- New or edited user-facing text in `templates/frontend-react` must go through `useTranslation()` and `src/locales/{zh-CN,en}.ts`. Do not hardcode UI strings in new components. The auth and admin shell are migrated; remaining pages are being migrated incrementally.
+- New or edited user-facing text in `templates/frontend-react` must go through `useTranslation()` and `src/locales/{zh-CN,en}.ts`. Do not hardcode UI strings in new components. The auth shell, admin shell, dashboard, settings pages, shared components and error surfaces are migrated; `DateTimeField` follows the active locale.
 - The default locale is `zh-CN`; English is opt-in. Locale is runtime-only (`app.locale`), with no URL prefix.
 - `en.ts` is typed against `zh-CN.ts`; add or rename keys in both catalogs together.
 - Server-provided `message` values are not localized yet. Show them as-is or add a translated fallback; do not silently translate arbitrary server text.
