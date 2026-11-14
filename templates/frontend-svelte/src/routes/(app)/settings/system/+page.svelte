@@ -154,7 +154,7 @@
       config = { ...res.data }
       savedConfig = { ...res.data }
       smtpPort = String(res.data.smtpPort ?? "")
-    } else if (res.message !== "请求已取消") {
+    } else if (res.message !== $t("errors.requestCancelled")) {
       toast.error(res.message || $t("systemPage.loadFailed"))
     }
     loading = false

@@ -1,4 +1,5 @@
 import type { ApiResponse, QueryParams } from "#lib/types/common.js"
+import { translate } from "#lib/i18n.js"
 
 /**
  * HTTP 基础设施：只被 `api/client.ts` 使用。
@@ -67,7 +68,11 @@ export async function requestJson<T>(
 
     if (response.status === 401) {
       redirectToLogin()
-      return { code: -1, message: "未登录或登录已过期", data: undefined as T }
+      return {
+        code: -1,
+        message: translate("errors.sessionExpired"),
+        data: undefined as T,
+      }
     }
 
     if (response.status === 204) {
@@ -87,11 +92,15 @@ export async function requestJson<T>(
     return await response.json()
   } catch (error) {
     if ((error as Error).name === "AbortError") {
-      return { code: -1, message: "请求已取消", data: undefined as T }
+      return {
+        code: -1,
+        message: translate("errors.requestCancelled"),
+        data: undefined as T,
+      }
     }
     return {
       code: -1,
-      message: (error as Error).message || "网络请求失败",
+      message: (error as Error).message || translate("errors.networkFailed"),
       data: undefined as T,
     }
   }
@@ -114,7 +123,7 @@ export async function requestRaw(
 
   if (response.status === 401) {
     redirectToLogin()
-    throw new Error("未登录或登录已过期")
+    throw new Error(translate("errors.sessionExpired"))
   }
   if (!response.ok) {
     const errorData = await response.json().catch(() => null)
