@@ -37,6 +37,7 @@
     getDashboardActivity,
     getDashboardStats,
   } from "#lib/api/dashboard.js"
+  import { locale, t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import { cn } from "#lib/utils.js"
   import type { AuditLog } from "#lib/types/audit-log.js"
@@ -45,29 +46,29 @@
   const QUICK_LINKS = [
     {
       href: "/settings/user",
-      label: "用户管理",
-      description: "维护团队成员及其角色",
+      labelKey: "dashboard.links.users.label",
+      descriptionKey: "dashboard.links.users.description",
       icon: Users,
       permission: "users",
     },
     {
       href: "/settings/role",
-      label: "角色管理",
-      description: "分配角色与权限",
+      labelKey: "dashboard.links.roles.label",
+      descriptionKey: "dashboard.links.roles.description",
       icon: ShieldCheck,
       permission: "roles",
     },
     {
       href: "/settings/audit-log",
-      label: "审计日志",
-      description: "查看写操作与权限拦截",
+      labelKey: "dashboard.links.audit.label",
+      descriptionKey: "dashboard.links.audit.description",
       icon: FileText,
       permission: "audit_logs",
     },
     {
       href: "/settings/data",
-      label: "数据管理",
-      description: "导出或恢复系统数据",
+      labelKey: "dashboard.links.data.label",
+      descriptionKey: "dashboard.links.data.description",
       icon: Database,
       permission: "data_management.export",
     },
@@ -139,36 +140,36 @@
     trend.reduce((sum, point) => sum + point.failed, 0)
   )
 
-  const statsNumber = new Intl.NumberFormat("zh-CN")
+  const statsNumber = $derived(new Intl.NumberFormat($locale))
 
   const statItems = $derived.by(() => {
     if (!stats) return []
     return [
       {
-        title: "总用户数",
+        title: $t("dashboard.stats.totalUsers"),
         value: statsNumber.format(stats.totalUsers),
-        hint: "全部账号",
+        hint: $t("dashboard.stats.allAccounts"),
         icon: Users,
         demo: false,
       },
       {
-        title: "当前活跃",
+        title: $t("dashboard.stats.activeNow"),
         value: statsNumber.format(stats.activeNow),
-        hint: "最近活跃会话",
+        hint: $t("dashboard.stats.recentSessions"),
         icon: Activity,
         demo: true,
       },
       {
-        title: "收入",
+        title: $t("dashboard.stats.revenue"),
         value: stats.revenue,
-        hint: "本月累计",
+        hint: $t("dashboard.stats.monthTotal"),
         icon: DollarSign,
         demo: true,
       },
       {
-        title: "增长率",
+        title: $t("dashboard.stats.growth"),
         value: stats.growth,
-        hint: "较上月",
+        hint: $t("dashboard.stats.vsLastMonth"),
         icon: TrendingUp,
         demo: true,
       },
@@ -176,7 +177,13 @@
   })
 
   const quickLinks = $derived(
-    QUICK_LINKS.filter((link) => auth.hasPermission(link.permission))
+    QUICK_LINKS.filter((link) => auth.hasPermission(link.permission)).map(
+      (link) => ({
+        ...link,
+        label: $t(link.labelKey),
+        description: $t(link.descriptionKey),
+      })
+    )
   )
 
   async function load() {
@@ -198,7 +205,8 @@
     if (activityRes.code === 0) activity = activityRes.data
     if (auditRes && auditRes.code === 0) logs = auditRes.data.list
     if (statsRes.code !== 0 || activityRes.code !== 0) {
-      error = statsRes.message || activityRes.message || "加载数据失败"
+      error =
+        statsRes.message || activityRes.message || $t("dashboard.loadFailed")
     }
     loading = false
     trendLoading = false
@@ -209,16 +217,18 @@
   })
 </script>
 
-<svelte:head><title>仪表盘 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title>{$t("dashboard.title")} · {$t("pwa.defaultName")}</title></svelte:head
+>
 
 <div class="flex flex-col gap-(--page-gap)">
   <PageHeader
-    title="仪表盘"
-    description="系统概览：账号规模、活跃度与最近操作。"
+    title={$t("dashboard.title")}
+    description={$t("dashboard.description")}
   >
     <Button variant="outline" disabled={loading} onclick={() => void load()}>
       <RefreshCw data-icon="inline-start" />
-      刷新
+      {$t("dashboard.refresh")}
     </Button>
   </PageHeader>
 
@@ -270,7 +280,7 @@
                     variant="outline"
                     class="h-4 px-1.5 text-[10px] font-normal"
                   >
-                    演示数据
+                    {$t("dashboard.demoData")}
                   </Badge>
                 {/if}
               </div>
@@ -284,11 +294,11 @@
       <Card class="lg:col-span-4">
         <CardHeader class="flex flex-row items-start justify-between gap-4">
           <div class="grid gap-1.5">
-            <CardTitle>近 7 天操作趋势</CardTitle>
+            <CardTitle>{$t("dashboard.trendTitle")}</CardTitle>
             <CardDescription>
               {canReadAudit
-                ? `共 ${weekTotal} 次写操作，按天统计。`
-                : "按天统计审计日志中的写操作，用于判断系统活跃度。"}
+                ? $t("dashboard.trendDescription", { count: weekTotal })
+                : $t("dashboard.trendDescriptionNoAudit")}
             </CardDescription>
           </div>
           {#if canReadAudit && weekTotal > 0}
@@ -297,12 +307,12 @@
             >
               <span class="flex items-center gap-1.5">
                 <span class="size-2 rounded-full bg-chart-1"></span>
-                成功 {weekSuccess}
+                {$t("dashboard.trendSuccess", { count: weekSuccess })}
               </span>
               {#if weekFailed > 0}
                 <span class="flex items-center gap-1.5">
                   <span class="size-2 rounded-full bg-destructive"></span>
-                  失败 {weekFailed}
+                  {$t("dashboard.trendFailed", { count: weekFailed })}
                 </span>
               {/if}
             </div>
@@ -314,9 +324,11 @@
               class="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center"
             >
               <ShieldCheck class="size-5 text-muted-foreground" />
-              <p class="text-sm font-medium">趋势需要审计权限</p>
+              <p class="text-sm font-medium">
+                {$t("dashboard.noAuditTitle")}
+              </p>
               <p class="max-w-xs text-xs text-muted-foreground">
-                当前账号没有「审计日志」权限，无法读取操作记录。联系管理员为该角色授予权限后即可查看。
+                {$t("dashboard.noAuditDescription")}
               </p>
             </div>
           {:else if trendLoading}
@@ -326,9 +338,11 @@
               class="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center"
             >
               <Activity class="size-5 text-muted-foreground" />
-              <p class="text-sm font-medium">最近 7 天没有写操作</p>
+              <p class="text-sm font-medium">
+                {$t("dashboard.emptyTrendTitle")}
+              </p>
               <p class="max-w-xs text-xs text-muted-foreground">
-                用户新增、修改、删除等操作会出现在这里。
+                {$t("dashboard.emptyTrendDescription")}
               </p>
             </div>
           {:else}
@@ -339,8 +353,8 @@
 
       <Card class="lg:col-span-3">
         <CardHeader>
-          <CardTitle>最近动态</CardTitle>
-          <CardDescription>工作区中的最新操作记录。</CardDescription>
+          <CardTitle>{$t("dashboard.recentTitle")}</CardTitle>
+          <CardDescription>{$t("dashboard.recentDescription")}</CardDescription>
         </CardHeader>
         <CardContent class="flex-1">
           {#if loading}
@@ -361,8 +375,8 @@
           {:else if activity.length === 0}
             <EmptyState
               icon={Activity}
-              title="暂无动态"
-              description="系统产生操作记录后会显示在这里。"
+              title={$t("dashboard.emptyRecentTitle")}
+              description={$t("dashboard.emptyRecentDescription")}
               class="border-0 py-8"
             />
           {:else}
@@ -397,7 +411,7 @@
             href={resolve("settings/audit-log")}
             class="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring"
           >
-            查看全部审计日志
+            {$t("dashboard.viewAll")}
             <ArrowRight class="size-4" />
           </a>
         </CardFooter>
@@ -407,8 +421,8 @@
     {#if quickLinks.length > 0}
       <Card>
         <CardHeader>
-          <CardTitle>快捷入口</CardTitle>
-          <CardDescription>只显示您有权限访问的页面。</CardDescription>
+          <CardTitle>{$t("dashboard.quickTitle")}</CardTitle>
+          <CardDescription>{$t("dashboard.quickDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div class="grid gap-2 sm:grid-cols-2">
@@ -444,7 +458,7 @@
 
     <p class="flex items-center gap-1.5 text-xs text-muted-foreground">
       <Info class="size-3.5 shrink-0" />
-      “当前活跃”“收入”“增长率”与“最近动态”来自后端的占位接口，接入真实统计后请替换。
+      {$t("dashboard.placeholderNote")}
     </p>
   {/if}
 </div>

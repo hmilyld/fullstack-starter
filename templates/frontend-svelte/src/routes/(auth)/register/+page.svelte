@@ -19,6 +19,7 @@
   } from "#lib/components/ui/field/index.js"
   import { Input } from "#lib/components/ui/input/index.js"
   import { register } from "#lib/api/auth.js"
+  import { t } from "#lib/i18n.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import { siteConfig } from "#lib/stores/site-config.svelte.js"
@@ -44,7 +45,7 @@
 
   async function handleSubmit() {
     if (password.length < 6) {
-      passwordError = "密码至少 6 位"
+      passwordError = $t("auth.register.passwordMin")
       return
     }
 
@@ -53,39 +54,48 @@
     const res = await register({ username, email, password })
     if (res.code === 0 && res.data?.token) {
       auth.login(res.data.token, res.data.user)
-      toast.success("注册成功")
+      toast.success($t("auth.register.success"))
       await goto(resolve("dashboard"), { replace: true })
       return
     }
     if (res.code === 0) {
-      toast.success(res.message || "注册成功，请等待管理员审核")
+      toast.success(res.message || $t("auth.register.successPending"))
       await goto(resolve("login"), { replace: true })
       return
     }
 
-    toast.error(res.message || "注册失败")
+    toast.error(res.message || $t("auth.register.failed"))
     submitting = false
   }
 </script>
 
-<svelte:head><title>注册 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title>{$t("auth.register.submit")} · {$t("pwa.defaultName")}</title
+  ></svelte:head
+>
 
 <AuthShell>
   <div class="flex flex-col gap-6">
     <div class="flex flex-col gap-1.5">
-      <h1 class="text-2xl font-semibold tracking-tight">创建账号</h1>
-      <p class="text-sm text-muted-foreground">填写以下信息完成注册</p>
+      <h1 class="text-2xl font-semibold tracking-tight">
+        {$t("auth.register.title")}
+      </h1>
+      <p class="text-sm text-muted-foreground">
+        {$t("auth.register.subtitle")}
+      </p>
     </div>
 
     {#if registrationDisabled}
       <Alert>
-        <AlertTitle>注册功能已关闭</AlertTitle>
-        <AlertDescription>请联系管理员开通注册。</AlertDescription>
+        <AlertTitle>{$t("auth.register.disabledTitle")}</AlertTitle>
+        <AlertDescription
+          >{$t("auth.register.disabledDescription")}</AlertDescription
+        >
       </Alert>
     {/if}
     {#if manualReview}
       <Alert>
-        <AlertDescription>注册后需管理员审核通过才能登录</AlertDescription>
+        <AlertDescription>{$t("auth.register.reviewNotice")}</AlertDescription>
       </Alert>
     {/if}
 
@@ -97,12 +107,12 @@
     >
       <FieldGroup>
         <Field>
-          <FieldLabel for="username">用户名</FieldLabel>
+          <FieldLabel for="username">{$t("auth.register.username")}</FieldLabel>
           <Input
             id="username"
             bind:value={username}
             name="username"
-            placeholder="请输入用户名"
+            placeholder={$t("auth.register.usernamePlaceholder")}
             autocomplete="username"
             spellcheck={false}
             required
@@ -110,13 +120,13 @@
           />
         </Field>
         <Field>
-          <FieldLabel for="email">邮箱</FieldLabel>
+          <FieldLabel for="email">{$t("auth.register.email")}</FieldLabel>
           <Input
             id="email"
             bind:value={email}
             name="email"
             type="email"
-            placeholder="请输入邮箱"
+            placeholder={$t("auth.register.emailPlaceholder")}
             autocomplete="email"
             spellcheck={false}
             required
@@ -124,12 +134,12 @@
           />
         </Field>
         <Field data-invalid={!!passwordError}>
-          <FieldLabel for="password">密码</FieldLabel>
+          <FieldLabel for="password">{$t("auth.register.password")}</FieldLabel>
           <PasswordInput
             id="password"
             bind:value={password}
             name="password"
-            placeholder="至少 6 位"
+            placeholder={$t("auth.register.passwordPlaceholder")}
             autocomplete="new-password"
             aria-invalid={!!passwordError}
             required
@@ -145,15 +155,15 @@
             loading={submitting}
             disabled={registrationDisabled}
           >
-            注册
+            {$t("auth.register.submit")}
           </LoadingButton>
           <FieldDescription class="text-center">
-            已有账号？
+            {$t("auth.register.hasAccount")}
             <a
               href={resolve("login")}
               class="underline-offset-4 hover:underline"
             >
-              立即登录
+              {$t("auth.register.loginLink")}
             </a>
           </FieldDescription>
         </Field>
