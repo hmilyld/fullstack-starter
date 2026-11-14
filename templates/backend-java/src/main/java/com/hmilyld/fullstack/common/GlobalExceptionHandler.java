@@ -3,6 +3,7 @@ package com.hmilyld.fullstack.common;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.exception.NotRoleException;
+import com.hmilyld.fullstack.common.i18n.MessageResolver;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,26 +27,38 @@ public class GlobalExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+  private final MessageResolver messageResolver;
+
+  public GlobalExceptionHandler(MessageResolver messageResolver) {
+    this.messageResolver = messageResolver;
+  }
+
   @ExceptionHandler(NotLoginException.class)
   public ResponseEntity<ApiResponse<?>> handleNotLogin(NotLoginException e) {
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("未登录或登录已过期"));
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        .body(ApiResponse.error(messageResolver.localize("未登录或登录已过期")));
   }
 
   @ExceptionHandler(NotPermissionException.class)
   public ResponseEntity<ApiResponse<?>> handleNotPermission(NotPermissionException e) {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("权限不足"));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ApiResponse.error(messageResolver.localize("权限不足")));
   }
 
   @ExceptionHandler(NotRoleException.class)
   public ResponseEntity<ApiResponse<?>> handleNotRole(NotRoleException e) {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("角色权限不足"));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ApiResponse.error(messageResolver.localize("角色权限不足")));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException e) {
     String msg =
         e.getBindingResult().getFieldErrors().stream()
-            .map(f -> f.getDefaultMessage() != null ? f.getDefaultMessage() : f.getField())
+            .map(
+                f ->
+                    messageResolver.localize(
+                        f.getDefaultMessage() != null ? f.getDefaultMessage() : f.getField()))
             .collect(Collectors.joining("; "));
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ApiResponse.error(msg));
   }
@@ -53,24 +66,25 @@ public class GlobalExceptionHandler {
   /** 业务失败：HTTP 200 + code -1，data 为 null。 */
   @ExceptionHandler(AppException.class)
   public ApiResponse<?> handleApp(AppException e) {
-    return ApiResponse.error(e.getMessage());
+    return ApiResponse.error(messageResolver.localize(e.getMessage()));
   }
 
   /** 无权限：HTTP 403。 */
   @ExceptionHandler(ForbiddenException.class)
   public ResponseEntity<ApiResponse<?>> handleForbidden(ForbiddenException e) {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ApiResponse.error(messageResolver.localize(e.getMessage())));
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ApiResponse<?> handleIllegalArgument(IllegalArgumentException e) {
-    return ApiResponse.error(e.getMessage());
+    return ApiResponse.error(messageResolver.localize(e.getMessage()));
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
     log.error("Unhandled exception", e);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(ApiResponse.error("服务器内部错误"));
+        .body(ApiResponse.error(messageResolver.localize("服务器内部错误")));
   }
 }
