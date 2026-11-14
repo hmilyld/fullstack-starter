@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 import { Mail } from "@lucide/vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
@@ -45,64 +46,16 @@ import type { SystemConfig } from "@/types/system"
 type SaveKey = "site" | "maintenance" | "registration" | "default" | "smtp"
 
 const SMTP_PRESETS = [
-  {
-    name: "QQ 邮箱",
-    host: "smtp.qq.com",
-    port: 465,
-    ssl: true,
-    fromName: "QQ邮箱",
-    tip: "需要开启 SMTP 服务并获取授权码",
-  },
-  {
-    name: "163 邮箱",
-    host: "smtp.163.com",
-    port: 465,
-    ssl: true,
-    fromName: "163邮箱",
-    tip: "需要开启 SMTP 服务并设置授权码",
-  },
-  {
-    name: "Gmail",
-    host: "smtp.gmail.com",
-    port: 587,
-    ssl: true,
-    fromName: "Gmail",
-    tip: "需要开启两步验证并生成应用专用密码",
-  },
-  {
-    name: "Outlook",
-    host: "smtp.office365.com",
-    port: 587,
-    ssl: true,
-    fromName: "Outlook",
-    tip: "使用 Outlook 或 Hotmail 账号",
-  },
-  {
-    name: "企业微信邮箱",
-    host: "smtp.exmail.qq.com",
-    port: 465,
-    ssl: true,
-    fromName: "企业微信邮箱",
-    tip: "使用企业微信邮箱账号",
-  },
-  {
-    name: "阿里企业邮箱",
-    host: "smtp.mxhichina.com",
-    port: 465,
-    ssl: true,
-    fromName: "阿里企业邮箱",
-    tip: "使用阿里企业邮箱账号",
-  },
-  {
-    name: "Foxmail",
-    host: "smtp.qq.com",
-    port: 465,
-    ssl: true,
-    fromName: "Foxmail",
-    tip: "Foxmail 使用 QQ 邮箱 SMTP 服务器",
-  },
-]
+  { id: "qq", host: "smtp.qq.com", port: 465, ssl: true },
+  { id: "net163", host: "smtp.163.com", port: 465, ssl: true },
+  { id: "gmail", host: "smtp.gmail.com", port: 587, ssl: true },
+  { id: "outlook", host: "smtp.office365.com", port: 587, ssl: true },
+  { id: "wecom", host: "smtp.exmail.qq.com", port: 465, ssl: true },
+  { id: "aliyun", host: "smtp.mxhichina.com", port: 465, ssl: true },
+  { id: "foxmail", host: "smtp.qq.com", port: 465, ssl: true },
+] as const
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const siteConfig = useSiteConfigStore()
@@ -113,6 +66,10 @@ const savedConfig = ref<SystemConfig | null>(null)
 const loading = ref(true)
 const saving = ref<SaveKey | null>(null)
 const roles = ref<{ id: string; name: string }[]>([])
+
+function roleLabel(role: { id: string; name: string }) {
+  return t(`roles.${role.id}`, role.name)
+}
 
 const smtpPassword = ref("")
 const smtpPort = ref("")
@@ -136,7 +93,7 @@ onMounted(async () => {
     savedConfig.value = { ...res.data }
     smtpPort.value = String(res.data.smtpPort ?? "")
   } else if (res.message !== "请求已取消") {
-    toast.error(res.message || "数据加载失败")
+    toast.error(res.message || t("systemPage.loadFailed"))
   }
   loading.value = false
 
@@ -186,27 +143,27 @@ const pageDirty = computed(
 
 const isWide = useMediaQuery("(min-width: 1024px)")
 
-const settingsTabs = [
-  { value: "site", title: "站点设置", icon: Settings2 },
-  { value: "register", title: "注册设置", icon: UserPlus },
-  { value: "smtp", title: "邮件配置", icon: Mail },
-]
+const settingsTabs = computed(() => [
+  { value: "site", title: t("systemPage.tabs.site"), icon: Settings2 },
+  { value: "register", title: t("systemPage.tabs.register"), icon: UserPlus },
+  { value: "smtp", title: t("systemPage.tabs.smtp"), icon: Mail },
+])
 
 const activePreset = computed(() =>
-  SMTP_PRESETS.find((preset) => preset.name === smtpPreset.value)
+  SMTP_PRESETS.find((preset) => preset.id === smtpPreset.value)
 )
 
 async function savePatch(
   key: SaveKey,
   patch: Partial<SystemConfig>,
-  successMessage = "保存成功"
+  successMessage = t("systemPage.saveSuccess")
 ) {
   if (!config.value || !savedConfig.value) return false
   saving.value = key
   const res = await updateSystemConfig(patch)
   saving.value = null
   if (res.code !== 0) {
-    toast.error(res.message || "保存失败")
+    toast.error(res.message || t("systemPage.saveFailed"))
     return false
   }
   savedConfig.value = { ...savedConfig.value, ...patch, smtpPassword: "" }
@@ -217,7 +174,7 @@ async function savePatch(
 
 async function handleSaveSite() {
   if (!config.value?.siteName.trim()) {
-    toast.error("请输入站点名称")
+    toast.error(t("systemPage.site.nameRequired"))
     return
   }
   const ok = await savePatch("site", {
@@ -259,12 +216,12 @@ async function handleSaveSmtp() {
     !config.value.smtpUsername.trim() ||
     !config.value.smtpFromEmail.trim()
   ) {
-    toast.error("请填写 SMTP 服务器、用户名和发件人邮箱")
+    toast.error(t("systemPage.smtp.required"))
     return
   }
   const port = Number(smtpPort.value)
   if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-    toast.error("请输入 1-65535 之间的端口号")
+    toast.error(t("systemPage.smtp.invalidPort"))
     return
   }
   const patch: Partial<SystemConfig> = {
@@ -290,20 +247,20 @@ async function handleTestEmail() {
   testEmailSending.value = true
   const res = await testEmail(testEmailAddr.value)
   testEmailSending.value = false
-  if (res.code === 0) toast.success("测试邮件发送成功")
-  else toast.error(res.message || "测试邮件发送失败")
+  if (res.code === 0) toast.success(t("systemPage.testEmail.success"))
+  else toast.error(res.message || t("systemPage.testEmail.failed"))
 }
 
-function applySmtpPreset(name: string) {
-  smtpPreset.value = name
-  const preset = SMTP_PRESETS.find((item) => item.name === name)
+function applySmtpPreset(id: string) {
+  smtpPreset.value = id
+  const preset = SMTP_PRESETS.find((item) => item.id === id)
   if (!preset || !config.value) return
   config.value = {
     ...config.value,
     smtpHost: preset.host,
     smtpPort: preset.port,
     smtpUseSsl: preset.ssl,
-    smtpFromName: preset.fromName,
+    smtpFromName: t(`systemPage.smtp.presets.${preset.id}.name`),
   }
   smtpPort.value = String(preset.port)
 }
@@ -313,8 +270,8 @@ function applySmtpPreset(name: string) {
   <div class="flex flex-col gap-(--page-gap)">
     <UnsavedChangesGuard :when="pageDirty" />
     <PageHeader
-      title="系统设置"
-      description="管理站点全局配置、注册策略与邮件服务。"
+      :title="t('systemPage.title')"
+      :description="t('systemPage.description')"
     />
 
     <Separator />
@@ -335,13 +292,17 @@ function applySmtpPreset(name: string) {
         >
           <Card variant="plain" class="max-w-3xl">
             <CardHeader>
-              <CardTitle>基本信息</CardTitle>
-              <CardDescription>配置站点名称、描述等基本信息。</CardDescription>
+              <CardTitle>{{ t("systemPage.site.title") }}</CardTitle>
+              <CardDescription>{{
+                t("systemPage.site.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent>
               <FieldGroup>
                 <Field>
-                  <FieldLabel for="site-name">站点名称</FieldLabel>
+                  <FieldLabel for="site-name">{{
+                    t("systemPage.site.name")
+                  }}</FieldLabel>
                   <Input
                     id="site-name"
                     v-model="config.siteName"
@@ -350,7 +311,9 @@ function applySmtpPreset(name: string) {
                   />
                 </Field>
                 <Field>
-                  <FieldLabel for="site-desc">站点描述</FieldLabel>
+                  <FieldLabel for="site-desc">{{
+                    t("systemPage.site.descriptionLabel")
+                  }}</FieldLabel>
                   <Input
                     id="site-desc"
                     v-model="config.siteDescription"
@@ -358,11 +321,13 @@ function applySmtpPreset(name: string) {
                     autocomplete="off"
                   />
                   <FieldDescription>
-                    显示在浏览器标签和搜索结果中。
+                    {{ t("systemPage.site.descriptionHint") }}
                   </FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel for="site-keywords">关键词</FieldLabel>
+                  <FieldLabel for="site-keywords">{{
+                    t("systemPage.site.keywords")
+                  }}</FieldLabel>
                   <Input
                     id="site-keywords"
                     v-model="config.keywords"
@@ -370,48 +335,48 @@ function applySmtpPreset(name: string) {
                     autocomplete="off"
                     :spellcheck="false"
                   />
-                  <FieldDescription
-                    >多个关键词用英文逗号分隔。</FieldDescription
-                  >
+                  <FieldDescription>{{
+                    t("systemPage.site.keywordsHint")
+                  }}</FieldDescription>
                 </Field>
               </FieldGroup>
             </CardContent>
             <SystemSaveFooter
               :dirty="siteDirty"
               :loading="saving === 'site'"
-              label="保存基本信息"
+              :label="t('systemPage.site.save')"
               @save="handleSaveSite"
             />
           </Card>
 
           <Card variant="plain" class="max-w-3xl">
             <CardHeader>
-              <CardTitle>维护模式</CardTitle>
-              <CardDescription>
-                开启后除管理员以外的用户将无法登录。
-              </CardDescription>
+              <CardTitle>{{ t("systemPage.maintenance.title") }}</CardTitle>
+              <CardDescription>{{
+                t("systemPage.maintenance.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div class="flex flex-1 flex-col gap-1">
-                  <FieldLabel for="maintenance-enabled">
-                    开启维护模式
-                  </FieldLabel>
+                  <FieldLabel for="maintenance-enabled">{{
+                    t("systemPage.maintenance.enabled")
+                  }}</FieldLabel>
                   <FieldDescription>
-                    其他用户会看到维护提示，管理员仍可登录。
+                    {{ t("systemPage.maintenance.enabledHint") }}
                   </FieldDescription>
                 </div>
                 <Switch
                   id="maintenance-enabled"
                   v-model="config.maintenanceEnabled"
-                  aria-label="开启维护模式"
+                  :aria-label="t('systemPage.maintenance.enabled')"
                 />
               </Field>
               <Separator />
               <Field>
-                <FieldLabel for="maintenance-message">
-                  维护提示信息
-                </FieldLabel>
+                <FieldLabel for="maintenance-message">{{
+                  t("systemPage.maintenance.message")
+                }}</FieldLabel>
                 <Input
                   id="maintenance-message"
                   v-model="config.maintenanceMessage"
@@ -423,7 +388,7 @@ function applySmtpPreset(name: string) {
             <SystemSaveFooter
               :dirty="maintenanceDirty"
               :loading="saving === 'maintenance'"
-              label="保存维护设置"
+              :label="t('systemPage.maintenance.save')"
               @save="handleSaveMaintenance"
             />
           </Card>
@@ -435,33 +400,41 @@ function applySmtpPreset(name: string) {
         >
           <Card variant="plain" class="max-w-3xl">
             <CardHeader>
-              <CardTitle>注册策略</CardTitle>
-              <CardDescription>控制用户注册方式和验证流程。</CardDescription>
+              <CardTitle>{{ t("systemPage.registration.title") }}</CardTitle>
+              <CardDescription>{{
+                t("systemPage.registration.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div class="flex flex-1 flex-col gap-1">
-                  <FieldLabel for="open-registration">开放注册</FieldLabel>
-                  <FieldDescription>允许新用户自行注册账号。</FieldDescription>
+                  <FieldLabel for="open-registration">{{
+                    t("systemPage.registration.open")
+                  }}</FieldLabel>
+                  <FieldDescription>{{
+                    t("systemPage.registration.openHint")
+                  }}</FieldDescription>
                 </div>
                 <Switch
                   id="open-registration"
                   v-model="config.openRegistration"
-                  aria-label="开放注册"
+                  :aria-label="t('systemPage.registration.open')"
                 />
               </Field>
               <Separator />
               <Field orientation="horizontal">
                 <div class="flex flex-1 flex-col gap-1">
-                  <FieldLabel for="manual-review">人工审核</FieldLabel>
+                  <FieldLabel for="manual-review">{{
+                    t("systemPage.registration.manual")
+                  }}</FieldLabel>
                   <FieldDescription>
-                    新注册用户需要管理员审核后才能使用系统。
+                    {{ t("systemPage.registration.manualHint") }}
                   </FieldDescription>
                 </div>
                 <Switch
                   id="manual-review"
                   v-model="config.manualReview"
-                  aria-label="人工审核"
+                  :aria-label="t('systemPage.registration.manual')"
                   :disabled="!config.openRegistration"
                 />
               </Field>
@@ -469,25 +442,30 @@ function applySmtpPreset(name: string) {
             <SystemSaveFooter
               :dirty="registrationDirty"
               :loading="saving === 'registration'"
-              label="保存注册策略"
+              :label="t('systemPage.registration.save')"
               @save="handleSaveRegistration"
             />
           </Card>
 
           <Card variant="plain" class="max-w-3xl">
             <CardHeader>
-              <CardTitle>默认配置</CardTitle>
-              <CardDescription>
-                新注册用户的默认角色和欢迎信息。
-              </CardDescription>
+              <CardTitle>{{ t("systemPage.defaults.title") }}</CardTitle>
+              <CardDescription>{{
+                t("systemPage.defaults.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent>
               <FieldGroup>
                 <Field>
-                  <FieldLabel>默认角色</FieldLabel>
+                  <FieldLabel>{{ t("systemPage.defaults.role") }}</FieldLabel>
                   <Select v-model="config.defaultRoleId">
-                    <SelectTrigger class="w-full" aria-label="默认角色">
-                      <SelectValue placeholder="请选择默认角色" />
+                    <SelectTrigger
+                      class="w-full"
+                      :aria-label="t('systemPage.defaults.role')"
+                    >
+                      <SelectValue
+                        :placeholder="t('systemPage.defaults.selectRole')"
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -496,17 +474,19 @@ function applySmtpPreset(name: string) {
                           :key="role.id"
                           :value="role.id"
                         >
-                          {{ role.name }}
+                          {{ roleLabel(role) }}
                         </SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                  <FieldDescription
-                    >新注册用户自动分配的角色。</FieldDescription
-                  >
+                  <FieldDescription>{{
+                    t("systemPage.defaults.roleHint")
+                  }}</FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel for="welcome-message">欢迎消息</FieldLabel>
+                  <FieldLabel for="welcome-message">{{
+                    t("systemPage.defaults.welcome")
+                  }}</FieldLabel>
                   <Input
                     id="welcome-message"
                     v-model="config.welcomeMessage"
@@ -519,7 +499,7 @@ function applySmtpPreset(name: string) {
             <SystemSaveFooter
               :dirty="defaultDirty"
               :loading="saving === 'default'"
-              label="保存默认配置"
+              :label="t('systemPage.defaults.save')"
               @save="handleSaveDefault"
             />
           </Card>
@@ -531,44 +511,52 @@ function applySmtpPreset(name: string) {
         >
           <Card variant="plain" class="max-w-3xl">
             <CardHeader>
-              <CardTitle>SMTP 邮件配置</CardTitle>
-              <CardDescription>
-                配置邮件服务器，用于发送系统通知邮件。
-              </CardDescription>
+              <CardTitle>{{ t("systemPage.smtp.title") }}</CardTitle>
+              <CardDescription>{{
+                t("systemPage.smtp.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-4">
               <Field orientation="horizontal">
                 <div class="flex flex-1 flex-col gap-1">
-                  <FieldLabel for="smtp-enabled">启用邮件</FieldLabel>
+                  <FieldLabel for="smtp-enabled">{{
+                    t("systemPage.smtp.enabled")
+                  }}</FieldLabel>
                   <FieldDescription>
-                    开启后系统将通过 SMTP 发送邮件。
+                    {{ t("systemPage.smtp.enabledHint") }}
                   </FieldDescription>
                 </div>
                 <Switch
                   id="smtp-enabled"
                   v-model="config.smtpEnabled"
-                  aria-label="启用邮件"
+                  :aria-label="t('systemPage.smtp.enabled')"
                 />
               </Field>
               <Separator />
 
               <Field>
-                <FieldLabel>快捷配置</FieldLabel>
+                <FieldLabel>{{ t("systemPage.smtp.preset") }}</FieldLabel>
                 <Select
                   :model-value="smtpPreset"
                   @update:model-value="applySmtpPreset(String($event))"
                 >
-                  <SelectTrigger class="w-full" aria-label="快捷配置">
-                    <SelectValue placeholder="选择常用邮箱快速配置…" />
+                  <SelectTrigger
+                    class="w-full"
+                    :aria-label="t('systemPage.smtp.preset')"
+                  >
+                    <SelectValue
+                      :placeholder="t('systemPage.smtp.presetPlaceholder')"
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       <SelectItem
                         v-for="preset in SMTP_PRESETS"
-                        :key="preset.name"
-                        :value="preset.name"
+                        :key="preset.id"
+                        :value="preset.id"
                       >
-                        {{ preset.name }} - {{ preset.host }}
+                        {{ t(`systemPage.smtp.presets.${preset.id}.name`) }}
+                        - {{ preset.host }}
                       </SelectItem>
                     </SelectGroup>
                   </SelectContent>
@@ -576,8 +564,8 @@ function applySmtpPreset(name: string) {
                 <FieldDescription>
                   {{
                     activePreset
-                      ? activePreset.tip
-                      : "选择后会自动填充服务器、端口和 SSL 配置。"
+                      ? t(`systemPage.smtp.presets.${activePreset.id}.tip`)
+                      : t("systemPage.smtp.presetHint")
                   }}
                 </FieldDescription>
               </Field>
@@ -587,19 +575,23 @@ function applySmtpPreset(name: string) {
               <FieldGroup>
                 <div class="grid gap-4 md:grid-cols-2">
                   <Field>
-                    <FieldLabel for="smtp-host">SMTP 服务器</FieldLabel>
+                    <FieldLabel for="smtp-host">{{
+                      t("systemPage.smtp.host")
+                    }}</FieldLabel>
                     <Input
                       id="smtp-host"
                       v-model="config.smtpHost"
                       name="smtp-host"
                       autocomplete="off"
                       :spellcheck="false"
-                      placeholder="例如：smtp.qq.com"
+                      :placeholder="t('systemPage.smtp.hostPlaceholder')"
                       required
                     />
                   </Field>
                   <Field>
-                    <FieldLabel for="smtp-port">端口</FieldLabel>
+                    <FieldLabel for="smtp-port">{{
+                      t("systemPage.smtp.port")
+                    }}</FieldLabel>
                     <Input
                       id="smtp-port"
                       v-model="smtpPort"
@@ -608,49 +600,57 @@ function applySmtpPreset(name: string) {
                       type="number"
                       :min="1"
                       :max="65535"
-                      placeholder="例如：587"
+                      :placeholder="t('systemPage.smtp.portPlaceholder')"
                       required
                     />
                   </Field>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <Field>
-                    <FieldLabel for="smtp-username">用户名</FieldLabel>
+                    <FieldLabel for="smtp-username">{{
+                      t("systemPage.smtp.username")
+                    }}</FieldLabel>
                     <Input
                       id="smtp-username"
                       v-model="config.smtpUsername"
                       name="smtp-username"
                       autocomplete="off"
                       :spellcheck="false"
-                      placeholder="例如：your@email.com"
+                      :placeholder="t('systemPage.smtp.usernamePlaceholder')"
                       required
                     />
                   </Field>
                   <Field>
-                    <FieldLabel for="smtp-password">密码 / 授权码</FieldLabel>
+                    <FieldLabel for="smtp-password">{{
+                      t("systemPage.smtp.password")
+                    }}</FieldLabel>
                     <Input
                       id="smtp-password"
                       v-model="smtpPassword"
                       name="smtp-password"
                       type="password"
-                      placeholder="留空保持不变"
+                      :placeholder="t('systemPage.smtp.passwordPlaceholder')"
                       autocomplete="new-password"
                     />
                   </Field>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <Field>
-                    <FieldLabel for="smtp-from-name">发件人名称</FieldLabel>
+                    <FieldLabel for="smtp-from-name">{{
+                      t("systemPage.smtp.fromName")
+                    }}</FieldLabel>
                     <Input
                       id="smtp-from-name"
                       v-model="config.smtpFromName"
                       name="smtp-from-name"
                       autocomplete="off"
-                      placeholder="例如：管理系统"
+                      :placeholder="t('systemPage.smtp.fromNamePlaceholder')"
                     />
                   </Field>
                   <Field>
-                    <FieldLabel for="smtp-from-email">发件人邮箱</FieldLabel>
+                    <FieldLabel for="smtp-from-email">{{
+                      t("systemPage.smtp.fromEmail")
+                    }}</FieldLabel>
                     <Input
                       id="smtp-from-email"
                       v-model="config.smtpFromEmail"
@@ -658,22 +658,24 @@ function applySmtpPreset(name: string) {
                       autocomplete="off"
                       :spellcheck="false"
                       type="email"
-                      placeholder="例如：noreply@example.com"
+                      :placeholder="t('systemPage.smtp.fromEmailPlaceholder')"
                       required
                     />
                   </Field>
                 </div>
                 <Field orientation="horizontal">
                   <div class="flex flex-1 flex-col gap-1">
-                    <FieldLabel for="smtp-ssl">使用 SSL</FieldLabel>
+                    <FieldLabel for="smtp-ssl">{{
+                      t("systemPage.smtp.ssl")
+                    }}</FieldLabel>
                     <FieldDescription>
-                      大多数邮件服务器需要开启 SSL。
+                      {{ t("systemPage.smtp.sslHint") }}
                     </FieldDescription>
                   </div>
                   <Switch
                     id="smtp-ssl"
                     v-model="config.smtpUseSsl"
-                    aria-label="使用 SSL"
+                    :aria-label="t('systemPage.smtp.ssl')"
                   />
                 </Field>
               </FieldGroup>
@@ -681,23 +683,25 @@ function applySmtpPreset(name: string) {
             <SystemSaveFooter
               :dirty="smtpDirty"
               :loading="saving === 'smtp'"
-              label="保存邮件配置"
+              :label="t('systemPage.smtp.save')"
               @save="handleSaveSmtp"
             />
           </Card>
 
           <Card variant="plain" class="max-w-3xl">
             <CardHeader>
-              <CardTitle>测试邮件</CardTitle>
-              <CardDescription>
-                发送测试邮件以验证邮件配置是否正确。
-              </CardDescription>
+              <CardTitle>{{ t("systemPage.testEmail.title") }}</CardTitle>
+              <CardDescription>{{
+                t("systemPage.testEmail.description")
+              }}</CardDescription>
             </CardHeader>
             <CardContent>
               <form id="test-email-form" @submit.prevent="handleTestEmail">
                 <FieldGroup>
                   <Field>
-                    <FieldLabel for="test-email">收件人邮箱</FieldLabel>
+                    <FieldLabel for="test-email">{{
+                      t("systemPage.testEmail.recipient")
+                    }}</FieldLabel>
                     <Input
                       id="test-email"
                       v-model="testEmailAddr"
@@ -705,7 +709,7 @@ function applySmtpPreset(name: string) {
                       autocomplete="off"
                       :spellcheck="false"
                       type="email"
-                      placeholder="请输入测试收件人邮箱"
+                      :placeholder="t('systemPage.testEmail.placeholder')"
                       required
                     />
                   </Field>
@@ -721,13 +725,13 @@ function applySmtpPreset(name: string) {
                 class="w-full md:w-auto"
               >
                 <Mail data-icon="inline-start" />
-                发送测试邮件
+                {{ t("systemPage.testEmail.send") }}
               </LoadingButton>
               <span
                 v-if="!config.smtpEnabled"
                 class="text-xs text-muted-foreground"
               >
-                请先开启“启用邮件”并保存 SMTP 配置。
+                {{ t("systemPage.testEmail.disabledHint") }}
               </span>
             </CardFooter>
           </Card>

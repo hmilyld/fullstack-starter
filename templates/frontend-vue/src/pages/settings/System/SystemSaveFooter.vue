@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import { Save } from "@lucide/vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import { CardFooter } from "@/components/ui/card"
@@ -12,6 +13,8 @@ defineProps<{
 const emit = defineEmits<{
   (e: "save"): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -26,7 +29,7 @@ const emit = defineEmits<{
       {{ label }}
     </LoadingButton>
     <span class="text-xs text-muted-foreground">
-      {{ dirty ? "有未保存的修改" : "已保存" }}
+      {{ dirty ? t("systemPage.unsaved") : t("systemPage.saved") }}
     </span>
   </CardFooter>
 </template>
