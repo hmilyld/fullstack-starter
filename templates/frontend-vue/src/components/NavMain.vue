@@ -24,6 +24,7 @@ type NavItem = {
 }
 
 type NavGroup = {
+  id: string
   label: string
   items: NavItem[]
 }
@@ -56,7 +57,7 @@ const activeGroup = computed(
   () =>
     props.groups.find((group) =>
       group.items.some((item) => isActivePath(route.path, item.url))
-    )?.label
+    )?.id
 )
 
 function isActivePath(pathname: string, url: string) {
@@ -65,15 +66,14 @@ function isActivePath(pathname: string, url: string) {
 
 function isOpen(group: NavGroup) {
   return (
-    group.label === activeGroup.value ||
-    !closedGroups.value.includes(group.label)
+    group.id === activeGroup.value || !closedGroups.value.includes(group.id)
   )
 }
 
 function toggleGroup(group: NavGroup, value: boolean) {
   const next = value
-    ? closedGroups.value.filter((label) => label !== group.label)
-    : [...closedGroups.value, group.label]
+    ? closedGroups.value.filter((id) => id !== group.id)
+    : [...closedGroups.value, group.id]
   closedGroups.value = next
   try {
     window.localStorage.setItem(CLOSED_GROUPS_KEY, JSON.stringify(next))
@@ -90,7 +90,7 @@ function handleNavigate() {
 <template>
   <CollapsibleRoot
     v-for="group in groups"
-    :key="group.label"
+    :key="group.id"
     :open="iconMode || isOpen(group)"
     :disabled="iconMode"
     @update:open="(value: boolean) => toggleGroup(group, value)"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onErrorCaptured, onMounted, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink, RouterView, useRoute } from "vue-router"
 import { TriangleAlert } from "@lucide/vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
@@ -13,6 +14,7 @@ import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useThemeStore } from "@/stores/theme"
 
+const { t } = useI18n()
 const route = useRoute()
 const siteConfig = useSiteConfigStore()
 const themeStore = useThemeStore()
@@ -62,14 +64,14 @@ watch(
     <EmptyState
       class="max-w-lg"
       :icon="TriangleAlert"
-      title="页面加载失败"
+      :title="t('errors.pageLoadFailed')"
       :description="appError"
     >
       <template #action>
         <Button as-child>
-          <RouterLink to="/dashboard" @click="clearAppError()"
-            >返回仪表盘</RouterLink
-          >
+          <RouterLink to="/dashboard" @click="clearAppError()">{{
+            t("errors.backToDashboard")
+          }}</RouterLink>
         </Button>
       </template>
     </EmptyState>

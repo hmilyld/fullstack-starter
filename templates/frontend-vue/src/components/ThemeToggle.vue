@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import { Moon, Sun } from "@lucide/vue"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useThemeStore } from "@/stores/theme"
 
+const { t } = useI18n()
 const themeStore = useThemeStore()
 </script>
 
@@ -23,19 +25,19 @@ const themeStore = useThemeStore()
         <Moon
           class="absolute scale-0 rotate-90 transition-transform dark:scale-100 dark:rotate-0"
         />
-        <span class="sr-only">切换主题</span>
+        <span class="sr-only">{{ t("common.theme") }}</span>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuGroup>
-        <DropdownMenuItem @select="themeStore.setTheme('light')">
-          浅色
+        <DropdownMenuItem @click="themeStore.setTheme('light')">
+          {{ t("appearance.light") }}
         </DropdownMenuItem>
-        <DropdownMenuItem @select="themeStore.setTheme('dark')">
-          深色
+        <DropdownMenuItem @click="themeStore.setTheme('dark')">
+          {{ t("appearance.dark") }}
         </DropdownMenuItem>
-        <DropdownMenuItem @select="themeStore.setTheme('system')">
-          跟随系统
+        <DropdownMenuItem @click="themeStore.setTheme('system')">
+          {{ t("appearance.system") }}
         </DropdownMenuItem>
       </DropdownMenuGroup>
     </DropdownMenuContent>

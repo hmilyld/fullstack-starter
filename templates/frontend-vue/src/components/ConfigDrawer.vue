@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Monitor, Moon, Settings2, Sun } from "@lucide/vue"
+import { useI18n } from "vue-i18n"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -9,34 +10,34 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import {
-  useLayoutConfig,
-  type SidebarCollapsible,
-  type SidebarVariant,
+import { cn } from "@/lib/utils"
+import type {
+  SidebarCollapsible,
+  SidebarVariant,
 } from "@/composables/use-layout-config"
+import { useLayoutConfig } from "@/composables/use-layout-config"
 import { useThemeStore } from "@/stores/theme"
 
-type ThemeValue = "light" | "dark" | "system"
+const THEMES = [
+  { value: "light", labelKey: "appearance.light", icon: Sun },
+  { value: "dark", labelKey: "appearance.dark", icon: Moon },
+  { value: "system", labelKey: "appearance.system", icon: Monitor },
+] as const
 
+const VARIANTS: { value: SidebarVariant; labelKey: string }[] = [
+  { value: "sidebar", labelKey: "appearance.default" },
+  { value: "floating", labelKey: "appearance.floating" },
+  { value: "inset", labelKey: "appearance.inset" },
+]
+
+const COLLAPSIBLES: { value: SidebarCollapsible; labelKey: string }[] = [
+  { value: "icon", labelKey: "appearance.icon" },
+  { value: "offcanvas", labelKey: "appearance.offcanvas" },
+]
+
+const { t } = useI18n()
 const themeStore = useThemeStore()
 const { variant, collapsible, setVariant, setCollapsible } = useLayoutConfig()
-
-const themes: { value: ThemeValue; label: string; icon: typeof Sun }[] = [
-  { value: "light", label: "浅色", icon: Sun },
-  { value: "dark", label: "深色", icon: Moon },
-  { value: "system", label: "跟随系统", icon: Monitor },
-]
-
-const variants: { value: SidebarVariant; label: string }[] = [
-  { value: "sidebar", label: "默认" },
-  { value: "floating", label: "浮动" },
-  { value: "inset", label: "内嵌" },
-]
-
-const collapsibles: { value: SidebarCollapsible; label: string }[] = [
-  { value: "icon", label: "图标栏" },
-  { value: "offcanvas", label: "抽屉" },
-]
 </script>
 
 <template>
@@ -45,76 +46,80 @@ const collapsibles: { value: SidebarCollapsible; label: string }[] = [
       <Button
         variant="ghost"
         size="icon-sm"
-        aria-label="外观设置"
-        title="外观设置"
+        :aria-label="t('common.appearance')"
+        :title="t('common.appearance')"
       >
         <Settings2 />
       </Button>
     </SheetTrigger>
     <SheetContent class="w-80">
       <SheetHeader>
-        <SheetTitle>外观</SheetTitle>
-        <SheetDescription>
-          调整主题、侧栏样式与折叠方式，设置会保存在本机。
-        </SheetDescription>
+        <SheetTitle>{{ t("appearance.title") }}</SheetTitle>
+        <SheetDescription>{{ t("appearance.description") }}</SheetDescription>
       </SheetHeader>
       <div class="flex flex-col gap-6 px-4 pb-6">
         <section class="flex flex-col gap-2">
-          <h3 class="text-sm font-medium">主题</h3>
-          <div class="grid grid-cols-3 gap-2" role="group" aria-label="主题">
+          <h3 class="text-sm font-medium">{{ t("appearance.theme") }}</h3>
+          <div
+            class="grid grid-cols-3 gap-2"
+            role="group"
+            :aria-label="t('appearance.theme')"
+          >
             <Button
-              v-for="item in themes"
-              :key="item.value"
+              v-for="option in THEMES"
+              :key="option.value"
               type="button"
-              :variant="themeStore.theme === item.value ? 'default' : 'outline'"
-              :aria-pressed="themeStore.theme === item.value"
-              class="h-auto flex-col gap-1.5 px-2 py-3 text-xs"
-              @click="themeStore.setTheme(item.value)"
+              :variant="
+                themeStore.theme === option.value ? 'default' : 'outline'
+              "
+              :aria-pressed="themeStore.theme === option.value"
+              :class="cn('h-auto flex-col gap-1.5 px-2 py-3 text-xs')"
+              @click="themeStore.setTheme(option.value)"
             >
-              <component :is="item.icon" class="size-4" />
-              {{ item.label }}
+              <component :is="option.icon" class="size-4" />
+              {{ t(option.labelKey) }}
             </Button>
           </div>
         </section>
 
         <section class="flex flex-col gap-2">
-          <h3 class="text-sm font-medium">侧栏样式</h3>
+          <h3 class="text-sm font-medium">{{ t("appearance.sidebar") }}</h3>
           <div
             class="grid grid-cols-3 gap-2"
             role="group"
-            aria-label="侧栏样式"
+            :aria-label="t('appearance.sidebar')"
           >
             <Button
-              v-for="item in variants"
-              :key="item.value"
+              v-for="option in VARIANTS"
+              :key="option.value"
               type="button"
-              :variant="variant === item.value ? 'default' : 'outline'"
-              :aria-pressed="variant === item.value"
-              class="h-auto flex-col gap-1.5 px-2 py-3 text-xs"
-              @click="setVariant(item.value)"
+              :variant="variant === option.value ? 'default' : 'outline'"
+              :aria-pressed="variant === option.value"
+              :class="cn('h-auto flex-col gap-1.5 px-2 py-3 text-xs')"
+              @click="setVariant(option.value)"
             >
-              {{ item.label }}
+              {{ t(option.labelKey) }}
             </Button>
           </div>
         </section>
 
         <section class="flex flex-col gap-2">
-          <h3 class="text-sm font-medium">折叠方式</h3>
+          <h3 class="text-sm font-medium">{{ t("appearance.collapse") }}</h3>
           <div
             class="grid grid-cols-3 gap-2"
             role="group"
-            aria-label="折叠方式"
+            :aria-label="t('appearance.collapse')"
           >
             <Button
-              v-for="item in collapsibles"
-              :key="item.value"
+              v-for="option in COLLAPSIBLES"
+              :key="option.value"
               type="button"
-              :variant="collapsible === item.value ? 'default' : 'outline'"
-              :aria-pressed="collapsible === item.value"
-              class="h-auto flex-col gap-1.5 px-2 py-3 text-xs"
-              @click="setCollapsible(item.value)"
+              :variant="collapsible === option.value ? 'default' : 'outline'"
+              :aria-pressed="collapsible === option.value"
+              :class="cn('h-auto flex-col gap-1.5 px-2 py-3 text-xs')"
+              @click="setCollapsible(option.value)"
             >
-              {{ item.label }}
+              {{ t(option.labelKey) }}
             </Button>
           </div>
         </section>
