@@ -22,6 +22,7 @@
     buildPermissionTree,
     filterPermissionTree,
   } from "#lib/access-tree.js"
+  import { t } from "#lib/i18n.js"
   import { cn } from "#lib/utils.js"
   import type { Permission } from "#lib/types/permission.js"
 
@@ -103,9 +104,12 @@
 
   function menuCountLabel(code: string) {
     const children = childrenOf(code)
-    if (children.length === 0) return "无操作权限"
+    if (children.length === 0) return $t("rolePermissions.noOperations")
     const checked = children.filter((child) => selected.has(child.code)).length
-    return `${checked}/${children.length} 个操作`
+    return $t("rolePermissions.operationCount", {
+      checked,
+      total: children.length,
+    })
   }
 
   function toggleCollapsed(code: string) {
@@ -158,24 +162,24 @@
     <div
       class="flex h-40 items-center justify-center rounded-xl border text-sm text-muted-foreground"
     >
-      权限加载中…
+      {$t("rolePermissions.loading")}
     </div>
   {:else if error}
     <div class="flex flex-col items-start gap-2 rounded-xl border p-4 text-sm">
       <span class="text-destructive">{error}</span>
       <Button type="button" variant="outline" size="sm" onclick={onRetry}>
-        重试
+        {$t("common.retry")}
       </Button>
     </div>
   {:else if menuPermissions.length === 0}
     <div
       class="flex h-40 items-center justify-center rounded-xl border text-sm text-muted-foreground"
     >
-      暂无可分配的权限
+      {$t("rolePermissions.empty")}
     </div>
   {:else}
     <p class="text-xs text-muted-foreground">
-      勾选菜单会同时选中其下全部操作，再次点击取消整组；单独勾选操作会保留菜单并显示半选。
+      {$t("rolePermissions.hint")}
     </p>
 
     <div
@@ -186,8 +190,8 @@
           name="permission-q"
           autocomplete="off"
           spellcheck={false}
-          placeholder="搜索名称或编码…"
-          aria-label="搜索权限"
+          placeholder={$t("rolePermissions.searchPlaceholder")}
+          aria-label={$t("rolePermissions.searchAria")}
           bind:value={search}
           onkeydown={(event) => {
             if (event.key === "Enter" && !event.isComposing)
@@ -201,7 +205,10 @@
 
       <div class="flex items-center justify-between gap-2 md:justify-end">
         <span class="text-xs text-muted-foreground" aria-live="polite">
-          已选 {selectedCount} / {catalogCodes.size} 项
+          {$t("rolePermissions.selected", {
+            selected: selectedCount,
+            total: catalogCodes.size,
+          })}
         </span>
         <div class="flex items-center gap-1">
           <Button
@@ -212,7 +219,7 @@
             disabled={catalogCodes.size === 0}
             onclick={selectAll}
           >
-            全选
+            {$t("rolePermissions.selectAll")}
           </Button>
           <Button
             type="button"
@@ -222,7 +229,7 @@
             disabled={selectedCount === 0}
             onclick={clearAll}
           >
-            清空
+            {$t("rolePermissions.clear")}
           </Button>
         </div>
       </div>
@@ -232,14 +239,14 @@
       <div
         class="flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground"
       >
-        <span>没有匹配的权限</span>
+        <span>{$t("rolePermissions.noMatches")}</span>
         <Button
           type="button"
           variant="outline"
           size="sm"
           onclick={() => (search = "")}
         >
-          清空搜索
+          {$t("rolePermissions.clearSearch")}
         </Button>
       </div>
     {:else if isCompact.matches}
@@ -252,7 +259,9 @@
               <Checkbox
                 id={`role-permission-menu-${menu.code}`}
                 class="mt-0.5"
-                aria-label={`选择 ${menu.name}`}
+                aria-label={$t("rolePermissions.selectMenu", {
+                  name: menu.name,
+                })}
                 checked={menuState(menu) === true}
                 indeterminate={menuState(menu) === "indeterminate"}
                 onCheckedChange={() => toggleMenu(menu)}
@@ -280,7 +289,12 @@
                   size="icon-sm"
                   class="shrink-0"
                   aria-expanded={!collapsed.has(menu.code)}
-                  aria-label={`${collapsed.has(menu.code) ? "展开" : "收起"} ${menu.name} 的操作权限`}
+                  aria-label={$t(
+                    collapsed.has(menu.code)
+                      ? "rolePermissions.expandAria"
+                      : "rolePermissions.collapseAria",
+                    { name: menu.name }
+                  )}
                   onclick={() => toggleCollapsed(menu.code)}
                 >
                   <ChevronRight
@@ -300,7 +314,9 @@
                     <Checkbox
                       id={`role-permission-op-${operation.code}`}
                       class="mt-0.5"
-                      aria-label={`选择 ${operation.name}`}
+                      aria-label={$t("rolePermissions.selectOperation", {
+                        name: operation.name,
+                      })}
                       checked={selected.has(operation.code)}
                       onCheckedChange={() => toggleOperation(operation)}
                     />
@@ -331,9 +347,15 @@
         <Table class="min-w-[520px]">
           <TableHeader class="sticky top-0 z-10 bg-muted">
             <TableRow class="hover:bg-transparent">
-              <TableHead class="w-[52%]">权限名称</TableHead>
-              <TableHead class="w-[33%]">权限编码</TableHead>
-              <TableHead class="w-[15%]">类型</TableHead>
+              <TableHead class="w-[52%]"
+                >{$t("rolePermissions.nameHeader")}</TableHead
+              >
+              <TableHead class="w-[33%]"
+                >{$t("rolePermissions.codeHeader")}</TableHead
+              >
+              <TableHead class="w-[15%]"
+                >{$t("rolePermissions.typeHeader")}</TableHead
+              >
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -343,7 +365,9 @@
                   <div class="flex items-center gap-2">
                     <Checkbox
                       id={`role-permission-menu-${menu.code}`}
-                      aria-label={`选择 ${menu.name}`}
+                      aria-label={$t("rolePermissions.selectMenu", {
+                        name: menu.name,
+                      })}
                       checked={menuState(menu) === true}
                       indeterminate={menuState(menu) === "indeterminate"}
                       onCheckedChange={() => toggleMenu(menu)}
@@ -354,7 +378,12 @@
                         variant="ghost"
                         size="icon-xs"
                         aria-expanded={!collapsed.has(menu.code)}
-                        aria-label={`${collapsed.has(menu.code) ? "展开" : "收起"} ${menu.name} 的操作权限`}
+                        aria-label={$t(
+                          collapsed.has(menu.code)
+                            ? "rolePermissions.expandAria"
+                            : "rolePermissions.collapseAria",
+                          { name: menu.name }
+                        )}
                         onclick={() => toggleCollapsed(menu.code)}
                       >
                         <ChevronRight
@@ -381,7 +410,9 @@
                 <TableCell class="font-mono text-xs text-muted-foreground">
                   {menu.code}
                 </TableCell>
-                <TableCell><Badge>菜单</Badge></TableCell>
+                <TableCell
+                  ><Badge>{$t("rolePermissions.menuType")}</Badge></TableCell
+                >
               </TableRow>
 
               {#if !collapsed.has(menu.code)}
@@ -391,7 +422,9 @@
                       <div class="flex items-center gap-2 pl-8">
                         <Checkbox
                           id={`role-permission-op-${operation.code}`}
-                          aria-label={`选择 ${operation.name}`}
+                          aria-label={$t("rolePermissions.selectOperation", {
+                            name: operation.name,
+                          })}
                           checked={selected.has(operation.code)}
                           onCheckedChange={() => toggleOperation(operation)}
                         />
@@ -407,7 +440,9 @@
                       {operation.code}
                     </TableCell>
                     <TableCell
-                      ><Badge variant="secondary">操作</Badge></TableCell
+                      ><Badge variant="secondary"
+                        >{$t("rolePermissions.operationType")}</Badge
+                      ></TableCell
                     >
                   </TableRow>
                 {/each}

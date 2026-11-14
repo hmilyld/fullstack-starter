@@ -76,6 +76,7 @@
   import { useTableDensity } from "#lib/hooks/use-table-density.svelte.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { useUrlListState } from "#lib/hooks/use-url-list-state.svelte.js"
+  import { t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import type { Role } from "#lib/types/role.js"
   import type { User } from "#lib/types/user.js"
@@ -167,10 +168,14 @@
       : await createUser(payload)
     editSubmitting = false
     if (res.code !== 0) {
-      toast.error(res.message || "操作失败")
+      toast.error(res.message || $t("users.toasts.operationFailed"))
       return
     }
-    toast.success(editingUser ? "保存成功" : "创建成功")
+    toast.success(
+      editingUser
+        ? $t("users.toasts.saveSuccess")
+        : $t("users.toasts.createSuccess")
+    )
     editOpen = false
     list.refresh()
   }
@@ -187,10 +192,10 @@
     const res = await updateUser(roleTarget.id, { roleId: roleValue })
     roleSubmitting = false
     if (res.code !== 0) {
-      toast.error(res.message || "操作失败")
+      toast.error(res.message || $t("users.toasts.operationFailed"))
       return
     }
-    toast.success("角色已更新")
+    toast.success($t("users.toasts.roleUpdated"))
     roleOpen = false
     list.refresh()
   }
@@ -206,10 +211,10 @@
     const res = await apiDeleteUser(deleteTarget.id)
     deleteSubmitting = false
     if (res.code !== 0) {
-      toast.error(res.message || "删除失败")
+      toast.error(res.message || $t("users.toasts.deleteFailed"))
       return
     }
-    toast.success("删除成功")
+    toast.success($t("users.toasts.deleteSuccess"))
     deleteOpen = false
     list.refresh()
   }
@@ -224,7 +229,7 @@
         (user) => user.roleId === "pending_review"
       )
     } else {
-      toast.error(res.message || "加载待审核用户失败")
+      toast.error(res.message || $t("users.toasts.pendingLoadFailed"))
     }
     pendingLoading = false
   }
@@ -253,10 +258,12 @@
     )
     pendingSubmitting = false
     if (res.code !== 0) {
-      toast.error(res.message || "审核失败")
+      toast.error(res.message || $t("users.toasts.reviewFailed"))
       return
     }
-    toast.success(`已通过 ${selectedPending.size} 位用户审核`)
+    toast.success(
+      $t("users.toasts.approveSuccess", { count: selectedPending.size })
+    )
     pendingOpen = false
     list.refresh()
   }
@@ -272,12 +279,14 @@
 
     const failed = results.filter((res) => res.code !== 0).length
     if (failed > 0) {
-      toast.error(`${failed} 位用户拒绝失败`)
+      toast.error($t("users.toasts.rejectFailed", { count: failed }))
       await openPending()
       return
     }
 
-    toast.success(`已拒绝 ${selectedPending.size} 位用户`)
+    toast.success(
+      $t("users.toasts.rejectSuccess", { count: selectedPending.size })
+    )
     pendingOpen = false
     list.refresh()
   }
@@ -294,19 +303,19 @@
     const res = await resetPassword(resetTarget.id, newPassword)
     resetSubmitting = false
     if (res.code !== 0) {
-      toast.error(res.message || "重置失败")
+      toast.error(res.message || $t("users.toasts.resetFailed"))
       return
     }
-    toast.success("密码已重置")
+    toast.success($t("users.toasts.resetSuccess"))
     resetOpen = false
   }
 
   async function copyPassword() {
     try {
       await navigator.clipboard.writeText(newPassword)
-      toast.success("密码已复制到剪贴板")
+      toast.success($t("users.toasts.passwordCopied"))
     } catch {
-      toast.error("复制失败，请手动复制")
+      toast.error($t("users.toasts.copyFailed"))
     }
   }
 
@@ -314,28 +323,28 @@
     const actions: RowAction[] = []
     if (auth.hasPermission("users.edit")) {
       actions.push({
-        label: "编辑",
+        label: $t("users.actions.edit"),
         icon: Pencil,
         onSelect: () => handleEdit(user),
       })
     }
     if (auth.hasPermission("users.assign_role")) {
       actions.push({
-        label: "维护角色",
+        label: $t("users.actions.role"),
         icon: Shield,
         onSelect: () => handleRole(user),
       })
     }
     if (auth.hasPermission("users.edit")) {
       actions.push({
-        label: "重置密码",
+        label: $t("users.actions.reset"),
         icon: KeyRound,
         onSelect: () => openReset(user),
       })
     }
     if (auth.hasPermission("users.delete") && user.id !== auth.user?.id) {
       actions.push({
-        label: "删除",
+        label: $t("users.actions.delete"),
         icon: Trash2,
         destructive: true,
         separatorBefore: true,
@@ -391,71 +400,78 @@
     )
     bulkSubmitting = false
     if (res.code !== 0) {
-      toast.error(res.message || "批量操作失败")
+      toast.error(res.message || $t("users.toasts.bulkFailed"))
       return
     }
-    toast.success(`已更新 ${selectedIds.size} 位用户的角色`)
+    toast.success(
+      $t("users.toasts.bulkRoleSuccess", { count: selectedIds.size })
+    )
     bulkRoleOpen = false
     selectedIds = new Set()
     list.refresh()
   }
 
-  const columns: DataColumn[] = [
+  const columns: DataColumn[] = $derived([
     { key: "select", header: "", headClass: "w-10" },
-    { key: "username", header: "用户名" },
+    { key: "username", header: $t("users.headers.username") },
     {
       key: "name",
-      header: "姓名",
+      header: $t("users.headers.name"),
       hideable: true,
       headClass: "hidden md:table-cell",
       cellClass: "hidden md:table-cell",
     },
     {
       key: "email",
-      header: "邮箱",
+      header: $t("users.headers.email"),
       hideable: true,
       headClass: "hidden lg:table-cell",
       cellClass: "hidden text-muted-foreground lg:table-cell",
     },
-    { key: "role", header: "角色" },
+    { key: "role", header: $t("users.headers.role") },
     {
       key: "actions",
-      header: "操作",
+      header: $t("users.headers.actions"),
       pinRight: true,
       headClass: "text-right",
       cellClass: "text-right",
     },
-  ]
+  ])
 
   const roleItems = $derived(
-    roles.map((role) => ({ value: role.id, label: role.name }))
+    roles.map((role) => ({
+      value: role.id,
+      label: $t(`roles.${role.id}`, { defaultValue: role.name }),
+    }))
   )
 
   const columnState = useColumnVisibility("users", () => columns)
   const densityState = useTableDensity("users")
 
-  const pendingColumns: DataColumn[] = [
+  const pendingColumns: DataColumn[] = $derived([
     { key: "select", header: "", headClass: "w-12" },
-    { key: "username", header: "用户名" },
-    { key: "name", header: "姓名" },
-    { key: "email", header: "邮箱" },
-  ]
+    { key: "username", header: $t("users.headers.username") },
+    { key: "name", header: $t("users.headers.name") },
+    { key: "email", header: $t("users.headers.email") },
+  ])
 </script>
 
-<svelte:head><title>用户管理 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title>{$t("users.title")} · {$t("pwa.defaultName")}</title></svelte:head
+>
 
 <div class="flex flex-col gap-(--page-gap)">
-  <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
+  <PageHeader title={$t("users.title")} description={$t("users.description")} />
 
-  <ListShell description={`共 ${list.total} 位用户`}>
+  <ListShell description={$t("users.listDescription", { total: list.total })}>
     {#snippet actions()}
       <InputGroup class="w-full md:w-64">
         <InputGroupInput
           name="q"
           autocomplete="off"
           spellcheck={false}
-          placeholder="搜索用户名、姓名或邮箱…"
-          aria-label="搜索用户"
+          placeholder={$t("users.searchPlaceholder")}
+          aria-label={$t("users.searchAria")}
           value={urlState.search}
           oninput={(event) => urlState.setSearch(event.currentTarget.value)}
         />
@@ -476,7 +492,7 @@
       {#if auth.hasPermission("users.create")}
         <Button class="w-full md:w-auto" onclick={handleAdd}>
           <Plus data-icon="inline-start" />
-          新增用户
+          {$t("users.addUser")}
         </Button>
       {/if}
       {#if auth.hasPermission("users.edit")}
@@ -485,7 +501,7 @@
           class="w-full md:w-auto"
           onclick={openPending}
         >
-          待审核
+          {$t("users.pendingReview")}
         </Button>
       {/if}
     {/snippet}
@@ -497,7 +513,7 @@
           page={list.page}
           totalPages={list.totalPages}
           total={list.total}
-          itemLabel="位用户"
+          itemLabel={$t("users.entityName")}
           {pageSize}
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           onPageChange={list.setPage}
@@ -518,10 +534,12 @@
       skeletonColSpan={6}
       empty={{
         icon: Users,
-        title: debouncedSearch.value ? "没有匹配的用户" : "还没有用户",
+        title: debouncedSearch.value
+          ? $t("users.emptySearchTitle")
+          : $t("users.emptyTitle"),
         description: debouncedSearch.value
-          ? "换个关键词，或清空搜索条件后再试。"
-          : "创建第一位用户，或等待注册审核通过。",
+          ? $t("users.emptySearchDescription")
+          : $t("users.emptyDescription"),
       }}
       onRetry={list.refresh}
       onHideColumn={columnState.toggle}
@@ -529,12 +547,12 @@
       {#snippet emptyAction()}
         {#if debouncedSearch.value}
           <Button variant="outline" onclick={() => urlState.setSearch("")}
-            >清空搜索</Button
+            >{$t("users.clearSearch")}</Button
           >
         {:else if auth.hasPermission("users.create")}
           <Button onclick={handleAdd}>
             <Plus data-icon="inline-start" />
-            新增用户
+            {$t("users.addUser")}
           </Button>
         {/if}
       {/snippet}
@@ -544,7 +562,7 @@
           {#snippet leading()}
             <Checkbox
               checked={selectedIds.has(row.id)}
-              aria-label={`选择 ${row.name}`}
+              aria-label={$t("users.selectUser", { name: row.name })}
               class="mt-0.5"
               onCheckedChange={() => toggleSelected(row.id)}
             />
@@ -579,7 +597,7 @@
           <Checkbox
             checked={allSelected}
             indeterminate={someSelected}
-            aria-label="全选当前页用户"
+            aria-label={$t("users.selectAllCurrent")}
             onCheckedChange={(value) => toggleAll(value === true)}
           />
         {:else}
@@ -591,7 +609,7 @@
         {#if key === "select"}
           <Checkbox
             checked={selectedIds.has(row.id)}
-            aria-label={`选择 ${row.name}`}
+            aria-label={$t("users.selectUser", { name: row.name })}
             class="relative z-20"
             onCheckedChange={() => toggleSelected(row.id)}
           />
@@ -625,12 +643,14 @@
                 onclick={() => handleEdit(row)}
               >
                 <Pencil />
-                <span class="sr-only">编辑 {row.name}</span>
+                <span class="sr-only"
+                  >{$t("users.editSrOnly", { name: row.name })}</span
+                >
               </Button>
             {/if}
             <RowActions
               actions={buildUserActions(row).filter(
-                (item) => item.label !== "编辑"
+                (item) => item.label !== $t("users.actions.edit")
               )}
             />
           </div>
@@ -641,27 +661,27 @@
 
   <BulkActionsBar
     count={selectedIds.size}
-    entityName="位用户"
+    entityName={$t("users.entityName")}
     onClear={() => (selectedIds = new Set())}
   >
     {#if auth.hasPermission("users.assign_role")}
       <Button size="sm" onclick={() => (bulkRoleOpen = true)}>
-        批量维护角色
+        {$t("users.bulkRole.action")}
       </Button>
     {/if}
   </BulkActionsBar>
 
   <FormDialog
     bind:open={bulkRoleOpen}
-    title="批量维护角色"
-    description={`将为已选的 ${selectedIds.size} 位用户设置同一角色。`}
+    title={$t("users.bulkRole.title")}
+    description={$t("users.bulkRole.description", { count: selectedIds.size })}
     submitting={bulkSubmitting}
-    submitLabel="保存"
+    submitLabel={$t("users.bulkRole.save")}
     onSubmit={() => void handleBulkRoleSubmit()}
   >
     <FieldGroup>
       <Field>
-        <FieldLabel for="bulk-role">角色</FieldLabel>
+        <FieldLabel for="bulk-role">{$t("users.bulkRole.role")}</FieldLabel>
         <Select
           type="single"
           items={roleItems}
@@ -670,12 +690,20 @@
             if (value) bulkRoleId = value
           }}
         >
-          <SelectTrigger id="bulk-role" class="w-full" aria-label="角色">
-            <SelectValue placeholder="请选择角色" />
+          <SelectTrigger
+            id="bulk-role"
+            class="w-full"
+            aria-label={$t("users.bulkRole.role")}
+          >
+            <SelectValue placeholder={$t("users.bulkRole.selectRole")} />
           </SelectTrigger>
           <SelectContent>
             {#each roles as role (role.id)}
-              <SelectItem value={role.id}>{role.name}</SelectItem>
+              <SelectItem value={role.id}
+                >{$t(`roles.${role.id}`, {
+                  defaultValue: role.name,
+                })}</SelectItem
+              >
             {/each}
           </SelectContent>
         </Select>
@@ -685,40 +713,40 @@
 
   <FormDialog
     bind:open={editOpen}
-    title={editingUser ? "编辑用户" : "新增用户"}
+    title={editingUser ? $t("users.edit.editTitle") : $t("users.edit.addTitle")}
     description={editingUser
-      ? "修改用户的基本信息。"
-      : "填写以下信息创建新用户。"}
+      ? $t("users.edit.editDescription")
+      : $t("users.edit.addDescription")}
     submitting={editSubmitting}
-    submitLabel={editingUser ? "保存" : "创建"}
+    submitLabel={editingUser ? $t("users.edit.save") : $t("users.edit.create")}
     onSubmit={() => void handleEditSubmit()}
   >
     <FieldGroup>
       <Field>
-        <FieldLabel for="username">用户名</FieldLabel>
+        <FieldLabel for="username">{$t("users.edit.username")}</FieldLabel>
         <Input
           id="username"
           bind:value={editForm.username}
           name="username"
           autocomplete="off"
           spellcheck={false}
-          placeholder="请输入用户名"
+          placeholder={$t("users.edit.usernamePlaceholder")}
           required
         />
       </Field>
       <Field>
-        <FieldLabel for="name">姓名</FieldLabel>
+        <FieldLabel for="name">{$t("users.edit.name")}</FieldLabel>
         <Input
           id="name"
           bind:value={editForm.name}
           name="name"
           autocomplete="off"
-          placeholder="请输入姓名"
+          placeholder={$t("users.edit.namePlaceholder")}
           required
         />
       </Field>
       <Field>
-        <FieldLabel for="email">邮箱</FieldLabel>
+        <FieldLabel for="email">{$t("users.edit.email")}</FieldLabel>
         <Input
           id="email"
           bind:value={editForm.email}
@@ -726,13 +754,13 @@
           autocomplete="off"
           spellcheck={false}
           type="email"
-          placeholder="请输入邮箱"
+          placeholder={$t("users.edit.emailPlaceholder")}
           required
         />
       </Field>
       {#if auth.hasPermission("users.assign_role")}
         <Field>
-          <FieldLabel>角色</FieldLabel>
+          <FieldLabel>{$t("users.edit.role")}</FieldLabel>
           <Select
             type="single"
             items={roleItems}
@@ -741,13 +769,17 @@
               if (value) editForm.roleId = value
             }}
           >
-            <SelectTrigger class="w-full" aria-label="角色">
-              <SelectValue placeholder="请选择角色" />
+            <SelectTrigger class="w-full" aria-label={$t("users.edit.role")}>
+              <SelectValue placeholder={$t("users.edit.selectRole")} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 {#each roles as role (role.id)}
-                  <SelectItem value={role.id}>{role.name}</SelectItem>
+                  <SelectItem value={role.id}
+                    >{$t(`roles.${role.id}`, {
+                      defaultValue: role.name,
+                    })}</SelectItem
+                  >
                 {/each}
               </SelectGroup>
             </SelectContent>
@@ -759,15 +791,17 @@
 
   <FormDialog
     bind:open={roleOpen}
-    title="维护角色"
-    description={`为 ${roleTarget?.name ?? ""} 修改角色。`}
+    title={$t("users.role.title")}
+    description={$t("users.role.description", {
+      name: roleTarget?.name ?? "",
+    })}
     submitting={roleSubmitting}
-    submitLabel="确认修改"
+    submitLabel={$t("users.role.confirm")}
     onSubmit={() => void handleRoleSubmit()}
   >
     <FieldGroup>
       <Field>
-        <FieldLabel>当前角色</FieldLabel>
+        <FieldLabel>{$t("users.role.current")}</FieldLabel>
         <div>
           {#if roleTarget}
             <RoleBadge roleId={roleTarget.roleId} {roles} />
@@ -775,7 +809,7 @@
         </div>
       </Field>
       <Field>
-        <FieldLabel>新角色</FieldLabel>
+        <FieldLabel>{$t("users.role.new")}</FieldLabel>
         <Select
           type="single"
           items={roleItems}
@@ -784,13 +818,17 @@
             if (value) roleValue = value
           }}
         >
-          <SelectTrigger class="w-full" aria-label="新角色">
-            <SelectValue placeholder="请选择角色" />
+          <SelectTrigger class="w-full" aria-label={$t("users.role.new")}>
+            <SelectValue placeholder={$t("users.role.selectRole")} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               {#each roles as role (role.id)}
-                <SelectItem value={role.id}>{role.name}</SelectItem>
+                <SelectItem value={role.id}
+                  >{$t(`roles.${role.id}`, {
+                    defaultValue: role.name,
+                  })}</SelectItem
+                >
               {/each}
             </SelectGroup>
           </SelectContent>
@@ -809,14 +847,16 @@
   <Dialog bind:open={resetOpen}>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>重置密码</DialogTitle>
+        <DialogTitle>{$t("users.reset.title")}</DialogTitle>
         <DialogDescription>
-          为 <span class="font-medium">{resetTarget?.name}</span> 重置密码
+          {$t("users.reset.description", {
+            name: resetTarget?.name ?? "",
+          })}
         </DialogDescription>
       </DialogHeader>
       <FieldGroup>
         <Field>
-          <FieldLabel>新密码</FieldLabel>
+          <FieldLabel>{$t("users.reset.newPassword")}</FieldLabel>
           <div class="flex gap-2">
             <Input
               name="newPassword"
@@ -828,16 +868,16 @@
             <Button
               variant="outline"
               size="icon"
-              aria-label="重新生成密码"
+              aria-label={$t("users.reset.regenerate")}
               onclick={() => (newPassword = generatePassword())}
             >
               <RefreshCw />
             </Button>
             <Button variant="outline" onclick={() => void copyPassword()}
-              >复制</Button
+              >{$t("users.reset.copy")}</Button
             >
           </div>
-          <p class="text-sm text-muted-foreground">请将密码发送给用户。</p>
+          <p class="text-sm text-muted-foreground">{$t("users.reset.hint")}</p>
         </Field>
       </FieldGroup>
       <DialogFooter>
@@ -845,7 +885,7 @@
           loading={resetSubmitting}
           onclick={() => void handleResetSubmit()}
         >
-          确认重置
+          {$t("users.reset.confirm")}
         </LoadingButton>
       </DialogFooter>
     </DialogContent>
@@ -854,9 +894,12 @@
   <Dialog bind:open={pendingOpen}>
     <DialogContent class="sm:max-w-2xl">
       <DialogHeader>
-        <DialogTitle>待审核用户</DialogTitle>
+        <DialogTitle>{$t("users.pending.title")}</DialogTitle>
         <DialogDescription>
-          共 {pendingUsers.length} 位用户等待审核，已选择 {selectedPending.size} 位。
+          {$t("users.pending.description", {
+            total: pendingUsers.length,
+            selected: selectedPending.size,
+          })}
         </DialogDescription>
       </DialogHeader>
       <DataList
@@ -869,8 +912,8 @@
         bordered={false}
         empty={{
           icon: UserRound,
-          title: "暂无待审核用户",
-          description: "开启人工审核后，新注册用户会出现在这里。",
+          title: $t("users.pending.emptyTitle"),
+          description: $t("users.pending.emptyDescription"),
         }}
         onRetry={() => void openPending()}
         onHideColumn={() => {}}
@@ -880,7 +923,7 @@
             <Checkbox
               checked={allPendingSelected}
               indeterminate={somePendingSelected}
-              aria-label="选择全部待审核用户"
+              aria-label={$t("users.selectAllPending")}
               onCheckedChange={toggleAllPending}
             />
           {:else}
@@ -891,7 +934,7 @@
           {#if key === "select"}
             <Checkbox
               checked={selectedPending.has(row.id)}
-              aria-label={`选择 ${row.name}`}
+              aria-label={$t("users.selectUser", { name: row.name })}
               class="relative z-20"
               onCheckedChange={() => togglePending(row.id)}
             />
@@ -911,7 +954,7 @@
             {#snippet leading()}
               <Checkbox
                 checked={selectedPending.has(row.id)}
-                aria-label={`选择 ${row.name}`}
+                aria-label={$t("users.selectUser", { name: row.name })}
                 class="mt-0.5"
                 onCheckedChange={() => togglePending(row.id)}
               />
@@ -925,14 +968,14 @@
           disabled={selectedPending.size === 0 || pendingSubmitting}
           onclick={() => (rejectOpen = true)}
         >
-          拒绝 ({selectedPending.size})
+          {$t("users.pending.reject", { count: selectedPending.size })}
         </Button>
         <LoadingButton
           disabled={selectedPending.size === 0}
           loading={pendingSubmitting}
           onclick={() => void handleBatchApprove()}
         >
-          通过 ({selectedPending.size})
+          {$t("users.pending.approve", { count: selectedPending.size })}
         </LoadingButton>
       </DialogFooter>
     </DialogContent>
@@ -940,8 +983,10 @@
 
   <ConfirmDeleteDialog
     bind:open={rejectOpen}
-    targetName={`选中的 ${selectedPending.size} 位用户`}
-    description="拒绝后这些账号会被删除。"
+    targetName={$t("users.pending.rejectTarget", {
+      count: selectedPending.size,
+    })}
+    description={$t("users.pending.rejectDescription")}
     loading={pendingSubmitting}
     onConfirm={() => void handleBatchReject()}
   />

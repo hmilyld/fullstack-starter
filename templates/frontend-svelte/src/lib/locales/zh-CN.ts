@@ -196,6 +196,7 @@ const zhCN = {
       resetFailed: "重置失败",
       resetSuccess: "密码已重置",
       passwordCopied: "密码已复制到剪贴板",
+      copyFailed: "复制失败，请手动复制",
     },
     bulkRole: {
       action: "批量维护角色",
