@@ -347,6 +347,39 @@ const en = {
     menuType: "Menu",
     operationType: "Operation",
   },
+  permissionPage: {
+    title: "Permission overview",
+    description:
+      "Read-only view of menu and operation permissions. Use Menus & Permissions for day-to-day changes.",
+    menuLink: "Menus & permissions",
+    listDescription:
+      "{{menus}} menu permissions and {{ops}} operation permissions",
+    searchPlaceholder: "Search code or name…",
+    searchAria: "Search permissions",
+    sync: "Sync permissions",
+    loadMenuFailed: "Failed to load menu permissions",
+    loadOperationFailed: "Failed to load operation permissions",
+    syncFailed: "Sync failed",
+    syncSuccess:
+      "Synced: {{added}} added, {{updated}} updated, {{granted}} granted to administrators",
+    emptySearchTitle: "No matching permissions",
+    emptyTitle: "No permissions yet",
+    emptySearchDescription: "Try another keyword, or clear the search.",
+    emptyDescription:
+      "Add a menu in Menus & Permissions to generate its permission.",
+    clearSearch: "Clear search",
+    goToMenus: "Go to Menus & Permissions",
+    hiddenNote:
+      "Hidden menus still appear here. Hiding only affects the sidebar, not permissions or direct route access.",
+    menuType: "Menu",
+    operationType: "Operation",
+    noOperations: "No operation permissions",
+    nameHeader: "Permission",
+    codeHeader: "Code",
+    typeHeader: "Type",
+    expandAria: "Expand {{name}}",
+    collapseAria: "Collapse {{name}}",
+  },
   nav: {
     groups: {
       navigation: "Navigation",
