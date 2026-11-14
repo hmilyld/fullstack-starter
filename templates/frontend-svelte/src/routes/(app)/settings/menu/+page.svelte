@@ -70,6 +70,7 @@
   import { useMediaQuery } from "#lib/hooks/use-media-query.svelte.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { OPERATION_PRESETS, buildOperationCode } from "#lib/access-tree.js"
+  import { t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import type {
     MenuConfig,
@@ -94,6 +95,18 @@
 
   const toast = useToast()
   const isCompact = useMediaQuery("(max-width: 767px)")
+
+  function groupLabel(group: MenuGroup) {
+    return group.isSystem
+      ? $t(`nav.groups.${group.id}`, { defaultValue: group.name })
+      : group.name
+  }
+
+  function menuLabel(item: MenuItem) {
+    return item.isSystem
+      ? $t(`nav.items.${item.permissionCode}`, { defaultValue: item.name })
+      : item.name
+  }
 
   let config = $state<MenuConfig | null>(null)
   let loading = $state(true)
@@ -167,10 +180,14 @@
       label: group.name,
     }))
   )
-  const operationVerbItems = OPERATION_PRESETS.map((preset) => ({
-    value: preset.verb,
-    label: preset.label,
-  }))
+  const operationVerbItems = $derived(
+    OPERATION_PRESETS.map((preset) => ({
+      value: preset.verb,
+      label: $t(`menuPage.verbs.${preset.verb}`, {
+        defaultValue: preset.label,
+      }),
+    }))
+  )
 
   const menuStats = $derived.by(() => {
     const groups = config?.groups ?? []
@@ -184,7 +201,11 @@
         ),
       0
     )
-    return `共 ${groups.length} 个分组，${menus} 个菜单，${operations} 个操作权限`
+    return $t("menuPage.listDescription", {
+      groups: groups.length,
+      menus,
+      operations,
+    })
   })
 
   const visibleGroups = $derived.by<MenuGroup[]>(() => {
@@ -243,7 +264,7 @@
       loading = false
       return true
     }
-    error = response.message || "加载菜单失败"
+    error = response.message || $t("menuPage.loadFailed")
     loading = false
     return false
   }
@@ -282,7 +303,7 @@
         })),
       })
       if (response.code !== 0) {
-        toast.error(response.message || "保存失败")
+        toast.error(response.message || $t("menuPage.toasts.saveFailed"))
         await load()
         return
       }
@@ -447,13 +468,17 @@
         ? await updateMenuGroup(editingGroup.id, groupName)
         : await createMenuGroup(groupName)
       if (response.code !== 0) {
-        toast.error(response.message || "操作失败")
+        toast.error(response.message || $t("menuPage.toasts.operationFailed"))
         return
       }
       groupOpen = false
       await load()
       window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-      toast.success(editingGroup ? "分组已更新" : "分组已创建")
+      toast.success(
+        editingGroup
+          ? $t("menuPage.toasts.groupUpdated")
+          : $t("menuPage.toasts.groupCreated")
+      )
     } finally {
       submitting = false
       saving = false
@@ -518,13 +543,17 @@
           })
         : await createMenuItem(itemForm)
       if (response.code !== 0) {
-        toast.error(response.message || "操作失败")
+        toast.error(response.message || $t("menuPage.toasts.operationFailed"))
         return
       }
       itemOpen = false
       await load()
       window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-      toast.success(editingItem ? "菜单已更新" : "菜单已创建")
+      toast.success(
+        editingItem
+          ? $t("menuPage.toasts.menuUpdated")
+          : $t("menuPage.toasts.menuCreated")
+      )
     } finally {
       submitting = false
       saving = false
@@ -537,15 +566,19 @@
     try {
       const response = await updateMenuItem(item.permissionCode, { hidden })
       if (response.code !== 0) {
-        toast.error(response.message || "操作失败")
+        toast.error(response.message || $t("menuPage.toasts.operationFailed"))
         return false
       }
       if (!(await load())) {
-        toast.error("菜单状态已保存，但列表刷新失败，请重试")
+        toast.error($t("menuPage.toasts.hiddenSavedReloadFailed"))
         return false
       }
       window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-      toast.success(hidden ? "菜单已隐藏" : "菜单已显示")
+      toast.success(
+        hidden
+          ? $t("menuPage.toasts.menuHidden")
+          : $t("menuPage.toasts.menuShown")
+      )
       return true
     } finally {
       saving = false
@@ -638,12 +671,12 @@
   async function submitOperation() {
     if (!operationMenu || saving) return
     if (!operationForm.name.trim()) {
-      toast.error("请输入权限名称")
+      toast.error($t("menuPage.dialogs.operation.nameRequired"))
       return
     }
     const code = operationForm.code.trim()
     if (!editingOperation && !code) {
-      toast.error("请输入权限编码")
+      toast.error($t("menuPage.dialogs.operation.codeRequired"))
       return
     }
 
@@ -662,10 +695,14 @@
             parent: operationMenu.permissionCode,
           })
       if (response.code !== 0) {
-        toast.error(response.message || "操作失败")
+        toast.error(response.message || $t("menuPage.toasts.operationFailed"))
         return
       }
-      toast.success(editingOperation ? "操作权限已更新" : "操作权限已创建")
+      toast.success(
+        editingOperation
+          ? $t("menuPage.toasts.operationUpdated")
+          : $t("menuPage.toasts.operationCreated")
+      )
       operationOpen = false
       await load()
     } finally {
@@ -687,7 +724,7 @@
             ? await deleteMenuItem(target.id)
             : await deletePermission(target.id)
       if (response.code !== 0) {
-        toast.error(response.message || "删除失败")
+        toast.error(response.message || $t("menuPage.toasts.deleteFailed"))
         return
       }
       deleteOpen = false
@@ -696,7 +733,7 @@
       if (target.type !== "operation") {
         window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
       }
-      toast.success("删除成功")
+      toast.success($t("menuPage.toasts.deleteSuccess"))
     } finally {
       deleteLoading = false
       saving = false
@@ -706,24 +743,31 @@
   const deleteDescription = $derived.by(() => {
     if (deleteTarget?.type === "item") {
       return deleteTarget.operationCount > 0
-        ? `删除后将同时移除 ${deleteTarget.operationCount} 个操作权限，并从相关角色中移除授权。`
-        : "对应菜单权限和角色授权也会被删除。"
+        ? $t("menuPage.delete.itemWithOperations", {
+            count: deleteTarget.operationCount,
+          })
+        : $t("menuPage.delete.item")
     }
     if (deleteTarget?.type === "operation") {
-      return "删除后，已授予该权限的角色会同步失去此权限。"
+      return $t("menuPage.delete.operation")
     }
     if (deleteTarget?.type === "group") {
-      return "仅空分组可以删除。"
+      return $t("menuPage.delete.group")
     }
     return undefined
   })
 
   const operationTitle = $derived(
-    editingOperation ? "编辑操作权限" : "新增操作权限"
+    editingOperation
+      ? $t("menuPage.dialogs.operation.editTitle")
+      : $t("menuPage.dialogs.operation.addTitle")
   )
   const operationDescription = $derived(
     operationMenu
-      ? `所属菜单：${operationMenu.name}（${operationMenu.permissionCode}）`
+      ? $t("menuPage.dialogs.operation.description", {
+          name: menuLabel(operationMenu),
+          code: operationMenu.permissionCode,
+        })
       : undefined
   )
 
@@ -731,27 +775,27 @@
     const actions: RowAction[] = []
     if (canCreate) {
       actions.push({
-        label: "新增菜单",
+        label: $t("menuPage.actions.addMenu"),
         icon: Plus,
         onSelect: () => openCreateItem(group.id),
       })
     }
     if (canEdit) {
       actions.push({
-        label: "编辑分组",
+        label: $t("menuPage.actions.editGroup"),
         onSelect: () => openEditGroup(group),
       })
     }
     if (reorderEnabled) {
       actions.push({
-        label: "上移",
+        label: $t("menuPage.actions.up"),
         disabled:
           (config?.groups.findIndex((item) => item.id === group.id) ?? 0) <= 0,
         onSelect: () => moveGroup(group.id, -1),
         separatorBefore: true,
       })
       actions.push({
-        label: "下移",
+        label: $t("menuPage.actions.down"),
         disabled:
           (config?.groups.findIndex((item) => item.id === group.id) ?? 0) >=
           (config?.groups.length ?? 1) - 1,
@@ -760,14 +804,14 @@
     }
     if (canDelete) {
       actions.push({
-        label: "删除分组",
+        label: $t("menuPage.actions.deleteGroup"),
         destructive: true,
         separatorBefore: true,
         onSelect: () =>
           askDelete({
             type: "group",
             id: group.id,
-            name: group.name,
+            name: groupLabel(group),
           }),
       })
     }
@@ -782,44 +826,46 @@
     const actions: RowAction[] = []
     if (canCreateOperation) {
       actions.push({
-        label: "新增操作权限",
+        label: $t("menuPage.addOperation"),
         icon: KeyRound,
         onSelect: () => openCreateOperation(item),
       })
     }
     if (canEdit) {
       actions.push({
-        label: "编辑菜单",
+        label: $t("menuPage.actions.edit"),
         onSelect: () => openEditItem(item),
       })
       actions.push({
-        label: item.hidden ? "显示菜单" : "隐藏菜单",
+        label: item.hidden
+          ? $t("menuPage.actions.showInSidebar")
+          : $t("menuPage.actions.hideMenu"),
         onSelect: () => void toggleHidden(item),
       })
     }
     if (reorderEnabled) {
       actions.push({
-        label: "上移",
+        label: $t("menuPage.actions.up"),
         disabled: index <= 0,
         onSelect: () => moveItem(item.groupId, item.permissionCode, -1),
         separatorBefore: true,
       })
       actions.push({
-        label: "下移",
+        label: $t("menuPage.actions.down"),
         disabled: index >= length - 1,
         onSelect: () => moveItem(item.groupId, item.permissionCode, 1),
       })
     }
     if (canDelete) {
       actions.push({
-        label: "删除菜单",
+        label: $t("menuPage.actions.delete"),
         destructive: true,
         separatorBefore: true,
         onSelect: () =>
           askDelete({
             type: "item",
             id: item.permissionCode,
-            name: item.name,
+            name: menuLabel(item),
             operationCount: item.operations.length,
           }),
       })
@@ -828,12 +874,14 @@
   }
 </script>
 
-<svelte:head><title>菜单与权限 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title>{$t("menuPage.title")} · {$t("pwa.defaultName")}</title></svelte:head
+>
 
 <div class="flex flex-col gap-(--page-gap)">
   <PageHeader
-    title="菜单与权限"
-    description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
+    title={$t("menuPage.title")}
+    description={$t("menuPage.description")}
   />
 
   <ListShell description={menuStats}>
@@ -843,8 +891,8 @@
           name="q"
           autocomplete="off"
           spellcheck={false}
-          placeholder="搜索菜单或操作权限…"
-          aria-label="搜索菜单"
+          placeholder={$t("menuPage.searchPlaceholder")}
+          aria-label={$t("menuPage.searchAria")}
           bind:value={search}
         />
         <InputGroupAddon>
@@ -852,7 +900,9 @@
         </InputGroupAddon>
       </InputGroup>
       {#if saving}
-        <span class="text-xs text-muted-foreground">正在保存…</span>
+        <span class="text-xs text-muted-foreground"
+          >{$t("menuPage.saving")}</span
+        >
       {/if}
       {#if canViewOverview}
         <Button
@@ -861,7 +911,7 @@
           class="w-full md:w-auto"
         >
           <KeyRound data-icon="inline-start" />
-          权限总览
+          {$t("menuPage.overview")}
         </Button>
       {/if}
       {#if canCreate}
@@ -872,11 +922,13 @@
           onclick={openCreateGroup}
         >
           <Plus data-icon="inline-start" />
-          新增分组
+          {$t("menuPage.addGroup")}
         </Button>
       {/if}
       {#if search.trim()}
-        <span class="text-xs text-muted-foreground">搜索时暂停拖拽</span>
+        <span class="text-xs text-muted-foreground"
+          >{$t("menuPage.dragPaused")}</span
+        >
       {/if}
     {/snippet}
 
@@ -888,27 +940,28 @@
       <PageFormSkeleton />
     {:else if !config}
       <ErrorState
-        message={error || "加载菜单失败"}
+        message={error || $t("menuPage.loadFailed")}
         onRetry={() => void load()}
       />
     {:else if config.groups.length === 0}
       <EmptyState
-        title="还没有菜单分组"
-        description="先创建一个分组，再把菜单入口放进去。"
+        title={$t("menuPage.emptyGroupTitle")}
+        description={$t("menuPage.emptyGroupDescription")}
       >
         {#if canCreate}
           <Button onclick={openCreateGroup}>
             <Plus data-icon="inline-start" />
-            新增分组
+            {$t("menuPage.addGroup")}
           </Button>
         {/if}
       </EmptyState>
     {:else if visibleGroups.length === 0}
       <EmptyState
-        title="没有匹配的菜单"
-        description="换个关键词，或清空搜索条件后再试。"
+        title={$t("menuPage.emptySearchTitle")}
+        description={$t("menuPage.emptySearchDescription")}
       >
-        <Button variant="outline" onclick={() => (search = "")}>清空搜索</Button
+        <Button variant="outline" onclick={() => (search = "")}
+          >{$t("menuPage.clearSearch")}</Button
         >
       </EmptyState>
     {:else if isCompact.matches}
@@ -919,21 +972,32 @@
               <Button
                 variant="ghost"
                 size="icon-xs"
-                aria-label={`${collapsedGroups.has(group.id) ? "展开" : "收起"} ${group.name} 分组`}
+                aria-label={$t("menuPage.aria.toggleGroup", {
+                  action: collapsedGroups.has(group.id)
+                    ? $t("menuPage.actions.expand")
+                    : $t("menuPage.actions.collapse"),
+                  name: groupLabel(group),
+                })}
                 onclick={() => toggleGroup(group.id)}
               >
                 <ChevronRight
                   class={collapsedGroups.has(group.id) ? "" : "rotate-90"}
                 />
               </Button>
-              <span class="font-medium">{group.name}</span>
-              <Badge variant="secondary">{group.items.length} 个菜单</Badge>
+              <span class="font-medium">{groupLabel(group)}</span>
+              <Badge variant="secondary"
+                >{$t("menuPage.itemCount", {
+                  count: group.items.length,
+                })}</Badge
+              >
               <div class="ml-auto flex items-center gap-1">
                 {#if reorderEnabled}
                   <Button
                     variant="ghost"
                     size="icon-xs"
-                    aria-label={`拖动 ${group.name} 排序`}
+                    aria-label={$t("menuPage.aria.dragGroup", {
+                      name: groupLabel(group),
+                    })}
                     onpointerdown={(event) =>
                       startDrag(event, { type: "group", groupId: group.id })}
                   >
@@ -942,7 +1006,9 @@
                 {/if}
                 <RowActions
                   actions={buildGroupActions(group)}
-                  label={`${group.name} 的操作`}
+                  label={$t("menuPage.groupActions", {
+                    name: groupLabel(group),
+                  })}
                 />
               </div>
             </div>
@@ -954,7 +1020,12 @@
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={`${expanded.has(item.permissionCode) ? "收起" : "展开"} ${item.name} 的操作权限`}
+                        aria-label={$t("menuPage.aria.toggleOperations", {
+                          action: expanded.has(item.permissionCode)
+                            ? $t("menuPage.actions.collapse")
+                            : $t("menuPage.actions.expand"),
+                          name: menuLabel(item),
+                        })}
                         onclick={() => toggleExpanded(item.permissionCode)}
                       >
                         <ChevronRight
@@ -966,10 +1037,10 @@
                       <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-1.5">
                           <span class="truncate text-sm font-medium"
-                            >{item.name}</span
+                            >{menuLabel(item)}</span
                           >
                           {#if item.hidden}<Badge variant="outline"
-                              >已隐藏</Badge
+                              >{$t("menuPage.hidden")}</Badge
                             >{/if}
                         </div>
                         <p
@@ -982,7 +1053,9 @@
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`拖动 ${item.name} 排序`}
+                          aria-label={$t("menuPage.aria.dragItem", {
+                            name: menuLabel(item),
+                          })}
                           onpointerdown={(event) =>
                             startDrag(event, {
                               type: "item",
@@ -999,7 +1072,9 @@
                           itemIndex,
                           group.items.length
                         )}
-                        label={`${item.name} 的操作`}
+                        label={$t("menuPage.itemActions", {
+                          name: menuLabel(item),
+                        })}
                       />
                     </div>
                     {#if expanded.has(item.permissionCode)}
@@ -1015,7 +1090,9 @@
                               <Button
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`编辑 ${operation.name}`}
+                                aria-label={$t("menuPage.aria.editOperation", {
+                                  name: operation.name,
+                                })}
                                 onclick={() =>
                                   openEditOperation(item, operation)}
                               >
@@ -1026,7 +1103,12 @@
                               <Button
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`删除 ${operation.name}`}
+                                aria-label={$t(
+                                  "menuPage.aria.deleteOperation",
+                                  {
+                                    name: operation.name,
+                                  }
+                                )}
                                 onclick={() =>
                                   handleDeleteOperation(item, operation)}
                               >
@@ -1037,7 +1119,7 @@
                         {/each}
                         {#if item.operations.length === 0}
                           <span class="text-xs text-muted-foreground"
-                            >暂无操作权限</span
+                            >{$t("menuPage.noOperations")}</span
                           >
                         {/if}
                         {#if canCreateOperation}
@@ -1048,7 +1130,7 @@
                             onclick={() => openCreateOperation(item)}
                           >
                             <Plus data-icon="inline-start" />
-                            新增操作权限
+                            {$t("menuPage.addOperation")}
                           </Button>
                         {/if}
                       </div>
@@ -1062,7 +1144,7 @@
                     onclick={() => openCreateItem(group.id)}
                   >
                     <Plus data-icon="inline-start" />
-                    新增菜单
+                    {$t("menuPage.actions.addMenu")}
                   </Button>
                 {/if}
               </div>
@@ -1075,12 +1157,20 @@
         <Table class="min-w-[600px] table-fixed">
           <TableHeader>
             <TableRow class="bg-muted/50 hover:bg-muted/50">
-              <TableHead class="w-[35%]">名称</TableHead>
-              <TableHead class="w-[10%]">类型</TableHead>
-              <TableHead class="w-[27%]">路由 / 权限编码</TableHead>
-              <TableHead class="hidden w-[12%] lg:table-cell">标记</TableHead>
+              <TableHead class="w-[35%]"
+                >{$t("menuPage.columns.name")}</TableHead
+              >
+              <TableHead class="w-[10%]"
+                >{$t("menuPage.columns.type")}</TableHead
+              >
+              <TableHead class="w-[27%]"
+                >{$t("menuPage.columns.routeOrCode")}</TableHead
+              >
+              <TableHead class="hidden w-[12%] lg:table-cell"
+                >{$t("menuPage.columns.marker")}</TableHead
+              >
               <TableHead class="sticky right-0 w-[16%] bg-muted/50 text-right"
-                >操作</TableHead
+                >{$t("menuPage.columns.actions")}</TableHead
               >
             </TableRow>
           </TableHeader>
@@ -1095,7 +1185,12 @@
                     <Button
                       variant="ghost"
                       size="icon-xs"
-                      aria-label={`${tableCollapsedGroups.has(group.id) ? "展开" : "收起"} ${group.name} 分组`}
+                      aria-label={$t("menuPage.aria.toggleGroup", {
+                        action: tableCollapsedGroups.has(group.id)
+                          ? $t("menuPage.actions.expand")
+                          : $t("menuPage.actions.collapse"),
+                        name: groupLabel(group),
+                      })}
                       onclick={() => toggleGroup(group.id)}
                     >
                       <ChevronRight
@@ -1104,17 +1199,22 @@
                           : "rotate-90"}
                       />
                     </Button>
-                    <span class="font-medium">{group.name}</span>
+                    <span class="font-medium">{groupLabel(group)}</span>
                   </div>
                 </TableCell>
-                <TableCell><Badge variant="secondary">分组</Badge></TableCell>
+                <TableCell
+                  ><Badge variant="secondary">{$t("menuPage.groupType")}</Badge
+                  ></TableCell
+                >
                 <TableCell class="font-mono text-xs text-muted-foreground"
                   >{group.id}</TableCell
                 >
                 <TableCell
                   class="hidden text-xs text-muted-foreground lg:table-cell"
                 >
-                  {group.isSystem ? "内置" : "自定义"}
+                  {group.isSystem
+                    ? $t("menuPage.builtIn")
+                    : $t("rolesPage.custom")}
                 </TableCell>
                 <TableCell class="sticky right-0 bg-muted/40 text-right">
                   <div class="flex items-center justify-end gap-1">
@@ -1122,7 +1222,9 @@
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={`拖动 ${group.name} 排序`}
+                        aria-label={$t("menuPage.aria.dragGroup", {
+                          name: groupLabel(group),
+                        })}
                         onpointerdown={(event) =>
                           startDrag(event, {
                             type: "group",
@@ -1138,12 +1240,15 @@
                         size="xs"
                         onclick={() => openCreateItem(group.id)}
                       >
-                        <Plus /> 新增菜单
+                        <Plus />
+                        {$t("menuPage.actions.addMenu")}
                       </Button>
                     {/if}
                     <RowActions
                       actions={buildGroupActions(group)}
-                      label={`${group.name} 的操作`}
+                      label={$t("menuPage.groupActions", {
+                        name: groupLabel(group),
+                      })}
                     />
                   </div>
                 </TableCell>
@@ -1161,7 +1266,12 @@
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`${expanded.has(item.permissionCode) ? "收起" : "展开"} ${item.name} 的操作权限`}
+                          aria-label={$t("menuPage.aria.toggleOperations", {
+                            action: expanded.has(item.permissionCode)
+                              ? $t("menuPage.actions.collapse")
+                              : $t("menuPage.actions.expand"),
+                            name: menuLabel(item),
+                          })}
                           onclick={() => toggleExpanded(item.permissionCode)}
                         >
                           <ChevronRight
@@ -1170,10 +1280,14 @@
                               : ""}
                           />
                         </Button>
-                        <span class="text-sm font-medium">{item.name}</span>
+                        <span class="text-sm font-medium"
+                          >{menuLabel(item)}</span
+                        >
                       </div>
                     </TableCell>
-                    <TableCell><Badge>菜单</Badge></TableCell>
+                    <TableCell
+                      ><Badge>{$t("menuPage.menuType")}</Badge></TableCell
+                    >
                     <TableCell>
                       <div class="flex flex-col gap-0.5">
                         <span class="text-sm">{item.route}</span>
@@ -1184,7 +1298,8 @@
                       </div>
                     </TableCell>
                     <TableCell class="hidden lg:table-cell">
-                      {#if item.hidden}<Badge variant="outline">已隐藏</Badge
+                      {#if item.hidden}<Badge variant="outline"
+                          >{$t("menuPage.hidden")}</Badge
                         >{:else}<span class="text-xs text-muted-foreground"
                           >—</span
                         >{/if}
@@ -1195,7 +1310,9 @@
                           <Button
                             variant="ghost"
                             size="icon-xs"
-                            aria-label={`拖动 ${item.name} 排序`}
+                            aria-label={$t("menuPage.aria.dragItem", {
+                              name: menuLabel(item),
+                            })}
                             onpointerdown={(event) =>
                               startDrag(event, {
                                 type: "item",
@@ -1210,7 +1327,9 @@
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            aria-label={`编辑 ${item.name}`}
+                            aria-label={$t("menuPage.aria.editItem", {
+                              name: menuLabel(item),
+                            })}
                             onclick={() => openEditItem(item)}
                           >
                             <KeyRound />
@@ -1222,7 +1341,9 @@
                             itemIndex,
                             group.items.length
                           )}
-                          label={`${item.name} 的操作`}
+                          label={$t("menuPage.itemActions", {
+                            name: menuLabel(item),
+                          })}
                         />
                       </div>
                     </TableCell>
@@ -1236,7 +1357,9 @@
                           >{operation.name}</TableCell
                         >
                         <TableCell
-                          ><Badge variant="secondary">操作</Badge></TableCell
+                          ><Badge variant="secondary"
+                            >{$t("menuPage.operationType")}</Badge
+                          ></TableCell
                         >
                         <TableCell
                           class="font-mono text-xs text-muted-foreground"
@@ -1251,7 +1374,9 @@
                               <Button
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`编辑 ${operation.name}`}
+                                aria-label={$t("menuPage.aria.editOperation", {
+                                  name: operation.name,
+                                })}
                                 onclick={() =>
                                   openEditOperation(item, operation)}
                               >
@@ -1262,7 +1387,12 @@
                               <Button
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`删除 ${operation.name}`}
+                                aria-label={$t(
+                                  "menuPage.aria.deleteOperation",
+                                  {
+                                    name: operation.name,
+                                  }
+                                )}
                                 onclick={() =>
                                   handleDeleteOperation(item, operation)}
                               >
@@ -1285,14 +1415,18 @@
 
   <FormDialog
     bind:open={groupOpen}
-    title={editingGroup ? "编辑分组" : "新增分组"}
-    description="分组名称仅用于侧边栏展示。"
+    title={editingGroup
+      ? $t("menuPage.dialogs.group.editTitle")
+      : $t("menuPage.dialogs.group.addTitle")}
+    description={$t("menuPage.dialogs.group.description")}
     {submitting}
     onSubmit={() => void submitGroup()}
   >
     <FieldGroup>
       <Field>
-        <FieldLabel for="group-name">分组名称</FieldLabel>
+        <FieldLabel for="group-name"
+          >{$t("menuPage.dialogs.group.name")}</FieldLabel
+        >
         <Input
           id="group-name"
           bind:value={groupName}
@@ -1306,14 +1440,18 @@
 
   <FormDialog
     bind:open={itemOpen}
-    title={editingItem ? "编辑菜单" : "新增菜单"}
-    description="菜单路由需要由前端页面提供。"
+    title={editingItem
+      ? $t("menuPage.dialogs.item.editTitle")
+      : $t("menuPage.dialogs.item.addTitle")}
+    description={$t("menuPage.dialogs.item.description")}
     {submitting}
     onSubmit={() => void submitItem()}
   >
     <FieldGroup>
       <Field>
-        <FieldLabel for="item-code">权限编码</FieldLabel>
+        <FieldLabel for="item-code"
+          >{$t("menuPage.dialogs.item.code")}</FieldLabel
+        >
         <Input
           id="item-code"
           bind:value={itemForm.permissionCode}
@@ -1323,11 +1461,13 @@
           disabled={!!editingItem}
           required
           pattern="^[a-z0-9_.-]+$"
-          title="只能包含小写字母、数字、点、下划线和连字符"
+          title={$t("menuPage.dialogs.item.codePattern")}
         />
       </Field>
       <Field>
-        <FieldLabel for="item-name">菜单名称</FieldLabel>
+        <FieldLabel for="item-name"
+          >{$t("menuPage.dialogs.item.name")}</FieldLabel
+        >
         <Input
           id="item-name"
           bind:value={itemForm.name}
@@ -1337,7 +1477,7 @@
         />
       </Field>
       <Field>
-        <FieldLabel>所属分组</FieldLabel>
+        <FieldLabel>{$t("menuPage.dialogs.item.group")}</FieldLabel>
         <Select
           type="single"
           items={groupItems}
@@ -1346,20 +1486,27 @@
             if (value) itemForm.groupId = value
           }}
         >
-          <SelectTrigger class="w-full" aria-label="所属分组">
-            <SelectValue placeholder="请选择分组" />
+          <SelectTrigger
+            class="w-full"
+            aria-label={$t("menuPage.dialogs.item.group")}
+          >
+            <SelectValue
+              placeholder={$t("menuPage.dialogs.item.selectGroup")}
+            />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               {#each config?.groups ?? [] as group (group.id)}
-                <SelectItem value={group.id}>{group.name}</SelectItem>
+                <SelectItem value={group.id}>{groupLabel(group)}</SelectItem>
               {/each}
             </SelectGroup>
           </SelectContent>
         </Select>
       </Field>
       <Field>
-        <FieldLabel for="item-route">路由</FieldLabel>
+        <FieldLabel for="item-route"
+          >{$t("menuPage.dialogs.item.route")}</FieldLabel
+        >
         <Input
           id="item-route"
           bind:value={itemForm.route}
@@ -1371,17 +1518,19 @@
         />
       </Field>
       <Field>
-        <FieldLabel>图标</FieldLabel>
+        <FieldLabel>{$t("menuPage.dialogs.item.icon")}</FieldLabel>
         <IconPicker bind:value={itemForm.icon} />
       </Field>
       <Field orientation="horizontal">
         <div class="flex flex-1 flex-col gap-1">
-          <FieldLabel for="item-visible">在侧边栏显示</FieldLabel>
+          <FieldLabel for="item-visible"
+            >{$t("menuPage.dialogs.item.visible")}</FieldLabel
+          >
           <FieldDescription>
             {editingItem?.permissionCode === "menus" ||
             editingItem?.permissionCode === "settings"
-              ? "隐藏后仍可通过 /settings/menu 直接访问并重新显示。"
-              : "关闭后菜单仍保留权限和路由，只是不在侧边栏展示。"}
+              ? $t("menuPage.dialogs.item.criticalHint")
+              : $t("menuPage.dialogs.item.visibleHint")}
           </FieldDescription>
         </div>
         <Switch
@@ -1402,32 +1551,43 @@
   >
     <FieldGroup>
       <Field>
-        <FieldLabel for="operation-name">权限名称</FieldLabel>
+        <FieldLabel for="operation-name"
+          >{$t("menuPage.dialogs.operation.name")}</FieldLabel
+        >
         <Input
           id="operation-name"
           bind:value={operationForm.name}
           name="operation-name"
           autocomplete="off"
-          placeholder="如：新增用户"
+          placeholder={$t("menuPage.dialogs.operation.namePlaceholder")}
           required
         />
       </Field>
       {#if !editingOperation}
         <Field>
-          <FieldLabel>常用动作</FieldLabel>
+          <FieldLabel>{$t("menuPage.dialogs.operation.preset")}</FieldLabel>
           <Select
             type="single"
             items={operationVerbItems}
             value={operationForm.verb}
             onValueChange={(value) => value && handleOperationVerbChange(value)}
           >
-            <SelectTrigger class="w-full" aria-label="常用动作">
-              <SelectValue placeholder="选择常用动作" />
+            <SelectTrigger
+              class="w-full"
+              aria-label={$t("menuPage.dialogs.operation.preset")}
+            >
+              <SelectValue
+                placeholder={$t("menuPage.dialogs.operation.presetPlaceholder")}
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 {#each OPERATION_PRESETS as preset (preset.verb)}
-                  <SelectItem value={preset.verb}>{preset.label}</SelectItem>
+                  <SelectItem value={preset.verb}
+                    >{$t(`menuPage.verbs.${preset.verb}`, {
+                      defaultValue: preset.label,
+                    })}</SelectItem
+                  >
                 {/each}
               </SelectGroup>
             </SelectContent>
@@ -1436,8 +1596,12 @@
       {/if}
       <Field orientation="horizontal">
         <div class="flex flex-1 flex-col gap-1">
-          <FieldLabel for="operation-custom">自定义编码</FieldLabel>
-          <FieldDescription>关闭时按“菜单编码.动作”自动生成。</FieldDescription>
+          <FieldLabel for="operation-custom"
+            >{$t("menuPage.dialogs.operation.custom")}</FieldLabel
+          >
+          <FieldDescription
+            >{$t("menuPage.dialogs.operation.customHint")}</FieldDescription
+          >
         </div>
         <Switch
           id="operation-custom"
@@ -1447,7 +1611,9 @@
         />
       </Field>
       <Field>
-        <FieldLabel for="operation-code">权限编码</FieldLabel>
+        <FieldLabel for="operation-code"
+          >{$t("menuPage.dialogs.operation.code")}</FieldLabel
+        >
         <Input
           id="operation-code"
           bind:value={operationForm.code}
@@ -1457,10 +1623,10 @@
           disabled={!operationForm.custom || !!editingOperation}
           required
           pattern="^[a-z0-9_.-]+$"
-          title="只能包含小写字母、数字、点、下划线和连字符"
+          title={$t("menuPage.dialogs.operation.codePattern")}
         />
         <FieldDescription
-          >编码用于后端鉴权，请与代码中的权限码保持一致。</FieldDescription
+          >{$t("menuPage.dialogs.operation.codeHint")}</FieldDescription
         >
       </Field>
     </FieldGroup>
@@ -1476,7 +1642,7 @@
 
   <ConfirmHideDialog
     bind:open={hideOpen}
-    targetName={hideConfirmTarget?.name ?? ""}
+    targetName={hideConfirmTarget ? menuLabel(hideConfirmTarget) : ""}
     loading={hideConfirmLoading}
     onConfirm={() => void handleHideConfirm()}
   />

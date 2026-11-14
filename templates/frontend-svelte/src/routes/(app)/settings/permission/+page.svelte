@@ -32,6 +32,7 @@
   } from "#lib/access-tree.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { useUrlListState } from "#lib/hooks/use-url-list-state.svelte.js"
+  import { t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import { cn } from "#lib/utils.js"
   import type { Permission } from "#lib/types/permission.js"
@@ -55,9 +56,9 @@
       getPermissions({ type: "operation" }),
     ])
     if (menuRes.code === 0) menuPermissions = menuRes.data
-    else error = menuRes.message || "加载菜单权限失败"
+    else error = menuRes.message || $t("permissionPage.loadMenuFailed")
     if (opRes.code === 0) operationPermissions = opRes.data
-    else error = opRes.message || "加载操作权限失败"
+    else error = opRes.message || $t("permissionPage.loadOperationFailed")
     tableLoading = false
   }
 
@@ -88,11 +89,15 @@
     const res = await syncPermissions()
     syncing = false
     if (res.code !== 0) {
-      toast.error(res.message || "同步失败")
+      toast.error(res.message || $t("permissionPage.syncFailed"))
       return
     }
     toast.success(
-      `同步成功：新增 ${res.data.added.length} 个，更新 ${res.data.updated.length} 个，管理员授予 ${res.data.granted.length} 个`
+      $t("permissionPage.syncSuccess", {
+        added: res.data.added.length,
+        updated: res.data.updated.length,
+        granted: res.data.granted.length,
+      })
     )
     void loadData()
   }
@@ -100,21 +105,27 @@
   const hasPermissions = $derived(tree.length > 0)
 </script>
 
-<svelte:head><title>权限总览 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title>{$t("permissionPage.title")} · {$t("pwa.defaultName")}</title
+  ></svelte:head
+>
 
 <div class="flex flex-col gap-(--page-gap)">
   <PageHeader
-    title="权限总览"
-    description="只读查看菜单权限与操作权限；日常维护请前往菜单与权限。"
+    title={$t("permissionPage.title")}
+    description={$t("permissionPage.description")}
   >
     <Button href="/settings/menu" variant="outline">
       <KeyRound data-icon="inline-start" />
-      菜单与权限
+      {$t("permissionPage.menuLink")}
     </Button>
   </PageHeader>
 
   <ListShell
-    description={`共 ${menuPermissions.length} 个菜单权限，${operationPermissions.length} 个操作权限`}
+    description={$t("permissionPage.listDescription", {
+      menus: menuPermissions.length,
+      ops: operationPermissions.length,
+    })}
   >
     {#snippet actions()}
       <InputGroup class="w-full md:w-64">
@@ -122,8 +133,8 @@
           name="q"
           autocomplete="off"
           spellcheck={false}
-          placeholder="搜索编码或名称…"
-          aria-label="搜索权限"
+          placeholder={$t("permissionPage.searchPlaceholder")}
+          aria-label={$t("permissionPage.searchAria")}
           value={search}
           oninput={(event) => urlState.setSearch(event.currentTarget.value)}
         />
@@ -139,7 +150,7 @@
           onclick={() => void handleSync()}
         >
           {#if !syncing}<RefreshCw data-icon="inline-start" />{/if}
-          同步权限
+          {$t("permissionPage.sync")}
         </LoadingButton>
       {/if}
     {/snippet}
@@ -155,22 +166,25 @@
     {:else if !hasPermissions}
       <EmptyState
         icon={KeyRound}
-        title={search ? "没有匹配的权限" : "还没有权限"}
+        title={search
+          ? $t("permissionPage.emptySearchTitle")
+          : $t("permissionPage.emptyTitle")}
         description={search
-          ? "换个关键词，或清空搜索条件后再试。"
-          : "在菜单与权限中新增菜单后，会自动生成对应的菜单权限。"}
+          ? $t("permissionPage.emptySearchDescription")
+          : $t("permissionPage.emptyDescription")}
       >
         {#if search}
           <Button variant="outline" onclick={() => urlState.setSearch("")}>
-            清空搜索
+            {$t("permissionPage.clearSearch")}
           </Button>
         {:else if auth.hasPermission("permissions")}
-          <Button href="/settings/menu">前往菜单与权限</Button>
+          <Button href="/settings/menu">{$t("permissionPage.goToMenus")}</Button
+          >
         {/if}
       </EmptyState>
     {:else}
       <p class="px-1 text-xs text-muted-foreground">
-        隐藏菜单仍会出现在这里；隐藏只影响侧边栏展示，不影响权限与路由访问。
+        {$t("permissionPage.hiddenNote")}
       </p>
 
       <div class="flex flex-col gap-2 md:hidden">
@@ -180,7 +194,9 @@
               <div class="flex min-w-0 flex-col gap-1">
                 <div class="flex items-center gap-2">
                   <span class="font-medium">{node.name}</span>
-                  <Badge variant="default">菜单</Badge>
+                  <Badge variant="default"
+                    >{$t("permissionPage.menuType")}</Badge
+                  >
                 </div>
                 <code class="truncate text-xs text-muted-foreground">
                   {node.code}
@@ -189,7 +205,12 @@
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label={`${expanded.has(node.code) ? "收起" : "展开"} ${node.name}`}
+                aria-label={$t(
+                  expanded.has(node.code)
+                    ? "permissionPage.collapseAria"
+                    : "permissionPage.expandAria",
+                  { name: node.name }
+                )}
                 aria-expanded={expanded.has(node.code)}
                 onclick={() => toggleExpand(node.code)}
               >
@@ -217,7 +238,7 @@
                 {/each}
                 {#if node.children.length === 0}
                   <p class="px-2 py-3 text-sm text-muted-foreground">
-                    暂无操作权限
+                    {$t("permissionPage.noOperations")}
                   </p>
                 {/if}
               </div>
@@ -230,9 +251,15 @@
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead class="w-[45%]">权限名称</TableHead>
-              <TableHead class="w-[45%]">权限编码</TableHead>
-              <TableHead class="w-[10%]">类型</TableHead>
+              <TableHead class="w-[45%]"
+                >{$t("permissionPage.nameHeader")}</TableHead
+              >
+              <TableHead class="w-[45%]"
+                >{$t("permissionPage.codeHeader")}</TableHead
+              >
+              <TableHead class="w-[10%]"
+                >{$t("permissionPage.typeHeader")}</TableHead
+              >
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -244,7 +271,12 @@
                       variant="ghost"
                       size="icon-xs"
                       aria-expanded={expanded.has(node.code)}
-                      aria-label={`${expanded.has(node.code) ? "收起" : "展开"} ${node.name}`}
+                      aria-label={$t(
+                        expanded.has(node.code)
+                          ? "permissionPage.collapseAria"
+                          : "permissionPage.expandAria",
+                        { name: node.name }
+                      )}
                       onclick={() => toggleExpand(node.code)}
                     >
                       <ChevronRight
@@ -259,7 +291,9 @@
                 </TableCell>
                 <TableCell class="font-mono text-sm">{node.code}</TableCell>
                 <TableCell>
-                  <Badge variant="default">菜单</Badge>
+                  <Badge variant="default"
+                    >{$t("permissionPage.menuType")}</Badge
+                  >
                 </TableCell>
               </TableRow>
 
@@ -275,7 +309,9 @@
                       {child.code}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">操作</Badge>
+                      <Badge variant="secondary"
+                        >{$t("permissionPage.operationType")}</Badge
+                      >
                     </TableCell>
                   </TableRow>
                 {/each}
@@ -283,7 +319,7 @@
                   <TableRow>
                     <TableCell colspan={3}>
                       <div class="pl-9 text-sm text-muted-foreground">
-                        暂无操作权限
+                        {$t("permissionPage.noOperations")}
                       </div>
                     </TableCell>
                   </TableRow>
