@@ -959,7 +959,7 @@ const zhCN = {
     reload: "刷新页面",
     backToDashboard: "返回仪表盘",
     notFoundTitle: "页面不存在",
-    notFoundDescription: "地址可能已更改，或者您没有访问该页面的权限。",
+    notFoundDescription: "你访问的页面可能已被移动或删除。",
   },
   iconPicker: {
     aria: "选择图标",

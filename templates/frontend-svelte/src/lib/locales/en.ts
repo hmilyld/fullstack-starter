@@ -1049,8 +1049,7 @@ const en = {
     reload: "Refresh page",
     backToDashboard: "Back to dashboard",
     notFoundTitle: "Page not found",
-    notFoundDescription:
-      "The address may have changed, or you do not have permission to view this page.",
+    notFoundDescription: "The page you visited may have been moved or deleted.",
   },
   iconPicker: {
     aria: "Select icon",
