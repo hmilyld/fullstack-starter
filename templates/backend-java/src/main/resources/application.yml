@@ -43,7 +43,7 @@ sa-token:
   is-read-cookie: false
 
 app:
-  cors-origins: http://localhost:5173
+  cors-origins: http://localhost:5173,http://localhost:5174,http://localhost:5175,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175
   rate-limit:
     # 登录/注册按 IP 的滑动窗口限流，与 Python 侧一致
     max-attempts: 5
