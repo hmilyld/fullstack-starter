@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import { LoadingButton } from "@/components/shared/loading-button"
 import { Button } from "@/components/ui/button"
@@ -35,12 +36,16 @@ export function FormDialog({
   title,
   description,
   submitting = false,
-  submitLabel = "保存",
-  cancelLabel = "取消",
+  submitLabel,
+  cancelLabel,
   onSubmit,
   children,
   className,
 }: FormDialogProps) {
+  const { t } = useTranslation()
+  const submitText = submitLabel ?? t("common.save")
+  const cancelText = cancelLabel ?? t("common.cancel")
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -66,10 +71,10 @@ export function FormDialog({
               disabled={submitting}
               onClick={() => onOpenChange(false)}
             >
-              {cancelLabel}
+              {cancelText}
             </Button>
             <LoadingButton type="submit" loading={submitting}>
-              {submitLabel}
+              {submitText}
             </LoadingButton>
           </DialogFooter>
         </form>
