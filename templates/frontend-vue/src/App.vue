@@ -10,11 +10,10 @@ import { Toaster } from "@/components/ui/sonner"
 import { useMediaQuery } from "@/composables/use-media-query"
 import { usePwaManifest } from "@/composables/use-pwa-manifest"
 import { appError, clearAppError, setAppError } from "@/lib/app-error"
-import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useThemeStore } from "@/stores/theme"
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const siteConfig = useSiteConfigStore()
 const themeStore = useThemeStore()
@@ -39,21 +38,19 @@ watch(
 )
 
 watch(
-  () => siteConfig.config,
-  (config) => {
-    if (config) {
-      document.title = config.siteName || DEFAULT_SITE_NAME
-      let metaDesc = document.querySelector('meta[name="description"]')
-      if (!metaDesc) {
-        metaDesc = document.createElement("meta")
-        metaDesc.setAttribute("name", "description")
-        document.head.appendChild(metaDesc)
-      }
-      metaDesc.setAttribute(
-        "content",
-        config.siteDescription || DEFAULT_SITE_DESCRIPTION
-      )
+  [() => siteConfig.config, locale],
+  ([config]) => {
+    document.title = config?.siteName || t("pwa.defaultName")
+    let metaDesc = document.querySelector('meta[name="description"]')
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta")
+      metaDesc.setAttribute("name", "description")
+      document.head.appendChild(metaDesc)
     }
+    metaDesc.setAttribute(
+      "content",
+      config?.siteDescription || t("pwa.defaultDescription")
+    )
   },
   { immediate: true }
 )
