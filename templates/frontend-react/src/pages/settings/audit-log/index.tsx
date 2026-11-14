@@ -43,7 +43,7 @@ import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlPage } from "@/hooks/use-url-list-state"
-import { formatDateTimeInput } from "@/lib/date-time"
+import { formatDateTimeInput, type DateTimeLocale } from "@/lib/date-time"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
@@ -67,7 +67,8 @@ const FILTER_KEYS: AuditFilterKey[] = [
 ]
 
 export function AuditLogPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const locale: DateTimeLocale = i18n.resolvedLanguage === "en" ? "en" : "zh-CN"
   const [searchParams, setSearchParams] = useSearchParams()
   const query: AuditFilters = {
     userId: searchParams.get("userId") ?? "",
@@ -165,7 +166,7 @@ export function AuditLogPage() {
   function formatFilterValue(key: AuditFilterKey, value: string) {
     if (key === "status") return statusLabel(value)
     if (key === "startTime" || key === "endTime")
-      return formatDateTimeInput(value)
+      return formatDateTimeInput(value, locale)
     return value
   }
 
@@ -271,7 +272,7 @@ export function AuditLogPage() {
       key: "createdAt",
       header: t("auditLogPage.columns.time"),
       cellClassName: "whitespace-nowrap text-muted-foreground",
-      cell: (log) => formatDateTime(log.createdAt),
+      cell: (log) => formatDateTime(log.createdAt, locale),
     },
     {
       key: "username",
@@ -473,7 +474,7 @@ export function AuditLogPage() {
               key={log.id}
               title={log.action}
               badges={getStatusBadge(log.status)}
-              subtitle={formatDateTime(log.createdAt)}
+              subtitle={formatDateTime(log.createdAt, locale)}
               meta={
                 <>
                   <span>{log.username || t("auditLogPage.unknown")}</span>
