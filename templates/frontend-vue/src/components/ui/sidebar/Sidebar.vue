@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SidebarProps } from "."
+import { useI18n } from "vue-i18n"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import SheetDescription from "@/components/ui/sheet/SheetDescription.vue"
@@ -17,6 +18,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: "offcanvas",
 })
 
+const { t } = useI18n()
 const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 </script>
 
@@ -52,8 +54,8 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
       }"
     >
       <SheetHeader class="sr-only">
-        <SheetTitle>导航菜单</SheetTitle>
-        <SheetDescription>系统功能导航</SheetDescription>
+        <SheetTitle>{{ t("sidebar.title") }}</SheetTitle>
+        <SheetDescription>{{ t("sidebar.description") }}</SheetDescription>
       </SheetHeader>
       <div class="flex h-full w-full flex-col">
         <slot />

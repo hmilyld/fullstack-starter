@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { useI18n } from "vue-i18n"
 import {
   ChevronLeft,
   ChevronRight,
@@ -26,10 +27,12 @@ const props = withDefaults(
     pageSizeOptions?: number[]
   }>(),
   {
-    itemLabel: "条记录",
     pageSizeOptions: () => [10, 20, 50],
   }
 )
+
+const { t } = useI18n()
+const label = computed(() => props.itemLabel ?? t("common.pagination.records"))
 
 const emit = defineEmits<{
   (e: "page-change", page: number): void
@@ -71,14 +74,23 @@ const pageSizeModel = computed({
     <div
       class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground"
     >
-      <p>共 {{ total }} {{ itemLabel }}，第 {{ page }} / {{ totalPages }} 页</p>
+      <p>
+        {{
+          t("common.pagination.summary", {
+            total,
+            itemLabel: label,
+            page,
+            totalPages,
+          })
+        }}
+      </p>
       <label v-if="showPageSize" class="flex items-center gap-2 text-xs">
-        每页
+        {{ t("common.pagination.perPage") }}
         <Select v-model="pageSizeModel">
           <SelectTrigger
             size="sm"
             class="h-8 w-[76px]"
-            aria-label="每页显示条数"
+            :aria-label="t('common.pagination.perPageAria')"
           >
             <SelectValue />
           </SelectTrigger>
@@ -88,7 +100,7 @@ const pageSizeModel = computed({
               :key="option"
               :value="String(option)"
             >
-              {{ option }} 条
+              {{ t("common.pagination.items", { count: option }) }}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -96,7 +108,7 @@ const pageSizeModel = computed({
     </div>
 
     <nav
-      aria-label="分页"
+      :aria-label="t('common.pagination.navigation')"
       class="mx-auto flex w-full justify-center md:mx-0 md:w-auto md:justify-end"
     >
       <ul class="flex items-center gap-1">
@@ -105,7 +117,7 @@ const pageSizeModel = computed({
             variant="ghost"
             size="icon-sm"
             :disabled="page <= 1"
-            aria-label="第一页"
+            :aria-label="t('common.pagination.first')"
             @click="emit('page-change', 1)"
           >
             <ChevronsLeft />
@@ -119,7 +131,7 @@ const pageSizeModel = computed({
             @click="emit('page-change', page - 1)"
           >
             <ChevronLeft data-icon="inline-start" />
-            上一页
+            {{ t("common.pagination.previous") }}
           </Button>
         </li>
         <li
@@ -153,7 +165,7 @@ const pageSizeModel = computed({
             :disabled="page >= totalPages"
             @click="emit('page-change', page + 1)"
           >
-            下一页
+            {{ t("common.pagination.next") }}
             <ChevronRight data-icon="inline-end" />
           </Button>
         </li>
@@ -162,7 +174,7 @@ const pageSizeModel = computed({
             variant="ghost"
             size="icon-sm"
             :disabled="page >= totalPages"
-            aria-label="最后一页"
+            :aria-label="t('common.pagination.last')"
             @click="emit('page-change', totalPages)"
           >
             <ChevronsRight />

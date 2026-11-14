@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router"
 import type { RouteLocationNormalized } from "vue-router"
 import {
@@ -15,6 +16,7 @@ import {
 
 const props = defineProps<{ when: boolean }>()
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const open = ref(false)
@@ -66,14 +68,18 @@ function stay() {
   <AlertDialog :open="open" @update:open="(value: boolean) => !value && stay()">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>放弃未保存的修改？</AlertDialogTitle>
+        <AlertDialogTitle>{{ t("common.unsaved.title") }}</AlertDialogTitle>
         <AlertDialogDescription>
-          当前页面还有未保存的内容，离开后这些修改会丢失。
+          {{ t("common.unsaved.description") }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="stay">留在本页</AlertDialogCancel>
-        <AlertDialogAction @click="proceed">放弃修改</AlertDialogAction>
+        <AlertDialogCancel @click="stay">{{
+          t("common.unsaved.stay")
+        }}</AlertDialogCancel>
+        <AlertDialogAction @click="proceed">{{
+          t("common.unsaved.discard")
+        }}</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

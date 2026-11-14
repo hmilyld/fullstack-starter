@@ -2,6 +2,7 @@
 import type { PaginationEllipsisProps } from "reka-ui"
 
 import type { HTMLAttributes } from "vue"
+import { useI18n } from "vue-i18n"
 import { MoreHorizontalIcon } from "@lucide/vue"
 import { reactiveOmit } from "@vueuse/core"
 import { cn } from "@/lib/utils"
@@ -11,6 +12,7 @@ const props = defineProps<
   PaginationEllipsisProps & { class?: HTMLAttributes["class"] }
 >()
 
+const { t } = useI18n()
 const delegatedProps = reactiveOmit(props, "class")
 </script>
 
@@ -27,7 +29,7 @@ const delegatedProps = reactiveOmit(props, "class")
   >
     <slot>
       <MoreHorizontalIcon />
-      <span class="sr-only">更多页</span>
+      <span class="sr-only">{{ t("common.pagination.more") }}</span>
     </slot>
   </PaginationEllipsis>
 </template>

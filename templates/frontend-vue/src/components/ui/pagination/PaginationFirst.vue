@@ -2,6 +2,7 @@
 import type { PaginationFirstProps } from "reka-ui"
 
 import type { HTMLAttributes } from "vue"
+import { useI18n } from "vue-i18n"
 import type { ButtonVariants } from "@/components/ui/button"
 import { ChevronsLeftIcon } from "@lucide/vue"
 import { reactiveOmit } from "@vueuse/core"
@@ -21,6 +22,7 @@ const props = withDefaults(
   }
 )
 
+const { t } = useI18n()
 const delegatedProps = reactiveOmit(props, "class", "size")
 const forwarded = useForwardProps(delegatedProps)
 </script>
@@ -33,7 +35,7 @@ const forwarded = useForwardProps(delegatedProps)
   >
     <slot>
       <ChevronsLeftIcon data-icon="inline-start" />
-      <span class="hidden sm:block">首页</span>
+      <span class="hidden sm:block">{{ t("common.pagination.first") }}</span>
     </slot>
   </PaginationFirst>
 </template>

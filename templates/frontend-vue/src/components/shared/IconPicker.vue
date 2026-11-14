@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { useI18n } from "vue-i18n"
 import {
   iconOptions,
   menuIcons,
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/select"
 
 const model = defineModel<string>({ default: "circle" })
+const { t } = useI18n()
 
 const groups: MenuIconGroup[] = ["常用", "数据", "系统", "内容"]
 
@@ -30,12 +32,14 @@ const grouped = computed(() =>
 
 <template>
   <Select v-model="model">
-    <SelectTrigger class="w-full" aria-label="选择图标">
-      <SelectValue placeholder="选择图标" />
+    <SelectTrigger class="w-full" :aria-label="t('iconPicker.aria')">
+      <SelectValue :placeholder="t('iconPicker.aria')" />
     </SelectTrigger>
     <SelectContent class="max-h-72">
       <SelectGroup v-for="entry in grouped" :key="entry.group">
-        <SelectLabel>{{ entry.group }}</SelectLabel>
+        <SelectLabel>{{
+          t(`iconPicker.groups.${entry.group}`, entry.group)
+        }}</SelectLabel>
         <SelectItem
           v-for="item in entry.items"
           :key="item.value"
@@ -46,7 +50,7 @@ const grouped = computed(() =>
               :is="menuIcons[item.value as MenuIconName]"
               class="size-4"
             />
-            {{ item.label }}
+            {{ t(`icons.${item.value}`, item.label) }}
           </span>
         </SelectItem>
       </SelectGroup>

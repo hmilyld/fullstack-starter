@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { useI18n } from "vue-i18n"
 import { Columns3 } from "@lucide/vue"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +25,7 @@ const emit = defineEmits<{
   (e: "reset"): void
 }>()
 
+const { t } = useI18n()
 const hideable = computed(() =>
   props.columns.filter((column) => column.hideable)
 )
@@ -34,11 +36,11 @@ const hideable = computed(() =>
     <DropdownMenuTrigger as-child>
       <Button variant="outline" :class="cn('w-full md:w-fit', props.class)">
         <Columns3 data-icon="inline-start" />
-        列
+        {{ t("common.table.columns") }}
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-44">
-      <DropdownMenuLabel>显示列</DropdownMenuLabel>
+      <DropdownMenuLabel>{{ t("common.table.showColumns") }}</DropdownMenuLabel>
       <DropdownMenuCheckboxItem
         v-for="column in hideable"
         :key="column.key"
@@ -49,7 +51,9 @@ const hideable = computed(() =>
         {{ column.header }}
       </DropdownMenuCheckboxItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem @select="emit('reset')">恢复默认</DropdownMenuItem>
+      <DropdownMenuItem @select="emit('reset')">{{
+        t("common.table.resetColumns")
+      }}</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

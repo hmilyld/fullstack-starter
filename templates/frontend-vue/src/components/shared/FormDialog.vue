@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,8 +23,6 @@ withDefaults(
   }>(),
   {
     submitting: false,
-    submitLabel: "保存",
-    cancelLabel: "取消",
   }
 )
 
@@ -31,6 +30,8 @@ const emit = defineEmits<{
   (e: "update:open", value: boolean): void
   (e: "submit", event: Event): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -67,10 +68,10 @@ const emit = defineEmits<{
             :disabled="submitting"
             @click="emit('update:open', false)"
           >
-            {{ cancelLabel }}
+            {{ cancelLabel ?? t("common.cancel") }}
           </Button>
           <LoadingButton type="submit" :loading="submitting">
-            {{ submitLabel }}
+            {{ submitLabel ?? t("common.save") }}
           </LoadingButton>
         </DialogFooter>
       </form>
