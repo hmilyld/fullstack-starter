@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink, useRouter } from "vue-router"
 import AuthShell from "@/components/shared/AuthShell.vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
@@ -18,6 +19,7 @@ import { useAuthStore } from "@/stores/auth"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useToast } from "@/composables/use-toast"
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
 const router = useRouter()
@@ -34,7 +36,7 @@ const maintenanceEnabled = computed(
 
 async function handleSubmit() {
   if (password.value.length < 6) {
-    passwordError.value = "密码至少 6 位"
+    passwordError.value = t("auth.login.passwordMin")
     return
   }
 
@@ -43,12 +45,12 @@ async function handleSubmit() {
   const res = await apiLogin(account.value, password.value)
   if (res.code === 0) {
     auth.login(res.data.token, res.data.user)
-    toast.success("登录成功")
+    toast.success(t("auth.login.success"))
     await router.replace("/dashboard")
     return
   }
 
-  toast.error(res.message || "登录失败")
+  toast.error(res.message || t("auth.login.failed"))
   submitting.value = false
 }
 </script>
@@ -57,18 +59,20 @@ async function handleSubmit() {
   <AuthShell>
     <div class="flex flex-col gap-6">
       <div class="flex flex-col gap-1.5">
-        <h1 class="text-2xl font-semibold tracking-tight">欢迎回来</h1>
+        <h1 class="text-2xl font-semibold tracking-tight">
+          {{ t("auth.login.title") }}
+        </h1>
         <p class="text-sm text-muted-foreground">
-          使用邮箱或用户名登录您的账户
+          {{ t("auth.login.subtitle") }}
         </p>
       </div>
 
       <Alert v-if="maintenanceEnabled">
-        <AlertTitle>系统维护中</AlertTitle>
+        <AlertTitle>{{ t("auth.login.maintenanceTitle") }}</AlertTitle>
         <AlertDescription>
           {{
             siteConfig.config?.maintenanceMessage ||
-            "系统正在维护中，请稍后再试。"
+            t("auth.login.maintenanceFallback")
           }}
         </AlertDescription>
       </Alert>
@@ -76,24 +80,24 @@ async function handleSubmit() {
       <form @submit.prevent="handleSubmit">
         <FieldGroup>
           <Field>
-            <FieldLabel for="account">邮箱或用户名</FieldLabel>
+            <FieldLabel for="account">{{ t("auth.login.account") }}</FieldLabel>
             <Input
               id="account"
               v-model="account"
               name="account"
-              placeholder="请输入邮箱或用户名"
+              :placeholder="t('auth.login.accountPlaceholder')"
               autocomplete="username"
               :spellcheck="false"
               required
             />
           </Field>
           <Field :data-invalid="!!passwordError">
-            <FieldLabel for="password">密码</FieldLabel>
+            <FieldLabel for="password">{{ t("auth.login.password") }}</FieldLabel>
             <PasswordInput
               id="password"
               v-model="password"
               name="password"
-              placeholder="请输入密码"
+              :placeholder="t('auth.login.passwordPlaceholder')"
               autocomplete="current-password"
               :aria-invalid="!!passwordError"
               required
@@ -103,15 +107,15 @@ async function handleSubmit() {
           </Field>
           <Field>
             <LoadingButton type="submit" class="w-full" :loading="submitting">
-              登录
+              {{ t("auth.login.submit") }}
             </LoadingButton>
             <FieldDescription class="text-center">
-              还没有账号？
+              {{ t("auth.login.noAccount") }}
               <RouterLink
                 to="/register"
                 class="underline-offset-4 hover:underline"
               >
-                立即注册
+                {{ t("auth.login.registerLink") }}
               </RouterLink>
             </FieldDescription>
           </Field>

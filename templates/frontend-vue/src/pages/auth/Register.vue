@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink, useRouter } from "vue-router"
 import AuthShell from "@/components/shared/AuthShell.vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
@@ -18,6 +19,7 @@ import { useAuthStore } from "@/stores/auth"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useToast } from "@/composables/use-toast"
 
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
@@ -38,7 +40,7 @@ const manualReview = computed(
 
 async function handleSubmit() {
   if (password.value.length < 6) {
-    passwordError.value = "密码至少 6 位"
+    passwordError.value = t("auth.register.passwordMin")
     return
   }
 
@@ -51,17 +53,17 @@ async function handleSubmit() {
   })
   if (res.code === 0 && res.data?.token) {
     auth.login(res.data.token, res.data.user)
-    toast.success("注册成功")
+    toast.success(t("auth.register.success"))
     await router.replace("/dashboard")
     return
   }
   if (res.code === 0) {
-    toast.success(res.message || "注册成功，请等待管理员审核")
+    toast.success(res.message || t("auth.register.successPending"))
     await router.replace("/login")
     return
   }
 
-  toast.error(res.message || "注册失败")
+  toast.error(res.message || t("auth.register.failed"))
   submitting.value = false
 }
 </script>
@@ -70,27 +72,37 @@ async function handleSubmit() {
   <AuthShell>
     <div class="flex flex-col gap-6">
       <div class="flex flex-col gap-1.5">
-        <h1 class="text-2xl font-semibold tracking-tight">创建账号</h1>
-        <p class="text-sm text-muted-foreground">填写以下信息完成注册</p>
+        <h1 class="text-2xl font-semibold tracking-tight">
+          {{ t("auth.register.title") }}
+        </h1>
+        <p class="text-sm text-muted-foreground">
+          {{ t("auth.register.subtitle") }}
+        </p>
       </div>
 
       <Alert v-if="registrationDisabled">
-        <AlertTitle>注册功能已关闭</AlertTitle>
-        <AlertDescription>请联系管理员开通注册。</AlertDescription>
+        <AlertTitle>{{ t("auth.register.disabledTitle") }}</AlertTitle>
+        <AlertDescription>{{
+          t("auth.register.disabledDescription")
+        }}</AlertDescription>
       </Alert>
       <Alert v-if="manualReview">
-        <AlertDescription>注册后需管理员审核通过才能登录</AlertDescription>
+        <AlertDescription>{{
+          t("auth.register.reviewNotice")
+        }}</AlertDescription>
       </Alert>
 
       <form @submit.prevent="handleSubmit">
         <FieldGroup>
           <Field>
-            <FieldLabel for="username">用户名</FieldLabel>
+            <FieldLabel for="username">{{
+              t("auth.register.username")
+            }}</FieldLabel>
             <Input
               id="username"
               v-model="username"
               name="username"
-              placeholder="请输入用户名"
+              :placeholder="t('auth.register.usernamePlaceholder')"
               autocomplete="username"
               :spellcheck="false"
               required
@@ -98,13 +110,13 @@ async function handleSubmit() {
             />
           </Field>
           <Field>
-            <FieldLabel for="email">邮箱</FieldLabel>
+            <FieldLabel for="email">{{ t("auth.register.email") }}</FieldLabel>
             <Input
               id="email"
               v-model="email"
               name="email"
               type="email"
-              placeholder="请输入邮箱"
+              :placeholder="t('auth.register.emailPlaceholder')"
               autocomplete="email"
               :spellcheck="false"
               required
@@ -112,12 +124,14 @@ async function handleSubmit() {
             />
           </Field>
           <Field :data-invalid="!!passwordError">
-            <FieldLabel for="password">密码</FieldLabel>
+            <FieldLabel for="password">{{
+              t("auth.register.password")
+            }}</FieldLabel>
             <PasswordInput
               id="password"
               v-model="password"
               name="password"
-              placeholder="至少 6 位"
+              :placeholder="t('auth.register.passwordPlaceholder')"
               autocomplete="new-password"
               :aria-invalid="!!passwordError"
               required
@@ -133,15 +147,15 @@ async function handleSubmit() {
               :loading="submitting"
               :disabled="registrationDisabled"
             >
-              注册
+              {{ t("auth.register.submit") }}
             </LoadingButton>
             <FieldDescription class="text-center">
-              已有账号？
+              {{ t("auth.register.hasAccount") }}
               <RouterLink
                 to="/login"
                 class="underline-offset-4 hover:underline"
               >
-                立即登录
+                {{ t("auth.register.loginLink") }}
               </RouterLink>
             </FieldDescription>
           </Field>
