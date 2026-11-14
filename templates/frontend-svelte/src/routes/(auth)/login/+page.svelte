@@ -61,7 +61,9 @@
 </script>
 
 <svelte:head
-  ><title>{$t("auth.login.submit")} · {$t("pwa.defaultName")}</title
+  ><title
+    >{$t("auth.login.submit")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
   ></svelte:head
 >
 

@@ -38,6 +38,7 @@
   import { t } from "#lib/i18n.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { auth } from "#lib/stores/auth.svelte.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
   import type {
     ExportResult,
     ImportStatus,
@@ -188,7 +189,10 @@
 </script>
 
 <svelte:head
-  ><title>{$t("dataPage.title")} · {$t("pwa.defaultName")}</title></svelte:head
+  ><title
+    >{$t("dataPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
+  ></svelte:head
 >
 
 <div class="flex flex-col gap-(--page-gap)">

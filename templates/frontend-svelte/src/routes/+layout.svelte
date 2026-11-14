@@ -18,9 +18,10 @@
     applyTheme(getResolvedTheme())
   })
 
+  // 标题由各页面通过 <svelte:head> 维护（页面名 · 站点名），
+  // 布局只负责站点描述，避免语言或配置刷新时把页面标题覆盖成站点名。
   $effect(() => {
     const config = siteConfig.config
-    document.title = config?.siteName?.trim() || $t("pwa.defaultName")
     let metaDesc = document.querySelector<HTMLMetaElement>(
       'meta[name="description"]'
     )

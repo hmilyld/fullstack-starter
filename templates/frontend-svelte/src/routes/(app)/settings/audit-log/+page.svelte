@@ -37,6 +37,7 @@
   import { usePagedList } from "#lib/hooks/use-paged-list.svelte.js"
   import { useTableDensity } from "#lib/hooks/use-table-density.svelte.js"
   import { useUrlPage } from "#lib/hooks/use-url-list-state.svelte.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
   import type {
     AuditFilterKey,
     AuditFilters,
@@ -229,7 +230,9 @@
 </script>
 
 <svelte:head
-  ><title>{$t("auditLogPage.title")} · {$t("pwa.defaultName")}</title
+  ><title
+    >{$t("auditLogPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
   ></svelte:head
 >
 
@@ -317,7 +320,7 @@
               })}
               onclick={() => removeFilter(filter.key)}
             >
-              {filter.label}：{filter.value}
+              {filter.label}{$t("auditLogPage.filterSeparator")}{filter.value}
               <X data-icon="inline-end" />
             </Button>
           {/each}

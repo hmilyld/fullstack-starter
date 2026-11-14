@@ -345,7 +345,9 @@
 </script>
 
 <svelte:head
-  ><title>{$t("systemPage.title")} · {$t("pwa.defaultName")}</title
+  ><title
+    >{$t("systemPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
   ></svelte:head
 >
 

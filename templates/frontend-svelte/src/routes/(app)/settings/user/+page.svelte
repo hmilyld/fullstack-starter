@@ -80,6 +80,7 @@
   import { auth } from "#lib/stores/auth.svelte.js"
   import type { Role } from "#lib/types/role.js"
   import type { User } from "#lib/types/user.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const DEFAULT_PAGE_SIZE = 8
   const PAGE_SIZE_OPTIONS = [8, 16, 32]
@@ -457,7 +458,10 @@
 </script>
 
 <svelte:head
-  ><title>{$t("users.title")} · {$t("pwa.defaultName")}</title></svelte:head
+  ><title
+    >{$t("users.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
+  ></svelte:head
 >
 
 <div class="flex flex-col gap-(--page-gap)">

@@ -21,6 +21,7 @@
   import {
     buildPermissionTree,
     filterPermissionTree,
+    permissionNameKey,
   } from "#lib/access-tree.js"
   import { t } from "#lib/i18n.js"
   import { cn } from "#lib/utils.js"
@@ -73,7 +74,18 @@
 
   const tree = $derived(
     filterPermissionTree(
-      buildPermissionTree(menuPermissions, operationPermissions),
+      buildPermissionTree(menuPermissions, operationPermissions).map(
+        (node) => ({
+          ...node,
+          name: $t(permissionNameKey(node.code), { defaultValue: node.name }),
+          children: node.children.map((child) => ({
+            ...child,
+            name: $t(permissionNameKey(child.code), {
+              defaultValue: child.name,
+            }),
+          })),
+        })
+      ),
       search
     )
   )

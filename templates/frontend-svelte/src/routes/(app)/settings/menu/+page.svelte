@@ -72,6 +72,7 @@
   import { OPERATION_PRESETS, buildOperationCode } from "#lib/access-tree.js"
   import { t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
   import type {
     MenuConfig,
     MenuGroup,
@@ -177,7 +178,7 @@
   const groupItems = $derived(
     (config?.groups ?? []).map((group) => ({
       value: group.id,
-      label: group.name,
+      label: groupLabel(group),
     }))
   )
   const operationVerbItems = $derived(
@@ -214,10 +215,13 @@
     if (!query) return config.groups
     return config.groups
       .map((group) => {
-        const groupMatch = group.name.toLowerCase().includes(query)
+        const groupMatch =
+          group.name.toLowerCase().includes(query) ||
+          groupLabel(group).toLowerCase().includes(query)
         const items = group.items.filter((item) => {
           const itemMatch =
             item.name.toLowerCase().includes(query) ||
+            menuLabel(item).toLowerCase().includes(query) ||
             item.permissionCode.toLowerCase().includes(query) ||
             item.route.toLowerCase().includes(query)
           const operationMatch = item.operations.some(
@@ -875,7 +879,10 @@
 </script>
 
 <svelte:head
-  ><title>{$t("menuPage.title")} · {$t("pwa.defaultName")}</title></svelte:head
+  ><title
+    >{$t("menuPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
+  ></svelte:head
 >
 
 <div class="flex flex-col gap-(--page-gap)">

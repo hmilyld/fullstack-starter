@@ -28,6 +28,7 @@
   import {
     buildPermissionTree,
     filterPermissionTree,
+    permissionNameKey,
     type PermissionTreeNode,
   } from "#lib/access-tree.js"
   import { useToast } from "#lib/hooks/use-toast.js"
@@ -36,6 +37,7 @@
   import { auth } from "#lib/stores/auth.svelte.js"
   import { cn } from "#lib/utils.js"
   import type { Permission } from "#lib/types/permission.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const toast = useToast()
   const urlState = useUrlListState()
@@ -68,7 +70,18 @@
 
   const tree = $derived<PermissionTreeNode[]>(
     filterPermissionTree(
-      buildPermissionTree(menuPermissions, operationPermissions),
+      buildPermissionTree(menuPermissions, operationPermissions).map(
+        (node) => ({
+          ...node,
+          name: $t(permissionNameKey(node.code), { defaultValue: node.name }),
+          children: node.children.map((child) => ({
+            ...child,
+            name: $t(permissionNameKey(child.code), {
+              defaultValue: child.name,
+            }),
+          })),
+        })
+      ),
       search
     )
   )
@@ -106,7 +119,9 @@
 </script>
 
 <svelte:head
-  ><title>{$t("permissionPage.title")} · {$t("pwa.defaultName")}</title
+  ><title
+    >{$t("permissionPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
   ></svelte:head
 >
 

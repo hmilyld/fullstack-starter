@@ -53,6 +53,7 @@
   import RolePermissionPicker from "./RolePermissionPicker.svelte"
   import type { Permission } from "#lib/types/permission.js"
   import type { Role } from "#lib/types/role.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const DEFAULT_PAGE_SIZE = 8
   const PAGE_SIZE_OPTIONS = [8, 16, 32]
@@ -220,7 +221,10 @@
 </script>
 
 <svelte:head
-  ><title>{$t("rolesPage.title")} · {$t("pwa.defaultName")}</title></svelte:head
+  ><title
+    >{$t("rolesPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
+  ></svelte:head
 >
 
 <div class="flex flex-col gap-(--page-gap)">

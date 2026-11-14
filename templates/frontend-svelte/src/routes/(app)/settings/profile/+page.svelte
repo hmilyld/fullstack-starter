@@ -30,6 +30,7 @@
   import { t } from "#lib/i18n.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { auth } from "#lib/stores/auth.svelte.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const toast = useToast()
   const isWide = useMediaQuery("(min-width: 1024px)")
@@ -121,7 +122,9 @@
 </script>
 
 <svelte:head
-  ><title>{$t("profilePage.title")} · {$t("pwa.defaultName")}</title
+  ><title
+    >{$t("profilePage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
   ></svelte:head
 >
 

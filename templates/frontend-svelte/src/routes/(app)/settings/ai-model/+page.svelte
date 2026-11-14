@@ -85,6 +85,7 @@
   import { useUrlListState } from "#lib/hooks/use-url-list-state.svelte.js"
   import { t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
   import type {
     AiModel,
     AiModelPreset,
@@ -383,7 +384,9 @@
 </script>
 
 <svelte:head
-  ><title>{$t("aiModelPage.title")} · {$t("pwa.defaultName")}</title
+  ><title
+    >{$t("aiModelPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
   ></svelte:head
 >
 

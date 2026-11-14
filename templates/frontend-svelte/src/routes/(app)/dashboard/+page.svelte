@@ -42,6 +42,7 @@
   import { cn } from "#lib/utils.js"
   import type { AuditLog } from "#lib/types/audit-log.js"
   import type { ActivityItem, DashboardStats } from "#lib/types/dashboard.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const QUICK_LINKS = [
     {
@@ -226,7 +227,10 @@
 </script>
 
 <svelte:head
-  ><title>{$t("dashboard.title")} · {$t("pwa.defaultName")}</title></svelte:head
+  ><title
+    >{$t("dashboard.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
+  ></svelte:head
 >
 
 <div class="flex flex-col gap-(--page-gap)">
