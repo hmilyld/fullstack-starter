@@ -101,7 +101,15 @@
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
   }
 
-  function buildTrend(records: AuditLog[]): TrendPoint[] {
+  function trendLabel(day: Date, locale: string) {
+    if (locale === "zh-CN") return `${day.getMonth() + 1}/${day.getDate()}`
+    return new Intl.DateTimeFormat(locale, {
+      month: "numeric",
+      day: "numeric",
+    }).format(day)
+  }
+
+  function buildTrend(records: AuditLog[], locale: string): TrendPoint[] {
     const today = startOfDay(new Date())
     const days = Array.from({ length: 7 }, (_, index) => {
       const day = new Date(today)
@@ -110,7 +118,7 @@
     })
 
     const points = days.map((day) => ({
-      label: `${day.getMonth() + 1}/${day.getDate()}`,
+      label: trendLabel(day, locale),
       success: 0,
       failed: 0,
       total: 0,
@@ -131,7 +139,7 @@
     return points
   }
 
-  const trend = $derived(buildTrend(logs))
+  const trend = $derived(buildTrend(logs, $locale))
   const weekTotal = $derived(trend.reduce((sum, point) => sum + point.total, 0))
   const weekSuccess = $derived(
     trend.reduce((sum, point) => sum + point.success, 0)
