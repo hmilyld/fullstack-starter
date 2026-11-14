@@ -30,7 +30,8 @@ export type PwaManifest = {
 /** 根据站点配置与当前主题生成 manifest，避免写死站点名和颜色 */
 export function buildPwaManifest(
   config: PublicConfig | null,
-  theme: PwaTheme
+  theme: PwaTheme,
+  lang = "zh-CN"
 ): PwaManifest {
   const name = config?.siteName?.trim() || DEFAULT_NAME
   const shortName = [...name].slice(0, 12).join("")
@@ -40,7 +41,7 @@ export function buildPwaManifest(
     name,
     short_name: shortName,
     description: config?.siteDescription?.trim() || DEFAULT_DESCRIPTION,
-    lang: "zh-CN",
+    lang,
     dir: "ltr",
     id: "/",
     start_url: "/",

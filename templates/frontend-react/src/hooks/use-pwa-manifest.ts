@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import { useTheme } from "@/components/theme-provider"
 import { useSiteConfig } from "@/lib/site-config"
@@ -12,6 +13,7 @@ function getSystemTheme(): PwaTheme {
 
 /** 站点配置或主题变化时，同步更新 PWA manifest 与主题色 */
 export function usePwaManifest() {
+  const { i18n } = useTranslation()
   const { config } = useSiteConfig()
   const { theme } = useTheme()
   const [systemTheme, setSystemTheme] = React.useState<PwaTheme>(getSystemTheme)
@@ -29,6 +31,7 @@ export function usePwaManifest() {
   const resolvedTheme: PwaTheme = theme === "system" ? systemTheme : theme
 
   React.useEffect(() => {
-    applyPwaManifest(buildPwaManifest(config, resolvedTheme))
-  }, [config, resolvedTheme])
+    const locale = i18n.resolvedLanguage?.startsWith("en") ? "en" : "zh-CN"
+    applyPwaManifest(buildPwaManifest(config, resolvedTheme, locale))
+  }, [config, resolvedTheme, i18n.resolvedLanguage])
 }

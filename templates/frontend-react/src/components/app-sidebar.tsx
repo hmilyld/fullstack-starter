@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import { SearchIcon } from "lucide-react"
 
@@ -18,19 +19,21 @@ import { useNavigation } from "@/hooks/use-navigation"
 import { useSiteConfig } from "@/lib/site-config"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { t } = useTranslation()
   const { config } = useSiteConfig()
   const { isMobile, setOpenMobile } = useSidebar()
   const { groups: navGroups } = useNavigation()
   const { variant, collapsible } = useLayoutConfig()
 
-  const siteName = config?.siteName || "管理系统"
-  const siteDescription = config?.siteDescription || "运营管理后台"
+  const siteName = config?.siteName || t("common.admin")
+  const siteDescription =
+    config?.siteDescription || t("common.adminDescription")
 
   const groups = navGroups.map((group) => ({
     id: group.id,
-    label: group.name,
+    label: t(`nav.groups.${group.id}`, { defaultValue: group.name }),
     items: group.items.map((item) => ({
-      title: item.name,
+      title: t(`nav.items.${item.permissionCode}`, { defaultValue: item.name }),
       url: item.route,
       icon: item.icon,
     })),
@@ -67,7 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           className="flex h-8 w-full items-center gap-2 rounded-md border bg-background px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring"
         >
           <SearchIcon className="size-3.5 shrink-0" />
-          <span>快速查找</span>
+          <span>{t("common.quickFind")}</span>
           <kbd className="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
             ⌘K
           </kbd>

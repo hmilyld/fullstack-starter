@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router"
 
 import { LoadingButton } from "@/components/shared/loading-button"
@@ -21,6 +22,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const { t } = useTranslation()
   const { login } = useAuth()
   const navigate = useNavigate()
   const { config } = useSiteConfig()
@@ -34,7 +36,7 @@ export function LoginForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (password.length < 6) {
-      setPasswordError("密码至少 6 位")
+      setPasswordError(t("auth.login.passwordMin"))
       return
     }
 
@@ -43,12 +45,12 @@ export function LoginForm({
     const res = await apiLogin(account, password)
     if (res.code === 0) {
       login(res.data.token, res.data.user)
-      appToast.success("登录成功")
+      appToast.success(t("auth.login.success"))
       navigate("/dashboard", { replace: true })
       return
     }
 
-    appToast.error(res.message || "登录失败")
+    appToast.error(res.message || t("auth.login.failed"))
     setSubmitting(false)
   }
 
@@ -56,27 +58,31 @@ export function LoginForm({
     <div className={className} {...props}>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight">欢迎回来</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("auth.login.title")}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            使用邮箱或用户名登录您的账户
+            {t("auth.login.subtitle")}
           </p>
         </div>
         {maintenanceEnabled && (
           <Alert>
-            <AlertTitle>系统维护中</AlertTitle>
+            <AlertTitle>{t("auth.login.maintenanceTitle")}</AlertTitle>
             <AlertDescription>
-              {config.maintenanceMessage || "系统正在维护中，请稍后再试。"}
+              {config.maintenanceMessage || t("auth.login.maintenanceFallback")}
             </AlertDescription>
           </Alert>
         )}
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="account">邮箱或用户名</FieldLabel>
+              <FieldLabel htmlFor="account">
+                {t("auth.login.account")}
+              </FieldLabel>
               <Input
                 id="account"
                 name="account"
-                placeholder="请输入邮箱或用户名"
+                placeholder={t("auth.login.accountPlaceholder")}
                 autoComplete="username"
                 spellCheck={false}
                 value={account}
@@ -85,11 +91,13 @@ export function LoginForm({
               />
             </Field>
             <Field data-invalid={!!passwordError}>
-              <FieldLabel htmlFor="password">密码</FieldLabel>
+              <FieldLabel htmlFor="password">
+                {t("auth.login.password")}
+              </FieldLabel>
               <PasswordInput
                 id="password"
                 name="password"
-                placeholder="请输入密码"
+                placeholder={t("auth.login.passwordPlaceholder")}
                 autoComplete="current-password"
                 value={password}
                 aria-invalid={!!passwordError}
@@ -107,15 +115,15 @@ export function LoginForm({
                 className="w-full"
                 loading={submitting}
               >
-                登录
+                {t("auth.login.submit")}
               </LoadingButton>
               <FieldDescription className="text-center">
-                还没有账号？
+                {t("auth.login.noAccount")}
                 <Link
                   to="/register"
                   className="underline-offset-4 hover:underline"
                 >
-                  立即注册
+                  {t("auth.login.registerLink")}
                 </Link>
               </FieldDescription>
             </Field>

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 import {
   ChevronsUpDownIcon,
@@ -26,6 +27,7 @@ import { useSiteConfig } from "@/lib/site-config"
 
 /** 顶栏右上角的账户菜单：个人设置、密码修改、权限总览、退出登录 */
 export function UserMenu() {
+  const { t } = useTranslation()
   const { user, logout, hasPermission } = useAuth()
   const { refresh } = useSiteConfig()
   const navigate = useNavigate()
@@ -50,7 +52,7 @@ export function UserMenu() {
         <Button
           variant="ghost"
           className="gap-2 rounded-full pr-2 pl-1"
-          aria-label={`${user.name} 的账户菜单`}
+          aria-label={t("userMenu.aria", { name: user.name })}
         >
           <Avatar className="size-7">
             <AvatarImage
@@ -95,18 +97,18 @@ export function UserMenu() {
             onSelect={() => navigate("/settings/profile?tab=profile")}
           >
             <UserCogIcon />
-            个人设置
+            {t("userMenu.profile")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => navigate("/settings/profile?tab=security")}
           >
             <KeyIcon />
-            密码修改
+            {t("userMenu.password")}
           </DropdownMenuItem>
           {hasPermission("permissions") && (
             <DropdownMenuItem onSelect={() => navigate("/settings/permission")}>
               <ShieldCheckIcon />
-              权限总览
+              {t("userMenu.permissions")}
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
@@ -118,12 +120,12 @@ export function UserMenu() {
           {loggingOut ? (
             <>
               <Spinner />
-              退出中…
+              {t("userMenu.loggingOut")}
             </>
           ) : (
             <>
               <LogOutIcon />
-              退出登录
+              {t("userMenu.logout")}
             </>
           )}
         </DropdownMenuItem>

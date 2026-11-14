@@ -59,7 +59,7 @@ The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`
 ## Coding Style
 
 - **Language**: TypeScript (ESM, `"type": "module"`)
-- **Templates**: All UI text in **Chinese**. API responses use `{ code: 0, message: "success", data }`
+- **Templates**: Default UI text is **Chinese (zh-CN)**. New user-facing text in the React template goes through `src/locales/{zh-CN,en}.ts`; the auth/admin shell is migrated and the remaining pages are being migrated. Vue and Svelte remain Chinese-only until their i18n migration. API responses use `{ code: 0, message: "success", data }`
 - **Naming**: TS/JS uses `camelCase` variables, `PascalCase` components. Python schemas use `camelCase` (roleId), ORM uses `snake_case` (role_id)
 
 ## Business Logic Conventions
@@ -97,6 +97,14 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Domain files must not import each other; shared behaviour belongs in `lib/`, `hooks/` (React) or `composables/` (Vue).
 - Keep `api/` flat by default. Only when one domain exceeds ~150 lines or needs a second file, promote `api/<domain>.ts` to `api/<domain>/index.ts` plus siblings. Do not nest ahead of need.
 - React and Vue share byte-identical `src/api/` and `src/types/`; keep them in sync when changing either. The Svelte template keeps the same domain files and export signatures under `src/lib/api` and `src/lib/types`, using `#lib` imports with `.js` extensions.
+
+### Internationalization (React pilot)
+
+- New or edited user-facing text in `templates/frontend-react` must go through `useTranslation()` and `src/locales/{zh-CN,en}.ts`. Do not hardcode UI strings in new components. The auth and admin shell are migrated; remaining pages are being migrated incrementally.
+- The default locale is `zh-CN`; English is opt-in. Locale is runtime-only (`app.locale`), with no URL prefix.
+- `en.ts` is typed against `zh-CN.ts`; add or rename keys in both catalogs together.
+- Server-provided `message` values are not localized yet. Show them as-is or add a translated fallback; do not silently translate arbitrary server text.
+- Do not add i18n to the Vue or Svelte templates until the React pilot is complete.
 
 ## Frontend Responsive Rules (frontend-react / frontend-vue / frontend-svelte)
 

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 import { CornerDownLeftIcon, SearchIcon } from "lucide-react"
 
@@ -61,11 +62,8 @@ type CommandEntry = {
   hint?: string
 }
 
-const EXTRA_ENTRIES: CommandEntry[] = [
-  { id: "profile", group: "账户", title: "个人设置", url: "/settings/profile" },
-]
-
 export function CommandMenu() {
+  const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState("")
   const [activeIndex, setActiveIndex] = React.useState(0)
@@ -81,51 +79,61 @@ export function CommandMenu() {
     const navEntries = groups.flatMap((group) =>
       group.items.map((item) => ({
         id: `${group.id}-${item.permissionCode}`,
-        group: group.name,
-        title: item.name,
+        group: t(`nav.groups.${group.id}`, { defaultValue: group.name }),
+        title: t(`nav.items.${item.permissionCode}`, {
+          defaultValue: item.name,
+        }),
         url: item.route,
       }))
     )
-    const extra = hasPermission("permissions")
-      ? [
-          ...EXTRA_ENTRIES,
-          {
-            id: "permission-overview",
-            group: "账户",
-            title: "权限总览",
-            url: "/settings/permission",
-          },
-        ]
-      : EXTRA_ENTRIES
+    const extra: CommandEntry[] = [
+      {
+        id: "profile",
+        group: t("commandMenu.groups.account"),
+        title: t("commandMenu.actions.profile"),
+        url: "/settings/profile",
+      },
+      ...(hasPermission("permissions")
+        ? [
+            {
+              id: "permission-overview",
+              group: t("commandMenu.groups.account"),
+              title: t("commandMenu.actions.permissions"),
+              url: "/settings/permission",
+            },
+          ]
+        : []),
+    ]
 
-    const themeSuffix = (value: string) => (theme === value ? "（当前）" : "")
+    const themeSuffix = (value: string) =>
+      theme === value ? t("commandMenu.actions.current") : ""
     const actions: CommandEntry[] = [
       {
         id: "theme-light",
-        group: "外观",
-        title: `切换为浅色主题${themeSuffix("light")}`,
-        hint: "主题",
+        group: t("commandMenu.groups.appearance"),
+        title: `${t("commandMenu.actions.themeLight")}${themeSuffix("light")}`,
+        hint: t("commandMenu.hints.theme"),
         run: () => setTheme("light"),
       },
       {
         id: "theme-dark",
-        group: "外观",
-        title: `切换为深色主题${themeSuffix("dark")}`,
-        hint: "主题",
+        group: t("commandMenu.groups.appearance"),
+        title: `${t("commandMenu.actions.themeDark")}${themeSuffix("dark")}`,
+        hint: t("commandMenu.hints.theme"),
         run: () => setTheme("dark"),
       },
       {
         id: "theme-system",
-        group: "外观",
-        title: `跟随系统主题${themeSuffix("system")}`,
-        hint: "主题",
+        group: t("commandMenu.groups.appearance"),
+        title: `${t("commandMenu.actions.themeSystem")}${themeSuffix("system")}`,
+        hint: t("commandMenu.hints.theme"),
         run: () => setTheme("system"),
       },
       {
         id: "sidebar-toggle",
-        group: "外观",
-        title: "收起 / 展开侧边栏",
-        hint: "布局",
+        group: t("commandMenu.groups.appearance"),
+        title: t("commandMenu.actions.sidebarToggle"),
+        hint: t("commandMenu.hints.layout"),
         run: toggleSidebar,
       },
     ]
@@ -135,13 +143,25 @@ export function CommandMenu() {
     const recent = recentUrls
       .map((url) => base.find((entry) => entry.url === url))
       .filter((entry): entry is CommandEntry => Boolean(entry))
-      .map((entry) => ({ ...entry, id: `recent-${entry.id}`, group: "最近" }))
+      .map((entry) => ({
+        ...entry,
+        id: `recent-${entry.id}`,
+        group: t("commandMenu.groups.recent"),
+      }))
 
     return [
       ...recent,
       ...base.filter((entry) => !recent.some((item) => item.url === entry.url)),
     ]
-  }, [groups, hasPermission, theme, setTheme, toggleSidebar, location.pathname])
+  }, [
+    groups,
+    hasPermission,
+    theme,
+    setTheme,
+    toggleSidebar,
+    location.pathname,
+    t,
+  ])
 
   const results = React.useMemo(() => {
     const keyword = query.trim().toLowerCase()
@@ -224,9 +244,9 @@ export function CommandMenu() {
         showCloseButton={false}
         className="top-[12%] max-h-[70svh] max-w-[calc(100%-2rem)] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
-        <DialogTitle className="sr-only">快速查找</DialogTitle>
+        <DialogTitle className="sr-only">{t("commandMenu.title")}</DialogTitle>
         <DialogDescription className="sr-only">
-          搜索页面、菜单或外观操作
+          {t("commandMenu.description")}
         </DialogDescription>
         <div className="flex items-center gap-2 border-b px-3">
           <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
@@ -241,8 +261,8 @@ export function CommandMenu() {
               setActiveIndex(0)
             }}
             onKeyDown={handleInputKeyDown}
-            placeholder="搜索页面或菜单…"
-            aria-label="搜索页面或菜单"
+            placeholder={t("commandMenu.placeholder")}
+            aria-label={t("commandMenu.searchAria")}
             role="combobox"
             aria-expanded="true"
             aria-controls="command-menu-list"
@@ -256,18 +276,18 @@ export function CommandMenu() {
         </div>
 
         <span className="sr-only" aria-live="polite">
-          {results.length} 个结果
+          {t("commandMenu.results", { count: results.length })}
         </span>
         <div
           ref={listRef}
           id="command-menu-list"
           role="listbox"
-          aria-label="搜索结果"
+          aria-label={t("commandMenu.resultsAria")}
           className="max-h-[46svh] overflow-y-auto overscroll-contain p-2"
         >
           {results.length === 0 ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-              没有匹配的页面，换个关键词试试。
+              {t("commandMenu.empty")}
             </p>
           ) : (
             results.map((entry, index) => {
@@ -309,13 +329,13 @@ export function CommandMenu() {
           <span className="flex items-center gap-1">
             <kbd className="rounded-sm border px-1 py-0.5 font-mono">↑</kbd>
             <kbd className="rounded-sm border px-1 py-0.5 font-mono">↓</kbd>
-            选择
+            {t("commandMenu.footer.select")}
           </span>
           <span className="flex items-center gap-1">
             <CornerDownLeftIcon className="size-3" />
-            打开
+            {t("commandMenu.footer.open")}
           </span>
-          <span className="ml-auto">⌘K 随时唤起</span>
+          <span className="ml-auto">{t("commandMenu.footer.shortcut")}</span>
         </div>
       </DialogContent>
     </Dialog>

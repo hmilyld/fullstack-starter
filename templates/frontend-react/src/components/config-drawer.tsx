@@ -1,4 +1,5 @@
 import { MonitorIcon, MoonIcon, Settings2Icon, SunIcon } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type {
   SidebarCollapsible,
@@ -18,20 +19,20 @@ import {
 import { cn } from "@/lib/utils"
 
 const THEMES = [
-  { value: "light", label: "浅色", icon: SunIcon },
-  { value: "dark", label: "深色", icon: MoonIcon },
-  { value: "system", label: "跟随系统", icon: MonitorIcon },
+  { value: "light", labelKey: "appearance.light", icon: SunIcon },
+  { value: "dark", labelKey: "appearance.dark", icon: MoonIcon },
+  { value: "system", labelKey: "appearance.system", icon: MonitorIcon },
 ] as const
 
-const VARIANTS: { value: SidebarVariant; label: string }[] = [
-  { value: "sidebar", label: "默认" },
-  { value: "floating", label: "浮动" },
-  { value: "inset", label: "内嵌" },
+const VARIANTS: { value: SidebarVariant; labelKey: string }[] = [
+  { value: "sidebar", labelKey: "appearance.default" },
+  { value: "floating", labelKey: "appearance.floating" },
+  { value: "inset", labelKey: "appearance.inset" },
 ]
 
-const COLLAPSIBLES: { value: SidebarCollapsible; label: string }[] = [
-  { value: "icon", label: "图标栏" },
-  { value: "offcanvas", label: "抽屉" },
+const COLLAPSIBLES: { value: SidebarCollapsible; labelKey: string }[] = [
+  { value: "icon", labelKey: "appearance.icon" },
+  { value: "offcanvas", labelKey: "appearance.offcanvas" },
 ]
 
 function OptionGroup<T extends string>({
@@ -72,6 +73,7 @@ function OptionGroup<T extends string>({
 
 /** 外观抽屉：主题、侧栏样式、折叠方式 */
 export function ConfigDrawer() {
+  const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { variant, collapsible, setVariant, setCollapsible } = useLayoutConfig()
 
@@ -81,36 +83,44 @@ export function ConfigDrawer() {
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="外观设置"
-          title="外观设置"
+          aria-label={t("common.appearance")}
+          title={t("common.appearance")}
         >
           <Settings2Icon />
         </Button>
       </SheetTrigger>
       <SheetContent className="w-80">
         <SheetHeader>
-          <SheetTitle>外观</SheetTitle>
-          <SheetDescription>
-            调整主题、侧栏样式与折叠方式，设置会保存在本机。
-          </SheetDescription>
+          <SheetTitle>{t("appearance.title")}</SheetTitle>
+          <SheetDescription>{t("appearance.description")}</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-6 px-4 pb-6">
           <OptionGroup
-            label="主题"
+            label={t("appearance.theme")}
             value={theme}
-            options={THEMES.map((item) => ({ ...item }))}
+            options={THEMES.map((item) => ({
+              value: item.value,
+              label: t(item.labelKey),
+              icon: item.icon,
+            }))}
             onChange={setTheme}
           />
           <OptionGroup
-            label="侧栏样式"
+            label={t("appearance.sidebar")}
             value={variant}
-            options={VARIANTS}
+            options={VARIANTS.map((item) => ({
+              ...item,
+              label: t(item.labelKey),
+            }))}
             onChange={setVariant}
           />
           <OptionGroup
-            label="折叠方式"
+            label={t("appearance.collapse")}
             value={collapsible}
-            options={COLLAPSIBLES}
+            options={COLLAPSIBLES.map((item) => ({
+              ...item,
+              label: t(item.labelKey),
+            }))}
             onChange={setCollapsible}
           />
         </div>
