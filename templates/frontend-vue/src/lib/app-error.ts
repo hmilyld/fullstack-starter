@@ -6,7 +6,7 @@ export const appError = ref<string | null>(null)
 
 export function setAppError(error: unknown) {
   const message = error instanceof Error ? error.message : ""
-  appError.value = message || i18n.global.t("errors.pageLoadFallback")
+  appError.value = message || i18n.global.t("errors.pageLoadDescription")
 }
 
 export function clearAppError() {

@@ -36,6 +36,7 @@ import { useUrlPage } from "@/composables/use-url-list-state"
 import { formatDateTimeInput, type DateTimeLocale } from "@/lib/date-time"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
+import { translateOr } from "@/lib/label"
 
 const DEFAULT_PAGE_SIZE = 10
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
@@ -149,7 +150,7 @@ function removeFilter(key: AuditFilterKey) {
 }
 
 function statusLabel(status: string) {
-  return t(`auditLogPage.status.${status}`, status)
+  return translateOr(`auditLogPage.status.${status}`, status)
 }
 
 function formatFilterValue(key: AuditFilterKey, value: string) {
@@ -295,7 +296,8 @@ const hasLogs = computed(() => logs.value.length > 0)
             "
             @click="removeFilter(filter.key)"
           >
-            {{ filter.label }}：{{ filter.value }}
+            {{ filter.label }}{{ t("auditLogPage.filterSeparator")
+            }}{{ filter.value }}
             <X data-icon="inline-end" />
           </Button>
           <Button variant="ghost" size="xs" @click="handleReset">

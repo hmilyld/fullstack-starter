@@ -15,6 +15,7 @@ import { useNavigation } from "@/composables/use-navigation"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useAuthStore } from "@/stores/auth"
 import { useThemeStore } from "@/stores/theme"
+import { translateOr } from "@/lib/label"
 
 type CommandEntry = {
   id: string
@@ -79,8 +80,8 @@ const entries = computed<CommandEntry[]>(() => {
   const navEntries = groups.value.flatMap((group) =>
     group.items.map((item) => ({
       id: `${group.id}-${item.permissionCode}`,
-      group: t(`nav.groups.${group.id}`, group.name),
-      title: t(`nav.items.${item.permissionCode}`, item.name),
+      group: translateOr(`nav.groups.${group.id}`, group.name),
+      title: translateOr(`nav.items.${item.permissionCode}`, item.name),
       url: item.route,
     }))
   )

@@ -58,6 +58,7 @@ import {
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 import { OPERATION_PRESETS, buildOperationCode } from "@/lib/access-tree"
+import { translateOr } from "@/lib/label"
 import type {
   MenuConfig,
   MenuGroup,
@@ -87,7 +88,7 @@ const isCompact = useMediaQuery("(max-width: 767px)")
 
 /** 内置分组使用导航目录中的翻译，自定义名称保持后端数据 */
 function groupLabel(group: { isSystem?: boolean; id: string; name: string }) {
-  return group.isSystem ? t(`nav.groups.${group.id}`, group.name) : group.name
+  return translateOr(`nav.groups.${group.id}`, group.name)
 }
 
 const config = ref<MenuConfig | null>(null)
@@ -174,10 +175,15 @@ const visibleGroups = computed<MenuGroup[]>(() => {
   if (!query) return config.value.groups
   return config.value.groups
     .map((group) => {
-      const groupMatch = group.name.toLowerCase().includes(query)
+      const groupMatch =
+        group.name.toLowerCase().includes(query) ||
+        groupLabel(group).toLowerCase().includes(query)
       const items = group.items.filter((item) => {
         const itemMatch =
           item.name.toLowerCase().includes(query) ||
+          translateOr(`nav.items.${item.permissionCode}`, item.name)
+            .toLowerCase()
+            .includes(query) ||
           item.permissionCode.toLowerCase().includes(query) ||
           item.route.toLowerCase().includes(query)
         const operationMatch = item.operations.some(

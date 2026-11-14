@@ -70,6 +70,7 @@ import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 import type { Role } from "@/types/role"
 import type { User } from "@/types/user"
+import { translateOr } from "@/lib/label"
 
 const DEFAULT_PAGE_SIZE = 8
 const PAGE_SIZE_OPTIONS = [8, 16, 32]
@@ -87,7 +88,7 @@ const toast = useToast()
 const roles = ref<Role[]>([])
 
 function roleLabel(role: Role) {
-  return t(`roles.${role.id}`, role.name)
+  return translateOr(`roles.${role.id}`, role.name)
 }
 
 const pageSize = ref(DEFAULT_PAGE_SIZE)

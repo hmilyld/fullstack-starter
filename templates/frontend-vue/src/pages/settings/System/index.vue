@@ -42,6 +42,7 @@ import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useToast } from "@/composables/use-toast"
 import type { SystemConfig } from "@/types/system"
+import { translateOr } from "@/lib/label"
 
 type SaveKey = "site" | "maintenance" | "registration" | "default" | "smtp"
 
@@ -68,7 +69,7 @@ const saving = ref<SaveKey | null>(null)
 const roles = ref<{ id: string; name: string }[]>([])
 
 function roleLabel(role: { id: string; name: string }) {
-  return t(`roles.${role.id}`, role.name)
+  return translateOr(`roles.${role.id}`, role.name)
 }
 
 const smtpPassword = ref("")

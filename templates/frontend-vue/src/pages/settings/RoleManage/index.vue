@@ -45,6 +45,7 @@ import { useToast } from "@/composables/use-toast"
 import RolePermissionPicker from "@/pages/settings/RoleManage/RolePermissionPicker.vue"
 import type { Permission } from "@/types/permission"
 import type { Role } from "@/types/role"
+import { translateOr } from "@/lib/label"
 
 const DEFAULT_PAGE_SIZE = 8
 const PAGE_SIZE_OPTIONS = [8, 16, 32]
@@ -54,7 +55,7 @@ const auth = useAuthStore()
 const toast = useToast()
 
 function roleLabel(role: Role) {
-  return t(`roles.${role.id}`, role.name)
+  return translateOr(`roles.${role.id}`, role.name)
 }
 
 const pageSize = ref(DEFAULT_PAGE_SIZE)

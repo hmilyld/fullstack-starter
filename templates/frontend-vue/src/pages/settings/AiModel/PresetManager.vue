@@ -112,7 +112,7 @@ async function loadData() {
   ])
   if (id !== requestId) return
   if (presetsRes.code === 0) presets.value = presetsRes.data
-  else error.value = presetsRes.message || t("aiModelPage.toasts.loadFailed")
+  else error.value = presetsRes.message || t("aiModelPage.preset.loadFailed")
   if (groupsRes.code === 0) groups.value = groupsRes.data
   loading.value = false
 }

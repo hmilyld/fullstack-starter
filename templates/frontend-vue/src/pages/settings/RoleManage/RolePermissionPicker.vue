@@ -19,9 +19,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useMediaQuery } from "@/composables/use-media-query"
-import { buildPermissionTree, filterPermissionTree } from "@/lib/access-tree"
+import {
+  buildPermissionTree,
+  filterPermissionTree,
+  permissionNameKey,
+} from "@/lib/access-tree"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
+import { translateOr } from "@/lib/label"
 
 const props = defineProps<{
   menuPermissions: Permission[]
@@ -74,7 +79,16 @@ const selectedCount = computed(
 
 const tree = computed(() =>
   filterPermissionTree(
-    buildPermissionTree(props.menuPermissions, props.operationPermissions),
+    buildPermissionTree(props.menuPermissions, props.operationPermissions).map(
+      (node) => ({
+        ...node,
+        name: translateOr(permissionNameKey(node.code), node.name),
+        children: node.children.map((child) => ({
+          ...child,
+          name: translateOr(permissionNameKey(child.code), child.name),
+        })),
+      })
+    ),
     search.value
   )
 )

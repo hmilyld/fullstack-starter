@@ -30,12 +30,14 @@ import { useUrlListState } from "@/composables/use-url-list-state"
 import {
   buildPermissionTree,
   filterPermissionTree,
+  permissionNameKey,
   type PermissionTreeNode,
 } from "@/lib/access-tree"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
+import { translateOr } from "@/lib/label"
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -71,7 +73,14 @@ const tree = computed<PermissionTreeNode[]>(() => {
   const fullTree = buildPermissionTree(
     menuPermissions.value,
     operationPermissions.value
-  )
+  ).map((node) => ({
+    ...node,
+    name: translateOr(permissionNameKey(node.code), node.name),
+    children: node.children.map((child) => ({
+      ...child,
+      name: translateOr(permissionNameKey(child.code), child.name),
+    })),
+  }))
   return filterPermissionTree(fullTree, search.value)
 })
 

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import type { MenuItem, MenuOperation } from "@/types/menu"
+import { translateOr } from "@/lib/label"
 import {
   itemSortableId,
   type MenuDragData,
@@ -57,7 +58,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const label = computed(() =>
   props.item.isSystem
-    ? t(`nav.items.${props.item.permissionCode}`, props.item.name)
+    ? translateOr(`nav.items.${props.item.permissionCode}`, props.item.name)
     : props.item.name
 )
 const element = ref<HTMLElement | null>(null)

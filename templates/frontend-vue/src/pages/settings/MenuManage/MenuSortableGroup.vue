@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { MenuGroup, MenuItem, MenuOperation } from "@/types/menu"
+import { translateOr } from "@/lib/label"
 import {
   groupSortableId,
   type MenuDragData,
@@ -72,7 +73,7 @@ function handleDeleteOperation(item: MenuItem, operation: MenuOperation) {
 const { t } = useI18n()
 const label = computed(() =>
   props.group.isSystem
-    ? t(`nav.groups.${props.group.id}`, props.group.name)
+    ? translateOr(`nav.groups.${props.group.id}`, props.group.name)
     : props.group.name
 )
 const element = ref<HTMLElement | null>(null)

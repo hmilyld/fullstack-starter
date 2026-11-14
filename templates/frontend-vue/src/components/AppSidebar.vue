@@ -20,6 +20,7 @@ import {
   useNavigation,
 } from "@/composables/use-navigation"
 import { useSiteConfigStore } from "@/stores/site-config"
+import { translateOr } from "@/lib/label"
 
 const { t } = useI18n()
 const siteConfig = useSiteConfigStore()
@@ -37,9 +38,9 @@ const siteDescription = computed(
 const groups = computed(() =>
   navGroups.value.map((group) => ({
     id: group.id,
-    label: t(`nav.groups.${group.id}`, group.name),
+    label: translateOr(`nav.groups.${group.id}`, group.name),
     items: group.items.map((item) => ({
-      title: t(`nav.items.${item.permissionCode}`, item.name),
+      title: translateOr(`nav.items.${item.permissionCode}`, item.name),
       url: item.route,
       icon: item.icon,
     })),

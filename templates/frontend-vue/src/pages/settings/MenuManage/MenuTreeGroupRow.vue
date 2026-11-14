@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import type { MenuGroup } from "@/types/menu"
+import { translateOr } from "@/lib/label"
 import {
   groupSortableId,
   type MenuDragData,
@@ -49,7 +50,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const label = computed(() =>
   props.group.isSystem
-    ? t(`nav.groups.${props.group.id}`, props.group.name)
+    ? translateOr(`nav.groups.${props.group.id}`, props.group.name)
     : props.group.name
 )
 const element = ref<HTMLElement | null>(null)
