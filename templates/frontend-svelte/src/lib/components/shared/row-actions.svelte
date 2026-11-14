@@ -11,24 +11,27 @@
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "#lib/components/ui/dropdown-menu/index.js"
+  import { t } from "#lib/i18n.js"
 
-  let {
-    actions,
-    label = "更多操作",
-  }: { actions: RowAction[]; label?: string } = $props()
+  let { actions, label }: { actions: RowAction[]; label?: string } = $props()
 </script>
 
 {#if actions.length > 0}
   <DropdownMenu>
     <DropdownMenuTrigger>
       {#snippet child({ props })}
-        <Button {...props} variant="ghost" size="icon-sm" aria-label={label}>
+        <Button
+          {...props}
+          variant="ghost"
+          size="icon-sm"
+          aria-label={label ?? $t("common.moreActions")}
+        >
           <MoreHorizontal />
         </Button>
       {/snippet}
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-44">
-      <DropdownMenuLabel>操作</DropdownMenuLabel>
+      <DropdownMenuLabel>{$t("common.actions")}</DropdownMenuLabel>
       <DropdownMenuGroup>
         {#each actions as action, index (action.label)}
           {#if action.separatorBefore && index > 0}

@@ -4,6 +4,7 @@
   import { Badge } from "#lib/components/ui/badge/index.js"
   import { Button } from "#lib/components/ui/button/index.js"
   import { Separator } from "#lib/components/ui/separator/index.js"
+  import { t } from "#lib/i18n.js"
 
   let {
     count,
@@ -28,7 +29,10 @@
       announcement = ""
       return
     }
-    announcement = `已选中 ${nextCount} ${entityName}，批量操作可用`
+    announcement = $t("common.bulk.selected", {
+      count: nextCount,
+      entityName,
+    })
     timer = setTimeout(() => {
       announcement = ""
     }, 3000)
@@ -78,7 +82,7 @@
   <div
     bind:this={bar}
     role="toolbar"
-    aria-label={`批量操作，已选 ${count} ${entityName}`}
+    aria-label={$t("common.bulk.aria", { count, entityName })}
     tabindex="-1"
     class="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 pb-[env(safe-area-inset-bottom)] md:bottom-6"
     onkeydown={handleBarKeyDown}
@@ -90,8 +94,8 @@
         variant="ghost"
         size="icon-xs"
         class="rounded-full"
-        aria-label="清除选择"
-        title="清除选择（Esc）"
+        aria-label={$t("common.bulk.clear")}
+        title={$t("common.bulk.clearTitle")}
         onclick={onClear}
       >
         <X />

@@ -14,11 +14,11 @@
     parseDateTimeInput,
     toDateTimeInput,
     todayKey,
+    weekdayLabels,
     type DateTimeParts,
   } from "#lib/date-time.js"
+  import { locale, t } from "#lib/i18n.js"
   import { cn } from "#lib/utils.js"
-
-  const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"]
 
   const ARROW_STEPS: Record<string, number> = {
     ArrowLeft: -1,
@@ -31,7 +31,7 @@
     value = $bindable(""),
     id,
     name,
-    placeholder = "选择日期时间",
+    placeholder,
     disabled = false,
     class: className,
   }: {
@@ -54,6 +54,9 @@
   let minuteText = $state("00")
   let grid = $state<HTMLDivElement | null>(null)
   let pendingFocus = $state<string | null>(null)
+
+  const placeholderText = $derived(placeholder ?? $t("dateTime.placeholder"))
+  const weekdays = $derived(weekdayLabels($locale))
 
   function syncView() {
     const base = parts ?? nowParts()
@@ -230,7 +233,7 @@
         )}
       >
         <span class="truncate tabular-nums">
-          {value ? formatDateTimeInput(value) : placeholder}
+          {value ? formatDateTimeInput(value, $locale) : placeholderText}
         </span>
         <Calendar
           class="size-4 shrink-0 text-muted-foreground"
@@ -245,18 +248,18 @@
       <div class="flex items-center justify-between">
         <button
           type="button"
-          aria-label="上个月"
+          aria-label={$t("dateTime.previousMonth")}
           class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
           onclick={() => shiftMonth(-1)}
         >
           <ChevronLeft class="size-4" />
         </button>
         <span class="text-sm font-medium tabular-nums">
-          {formatMonthLabel(view.year, view.month)}
+          {formatMonthLabel(view.year, view.month, $locale)}
         </span>
         <button
           type="button"
-          aria-label="下个月"
+          aria-label={$t("dateTime.nextMonth")}
           class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
           onclick={() => shiftMonth(1)}
         >
@@ -265,7 +268,7 @@
       </div>
 
       <div class="grid grid-cols-7">
-        {#each WEEKDAYS as label (label)}
+        {#each weekdays as label (label)}
           <span
             class="flex h-7 items-center justify-center text-xs text-muted-foreground"
           >
@@ -278,7 +281,7 @@
       <div
         bind:this={grid}
         role="group"
-        aria-label="选择日期"
+        aria-label={$t("dateTime.selectDate")}
         class="grid grid-cols-7 gap-y-0.5 [@media(pointer:coarse)]:gap-y-1"
         onkeydown={handleGridKeyDown}
       >
@@ -306,9 +309,9 @@
       </div>
 
       <div class="flex items-center gap-2 border-t pt-2.5">
-        <span class="text-xs text-muted-foreground">时间</span>
+        <span class="text-xs text-muted-foreground">{$t("dateTime.time")}</span>
         <input
-          aria-label="小时"
+          aria-label={$t("dateTime.hour")}
           inputmode="numeric"
           autocomplete="off"
           value={hourText}
@@ -319,7 +322,7 @@
         />
         <span class="text-sm text-muted-foreground">:</span>
         <input
-          aria-label="分钟"
+          aria-label={$t("dateTime.minute")}
           inputmode="numeric"
           autocomplete="off"
           value={minuteText}
@@ -333,7 +336,7 @@
           class="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
           onclick={setNow}
         >
-          此刻
+          {$t("dateTime.now")}
         </button>
       </div>
 
@@ -345,14 +348,14 @@
           onclick={clear}
         >
           <X class="size-3.5" />
-          清除
+          {$t("dateTime.clear")}
         </button>
         <button
           type="button"
           class="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-4"
           onclick={() => (open = false)}
         >
-          完成
+          {$t("dateTime.done")}
         </button>
       </div>
     </div>

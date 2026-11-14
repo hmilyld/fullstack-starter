@@ -11,6 +11,7 @@
     AlertDialogHeader,
     AlertDialogTitle,
   } from "#lib/components/ui/alert-dialog/index.js"
+  import { t } from "#lib/i18n.js"
 
   let { when }: { when: boolean } = $props()
 
@@ -57,14 +58,18 @@
 <AlertDialog bind:open>
   <AlertDialogContent>
     <AlertDialogHeader>
-      <AlertDialogTitle>放弃未保存的修改？</AlertDialogTitle>
+      <AlertDialogTitle>{$t("common.unsaved.title")}</AlertDialogTitle>
       <AlertDialogDescription>
-        当前页面还有未保存的内容，离开后这些修改会丢失。
+        {$t("common.unsaved.description")}
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
-      <AlertDialogCancel onclick={stay}>留在本页</AlertDialogCancel>
-      <AlertDialogAction onclick={proceed}>放弃修改</AlertDialogAction>
+      <AlertDialogCancel onclick={stay}
+        >{$t("common.unsaved.stay")}</AlertDialogCancel
+      >
+      <AlertDialogAction onclick={proceed}
+        >{$t("common.unsaved.discard")}</AlertDialogAction
+      >
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>

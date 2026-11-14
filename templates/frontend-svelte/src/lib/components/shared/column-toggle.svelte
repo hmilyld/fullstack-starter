@@ -10,6 +10,7 @@
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "#lib/components/ui/dropdown-menu/index.js"
+  import { t } from "#lib/i18n.js"
   import { cn } from "#lib/utils.js"
 
   let {
@@ -39,12 +40,12 @@
           class={cn("w-full md:w-fit", className)}
         >
           <Columns3 data-icon="inline-start" />
-          列
+          {$t("common.table.columns")}
         </Button>
       {/snippet}
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-44">
-      <DropdownMenuLabel>显示列</DropdownMenuLabel>
+      <DropdownMenuLabel>{$t("common.table.showColumns")}</DropdownMenuLabel>
       {#each hideable as column (column.key)}
         <DropdownMenuCheckboxItem
           checked={!hidden.includes(column.key)}
@@ -55,7 +56,9 @@
         </DropdownMenuCheckboxItem>
       {/each}
       <DropdownMenuSeparator />
-      <DropdownMenuItem onSelect={onReset}>恢复默认</DropdownMenuItem>
+      <DropdownMenuItem onSelect={onReset}
+        >{$t("common.table.resetColumns")}</DropdownMenuItem
+      >
     </DropdownMenuContent>
   </DropdownMenu>
 {/if}

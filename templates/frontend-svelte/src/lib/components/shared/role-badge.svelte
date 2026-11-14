@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Badge } from "#lib/components/ui/badge/index.js"
+  import { t } from "#lib/i18n.js"
   import type { Role } from "#lib/types/role.js"
 
   let { roleId, roles }: { roleId: string; roles: Role[] } = $props()
@@ -10,4 +11,8 @@
   )
 </script>
 
-<Badge {variant}>{role?.name ?? "未知角色"}</Badge>
+<Badge {variant}
+  >{role
+    ? $t(`roles.${role.id}`, { defaultValue: role.name })
+    : $t("roles.unknown")}</Badge
+>
