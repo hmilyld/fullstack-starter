@@ -47,16 +47,15 @@ export function filterPermissionTree(
 
 export type OperationPreset = {
   verb: string
-  label: string
 }
 
 export const OPERATION_PRESETS: OperationPreset[] = [
-  { verb: "view", label: "查看" },
-  { verb: "create", label: "新增" },
-  { verb: "edit", label: "编辑" },
-  { verb: "delete", label: "删除" },
-  { verb: "export", label: "导出" },
-  { verb: "import", label: "导入" },
+  { verb: "view" },
+  { verb: "create" },
+  { verb: "edit" },
+  { verb: "delete" },
+  { verb: "export" },
+  { verb: "import" },
 ]
 
 export function buildOperationCode(menuCode: string, verb: string): string {
