@@ -1041,6 +1041,12 @@ const en = {
   },
   errors: {
     pageLoadFailed: "Page failed to load",
+    pageLoadDescription:
+      "Something went wrong. Go back to the dashboard and try again.",
+    sessionExpired: "Not signed in or the session has expired",
+    requestCancelled: "Request cancelled",
+    networkFailed: "Network request failed",
+    exportPasswordMissing: "The server did not return an export password",
     refreshHint: "Refresh the page and try again.",
     reload: "Refresh page",
     backToDashboard: "Back to dashboard",

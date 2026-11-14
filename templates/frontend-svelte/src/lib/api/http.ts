@@ -1,5 +1,5 @@
 import type { ApiResponse, QueryParams } from "#lib/types/common.js"
-import { translate } from "#lib/i18n.js"
+import { currentLocale, translate } from "#lib/i18n.js"
 
 /**
  * HTTP 基础设施：只被 `api/client.ts` 使用。
@@ -57,6 +57,7 @@ export async function requestJson<T>(
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "Accept-Language": currentLocale(),
       ...(options.headers as Record<string, string>),
       ...authHeaders(),
     }
@@ -112,6 +113,7 @@ export async function requestRaw(
   options: RequestInit = {}
 ): Promise<Response> {
   const headers: Record<string, string> = {
+    "Accept-Language": currentLocale(),
     ...(options.headers as Record<string, string>),
     ...authHeaders(),
   }

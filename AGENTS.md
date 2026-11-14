@@ -98,13 +98,14 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Keep `api/` flat by default. Only when one domain exceeds ~150 lines or needs a second file, promote `api/<domain>.ts` to `api/<domain>/index.ts` plus siblings. Do not nest ahead of need.
 - React and Vue share byte-identical `src/api/` and `src/types/`; keep them in sync when changing either. The Svelte template keeps the same domain files and export signatures under `src/lib/api` and `src/lib/types`, using `#lib` imports with `.js` extensions.
 
-### Internationalization (React pilot)
+### Internationalization (frontend-react / frontend-vue / frontend-svelte)
 
-- New or edited user-facing text in `templates/frontend-react` must go through `useTranslation()` and `src/locales/{zh-CN,en}.ts`. Do not hardcode UI strings in new components. The auth shell, admin shell, dashboard, settings pages, shared components and error surfaces are migrated; `DateTimeField` follows the active locale.
-- The default locale is `zh-CN`; English is opt-in. Locale is runtime-only (`app.locale`), with no URL prefix.
-- `en.ts` is typed against `zh-CN.ts`; add or rename keys in both catalogs together.
-- Server-provided `message` values are not localized yet. Show them as-is or add a translated fallback; do not silently translate arbitrary server text.
-- Do not add i18n to the Vue or Svelte templates until the React pilot is complete.
+- All three frontends use runtime catalogs: React `src/locales/{zh-CN,en}.ts` with `useTranslation()`, Vue `src/locales/{zh-CN,en}.ts` with `useI18n()`, and Svelte `src/lib/locales/{zh-CN,en}.ts` with `$t` / `translate()`. New or edited user-facing text must go through the catalog; do not hardcode UI strings.
+- The default locale is `zh-CN`; English is opt-in. Locale is stored in `app.locale`, applied to `document.documentElement.lang` and the PWA manifest, and never prefixed to routes.
+- Keep the catalog key structure aligned across React, Vue and Svelte; add or rename keys in all three `zh-CN`/`en` pairs together.
+- Built-in menu, group, role and operation labels resolve by code/id to catalog keys; custom names and API data remain as sent by the backend.
+- The clients send `Accept-Language` on API requests. Server-provided `message` values are not localized yet; show them as-is or add a translated fallback.
+- Date/time display follows the active locale; keep the zh-CN formatting and tests unchanged.
 
 ## Frontend Responsive Rules (frontend-react / frontend-vue / frontend-svelte)
 

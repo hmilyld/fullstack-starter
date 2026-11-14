@@ -58,4 +58,11 @@ export function currentLocale(): Locale {
   return normalizeLocale(i18n.global.locale.value)
 }
 
+export function translate(
+  key: string,
+  options: Record<string, unknown> = {}
+): string {
+  return i18n.global.t(key, options)
+}
+
 export default i18n

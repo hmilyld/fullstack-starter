@@ -956,6 +956,10 @@ const zhCN = {
   errors: {
     pageLoadFailed: "页面加载失败",
     pageLoadFallback: "页面加载失败，请刷新后重试。",
+    sessionExpired: "未登录或登录已过期",
+    requestCancelled: "请求已取消",
+    networkFailed: "网络请求失败",
+    exportPasswordMissing: "服务器未返回导出密码",
     refreshHint: "请刷新页面重试。",
     reload: "刷新页面",
     backToDashboard: "返回仪表盘",
