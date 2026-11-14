@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import {
   CheckCircle2Icon,
   EyeIcon,
@@ -104,6 +105,7 @@ function groupPresets(presets: AiModelPreset[]) {
 }
 
 function AiModelPresetManager() {
+  const { t } = useTranslation()
   const { hasPermission } = useAuth()
   const [presets, setPresets] = React.useState<AiModelPreset[]>([])
   const [groups, setGroups] = React.useState<string[]>([])
@@ -165,10 +167,10 @@ function AiModelPresetManager() {
     ])
     if (id !== requestId.current) return
     if (presetsRes.code === 0) setPresets(presetsRes.data)
-    else setError(presetsRes.message || "加载预设模型失败")
+    else setError(presetsRes.message || t("aiModelPage.toasts.operationFailed"))
     if (groupsRes.code === 0) setGroups(groupsRes.data)
     setLoading(false)
-  }, [debouncedSearch, selectedGroup])
+  }, [debouncedSearch, selectedGroup, t])
 
   React.useEffect(() => {
     void loadData()
@@ -210,10 +212,14 @@ function AiModelPresetManager() {
       : await createAiModelPreset(editForm)
     setEditSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "操作失败")
+      appToast.error(res.message || t("aiModelPage.toasts.operationFailed"))
       return
     }
-    appToast.success(editingPreset ? "保存成功" : "创建成功")
+    appToast.success(
+      editingPreset
+        ? t("aiModelPage.toasts.saveSuccess")
+        : t("aiModelPage.toasts.createSuccess")
+    )
     setEditOpen(false)
     void loadData()
   }
@@ -229,10 +235,10 @@ function AiModelPresetManager() {
     const res = await apiDeleteAiModelPreset(deleteTarget.id)
     setDeleteSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "删除失败")
+      appToast.error(res.message || t("aiModelPage.toasts.deleteFailed"))
       return
     }
-    appToast.success("删除成功")
+    appToast.success(t("aiModelPage.toasts.deleteSuccess"))
     setDeleteOpen(false)
     void loadData()
   }
@@ -241,14 +247,14 @@ function AiModelPresetManager() {
     const actions: RowAction[] = []
     if (hasPermission("ai_models.presets.edit")) {
       actions.push({
-        label: "编辑",
+        label: t("common.edit"),
         icon: PencilIcon,
         onSelect: () => handleEdit(preset),
       })
     }
     if (hasPermission("ai_models.presets.delete")) {
       actions.push({
-        label: "删除",
+        label: t("common.delete"),
         icon: Trash2Icon,
         destructive: true,
         separatorBefore: true,
@@ -261,18 +267,18 @@ function AiModelPresetManager() {
   const columns: DataColumn<AiModelPreset>[] = [
     {
       key: "group",
-      header: "分组",
+      header: t("aiModelPage.labels.group"),
       hideable: true,
       cell: (preset) => <Badge variant="outline">{preset.group}</Badge>,
     },
     {
       key: "alias",
-      header: "别名",
+      header: t("aiModelPage.labels.alias"),
       cell: (preset) => <span className="font-medium">{preset.alias}</span>,
     },
     {
       key: "modelName",
-      header: "模型名称",
+      header: t("aiModelPage.labels.modelName"),
       hideable: true,
       headClassName: "hidden md:table-cell",
       cellClassName: "hidden md:table-cell",
@@ -280,7 +286,7 @@ function AiModelPresetManager() {
     },
     {
       key: "apiUrl",
-      header: "API 地址",
+      header: t("aiModelPage.labels.apiUrl"),
       hideable: true,
       headClassName: "hidden lg:table-cell",
       cellClassName:
@@ -289,7 +295,7 @@ function AiModelPresetManager() {
     },
     {
       key: "description",
-      header: "描述",
+      header: t("aiModelPage.labels.description"),
       hideable: true,
       headClassName: "hidden xl:table-cell",
       cellClassName:
@@ -298,16 +304,18 @@ function AiModelPresetManager() {
     },
     {
       key: "status",
-      header: "状态",
+      header: t("aiModelPage.labels.status"),
       cell: (preset) => (
         <Badge variant={preset.isActive ? "success" : "secondary"}>
-          {preset.isActive ? "启用" : "禁用"}
+          {preset.isActive
+            ? t("aiModelPage.labels.active")
+            : t("aiModelPage.labels.inactive")}
         </Badge>
       ),
     },
     {
       key: "sort",
-      header: "排序",
+      header: t("aiModelPage.labels.sort"),
       hideable: true,
       headClassName: "hidden lg:table-cell",
       cellClassName: "hidden lg:table-cell",
@@ -315,7 +323,7 @@ function AiModelPresetManager() {
     },
     {
       key: "actions",
-      header: "操作",
+      header: t("aiModelPage.labels.actions"),
       pinRight: true,
       headClassName: "text-right",
       cellClassName: "text-right",
@@ -328,12 +336,14 @@ function AiModelPresetManager() {
               onClick={() => handleEdit(preset)}
             >
               <PencilIcon />
-              <span className="sr-only">编辑 {preset.alias}</span>
+              <span className="sr-only">
+                {t("aiModelPage.preset.editSrOnly", { name: preset.alias })}
+              </span>
             </Button>
           )}
           <RowActions
             actions={buildPresetActions(preset).filter(
-              (action) => action.label !== "编辑"
+              (action) => action.label !== t("common.edit")
             )}
           />
         </div>
@@ -347,7 +357,9 @@ function AiModelPresetManager() {
   return (
     <>
       <ListShell
-        description={`共 ${presets.length} 个预设模型`}
+        description={t("aiModelPage.preset.listDescription", {
+          total: presets.length,
+        })}
         actions={
           <>
             <Select
@@ -356,12 +368,17 @@ function AiModelPresetManager() {
                 setSelectedGroup(value === "all" ? "" : value)
               }
             >
-              <SelectTrigger className="w-full md:w-40" aria-label="按分组筛选">
-                <SelectValue placeholder="全部分组" />
+              <SelectTrigger
+                className="w-full md:w-40"
+                aria-label={t("aiModelPage.preset.groupFilterAria")}
+              >
+                <SelectValue placeholder={t("aiModelPage.preset.allGroups")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="all">全部分组</SelectItem>
+                  <SelectItem value="all">
+                    {t("aiModelPage.preset.allGroups")}
+                  </SelectItem>
                   {groups.map((group) => (
                     <SelectItem key={group} value={group}>
                       {group}
@@ -375,8 +392,8 @@ function AiModelPresetManager() {
                 name="q"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="搜索别名或模型名称…"
-                aria-label="搜索预设模型"
+                placeholder={t("aiModelPage.preset.searchPlaceholder")}
+                aria-label={t("aiModelPage.preset.searchAria")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -394,7 +411,7 @@ function AiModelPresetManager() {
             {hasPermission("ai_models.presets.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
-                新增预设
+                {t("aiModelPage.preset.add")}
               </Button>
             )}
           </>
@@ -412,12 +429,12 @@ function AiModelPresetManager() {
             icon: StarIcon,
             title:
               debouncedSearch || selectedGroup
-                ? "没有匹配的预设"
-                : "还没有预设模型",
+                ? t("aiModelPage.preset.emptySearchTitle")
+                : t("aiModelPage.preset.emptyTitle"),
             description:
               debouncedSearch || selectedGroup
-                ? "换个关键词或分组再试。"
-                : "预设在新增模型时用于快速填充模型名称和接口地址。",
+                ? t("aiModelPage.preset.emptySearchDescription")
+                : t("aiModelPage.preset.emptyDescription"),
             action:
               debouncedSearch || selectedGroup ? (
                 <Button
@@ -427,12 +444,12 @@ function AiModelPresetManager() {
                     setSelectedGroup("")
                   }}
                 >
-                  清除筛选
+                  {t("aiModelPage.preset.clearFilter")}
                 </Button>
               ) : hasPermission("ai_models.presets.create") ? (
                 <Button onClick={handleAdd}>
                   <PlusIcon data-icon="inline-start" />
-                  新增预设
+                  {t("aiModelPage.preset.add")}
                 </Button>
               ) : null,
           }}
@@ -444,12 +461,20 @@ function AiModelPresetManager() {
                 <>
                   <Badge variant="outline">{preset.group}</Badge>
                   <Badge variant={preset.isActive ? "success" : "secondary"}>
-                    {preset.isActive ? "启用" : "禁用"}
+                    {preset.isActive
+                      ? t("aiModelPage.labels.active")
+                      : t("aiModelPage.labels.inactive")}
                   </Badge>
                 </>
               }
               subtitle={preset.modelName}
-              meta={<span>排序 {preset.sortOrder}</span>}
+              meta={
+                <span>
+                  {t("aiModelPage.preset.sortMeta", {
+                    order: preset.sortOrder,
+                  })}
+                </span>
+              }
               actions={<RowActions actions={buildPresetActions(preset)} />}
             />
           )}
@@ -461,11 +486,15 @@ function AiModelPresetManager() {
       <FormDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        title={editingPreset ? "编辑预设模型" : "新增预设模型"}
+        title={
+          editingPreset
+            ? t("aiModelPage.preset.form.editTitle")
+            : t("aiModelPage.preset.form.addTitle")
+        }
         description={
           editingPreset
-            ? "修改预设模型的配置信息。"
-            : "填写以下信息添加新的预设模型。"
+            ? t("aiModelPage.preset.form.editDescription")
+            : t("aiModelPage.preset.form.addDescription")
         }
         submitting={editSubmitting}
         className="sm:max-w-lg"
@@ -473,12 +502,14 @@ function AiModelPresetManager() {
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="preset-group">分组</FieldLabel>
+            <FieldLabel htmlFor="preset-group">
+              {t("aiModelPage.preset.form.group")}
+            </FieldLabel>
             <Input
               name="preset-group"
               autoComplete="off"
               id="preset-group"
-              placeholder="例如：DeepSeek、OpenAI"
+              placeholder={t("aiModelPage.preset.form.groupPlaceholder")}
               value={editForm.group}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -489,17 +520,19 @@ function AiModelPresetManager() {
               required
             />
             <FieldDescription>
-              用于分类管理，相同分组的模型会显示在一起。
+              {t("aiModelPage.preset.form.groupHint")}
             </FieldDescription>
           </Field>
           <Field>
-            <FieldLabel htmlFor="preset-alias">别名</FieldLabel>
+            <FieldLabel htmlFor="preset-alias">
+              {t("aiModelPage.preset.form.alias")}
+            </FieldLabel>
             <Input
               name="preset-alias"
               autoComplete="off"
               spellCheck={false}
               id="preset-alias"
-              placeholder="例如：deepseek-chat"
+              placeholder={t("aiModelPage.preset.form.aliasPlaceholder")}
               value={editForm.alias}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -509,17 +542,19 @@ function AiModelPresetManager() {
               }
               required
               pattern="^[a-zA-Z0-9._-]+$"
-              title="别名只能包含字母、数字、点、下划线和连字符"
+              title={t("aiModelPage.preset.form.aliasPattern")}
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="preset-model-name">模型名称</FieldLabel>
+            <FieldLabel htmlFor="preset-model-name">
+              {t("aiModelPage.preset.form.modelName")}
+            </FieldLabel>
             <Input
               name="preset-model-name"
               autoComplete="off"
               spellCheck={false}
               id="preset-model-name"
-              placeholder="例如：deepseek-chat"
+              placeholder={t("aiModelPage.preset.form.modelNamePlaceholder")}
               value={editForm.modelName}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -531,14 +566,16 @@ function AiModelPresetManager() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="preset-api-url">API 地址</FieldLabel>
+            <FieldLabel htmlFor="preset-api-url">
+              {t("aiModelPage.preset.form.apiUrl")}
+            </FieldLabel>
             <Input
               name="preset-api-url"
               autoComplete="off"
               spellCheck={false}
               id="preset-api-url"
               type="url"
-              placeholder="例如：https://api.deepseek.com/v1/chat/completions"
+              placeholder={t("aiModelPage.preset.form.apiUrlPlaceholder")}
               value={editForm.apiUrl}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -550,12 +587,14 @@ function AiModelPresetManager() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="preset-description">描述</FieldLabel>
+            <FieldLabel htmlFor="preset-description">
+              {t("aiModelPage.preset.form.description")}
+            </FieldLabel>
             <Textarea
               name="preset-description"
               autoComplete="off"
               id="preset-description"
-              placeholder="请输入模型描述（可选）"
+              placeholder={t("aiModelPage.preset.form.descriptionPlaceholder")}
               value={editForm.description}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -568,7 +607,9 @@ function AiModelPresetManager() {
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="preset-sort-order">排序</FieldLabel>
+              <FieldLabel htmlFor="preset-sort-order">
+                {t("aiModelPage.preset.form.sortOrder")}
+              </FieldLabel>
               <Input
                 name="preset-sort-order"
                 autoComplete="off"
@@ -588,14 +629,16 @@ function AiModelPresetManager() {
             </Field>
             <Field orientation="horizontal">
               <div className="flex flex-1 flex-col gap-1">
-                <FieldLabel htmlFor="preset-active">启用</FieldLabel>
+                <FieldLabel htmlFor="preset-active">
+                  {t("aiModelPage.preset.form.active")}
+                </FieldLabel>
                 <FieldDescription>
-                  禁用的预设不会出现在新增模型的快捷选择中。
+                  {t("aiModelPage.preset.form.activeHint")}
                 </FieldDescription>
               </div>
               <Switch
                 id="preset-active"
-                aria-label="启用预设"
+                aria-label={t("aiModelPage.preset.form.activeAria")}
                 checked={editForm.isActive}
                 onCheckedChange={(checked) =>
                   setEditForm((form) => ({ ...form, isActive: checked }))
@@ -618,6 +661,7 @@ function AiModelPresetManager() {
 }
 
 export function AiModelPage() {
+  const { t } = useTranslation()
   const { hasPermission } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get("tab") === "presets" ? "presets" : "models"
@@ -731,10 +775,10 @@ export function AiModelPage() {
       const res = await updateAiModel(editingModel.id, payload)
       setEditSubmitting(false)
       if (res.code !== 0) {
-        appToast.error(res.message || "保存失败")
+        appToast.error(res.message || t("aiModelPage.toasts.saveFailed"))
         return
       }
-      appToast.success("保存成功")
+      appToast.success(t("aiModelPage.toasts.saveSuccess"))
     } else {
       const res = await createAiModel({
         alias: editForm.alias,
@@ -746,10 +790,10 @@ export function AiModelPage() {
       })
       setEditSubmitting(false)
       if (res.code !== 0) {
-        appToast.error(res.message || "创建失败")
+        appToast.error(res.message || t("aiModelPage.toasts.createFailed"))
         return
       }
-      appToast.success("创建成功")
+      appToast.success(t("aiModelPage.toasts.createSuccess"))
     }
 
     setEditOpen(false)
@@ -767,10 +811,10 @@ export function AiModelPage() {
     const res = await apiDeleteAiModel(deleteTarget.id)
     setDeleteSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "删除失败")
+      appToast.error(res.message || t("aiModelPage.toasts.deleteFailed"))
       return
     }
-    appToast.success("删除成功")
+    appToast.success(t("aiModelPage.toasts.deleteSuccess"))
     setDeleteOpen(false)
     list.refresh()
   }
@@ -784,7 +828,7 @@ export function AiModelPage() {
     } else {
       setTestResult({
         success: false,
-        message: res.message || "测试失败",
+        message: res.message || t("aiModelPage.toasts.testFailed"),
         responseTime: null,
         model: null,
       })
@@ -796,7 +840,10 @@ export function AiModelPage() {
     const actions: RowAction[] = []
     if (hasPermission("ai_models")) {
       actions.push({
-        label: testingId === model.id ? "测试中…" : "测试",
+        label:
+          testingId === model.id
+            ? t("aiModelPage.model.testing")
+            : t("aiModelPage.model.test"),
         icon: TestTubeIcon,
         disabled: testingId === model.id,
         onSelect: () => handleTest(model),
@@ -804,14 +851,14 @@ export function AiModelPage() {
     }
     if (hasPermission("ai_models.edit")) {
       actions.push({
-        label: "编辑",
+        label: t("common.edit"),
         icon: PencilIcon,
         onSelect: () => handleEdit(model),
       })
     }
     if (hasPermission("ai_models.delete")) {
       actions.push({
-        label: "删除",
+        label: t("common.delete"),
         icon: Trash2Icon,
         destructive: true,
         separatorBefore: true,
@@ -826,12 +873,12 @@ export function AiModelPage() {
   const columns: DataColumn<AiModel>[] = [
     {
       key: "alias",
-      header: "别名",
+      header: t("aiModelPage.labels.alias"),
       cell: (model) => <span className="font-medium">{model.alias}</span>,
     },
     {
       key: "modelName",
-      header: "模型名称",
+      header: t("aiModelPage.labels.modelName"),
       hideable: true,
       headClassName: "hidden md:table-cell",
       cellClassName: "hidden md:table-cell",
@@ -839,7 +886,7 @@ export function AiModelPage() {
     },
     {
       key: "apiUrl",
-      header: "API 地址",
+      header: t("aiModelPage.labels.apiUrl"),
       hideable: true,
       headClassName: "hidden lg:table-cell",
       cellClassName:
@@ -848,7 +895,7 @@ export function AiModelPage() {
     },
     {
       key: "apiKey",
-      header: "API Key",
+      header: t("aiModelPage.labels.apiKey"),
       hideable: true,
       headClassName: "hidden xl:table-cell",
       cellClassName: "hidden xl:table-cell",
@@ -863,7 +910,9 @@ export function AiModelPage() {
             variant="ghost"
             size="icon-xs"
             aria-label={
-              visibleKeys.has(model.id) ? "隐藏 API Key" : "显示 API Key"
+              visibleKeys.has(model.id)
+                ? t("aiModelPage.model.hideKey")
+                : t("aiModelPage.model.showKey")
             }
             onClick={() => toggleKeyVisibility(model.id)}
           >
@@ -874,7 +923,7 @@ export function AiModelPage() {
     },
     {
       key: "description",
-      header: "描述",
+      header: t("aiModelPage.labels.description"),
       hideable: true,
       headClassName: "hidden xl:table-cell",
       cellClassName:
@@ -883,16 +932,18 @@ export function AiModelPage() {
     },
     {
       key: "status",
-      header: "状态",
+      header: t("aiModelPage.labels.status"),
       cell: (model) => (
         <Badge variant={model.isDefault ? "success" : "secondary"}>
-          {model.isDefault ? "默认" : "普通"}
+          {model.isDefault
+            ? t("aiModelPage.labels.default")
+            : t("aiModelPage.labels.normal")}
         </Badge>
       ),
     },
     {
       key: "actions",
-      header: "操作",
+      header: t("aiModelPage.labels.actions"),
       pinRight: true,
       headClassName: "text-right",
       cellClassName: "text-right",
@@ -905,12 +956,14 @@ export function AiModelPage() {
               onClick={() => handleEdit(model)}
             >
               <PencilIcon />
-              <span className="sr-only">编辑 {model.alias}</span>
+              <span className="sr-only">
+                {t("aiModelPage.model.editSrOnly", { name: model.alias })}
+              </span>
             </Button>
           )}
           <RowActions
             actions={buildModelActions(model).filter(
-              (action) => action.label !== "编辑"
+              (action) => action.label !== t("common.edit")
             )}
           />
         </div>
@@ -923,19 +976,25 @@ export function AiModelPage() {
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
-        title="AI 模型配置"
-        description="管理系统使用的 AI 模型配置，支持多个模型和自定义别名。"
+        title={t("aiModelPage.title")}
+        description={t("aiModelPage.description")}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="models">模型配置</TabsTrigger>
-          <TabsTrigger value="presets">预设模型管理</TabsTrigger>
+          <TabsTrigger value="models">
+            {t("aiModelPage.tabs.models")}
+          </TabsTrigger>
+          <TabsTrigger value="presets">
+            {t("aiModelPage.tabs.presets")}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="models" className="flex flex-col gap-(--page-gap)">
           <ListShell
-            description={`共 ${list.total} 个模型配置`}
+            description={t("aiModelPage.model.listDescription", {
+              total: list.total,
+            })}
             actions={
               <>
                 <InputGroup className="w-full md:w-64">
@@ -943,8 +1002,8 @@ export function AiModelPage() {
                     name="q"
                     autoComplete="off"
                     spellCheck={false}
-                    placeholder="搜索别名或模型名称…"
-                    aria-label="搜索模型"
+                    placeholder={t("aiModelPage.model.searchPlaceholder")}
+                    aria-label={t("aiModelPage.model.searchAria")}
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                   />
@@ -962,7 +1021,7 @@ export function AiModelPage() {
                 {hasPermission("ai_models.create") && (
                   <Button onClick={handleAdd} className="w-full md:w-auto">
                     <PlusIcon data-icon="inline-start" />
-                    新增模型
+                    {t("aiModelPage.model.add")}
                   </Button>
                 )}
               </>
@@ -973,7 +1032,7 @@ export function AiModelPage() {
                   page={list.page}
                   totalPages={list.totalPages}
                   total={list.total}
-                  itemLabel="个模型"
+                  itemLabel={t("aiModelPage.model.entityName")}
                   pageSize={pageSize}
                   pageSizeOptions={PAGE_SIZE_OPTIONS}
                   onPageSizeChange={(size) => {
@@ -995,18 +1054,20 @@ export function AiModelPage() {
               onHideColumn={table.toggle}
               empty={{
                 icon: StarIcon,
-                title: debouncedSearch ? "没有匹配的模型" : "还没有模型配置",
+                title: debouncedSearch
+                  ? t("aiModelPage.model.emptySearchTitle")
+                  : t("aiModelPage.model.emptyTitle"),
                 description: debouncedSearch
-                  ? "换个关键词，或清空搜索条件后再试。"
-                  : "新增模型后，其他模块即可通过别名调用。",
+                  ? t("aiModelPage.model.emptySearchDescription")
+                  : t("aiModelPage.model.emptyDescription"),
                 action: debouncedSearch ? (
                   <Button variant="outline" onClick={() => setSearch("")}>
-                    清空搜索
+                    {t("aiModelPage.model.clearSearch")}
                   </Button>
                 ) : hasPermission("ai_models.create") ? (
                   <Button onClick={handleAdd}>
                     <PlusIcon data-icon="inline-start" />
-                    新增模型
+                    {t("aiModelPage.model.add")}
                   </Button>
                 ) : null,
               }}
@@ -1016,7 +1077,9 @@ export function AiModelPage() {
                   title={model.alias}
                   badges={
                     <Badge variant={model.isDefault ? "success" : "secondary"}>
-                      {model.isDefault ? "默认" : "普通"}
+                      {model.isDefault
+                        ? t("aiModelPage.labels.default")
+                        : t("aiModelPage.labels.normal")}
                     </Badge>
                   }
                   subtitle={model.modelName}
@@ -1042,11 +1105,15 @@ export function AiModelPage() {
       <FormDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        title={editingModel ? "编辑模型" : "新增模型"}
+        title={
+          editingModel
+            ? t("aiModelPage.model.form.editTitle")
+            : t("aiModelPage.model.form.addTitle")
+        }
         description={
           editingModel
-            ? "修改 AI 模型的配置信息。"
-            : "填写以下信息添加新的 AI 模型配置，或从预设模型中快速选择。"
+            ? t("aiModelPage.model.form.editDescription")
+            : t("aiModelPage.model.form.addDescription")
         }
         submitting={editSubmitting}
         className="sm:max-w-lg"
@@ -1055,7 +1122,7 @@ export function AiModelPage() {
         <FieldGroup>
           {!editingModel && groupedPresets.length > 0 && (
             <Field>
-              <FieldLabel>快速选择预设模型</FieldLabel>
+              <FieldLabel>{t("aiModelPage.model.form.presetLabel")}</FieldLabel>
               <Select
                 value=""
                 onValueChange={(value) => {
@@ -1071,8 +1138,13 @@ export function AiModelPage() {
                   })
                 }}
               >
-                <SelectTrigger className="w-full" aria-label="快速选择预设模型">
-                  <SelectValue placeholder="选择常用 AI 模型…" />
+                <SelectTrigger
+                  className="w-full"
+                  aria-label={t("aiModelPage.model.form.presetAria")}
+                >
+                  <SelectValue
+                    placeholder={t("aiModelPage.model.form.presetPlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {groupedPresets.map(([group, items]) => (
@@ -1090,19 +1162,21 @@ export function AiModelPage() {
                 </SelectContent>
               </Select>
               <FieldDescription>
-                选择后将自动填充模型名称和 API 地址，只需填写 API Key。
+                {t("aiModelPage.model.form.presetHint")}
               </FieldDescription>
             </Field>
           )}
 
           <Field>
-            <FieldLabel htmlFor="model-alias">别名</FieldLabel>
+            <FieldLabel htmlFor="model-alias">
+              {t("aiModelPage.model.form.alias")}
+            </FieldLabel>
             <Input
               name="model-alias"
               autoComplete="off"
               spellCheck={false}
               id="model-alias"
-              placeholder="例如：deepseek-chat"
+              placeholder={t("aiModelPage.model.form.aliasPlaceholder")}
               value={editForm.alias}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -1112,20 +1186,22 @@ export function AiModelPage() {
               }
               required
               pattern="^[a-zA-Z0-9_-]+$"
-              title="别名只能包含字母、数字、下划线和连字符"
+              title={t("aiModelPage.model.form.aliasPattern")}
             />
             <FieldDescription>
-              唯一标识符，其他模块通过此别名调用模型。
+              {t("aiModelPage.model.form.aliasHint")}
             </FieldDescription>
           </Field>
           <Field>
-            <FieldLabel htmlFor="model-name">模型名称</FieldLabel>
+            <FieldLabel htmlFor="model-name">
+              {t("aiModelPage.model.form.modelName")}
+            </FieldLabel>
             <Input
               name="model-name"
               autoComplete="off"
               spellCheck={false}
               id="model-name"
-              placeholder="例如：deepseek-chat"
+              placeholder={t("aiModelPage.model.form.modelNamePlaceholder")}
               value={editForm.modelName}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -1137,14 +1213,16 @@ export function AiModelPage() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="model-api-url">API 地址</FieldLabel>
+            <FieldLabel htmlFor="model-api-url">
+              {t("aiModelPage.model.form.apiUrl")}
+            </FieldLabel>
             <Input
               name="model-api-url"
               autoComplete="off"
               spellCheck={false}
               id="model-api-url"
               type="url"
-              placeholder="例如：https://api.deepseek.com/v1/chat/completions"
+              placeholder={t("aiModelPage.model.form.apiUrlPlaceholder")}
               value={editForm.apiUrl}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -1156,10 +1234,16 @@ export function AiModelPage() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="model-api-key">API Key</FieldLabel>
+            <FieldLabel htmlFor="model-api-key">
+              {t("aiModelPage.model.form.apiKey")}
+            </FieldLabel>
             <PasswordInput
               id="model-api-key"
-              placeholder={editingModel ? "留空保持不变" : "请输入 API Key"}
+              placeholder={
+                editingModel
+                  ? t("aiModelPage.model.form.apiKeyKeep")
+                  : t("aiModelPage.model.form.apiKeyPlaceholder")
+              }
               autoComplete="off"
               value={editForm.apiKey}
               onChange={(event) =>
@@ -1172,12 +1256,14 @@ export function AiModelPage() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="model-description">描述</FieldLabel>
+            <FieldLabel htmlFor="model-description">
+              {t("aiModelPage.model.form.description")}
+            </FieldLabel>
             <Textarea
               name="model-description"
               autoComplete="off"
               id="model-description"
-              placeholder="请输入模型描述（可选）"
+              placeholder={t("aiModelPage.model.form.descriptionPlaceholder")}
               value={editForm.description}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -1190,14 +1276,16 @@ export function AiModelPage() {
           </Field>
           <Field orientation="horizontal">
             <div className="flex flex-1 flex-col gap-1">
-              <FieldLabel htmlFor="model-default">设为默认模型</FieldLabel>
+              <FieldLabel htmlFor="model-default">
+                {t("aiModelPage.model.form.defaultLabel")}
+              </FieldLabel>
               <FieldDescription>
-                默认模型可被其他模块直接调用，无需指定别名。
+                {t("aiModelPage.model.form.defaultHint")}
               </FieldDescription>
             </div>
             <Switch
               id="model-default"
-              aria-label="设为默认模型"
+              aria-label={t("aiModelPage.model.form.defaultLabel")}
               checked={editForm.isDefault}
               onCheckedChange={(checked) =>
                 setEditForm((form) => ({ ...form, isDefault: checked }))
@@ -1229,12 +1317,12 @@ export function AiModelPage() {
               ) : (
                 <XCircleIcon className="text-destructive" />
               )}
-              测试结果
+              {t("aiModelPage.test.title")}
             </DialogTitle>
             <DialogDescription>
               {testResult?.success
-                ? "模型配置测试成功。"
-                : "模型配置测试失败。"}
+                ? t("aiModelPage.test.successDescription")
+                : t("aiModelPage.test.failureDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
@@ -1243,7 +1331,9 @@ export function AiModelPage() {
             </div>
             {testResult?.responseTime != null && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">响应时间</span>
+                <span className="text-muted-foreground">
+                  {t("aiModelPage.test.responseTime")}
+                </span>
                 <span className="font-medium">
                   {testResult.responseTime} ms
                 </span>
@@ -1251,13 +1341,17 @@ export function AiModelPage() {
             )}
             {testResult?.model && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">实际模型</span>
+                <span className="text-muted-foreground">
+                  {t("aiModelPage.test.actualModel")}
+                </span>
                 <span className="font-medium">{testResult.model}</span>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button onClick={() => setTestResult(null)}>关闭</Button>
+            <Button onClick={() => setTestResult(null)}>
+              {t("aiModelPage.test.close")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
