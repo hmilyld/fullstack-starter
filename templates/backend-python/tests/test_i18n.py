@@ -9,6 +9,7 @@ import uuid
 from httpx import AsyncClient
 
 from app.core.i18n import resolve_locale, translate
+from app.data_management.state import data_operation_state
 
 EN = {"Accept-Language": "en"}
 
@@ -126,3 +127,19 @@ async def test_success_message_is_english_with_header(
     payload = response.json()
     assert payload["code"] == 0
     assert payload["message"] == "Permissions synchronized."
+
+
+async def test_freeze_response_follows_accept_language(client: AsyncClient) -> None:
+    data_operation_state.frozen = True
+    try:
+        english = await client.get("/api/public/config", headers=EN)
+        assert english.status_code == 503
+        payload = english.json()
+        assert payload["message"] == "Data import is in progress. Please try again later."
+        assert payload["data"] is None
+
+        chinese = await client.get("/api/public/config")
+        assert chinese.status_code == 503
+        assert chinese.json()["message"] == "系统正在导入数据，请稍后重试"
+    finally:
+        data_operation_state.frozen = False
