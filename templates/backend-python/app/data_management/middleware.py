@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.i18n import localize_message
 from app.core.schemas import ApiResponse
 from app.data_management.state import data_operation_state
 
@@ -24,7 +25,7 @@ class DataOperationMiddleware(BaseHTTPMiddleware):
                 status_code=503,
                 content=ApiResponse(
                     code=-1,
-                    message="系统正在导入数据，请稍后重试",
+                    message=localize_message("系统正在导入数据，请稍后重试", request),
                 ).model_dump(),
             )
         return await call_next(request)

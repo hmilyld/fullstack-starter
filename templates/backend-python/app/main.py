@@ -25,6 +25,7 @@ from app.core.exceptions import (
     ForbiddenError,
     ServiceUnavailableError,
 )
+from app.core.i18n import localize_message
 from app.core.schemas import ApiResponse
 from app.core.seed import seed_data
 from app.dashboard.router import router as dashboard_router
@@ -107,7 +108,10 @@ async def validation_exception_handler(
 ) -> JSONResponse:
     return JSONResponse(
         status_code=422,
-        content=ApiResponse(code=-1, message="请求参数校验失败").model_dump(),
+        content=ApiResponse(
+            code=-1,
+            message=localize_message("请求参数校验失败", request),
+        ).model_dump(),
     )
 
 
@@ -116,7 +120,10 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     """业务失败：HTTP 200 + code -1，data 为 null。"""
     return JSONResponse(
         status_code=exc.status_code,
-        content=ApiResponse(code=-1, message=exc.message).model_dump(),
+        content=ApiResponse(
+            code=-1,
+            message=localize_message(exc.message, request),
+        ).model_dump(),
     )
 
 
@@ -124,7 +131,10 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 async def auth_error_handler(request: Request, exc: AuthError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
-        content=ApiResponse(code=-1, message=exc.message).model_dump(),
+        content=ApiResponse(
+            code=-1,
+            message=localize_message(exc.message, request),
+        ).model_dump(),
     )
 
 
@@ -132,7 +142,10 @@ async def auth_error_handler(request: Request, exc: AuthError) -> JSONResponse:
 async def forbidden_error_handler(request: Request, exc: ForbiddenError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
-        content=ApiResponse(code=-1, message=exc.message).model_dump(),
+        content=ApiResponse(
+            code=-1,
+            message=localize_message(exc.message, request),
+        ).model_dump(),
     )
 
 
@@ -142,7 +155,10 @@ async def unavailable_error_handler(
 ) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
-        content=ApiResponse(code=-1, message=exc.message).model_dump(),
+        content=ApiResponse(
+            code=-1,
+            message=localize_message(exc.message, request),
+        ).model_dump(),
     )
 
 
@@ -152,7 +168,10 @@ async def http_exception_handler(
 ) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
-        content=ApiResponse(code=-1, message=str(exc.detail)).model_dump(),
+        content=ApiResponse(
+            code=-1,
+            message=localize_message(str(exc.detail), request),
+        ).model_dump(),
     )
 
 
@@ -162,5 +181,8 @@ async def unhandled_exception_handler(
 ) -> JSONResponse:
     return JSONResponse(
         status_code=500,
-        content=ApiResponse(code=-1, message="服务器内部错误").model_dump(),
+        content=ApiResponse(
+            code=-1,
+            message=localize_message("服务器内部错误", request),
+        ).model_dump(),
     )

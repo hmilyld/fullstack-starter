@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import require_permission
+from app.core.i18n import localize_message
 from app.core.schemas import ApiResponse
 from app.system import service
 from app.system.schemas import SystemConfigOut, SystemConfigUpdate, TestEmailRequest
@@ -35,8 +36,9 @@ async def update_system_config(
 @router.post("/test-email")
 async def test_email(
     data: TestEmailRequest,
+    req: Request,
     current_user: Annotated[User, Depends(require_permission("settings.edit"))],
     db: DbSession,
 ) -> ApiResponse[None]:
     await service.send_test_email(db, data.email)
-    return ApiResponse(message="测试邮件发送成功")
+    return ApiResponse(message=localize_message("测试邮件发送成功", req))
