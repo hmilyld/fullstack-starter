@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import {
   LockIcon,
   PencilIcon,
@@ -55,6 +56,9 @@ const DEFAULT_PAGE_SIZE = 8
 const PAGE_SIZE_OPTIONS = [8, 16, 32]
 
 export function RolesPage() {
+  const { t } = useTranslation()
+  const roleLabel = (role: Role) =>
+    t(`roles.${role.id}`, { defaultValue: role.name })
   const { hasPermission } = useAuth()
   const { search, page, setSearch, setPage } = useUrlListState()
   const debouncedSearch = useDebouncedValue(search)
@@ -84,11 +88,17 @@ export function RolesPage() {
       getPermissions({ type: "operation" }),
     ])
     if (menuRes.code === 0) setMenuPermissions(menuRes.data)
-    else setPermissionsError(menuRes.message || "加载菜单权限失败")
+    else
+      setPermissionsError(
+        menuRes.message || t("rolePermissions.loadMenuFailed")
+      )
     if (opRes.code === 0) setOperationPermissions(opRes.data)
-    else setPermissionsError(opRes.message || "加载操作权限失败")
+    else
+      setPermissionsError(
+        opRes.message || t("rolePermissions.loadOperationFailed")
+      )
     setPermissionsLoading(false)
-  }, [])
+  }, [t])
 
   React.useEffect(() => {
     void loadPermissions()
@@ -133,10 +143,14 @@ export function RolesPage() {
       : await createRole(payload)
     setEditSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "操作失败")
+      appToast.error(res.message || t("rolesPage.toasts.operationFailed"))
       return
     }
-    appToast.success(editingRole ? "保存成功" : "创建成功")
+    appToast.success(
+      editingRole
+        ? t("rolesPage.toasts.saveSuccess")
+        : t("rolesPage.toasts.createSuccess")
+    )
     setEditOpen(false)
     list.refresh()
   }
@@ -152,10 +166,10 @@ export function RolesPage() {
     const res = await apiDeleteRole(deleteTarget.id)
     setDeleteSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "删除失败")
+      appToast.error(res.message || t("rolesPage.toasts.deleteFailed"))
       return
     }
-    appToast.success("删除成功")
+    appToast.success(t("rolesPage.toasts.deleteSuccess"))
     setDeleteOpen(false)
     list.refresh()
   }
@@ -164,14 +178,14 @@ export function RolesPage() {
     const actions: RowAction[] = []
     if (hasPermission("roles.edit")) {
       actions.push({
-        label: "编辑",
+        label: t("rolesPage.actions.edit"),
         icon: PencilIcon,
         onSelect: () => handleEdit(role),
       })
     }
     if (!role.isPreset && hasPermission("roles.delete")) {
       actions.push({
-        label: "删除",
+        label: t("rolesPage.actions.delete"),
         icon: Trash2Icon,
         destructive: true,
         separatorBefore: true,
@@ -184,12 +198,12 @@ export function RolesPage() {
   const columns: DataColumn<Role>[] = [
     {
       key: "name",
-      header: "角色名称",
+      header: t("rolesPage.headers.name"),
       cell: (role) => <span className="font-medium">{role.name}</span>,
     },
     {
       key: "description",
-      header: "描述",
+      header: t("rolesPage.headers.description"),
       hideable: true,
       headClassName: "hidden md:table-cell",
       cellClassName: "hidden text-muted-foreground md:table-cell",
@@ -197,7 +211,7 @@ export function RolesPage() {
     },
     {
       key: "permissions",
-      header: "权限数",
+      header: t("rolesPage.headers.permissionCount"),
       hideable: true,
       headClassName: "hidden lg:table-cell",
       cellClassName: "hidden lg:table-cell",
@@ -207,20 +221,20 @@ export function RolesPage() {
     },
     {
       key: "type",
-      header: "类型",
+      header: t("rolesPage.headers.type"),
       cell: (role) =>
         role.isPreset ? (
           <Badge variant="outline">
             <LockIcon />
-            预设
+            {t("rolesPage.preset")}
           </Badge>
         ) : (
-          <Badge variant="secondary">自定义</Badge>
+          <Badge variant="secondary">{t("rolesPage.custom")}</Badge>
         ),
     },
     {
       key: "actions",
-      header: "操作",
+      header: t("rolesPage.headers.actions"),
       pinRight: true,
       headClassName: "text-right",
       cellClassName: "text-right",
@@ -233,12 +247,14 @@ export function RolesPage() {
               onClick={() => handleEdit(role)}
             >
               <PencilIcon />
-              <span className="sr-only">编辑 {role.name}</span>
+              <span className="sr-only">
+                {t("rolesPage.editSrOnly", { name: role.name })}
+              </span>
             </Button>
           )}
           <RowActions
             actions={buildRoleActions(role).filter(
-              (action) => action.label !== "编辑"
+              (action) => action.label !== t("rolesPage.actions.edit")
             )}
           />
         </div>
@@ -251,10 +267,13 @@ export function RolesPage() {
 
   return (
     <div className="flex flex-col gap-(--page-gap)">
-      <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
+      <PageHeader
+        title={t("rolesPage.title")}
+        description={t("rolesPage.description")}
+      />
 
       <ListShell
-        description={`共 ${list.total} 个角色`}
+        description={t("rolesPage.listDescription", { total: list.total })}
         actions={
           <>
             <InputGroup className="w-full md:w-64">
@@ -262,8 +281,8 @@ export function RolesPage() {
                 name="q"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="搜索角色名称…"
-                aria-label="搜索角色"
+                placeholder={t("rolesPage.searchPlaceholder")}
+                aria-label={t("rolesPage.searchAria")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -281,7 +300,7 @@ export function RolesPage() {
             {hasPermission("roles.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
-                新增角色
+                {t("rolesPage.addRole")}
               </Button>
             )}
           </>
@@ -292,7 +311,7 @@ export function RolesPage() {
               page={list.page}
               totalPages={list.totalPages}
               total={list.total}
-              itemLabel="个角色"
+              itemLabel={t("rolesPage.entityName")}
               pageSize={pageSize}
               pageSizeOptions={PAGE_SIZE_OPTIONS}
               onPageSizeChange={(size) => {
@@ -314,38 +333,42 @@ export function RolesPage() {
           onHideColumn={table.toggle}
           empty={{
             icon: ShieldCheckIcon,
-            title: debouncedSearch ? "没有匹配的角色" : "还没有角色",
+            title: debouncedSearch
+              ? t("rolesPage.emptySearchTitle")
+              : t("rolesPage.emptyTitle"),
             description: debouncedSearch
-              ? "换个关键词，或清空搜索条件后再试。"
-              : "创建角色并分配权限，再把角色授予用户。",
+              ? t("rolesPage.emptySearchDescription")
+              : t("rolesPage.emptyDescription"),
             action: debouncedSearch ? (
               <Button variant="outline" onClick={() => setSearch("")}>
-                清空搜索
+                {t("rolesPage.clearSearch")}
               </Button>
             ) : hasPermission("roles.create") ? (
               <Button onClick={handleAdd}>
                 <PlusIcon data-icon="inline-start" />
-                新增角色
+                {t("rolesPage.addRole")}
               </Button>
             ) : null,
           }}
           renderCard={(role) => (
             <RecordCard
               key={role.id}
-              title={role.name}
+              title={roleLabel(role)}
               badges={
                 <>
                   {role.isPreset ? (
-                    <Badge variant="outline">预设</Badge>
+                    <Badge variant="outline">{t("rolesPage.preset")}</Badge>
                   ) : (
-                    <Badge variant="secondary">自定义</Badge>
+                    <Badge variant="secondary">{t("rolesPage.custom")}</Badge>
                   )}
                   <Badge variant="secondary">
-                    {role.permissions.length} 项权限
+                    {t("rolesPage.permissionCount", {
+                      count: role.permissions.length,
+                    })}
                   </Badge>
                 </>
               }
-              subtitle={role.description || "暂无描述"}
+              subtitle={role.description || t("rolesPage.noDescription")}
               actions={<RowActions actions={buildRoleActions(role)} />}
             />
           )}
@@ -357,9 +380,15 @@ export function RolesPage() {
       <FormDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        title={editingRole ? "编辑角色" : "新增角色"}
+        title={
+          editingRole
+            ? t("rolesPage.edit.editTitle")
+            : t("rolesPage.edit.addTitle")
+        }
         description={
-          editingRole ? "修改角色信息和权限分配。" : "填写角色信息并分配权限。"
+          editingRole
+            ? t("rolesPage.edit.editDescription")
+            : t("rolesPage.edit.addDescription")
         }
         submitting={editSubmitting}
         className="sm:w-[calc(100%_-_2rem)] sm:max-w-4xl"
@@ -368,12 +397,14 @@ export function RolesPage() {
         <FieldGroup>
           <div className="@md/field-group:grid @md/field-group:grid-cols-2 @md/field-group:items-start @md/field-group:gap-4">
             <Field>
-              <FieldLabel htmlFor="role-name">角色名称</FieldLabel>
+              <FieldLabel htmlFor="role-name">
+                {t("rolesPage.edit.name")}
+              </FieldLabel>
               <Input
                 name="role-name"
                 autoComplete="off"
                 id="role-name"
-                placeholder="请输入角色名称"
+                placeholder={t("rolesPage.edit.namePlaceholder")}
                 value={editForm.name}
                 onChange={(event) =>
                   setEditForm((form) => ({ ...form, name: event.target.value }))
@@ -382,12 +413,14 @@ export function RolesPage() {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="role-desc">描述</FieldLabel>
+              <FieldLabel htmlFor="role-desc">
+                {t("rolesPage.edit.description")}
+              </FieldLabel>
               <Input
                 name="role-desc"
                 autoComplete="off"
                 id="role-desc"
-                placeholder="请输入角色描述"
+                placeholder={t("rolesPage.edit.descriptionPlaceholder")}
                 value={editForm.description}
                 onChange={(event) =>
                   setEditForm((form) => ({
@@ -402,7 +435,7 @@ export function RolesPage() {
 
         <FieldSet className="mt-6 gap-3">
           <FieldLegend variant="label" className="mb-0">
-            权限分配
+            {t("rolesPage.edit.permissions")}
           </FieldLegend>
           <RolePermissionPicker
             menuPermissions={menuPermissions}
@@ -420,7 +453,7 @@ export function RolesPage() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         targetName={deleteTarget?.name ?? ""}
-        description="已分配该角色的用户将失去对应权限。"
+        description={t("rolesPage.deleteDescription")}
         onConfirm={handleDeleteConfirm}
         loading={deleteSubmitting}
       />

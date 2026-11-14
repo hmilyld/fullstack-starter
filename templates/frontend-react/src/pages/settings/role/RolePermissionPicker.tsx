@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronRightIcon, SearchIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -62,6 +63,7 @@ export function RolePermissionPicker({
   error,
   onRetry,
 }: RolePermissionPickerProps) {
+  const { t } = useTranslation()
   const isCompact = useIsMobile()
   const [search, setSearch] = React.useState("")
   const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set())
@@ -159,7 +161,7 @@ export function RolePermissionPicker({
   if (loading) {
     return (
       <div className="flex h-40 items-center justify-center rounded-xl border text-sm text-muted-foreground">
-        权限加载中…
+        {t("rolePermissions.loading")}
       </div>
     )
   }
@@ -169,7 +171,7 @@ export function RolePermissionPicker({
       <div className="flex flex-col items-start gap-2 rounded-xl border p-4 text-sm">
         <span className="text-destructive">{error}</span>
         <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-          重试
+          {t("common.retry")}
         </Button>
       </div>
     )
@@ -178,7 +180,7 @@ export function RolePermissionPicker({
   if (menuPermissions.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center rounded-xl border text-sm text-muted-foreground">
-        暂无可分配的权限
+        {t("rolePermissions.empty")}
       </div>
     )
   }
@@ -186,7 +188,7 @@ export function RolePermissionPicker({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
-        勾选菜单会同时选中其下全部操作，再次点击取消整组；单独勾选操作会保留菜单并显示半选。
+        {t("rolePermissions.hint")}
       </p>
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -195,8 +197,8 @@ export function RolePermissionPicker({
             name="permission-q"
             autoComplete="off"
             spellCheck={false}
-            placeholder="搜索名称或编码…"
-            aria-label="搜索权限"
+            placeholder={t("rolePermissions.searchPlaceholder")}
+            aria-label={t("rolePermissions.searchAria")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={(event) => {
@@ -212,7 +214,10 @@ export function RolePermissionPicker({
 
         <div className="flex items-center justify-between gap-2 md:justify-end">
           <span className="text-xs text-muted-foreground" aria-live="polite">
-            已选 {selectedCount} / {catalogCodes.size} 项
+            {t("rolePermissions.selected", {
+              selected: selectedCount,
+              total: catalogCodes.size,
+            })}
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -223,7 +228,7 @@ export function RolePermissionPicker({
               disabled={catalogCodes.size === 0}
               onClick={selectAll}
             >
-              全选
+              {t("rolePermissions.selectAll")}
             </Button>
             <Button
               type="button"
@@ -233,7 +238,7 @@ export function RolePermissionPicker({
               disabled={selectedCount === 0}
               onClick={clearAll}
             >
-              清空
+              {t("rolePermissions.clear")}
             </Button>
           </div>
         </div>
@@ -241,14 +246,14 @@ export function RolePermissionPicker({
 
       {tree.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground">
-          <span>没有匹配的权限</span>
+          <span>{t("rolePermissions.noMatches")}</span>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setSearch("")}
           >
-            清空搜索
+            {t("rolePermissions.clearSearch")}
           </Button>
         </div>
       ) : isCompact ? (
@@ -267,7 +272,9 @@ export function RolePermissionPicker({
                   <Checkbox
                     id={`role-permission-menu-${menu.code}`}
                     className="mt-0.5"
-                    aria-label={`选择 ${menu.name}`}
+                    aria-label={t("rolePermissions.selectMenu", {
+                      name: menu.name,
+                    })}
                     checked={checked}
                     onCheckedChange={() => toggleMenu(menu)}
                   />
@@ -281,8 +288,11 @@ export function RolePermissionPicker({
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {allChildren.length === 0
-                          ? "无操作权限"
-                          : `${checkedChildren}/${allChildren.length} 个操作`}
+                          ? t("rolePermissions.noOperations")
+                          : t("rolePermissions.operationCount", {
+                              checked: checkedChildren,
+                              total: allChildren.length,
+                            })}
                       </span>
                     </span>
                     <span className="block truncate font-mono text-[11px] text-muted-foreground">
@@ -296,7 +306,12 @@ export function RolePermissionPicker({
                       size="icon-sm"
                       className="shrink-0"
                       aria-expanded={expanded}
-                      aria-label={`${expanded ? "收起" : "展开"} ${menu.name} 的操作权限`}
+                      aria-label={t(
+                        expanded
+                          ? "rolePermissions.collapseAria"
+                          : "rolePermissions.expandAria",
+                        { name: menu.name }
+                      )}
                       onClick={() => toggleCollapsed(menu.code)}
                     >
                       <ChevronRightIcon
@@ -319,7 +334,9 @@ export function RolePermissionPicker({
                         <Checkbox
                           id={`role-permission-op-${operation.code}`}
                           className="mt-0.5"
-                          aria-label={`选择 ${operation.name}`}
+                          aria-label={t("rolePermissions.selectOperation", {
+                            name: operation.name,
+                          })}
                           checked={selected.has(operation.code)}
                           onCheckedChange={() => toggleOperation(operation)}
                         />
@@ -347,9 +364,15 @@ export function RolePermissionPicker({
           <Table className="min-w-[520px]">
             <TableHeader className="sticky top-0 z-10 bg-muted">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[52%]">权限名称</TableHead>
-                <TableHead className="w-[33%]">权限编码</TableHead>
-                <TableHead className="w-[15%]">类型</TableHead>
+                <TableHead className="w-[52%]">
+                  {t("rolePermissions.nameHeader")}
+                </TableHead>
+                <TableHead className="w-[33%]">
+                  {t("rolePermissions.codeHeader")}
+                </TableHead>
+                <TableHead className="w-[15%]">
+                  {t("rolePermissions.typeHeader")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -368,7 +391,9 @@ export function RolePermissionPicker({
                         <div className="flex items-center gap-2">
                           <Checkbox
                             id={`role-permission-menu-${menu.code}`}
-                            aria-label={`选择 ${menu.name}`}
+                            aria-label={t("rolePermissions.selectMenu", {
+                              name: menu.name,
+                            })}
                             checked={checked}
                             onCheckedChange={() => toggleMenu(menu)}
                           />
@@ -378,7 +403,12 @@ export function RolePermissionPicker({
                               variant="ghost"
                               size="icon-xs"
                               aria-expanded={expanded}
-                              aria-label={`${expanded ? "收起" : "展开"} ${menu.name} 的操作权限`}
+                              aria-label={t(
+                                expanded
+                                  ? "rolePermissions.collapseAria"
+                                  : "rolePermissions.expandAria",
+                                { name: menu.name }
+                              )}
                               onClick={() => toggleCollapsed(menu.code)}
                             >
                               <ChevronRightIcon
@@ -399,8 +429,11 @@ export function RolePermissionPicker({
                           </label>
                           <span className="shrink-0 text-xs text-muted-foreground">
                             {allChildren.length === 0
-                              ? "无操作权限"
-                              : `${checkedChildren}/${allChildren.length} 个操作`}
+                              ? t("rolePermissions.noOperations")
+                              : t("rolePermissions.operationCount", {
+                                  checked: checkedChildren,
+                                  total: allChildren.length,
+                                })}
                           </span>
                         </div>
                       </TableCell>
@@ -408,7 +441,7 @@ export function RolePermissionPicker({
                         {menu.code}
                       </TableCell>
                       <TableCell>
-                        <Badge>菜单</Badge>
+                        <Badge>{t("rolePermissions.menuType")}</Badge>
                       </TableCell>
                     </TableRow>
 
@@ -419,7 +452,12 @@ export function RolePermissionPicker({
                             <div className="flex items-center gap-2 pl-8">
                               <Checkbox
                                 id={`role-permission-op-${operation.code}`}
-                                aria-label={`选择 ${operation.name}`}
+                                aria-label={t(
+                                  "rolePermissions.selectOperation",
+                                  {
+                                    name: operation.name,
+                                  }
+                                )}
                                 checked={selected.has(operation.code)}
                                 onCheckedChange={() =>
                                   toggleOperation(operation)
@@ -437,7 +475,9 @@ export function RolePermissionPicker({
                             {operation.code}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary">操作</Badge>
+                            <Badge variant="secondary">
+                              {t("rolePermissions.operationType")}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       ))}
