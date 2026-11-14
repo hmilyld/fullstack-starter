@@ -19,7 +19,7 @@ Svelte 模板在 `templates/frontend-svelte/src/lib/types/` 保持同一套字�
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `code` | number | `0` 成功，`-1` 业务失败 |
-| `message` | string | 成功时固定为 `"success"`；失败时为中文提示 |
+| `message` | string | 成功时固定为 `"success"`；失败时为提示文案，随 `Accept-Language` 本地化（见 1.1） |
 | `data` | any | 成功时的载荷；**失败时必须是 `null`，且该键必须存在** |
 
 规则：
@@ -29,7 +29,13 @@ Svelte 模板在 `templates/frontend-svelte/src/lib/types/` 保持同一套字�
 - 业务失败使用 HTTP `200` + `code: -1`。真实 HTTP 错误码只用于三类情况：
   未认证 `401`、无权限 `403`、参数校验失败 `422`、导入冻结 `503`。
 - 失败响应同样遵守信封，且 `data` 为 `null`。
-- 未处理异常统一映射为 `500` + `code: -1` + `message: "服务器内部错误"`，不泄露堆栈。
+- 未处理异常统一映射为 `500` + `code: -1` + `message`（`服务器内部错误`，英文请求为对应英文），不泄露堆栈。
+
+### 1.1 文案本地化
+
+- 响应文案由请求头 `Accept-Language` 决定：`en*` 返回英文，缺失、未知或 `zh-*` 保持中文（默认 `zh-CN`）。
+- 只影响 `message` 与少数成功提示；`code`、HTTP 状态码、`data`、权限/菜单/角色等业务数据不随语言变化。
+- 未收录的文案原样返回，不会把翻译键暴露给客户端。
 
 ## 2. 分页
 

@@ -19,7 +19,7 @@ More screens (login, user management, settings, audit logs) are in the [root REA
 - 📊 **Works out of the box**: dashboard stats, user/role/permission CRUD, paginated search, personal settings
 - 🧭 **List experience**: per-table column visibility and row density (remembered), page size, sticky headers, multi-select bulk actions, a ⌘K command palette (with recent pages), an appearance drawer (theme / sidebar variant), and an unsaved-changes warning
 - 🎛 **Design spec**: blue-grey neutrals with a deep navy primary, Inter / Manrope, a 6/8/10/14/18 radius scale; tokens and component rules live in `templates/frontend-react/DESIGN.md` (the Vue and Svelte templates are identical)
-- 🗓 **Date-time control**: a custom Chinese calendar with hour/minute inputs (native `datetime-local` renders English `mm/dd/yyyy` and has an inconsistent box model across browsers)
+- 🗓 **Date-time control**: a custom calendar with hour/minute inputs; month and weekday labels follow the active locale (native `datetime-local` fixes the format and has an inconsistent box model across browsers)
 
 ## Features of the Generated Project
 

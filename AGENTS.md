@@ -59,7 +59,7 @@ The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`
 ## Coding Style
 
 - **Language**: TypeScript (ESM, `"type": "module"`)
-- **Templates**: Default UI text is **Chinese (zh-CN)**. New user-facing text in the React template goes through `src/locales/{zh-CN,en}.ts`; the whole React UI, including settings pages and error surfaces, is migrated. Vue and Svelte remain Chinese-only until their i18n migration. API responses use `{ code: 0, message: "success", data }`
+- **Templates**: Default UI text is **Chinese (zh-CN)**; all three frontends ship runtime `zh-CN`/`en` catalogs and English is opt-in (see Internationalization). API responses use `{ code: 0, message: "success", data }`
 - **Naming**: TS/JS uses `camelCase` variables, `PascalCase` components. Python schemas use `camelCase` (roleId), ORM uses `snake_case` (role_id)
 
 ## Business Logic Conventions
@@ -106,6 +106,8 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Built-in menu, group, role and operation labels resolve by code/id to catalog keys; custom names and API data remain as sent by the backend.
 - The clients send `Accept-Language` on API requests. Both backends localize API-visible exception/validation messages (default zh-CN, safe fallback for unmapped messages and user data).
 - Date/time display follows the active locale; keep the zh-CN formatting and tests unchanged.
+- Built-in permission names in the RBAC screens (permission overview, role picker) resolve by code through `permissionNames.<code>` with `.` replaced by `_`; custom permission names and operation names in the menu editor stay backend data.
+- Never pass a backend-provided name as a vue-i18n default message (`t(key, name)`): the default message is compiled too, so `@`, `|` and `{}` in the name throw or truncate. Use `translateOr()` from `templates/frontend-vue/src/lib/label.ts`.
 
 ## Frontend Responsive Rules (frontend-react / frontend-vue / frontend-svelte)
 
