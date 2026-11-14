@@ -4,9 +4,17 @@
   import { Button } from "#lib/components/ui/button/index.js"
   import { page } from "$app/state"
   import { t } from "#lib/i18n.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const isNotFound = $derived(page.status === 404)
 </script>
+
+<svelte:head>
+  <title
+    >{isNotFound ? $t("errors.notFoundTitle") : $t("errors.pageLoadFailed")}
+    · {siteConfig.config?.siteName?.trim() || $t("pwa.defaultName")}</title
+  >
+</svelte:head>
 
 <div class="flex min-h-svh items-center justify-center p-6">
   <EmptyState
