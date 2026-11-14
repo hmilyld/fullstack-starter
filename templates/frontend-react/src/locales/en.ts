@@ -408,6 +408,73 @@ const en = {
     passwordFailed: "Change failed",
     passwordSuccess: "Password changed",
   },
+  dashboard: {
+    title: "Dashboard",
+    description:
+      "System overview: account scale, activity, and recent operations.",
+    refresh: "Refresh",
+    loadFailed: "Failed to load data",
+    demoData: "Demo data",
+    stats: {
+      totalUsers: "Total users",
+      allAccounts: "All accounts",
+      activeNow: "Active now",
+      recentSessions: "Recently active sessions",
+      revenue: "Revenue",
+      monthTotal: "This month",
+      growth: "Growth",
+      vsLastMonth: "vs last month",
+    },
+    trendTitle: "7-day activity trend",
+    trendDescription: "{{count}} write operations, grouped by day.",
+    trendDescriptionNoAudit:
+      "Write operations from the audit log are grouped by day to show activity.",
+    trendSuccess: "Success {{count}}",
+    trendFailed: "Failed {{count}}",
+    noAuditTitle: "The trend requires audit permission",
+    noAuditDescription:
+      "This account cannot read audit records. Ask an administrator to grant the audit permission to its role.",
+    emptyTrendTitle: "No write operations in the last 7 days",
+    emptyTrendDescription:
+      "User create, update, and delete operations will appear here.",
+    recentTitle: "Recent activity",
+    recentDescription: "The latest operations in this workspace.",
+    emptyRecentTitle: "No activity yet",
+    emptyRecentDescription:
+      "Activity appears here after the system records an operation.",
+    viewAll: "View all audit logs",
+    quickTitle: "Shortcuts",
+    quickDescription: "Only pages you can access are shown.",
+    placeholderNote:
+      "Active now, revenue, growth, and recent activity come from placeholder backend endpoints; replace them when real statistics are available.",
+    links: {
+      users: {
+        label: "User management",
+        description: "Manage team members and roles",
+      },
+      roles: {
+        label: "Role management",
+        description: "Assign roles and permissions",
+      },
+      audit: {
+        label: "Audit logs",
+        description: "Review writes and permission denials",
+      },
+      data: {
+        label: "Data management",
+        description: "Export or restore system data",
+      },
+    },
+  },
+  trendChart: {
+    ariaLabel: "7-day activity trend",
+    pointTitle:
+      "{{label}}: {{success}} succeeded, {{failed}} failed or blocked",
+    caption: "7-day activity trend",
+    date: "Date",
+    success: "Success",
+    failed: "Failed or blocked",
+  },
   nav: {
     groups: {
       navigation: "Navigation",
