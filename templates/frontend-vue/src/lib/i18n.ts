@@ -41,6 +41,10 @@ const i18n = createI18n({
     "zh-CN": zhCN,
     en,
   },
+  // Server-provided menu, role, and operation names intentionally fall back
+  // to the backend value when no catalog entry exists.
+  missingWarn: false,
+  fallbackWarn: false,
 })
 
 applyLocale(i18n.global.locale.value)

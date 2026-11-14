@@ -92,7 +92,9 @@ async function handleSubmit() {
             />
           </Field>
           <Field :data-invalid="!!passwordError">
-            <FieldLabel for="password">{{ t("auth.login.password") }}</FieldLabel>
+            <FieldLabel for="password">{{
+              t("auth.login.password")
+            }}</FieldLabel>
             <PasswordInput
               id="password"
               v-model="password"

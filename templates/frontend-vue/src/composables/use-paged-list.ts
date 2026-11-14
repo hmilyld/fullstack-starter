@@ -6,6 +6,7 @@ import {
   type MaybeRefOrGetter,
   type Ref,
 } from "vue"
+import i18n from "@/lib/i18n"
 import type { ApiResponse, PaginatedData, QueryParams } from "@/types/common"
 
 export type ListParams = QueryParams
@@ -63,11 +64,12 @@ export function usePagedList<T, P extends ListParams = ListParams>({
         items.value = res.data.list
         total.value = res.data.total
       } else {
-        error.value = res.message || "加载数据失败"
+        error.value = res.message || i18n.global.t("common.loadFailed")
       }
     } catch (err) {
       if (id === requestId) {
-        error.value = (err as Error).message || "加载数据失败"
+        error.value =
+          (err as Error).message || i18n.global.t("common.loadFailed")
       }
     } finally {
       if (id === requestId) loading.value = false
