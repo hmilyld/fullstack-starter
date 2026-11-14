@@ -59,6 +59,7 @@ Dark mode and responsive layouts are built in, not an add-on:
 - **Data management**: AES-encrypted full export, same-version full import, global freeze during import, forced re-login afterwards
 - **List experience**: per-table column visibility and density (remembered), page size, sticky headers, multi-select bulk actions, card lists on phones
 - **Interaction details**: ⌘K command palette (with recent pages), appearance drawer (theme / sidebar variant), unsaved-changes warning
+- **Internationalization**: Chinese (default) and English runtime switch, persisted in the browser; API errors follow `Accept-Language`
 - **PWA + Docker**: installable frontend; single-image deployment with Nginx and the backend
 
 ## Quick start

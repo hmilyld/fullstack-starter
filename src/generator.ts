@@ -548,6 +548,7 @@ docker compose up -d`;
 | 后端 | ${backendName} |
 | 数据库 | ${backend === 'python' ? 'SQLite (aiosqlite，Alembic 迁移)' : 'SQLite 文件 (Flyway 迁移)'} |
 | 认证 | ${backend === 'python' ? 'JWT (PyJWT + bcrypt，登出即失效)' : 'Sa-Token + BCrypt'} |
+| 国际化 | ${frontend === 'vue' ? 'vue-i18n' : frontend === 'svelte' ? 'i18next + Svelte store' : 'i18next + react-i18next'}（zh-CN 默认 / en） |
 | 部署 | Docker（单镜像：Nginx + 后端） |
 
 ## 功能模块
@@ -563,6 +564,7 @@ docker compose up -d`;
 - ✅ 审计日志（写操作与权限拦截记录，支持筛选与分页）
 - ✅ 数据管理（AES 加密完整导出、同版本完整导入、全局会话失效）
 - ✅ 个人中心（修改资料、修改密码）
+- ✅ 国际化：中文（默认）/ English 运行时切换，语言偏好保存在本机；API 错误消息随 Accept-Language 本地化
 - ✅ 三端响应式：手机卡片列表 + 抽屉导航、平板图标栏、桌面完整侧边栏（低于 1280 默认收起）
 - ✅ 列表体验：列显隐与表格密度（按表记忆）、每页条数、表头吸顶、多选批量、⌘K 命令面板（含最近访问）、表单未保存离开提示
 - ✅ 交互细节：外观抽屉（主题 / 侧栏样式 / 折叠方式）、自绘中文日期时间选择器、明暗主题
