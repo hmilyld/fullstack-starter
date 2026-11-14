@@ -677,6 +677,53 @@ const en = {
       "Write operations and permission denials are recorded here automatically.",
     clearFilter: "Clear filters",
   },
+  dataPage: {
+    title: "Data management",
+    description: "Export or restore the complete data of this system.",
+    export: {
+      title: "Export data",
+      description:
+        "Create an encrypted archive and download it to this device.",
+      action: "Generate and download",
+      failed: "Export failed",
+    },
+    import: {
+      title: "Import data",
+      description:
+        "Overwrite the current system data with an export from the same version.",
+      open: "Choose an archive",
+      createFailed: "Failed to create the import job",
+      waiting: "Waiting to import",
+      success: "Import complete",
+      failed: "Import failed",
+    },
+    status: {
+      queued: "Queued",
+      running: "Importing",
+      success: "Import complete",
+      failed: "Import failed",
+    },
+    exportDialog: {
+      title: "Export complete",
+      description:
+        "This password is shown only once and cannot be recovered after closing. Copy and store it safely.",
+      password: "Archive password",
+      copyAria: "Copy archive password",
+      copied: "Password copied",
+      saved: "I've saved it",
+    },
+    importDialog: {
+      title: "Import complete data",
+      description:
+        "Importing overwrites users, roles, settings, AI keys, audit logs, and menu data, and invalidates every signed-in session.",
+      file: "Archive",
+      password: "Archive password",
+      passwordHint:
+        "A lost password cannot be recovered; export the data again instead.",
+      cancel: "Cancel",
+      confirm: "Import",
+    },
+  },
   profilePage: {
     tabs: { profile: "Profile", security: "Change password" },
     title: "Profile",
