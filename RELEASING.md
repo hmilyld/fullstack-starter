@@ -52,7 +52,7 @@ The tag runs the CI workflow in order:
    `:vX.Y.Z` and `:latest`.
 3. **Release** — creates the GitHub Release only after the image push succeeds.
 
-On `main` pushes the same workflow runs the checks and publishes `:latest`; it
+On `main` pushes the same workflow runs the checks and publishes `:edge`; it
 does not create a release.
 
 ## npm

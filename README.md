@@ -3,6 +3,7 @@
 **One command, a production-ready admin system.** Pick React, Vue or Svelte for the frontend and FastAPI or Spring Boot for the backend — all six combinations share one API contract and one visual spec.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/hmilyld/fullstack-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/hmilyld/fullstack-starter/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
 [![Docs](https://img.shields.io/badge/docs-fullstack.hmilyld.com-blue)](https://fullstack.hmilyld.com)
 
