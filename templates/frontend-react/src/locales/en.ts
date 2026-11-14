@@ -1035,6 +1035,10 @@ const en = {
     description: "System feature navigation",
     toggle: "Toggle sidebar",
   },
+  pwa: {
+    defaultName: "Admin console",
+    defaultDescription: "React + shadcn/ui admin template",
+  },
   errors: {
     pageLoadFailed: "Page failed to load",
     refreshHint: "Refresh the page and try again.",

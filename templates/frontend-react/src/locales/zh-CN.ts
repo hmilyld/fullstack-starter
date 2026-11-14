@@ -946,6 +946,10 @@ const zhCN = {
     description: "系统功能导航",
     toggle: "切换侧边栏",
   },
+  pwa: {
+    defaultName: "管理系统",
+    defaultDescription: "基于 React + shadcn/ui 的后台管理框架",
+  },
   errors: {
     pageLoadFailed: "页面加载失败",
     refreshHint: "请刷新页面重试。",
