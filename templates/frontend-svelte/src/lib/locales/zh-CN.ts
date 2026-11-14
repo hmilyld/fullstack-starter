@@ -532,6 +532,7 @@ const zhCN = {
       },
     },
     preset: {
+      loadFailed: "加载预设模型失败",
       listDescription: "共 {{total}} 个预设模型",
       entityName: "个预设模型",
       groupFilterAria: "按分组筛选",

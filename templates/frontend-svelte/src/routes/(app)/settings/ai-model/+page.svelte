@@ -83,6 +83,7 @@
   import { useTableDensity } from "#lib/hooks/use-table-density.svelte.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { useUrlListState } from "#lib/hooks/use-url-list-state.svelte.js"
+  import { t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import type {
     AiModel,
@@ -242,10 +243,10 @@
       const res = await updateAiModel(editingModel.id, payload)
       editSubmitting = false
       if (res.code !== 0) {
-        toast.error(res.message || "保存失败")
+        toast.error(res.message || $t("aiModelPage.toasts.saveFailed"))
         return
       }
-      toast.success("保存成功")
+      toast.success($t("aiModelPage.toasts.saveSuccess"))
     } else {
       const res = await createAiModel({
         alias: editForm.alias,
@@ -257,10 +258,10 @@
       })
       editSubmitting = false
       if (res.code !== 0) {
-        toast.error(res.message || "创建失败")
+        toast.error(res.message || $t("aiModelPage.toasts.createFailed"))
         return
       }
-      toast.success("创建成功")
+      toast.success($t("aiModelPage.toasts.createSuccess"))
     }
 
     editOpen = false
@@ -278,10 +279,10 @@
     const res = await apiDeleteAiModel(deleteTarget.id)
     deleteSubmitting = false
     if (res.code !== 0) {
-      toast.error(res.message || "删除失败")
+      toast.error(res.message || $t("aiModelPage.toasts.deleteFailed"))
       return
     }
-    toast.success("删除成功")
+    toast.success($t("aiModelPage.toasts.deleteSuccess"))
     deleteOpen = false
     list.refresh()
   }
@@ -295,7 +296,7 @@
     } else {
       testResult = {
         success: false,
-        message: res.message || "测试失败",
+        message: res.message || $t("aiModelPage.toasts.testFailed"),
         responseTime: null,
         model: null,
       }
@@ -307,7 +308,10 @@
     const actions: RowAction[] = []
     if (auth.hasPermission("ai_models")) {
       actions.push({
-        label: testingId === model.id ? "测试中…" : "测试",
+        label:
+          testingId === model.id
+            ? $t("aiModelPage.model.testing")
+            : $t("aiModelPage.model.test"),
         icon: TestTube,
         disabled: testingId === model.id,
         onSelect: () => handleTest(model),
@@ -315,14 +319,14 @@
     }
     if (auth.hasPermission("ai_models.edit")) {
       actions.push({
-        label: "编辑",
+        label: $t("common.edit"),
         icon: Pencil,
         onSelect: () => handleEdit(model),
       })
     }
     if (auth.hasPermission("ai_models.delete")) {
       actions.push({
-        label: "删除",
+        label: $t("common.delete"),
         icon: Trash2,
         destructive: true,
         separatorBefore: true,
@@ -332,18 +336,18 @@
     return actions
   }
 
-  const columns: DataColumn[] = [
-    { key: "alias", header: "别名" },
+  const columns: DataColumn[] = $derived([
+    { key: "alias", header: $t("aiModelPage.labels.alias") },
     {
       key: "modelName",
-      header: "模型名称",
+      header: $t("aiModelPage.labels.modelName"),
       hideable: true,
       headClass: "hidden md:table-cell",
       cellClass: "hidden md:table-cell",
     },
     {
       key: "apiUrl",
-      header: "API 地址",
+      header: $t("aiModelPage.labels.apiUrl"),
       hideable: true,
       headClass: "hidden lg:table-cell",
       cellClass:
@@ -351,39 +355,42 @@
     },
     {
       key: "apiKey",
-      header: "API Key",
+      header: $t("aiModelPage.labels.apiKey"),
       hideable: true,
       headClass: "hidden xl:table-cell",
       cellClass: "hidden xl:table-cell",
     },
     {
       key: "description",
-      header: "描述",
+      header: $t("aiModelPage.labels.description"),
       hideable: true,
       headClass: "hidden xl:table-cell",
       cellClass:
         "hidden max-w-[150px] truncate text-muted-foreground xl:table-cell",
     },
-    { key: "status", header: "状态" },
+    { key: "status", header: $t("aiModelPage.labels.status") },
     {
       key: "actions",
-      header: "操作",
+      header: $t("aiModelPage.labels.actions"),
       pinRight: true,
       headClass: "text-right",
       cellClass: "text-right",
     },
-  ]
+  ])
 
   const columnState = useColumnVisibility("ai-models", () => columns)
   const densityState = useTableDensity("ai-models")
 </script>
 
-<svelte:head><title>AI 模型配置 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title>{$t("aiModelPage.title")} · {$t("pwa.defaultName")}</title
+  ></svelte:head
+>
 
 <div class="flex flex-col gap-(--page-gap)">
   <PageHeader
-    title="AI 模型配置"
-    description="管理系统使用的 AI 模型配置，支持多个模型和自定义别名。"
+    title={$t("aiModelPage.title")}
+    description={$t("aiModelPage.description")}
   />
 
   <Tabs
@@ -392,14 +399,17 @@
     onValueChange={(value) => setActiveTab(value)}
   >
     <TabsList>
-      <TabsTrigger value="models">模型配置</TabsTrigger>
-      <TabsTrigger value="presets">预设模型管理</TabsTrigger>
+      <TabsTrigger value="models">{$t("aiModelPage.tabs.models")}</TabsTrigger>
+      <TabsTrigger value="presets">{$t("aiModelPage.tabs.presets")}</TabsTrigger
+      >
     </TabsList>
 
     <TabsContent value="models" class="flex flex-col gap-(--page-gap)">
       <ListShell
         class="[&_[data-slot=table-container]]:md:overflow-x-visible"
-        description={`共 ${list.total} 个模型配置`}
+        description={$t("aiModelPage.model.listDescription", {
+          total: list.total,
+        })}
       >
         {#snippet actions()}
           <InputGroup class="w-full md:w-64">
@@ -407,8 +417,8 @@
               name="q"
               autocomplete="off"
               spellcheck={false}
-              placeholder="搜索别名或模型名称…"
-              aria-label="搜索模型"
+              placeholder={$t("aiModelPage.model.searchPlaceholder")}
+              aria-label={$t("aiModelPage.model.searchAria")}
               value={search}
               oninput={(event) =>
                 listState.setSearch(event.currentTarget.value)}
@@ -430,7 +440,7 @@
           {#if auth.hasPermission("ai_models.create")}
             <Button class="w-full md:w-auto" onclick={handleAdd}>
               <Plus data-icon="inline-start" />
-              新增模型
+              {$t("aiModelPage.model.add")}
             </Button>
           {/if}
         {/snippet}
@@ -441,7 +451,7 @@
               page={list.page}
               totalPages={list.totalPages}
               total={list.total}
-              itemLabel="个模型"
+              itemLabel={$t("aiModelPage.model.entityName")}
               {pageSize}
               pageSizeOptions={PAGE_SIZE_OPTIONS}
               onPageChange={list.setPage}
@@ -462,10 +472,12 @@
           skeletonColSpan={7}
           empty={{
             icon: Star,
-            title: debouncedSearch.value ? "没有匹配的模型" : "还没有模型配置",
+            title: debouncedSearch.value
+              ? $t("aiModelPage.model.emptySearchTitle")
+              : $t("aiModelPage.model.emptyTitle"),
             description: debouncedSearch.value
-              ? "换个关键词，或清空搜索条件后再试。"
-              : "新增模型后，其他模块即可通过别名调用。",
+              ? $t("aiModelPage.model.emptySearchDescription")
+              : $t("aiModelPage.model.emptyDescription"),
           }}
           onRetry={list.refresh}
           onHideColumn={columnState.toggle}
@@ -473,12 +485,12 @@
           {#snippet emptyAction()}
             {#if debouncedSearch.value}
               <Button variant="outline" onclick={() => listState.setSearch("")}>
-                清空搜索
+                {$t("aiModelPage.model.clearSearch")}
               </Button>
             {:else if auth.hasPermission("ai_models.create")}
               <Button onclick={handleAdd}>
                 <Plus data-icon="inline-start" />
-                新增模型
+                {$t("aiModelPage.model.add")}
               </Button>
             {/if}
           {/snippet}
@@ -487,7 +499,9 @@
             <RecordCard title={row.alias} subtitle={row.modelName}>
               {#snippet badges()}
                 <Badge variant={row.isDefault ? "success" : "secondary"}>
-                  {row.isDefault ? "默认" : "普通"}
+                  {row.isDefault
+                    ? $t("aiModelPage.labels.default")
+                    : $t("aiModelPage.labels.normal")}
                 </Badge>
               {/snippet}
               {#snippet meta()}
@@ -517,8 +531,8 @@
                   variant="ghost"
                   size="icon-xs"
                   aria-label={visibleKeys.has(row.id)
-                    ? "隐藏 API Key"
-                    : "显示 API Key"}
+                    ? $t("aiModelPage.model.hideKey")
+                    : $t("aiModelPage.model.showKey")}
                   onclick={() => toggleKeyVisibility(row.id)}
                 >
                   {#if visibleKeys.has(row.id)}
@@ -532,7 +546,9 @@
               {row.description || "-"}
             {:else if key === "status"}
               <Badge variant={row.isDefault ? "success" : "secondary"}>
-                {row.isDefault ? "默认" : "普通"}
+                {row.isDefault
+                  ? $t("aiModelPage.labels.default")
+                  : $t("aiModelPage.labels.normal")}
               </Badge>
             {:else if key === "actions"}
               <div class="flex items-center justify-end gap-1">
@@ -543,12 +559,16 @@
                     onclick={() => handleEdit(row)}
                   >
                     <Pencil />
-                    <span class="sr-only">编辑 {row.alias}</span>
+                    <span class="sr-only"
+                      >{$t("aiModelPage.model.editSrOnly", {
+                        name: row.alias,
+                      })}</span
+                    >
                   </Button>
                 {/if}
                 <RowActions
                   actions={buildModelActions(row).filter(
-                    (item) => item.label !== "编辑"
+                    (item) => item.label !== $t("common.edit")
                   )}
                 />
               </div>
@@ -565,10 +585,12 @@
 
   <FormDialog
     bind:open={editOpen}
-    title={editingModel ? "编辑模型" : "新增模型"}
+    title={editingModel
+      ? $t("aiModelPage.model.form.editTitle")
+      : $t("aiModelPage.model.form.addTitle")}
     description={editingModel
-      ? "修改 AI 模型的配置信息。"
-      : "填写以下信息添加新的 AI 模型配置，或从预设模型中快速选择。"}
+      ? $t("aiModelPage.model.form.editDescription")
+      : $t("aiModelPage.model.form.addDescription")}
     submitting={editSubmitting}
     class="sm:max-w-lg"
     onSubmit={() => void handleEditSubmit()}
@@ -576,15 +598,20 @@
     <FieldGroup>
       {#if !editingModel && groupedPresets.length > 0}
         <Field>
-          <FieldLabel>快速选择预设模型</FieldLabel>
+          <FieldLabel>{$t("aiModelPage.model.form.presetLabel")}</FieldLabel>
           <Select
             type="single"
             items={presetItems}
             value=""
             onValueChange={(value) => applyPreset(value)}
           >
-            <SelectTrigger class="w-full" aria-label="快速选择预设模型">
-              <SelectValue placeholder="选择常用 AI 模型…" />
+            <SelectTrigger
+              class="w-full"
+              aria-label={$t("aiModelPage.model.form.presetAria")}
+            >
+              <SelectValue
+                placeholder={$t("aiModelPage.model.form.presetPlaceholder")}
+              />
             </SelectTrigger>
             <SelectContent>
               {#each groupedPresets as [group, items] (group)}
@@ -606,43 +633,49 @@
               {/each}
             </SelectContent>
           </Select>
-          <FieldDescription>
-            选择后将自动填充模型名称和 API 地址，只需填写 API Key。
-          </FieldDescription>
+          <FieldDescription
+            >{$t("aiModelPage.model.form.presetHint")}</FieldDescription
+          >
         </Field>
       {/if}
 
       <Field>
-        <FieldLabel for="model-alias">别名</FieldLabel>
+        <FieldLabel for="model-alias"
+          >{$t("aiModelPage.model.form.alias")}</FieldLabel
+        >
         <Input
           id="model-alias"
           bind:value={editForm.alias}
           name="model-alias"
           autocomplete="off"
           spellcheck={false}
-          placeholder="例如：deepseek-chat"
+          placeholder={$t("aiModelPage.model.form.aliasPlaceholder")}
           required
           pattern="^[a-zA-Z0-9_-]+$"
-          title="别名只能包含字母、数字、下划线和连字符"
+          title={$t("aiModelPage.model.form.aliasPattern")}
         />
-        <FieldDescription>
-          唯一标识符，其他模块通过此别名调用模型。
-        </FieldDescription>
+        <FieldDescription
+          >{$t("aiModelPage.model.form.aliasHint")}</FieldDescription
+        >
       </Field>
       <Field>
-        <FieldLabel for="model-name">模型名称</FieldLabel>
+        <FieldLabel for="model-name"
+          >{$t("aiModelPage.model.form.modelName")}</FieldLabel
+        >
         <Input
           id="model-name"
           bind:value={editForm.modelName}
           name="model-name"
           autocomplete="off"
           spellcheck={false}
-          placeholder="例如：deepseek-chat"
+          placeholder={$t("aiModelPage.model.form.modelNamePlaceholder")}
           required
         />
       </Field>
       <Field>
-        <FieldLabel for="model-api-url">API 地址</FieldLabel>
+        <FieldLabel for="model-api-url"
+          >{$t("aiModelPage.model.form.apiUrl")}</FieldLabel
+        >
         <Input
           id="model-api-url"
           bind:value={editForm.apiUrl}
@@ -650,42 +683,48 @@
           autocomplete="off"
           spellcheck={false}
           type="url"
-          placeholder="例如：https://api.deepseek.com/v1/chat/completions"
+          placeholder={$t("aiModelPage.model.form.apiUrlPlaceholder")}
           required
         />
       </Field>
       <Field>
-        <FieldLabel for="model-api-key">API Key</FieldLabel>
+        <FieldLabel for="model-api-key"
+          >{$t("aiModelPage.model.form.apiKey")}</FieldLabel
+        >
         <PasswordInput
           id="model-api-key"
           bind:value={editForm.apiKey}
-          placeholder="留空保持不变"
+          placeholder={$t("aiModelPage.model.form.apiKeyKeep")}
           autocomplete="off"
           required={!editingModel}
         />
       </Field>
       <Field>
-        <FieldLabel for="model-description">描述</FieldLabel>
+        <FieldLabel for="model-description"
+          >{$t("aiModelPage.model.form.description")}</FieldLabel
+        >
         <Textarea
           id="model-description"
           bind:value={editForm.description}
           name="model-description"
           autocomplete="off"
-          placeholder="请输入模型描述（可选）"
+          placeholder={$t("aiModelPage.model.form.descriptionPlaceholder")}
           rows={3}
         />
       </Field>
       <Field orientation="horizontal">
         <div class="flex flex-1 flex-col gap-1">
-          <FieldLabel for="model-default">设为默认模型</FieldLabel>
-          <FieldDescription>
-            默认模型可被其他模块直接调用，无需指定别名。
-          </FieldDescription>
+          <FieldLabel for="model-default"
+            >{$t("aiModelPage.model.form.defaultLabel")}</FieldLabel
+          >
+          <FieldDescription
+            >{$t("aiModelPage.model.form.defaultHint")}</FieldDescription
+          >
         </div>
         <Switch
           id="model-default"
           bind:checked={editForm.isDefault}
-          aria-label="设为默认模型"
+          aria-label={$t("aiModelPage.model.form.defaultLabel")}
         />
       </Field>
     </FieldGroup>
@@ -707,10 +746,12 @@
           {:else}
             <XCircle class="text-destructive" />
           {/if}
-          测试结果
+          {$t("aiModelPage.test.title")}
         </DialogTitle>
         <DialogDescription>
-          {testResult?.success ? "模型配置测试成功。" : "模型配置测试失败。"}
+          {testResult?.success
+            ? $t("aiModelPage.test.successDescription")
+            : $t("aiModelPage.test.failureDescription")}
         </DialogDescription>
       </DialogHeader>
       <div class="flex flex-col gap-4">
@@ -719,19 +760,25 @@
         </div>
         {#if testResult?.responseTime != null}
           <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">响应时间</span>
+            <span class="text-muted-foreground"
+              >{$t("aiModelPage.test.responseTime")}</span
+            >
             <span class="font-medium">{testResult.responseTime} ms</span>
           </div>
         {/if}
         {#if testResult?.model}
           <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">实际模型</span>
+            <span class="text-muted-foreground"
+              >{$t("aiModelPage.test.actualModel")}</span
+            >
             <span class="font-medium">{testResult.model}</span>
           </div>
         {/if}
       </div>
       <DialogFooter>
-        <Button onclick={() => (testResult = null)}>关闭</Button>
+        <Button onclick={() => (testResult = null)}
+          >{$t("aiModelPage.test.close")}</Button
+        >
       </DialogFooter>
     </DialogContent>
   </Dialog>

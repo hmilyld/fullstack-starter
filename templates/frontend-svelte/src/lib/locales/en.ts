@@ -583,6 +583,7 @@ const en = {
       },
     },
     preset: {
+      loadFailed: "Failed to load presets",
       listDescription: "{{total}} preset models",
       entityName: "preset models",
       groupFilterAria: "Filter by group",
