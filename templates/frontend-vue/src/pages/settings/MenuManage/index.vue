@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink } from "vue-router"
 import { DragDropProvider, type DragEndEvent } from "@dnd-kit/vue"
 import { isSortable } from "@dnd-kit/vue/sortable"
@@ -79,9 +80,15 @@ type DeleteTarget =
   | { type: "operation"; id: string; name: string }
   | null
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const toast = useToast()
 const isCompact = useMediaQuery("(max-width: 767px)")
+
+/** 内置分组使用导航目录中的翻译，自定义名称保持后端数据 */
+function groupLabel(group: { isSystem?: boolean; id: string; name: string }) {
+  return group.isSystem ? t(`nav.groups.${group.id}`, group.name) : group.name
+}
 
 const config = ref<MenuConfig | null>(null)
 const loading = ref(true)
@@ -154,7 +161,11 @@ const menuStats = computed(() => {
       ),
     0
   )
-  return `共 ${groups.length} 个分组，${menus} 个菜单，${operations} 个操作权限`
+  return t("menuPage.listDescription", {
+    groups: groups.length,
+    menus,
+    operations,
+  })
 })
 
 const visibleGroups = computed<MenuGroup[]>(() => {
@@ -212,7 +223,7 @@ async function load(): Promise<boolean> {
     loading.value = false
     return true
   }
-  error.value = response.message || "加载菜单失败"
+  error.value = response.message || t("menuPage.loadFailed")
   loading.value = false
   return false
 }
@@ -251,7 +262,7 @@ async function persistLayout(next: MenuConfig) {
       })),
     })
     if (response.code !== 0) {
-      toast.error(response.message || "保存失败")
+      toast.error(response.message || t("menuPage.toasts.saveFailed"))
       await load()
       return
     }
@@ -343,13 +354,17 @@ async function submitGroup() {
       ? await updateMenuGroup(editingGroup.value.id, groupName.value)
       : await createMenuGroup(groupName.value)
     if (response.code !== 0) {
-      toast.error(response.message || "操作失败")
+      toast.error(response.message || t("menuPage.toasts.operationFailed"))
       return
     }
     groupOpen.value = false
     await load()
     window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-    toast.success(editingGroup.value ? "分组已更新" : "分组已创建")
+    toast.success(
+      editingGroup.value
+        ? t("menuPage.toasts.groupUpdated")
+        : t("menuPage.toasts.groupCreated")
+    )
   } finally {
     submitting.value = false
     saving.value = false
@@ -413,13 +428,17 @@ async function submitItemNow() {
         })
       : await createMenuItem(itemForm.value)
     if (response.code !== 0) {
-      toast.error(response.message || "操作失败")
+      toast.error(response.message || t("menuPage.toasts.operationFailed"))
       return
     }
     itemOpen.value = false
     await load()
     window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-    toast.success(editingItem.value ? "菜单已更新" : "菜单已创建")
+    toast.success(
+      editingItem.value
+        ? t("menuPage.toasts.menuUpdated")
+        : t("menuPage.toasts.menuCreated")
+    )
   } finally {
     submitting.value = false
     saving.value = false
@@ -432,15 +451,17 @@ async function applyHidden(item: MenuItem, hidden: boolean) {
   try {
     const response = await updateMenuItem(item.permissionCode, { hidden })
     if (response.code !== 0) {
-      toast.error(response.message || "操作失败")
+      toast.error(response.message || t("menuPage.toasts.operationFailed"))
       return false
     }
     if (!(await load())) {
-      toast.error("菜单状态已保存，但列表刷新失败，请重试")
+      toast.error(t("menuPage.toasts.hiddenSavedReloadFailed"))
       return false
     }
     window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-    toast.success(hidden ? "菜单已隐藏" : "菜单已显示")
+    toast.success(
+      hidden ? t("menuPage.toasts.menuHidden") : t("menuPage.toasts.menuShown")
+    )
     return true
   } finally {
     saving.value = false
@@ -537,12 +558,12 @@ function handleOperationCustomChange(custom: boolean) {
 async function submitOperation() {
   if (!operationMenu.value || saving.value) return
   if (!operationForm.value.name.trim()) {
-    toast.error("请输入权限名称")
+    toast.error(t("menuPage.dialogs.operation.nameRequired"))
     return
   }
   const code = operationForm.value.code.trim()
   if (!editingOperation.value && !code) {
-    toast.error("请输入权限编码")
+    toast.error(t("menuPage.dialogs.operation.codeRequired"))
     return
   }
 
@@ -561,10 +582,14 @@ async function submitOperation() {
           parent: operationMenu.value.permissionCode,
         })
     if (response.code !== 0) {
-      toast.error(response.message || "操作失败")
+      toast.error(response.message || t("menuPage.toasts.operationFailed"))
       return
     }
-    toast.success(editingOperation.value ? "操作权限已更新" : "操作权限已创建")
+    toast.success(
+      editingOperation.value
+        ? t("menuPage.toasts.operationUpdated")
+        : t("menuPage.toasts.operationCreated")
+    )
     operationOpen.value = false
     await load()
   } finally {
@@ -586,7 +611,7 @@ async function confirmDelete() {
           ? await deleteMenuItem(target.id)
           : await deletePermission(target.id)
     if (response.code !== 0) {
-      toast.error(response.message || "删除失败")
+      toast.error(response.message || t("menuPage.toasts.deleteFailed"))
       return
     }
     deleteTarget.value = null
@@ -594,7 +619,7 @@ async function confirmDelete() {
     if (target.type !== "operation") {
       window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
     }
-    toast.success("删除成功")
+    toast.success(t("menuPage.toasts.deleteSuccess"))
   } finally {
     deleteLoading.value = false
     saving.value = false
@@ -604,25 +629,32 @@ async function confirmDelete() {
 const deleteDescription = computed(() => {
   if (deleteTarget.value?.type === "item") {
     return deleteTarget.value.operationCount > 0
-      ? `删除后将同时移除 ${deleteTarget.value.operationCount} 个操作权限，并从相关角色中移除授权。`
-      : "对应菜单权限和角色授权也会被删除。"
+      ? t("menuPage.delete.itemWithOperations", {
+          count: deleteTarget.value.operationCount,
+        })
+      : t("menuPage.delete.item")
   }
   if (deleteTarget.value?.type === "operation") {
-    return "删除后，已授予该权限的角色会同步失去此权限。"
+    return t("menuPage.delete.operation")
   }
   if (deleteTarget.value?.type === "group") {
-    return "仅空分组可以删除。"
+    return t("menuPage.delete.group")
   }
   return undefined
 })
 
 const operationTitle = computed(() =>
-  editingOperation.value ? "编辑操作权限" : "新增操作权限"
+  editingOperation.value
+    ? t("menuPage.dialogs.operation.editTitle")
+    : t("menuPage.dialogs.operation.addTitle")
 )
 
 const operationDescription = computed(() =>
   operationMenu.value
-    ? `所属菜单：${operationMenu.value.name}（${operationMenu.value.permissionCode}）`
+    ? t("menuPage.dialogs.operation.description", {
+        name: operationMenu.value.name,
+        code: operationMenu.value.permissionCode,
+      })
     : undefined
 )
 </script>
@@ -630,8 +662,8 @@ const operationDescription = computed(() =>
 <template>
   <div class="flex flex-col gap-(--page-gap)">
     <PageHeader
-      title="菜单与权限"
-      description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
+      :title="t('menuPage.title')"
+      :description="t('menuPage.description')"
     />
 
     <ListShell :description="menuStats">
@@ -641,8 +673,8 @@ const operationDescription = computed(() =>
             name="q"
             autocomplete="off"
             :spellcheck="false"
-            placeholder="搜索菜单或操作权限…"
-            aria-label="搜索菜单"
+            :placeholder="t('menuPage.searchPlaceholder')"
+            :aria-label="t('menuPage.searchAria')"
             :model-value="search"
             @update:model-value="search = String($event)"
           />
@@ -651,7 +683,7 @@ const operationDescription = computed(() =>
           </InputGroupAddon>
         </InputGroup>
         <span v-if="saving" class="text-xs text-muted-foreground">
-          正在保存…
+          {{ t("menuPage.saving") }}
         </span>
         <Button
           v-if="canViewOverview"
@@ -661,7 +693,7 @@ const operationDescription = computed(() =>
         >
           <RouterLink to="/settings/permission">
             <KeyRound data-icon="inline-start" />
-            权限总览
+            {{ t("menuPage.overview") }}
           </RouterLink>
         </Button>
         <Button
@@ -672,10 +704,10 @@ const operationDescription = computed(() =>
           @click="openCreateGroup"
         >
           <Plus data-icon="inline-start" />
-          新增分组
+          {{ t("menuPage.addGroup") }}
         </Button>
         <span v-if="search.trim()" class="text-xs text-muted-foreground">
-          搜索时暂停拖拽
+          {{ t("menuPage.dragPaused") }}
         </span>
       </template>
 
@@ -685,30 +717,32 @@ const operationDescription = computed(() =>
 
       <ErrorState
         v-else-if="!config"
-        :message="error || '加载菜单失败'"
+        :message="error || t('menuPage.loadFailed')"
         :on-retry="load"
       />
 
       <EmptyState
         v-else-if="config.groups.length === 0"
-        title="还没有菜单分组"
-        description="先创建一个分组，再把菜单入口放进去。"
+        :title="t('menuPage.emptyGroupTitle')"
+        :description="t('menuPage.emptyGroupDescription')"
       >
         <template #action>
           <Button v-if="canCreate" @click="openCreateGroup">
             <Plus data-icon="inline-start" />
-            新增分组
+            {{ t("menuPage.addGroup") }}
           </Button>
         </template>
       </EmptyState>
 
       <EmptyState
         v-else-if="visibleGroups.length === 0"
-        title="没有匹配的菜单"
-        description="换个关键词，或清空搜索条件后再试。"
+        :title="t('menuPage.emptySearchTitle')"
+        :description="t('menuPage.emptySearchDescription')"
       >
         <template #action>
-          <Button variant="outline" @click="search = ''">清空搜索</Button>
+          <Button variant="outline" @click="search = ''">{{
+            t("menuPage.clearSearch")
+          }}</Button>
         </template>
       </EmptyState>
 
@@ -804,15 +838,21 @@ const operationDescription = computed(() =>
 
     <FormDialog
       :open="groupOpen"
-      :title="editingGroup ? '编辑分组' : '新增分组'"
-      description="分组名称仅用于侧边栏展示。"
+      :title="
+        editingGroup
+          ? t('menuPage.dialogs.group.editTitle')
+          : t('menuPage.dialogs.group.addTitle')
+      "
+      :description="t('menuPage.dialogs.group.description')"
       :submitting="submitting"
       @update:open="groupOpen = $event"
       @submit="submitGroup"
     >
       <FieldGroup>
         <Field>
-          <FieldLabel for="group-name">分组名称</FieldLabel>
+          <FieldLabel for="group-name">{{
+            t("menuPage.dialogs.group.name")
+          }}</FieldLabel>
           <Input
             id="group-name"
             v-model="groupName"
@@ -826,15 +866,21 @@ const operationDescription = computed(() =>
 
     <FormDialog
       :open="itemOpen"
-      :title="editingItem ? '编辑菜单' : '新增菜单'"
-      description="菜单路由需要由前端页面提供。"
+      :title="
+        editingItem
+          ? t('menuPage.dialogs.item.editTitle')
+          : t('menuPage.dialogs.item.addTitle')
+      "
+      :description="t('menuPage.dialogs.item.description')"
       :submitting="submitting"
       @update:open="itemOpen = $event"
       @submit="submitItem"
     >
       <FieldGroup>
         <Field>
-          <FieldLabel for="item-code">权限编码</FieldLabel>
+          <FieldLabel for="item-code">{{
+            t("menuPage.dialogs.item.code")
+          }}</FieldLabel>
           <Input
             id="item-code"
             v-model="itemForm.permissionCode"
@@ -844,11 +890,13 @@ const operationDescription = computed(() =>
             :disabled="!!editingItem"
             required
             pattern="^[a-z0-9_.-]+$"
-            title="只能包含小写字母、数字、点、下划线和连字符"
+            :title="t('menuPage.dialogs.item.codePattern')"
           />
         </Field>
         <Field>
-          <FieldLabel for="item-name">菜单名称</FieldLabel>
+          <FieldLabel for="item-name">{{
+            t("menuPage.dialogs.item.name")
+          }}</FieldLabel>
           <Input
             id="item-name"
             v-model="itemForm.name"
@@ -858,10 +906,15 @@ const operationDescription = computed(() =>
           />
         </Field>
         <Field>
-          <FieldLabel>所属分组</FieldLabel>
+          <FieldLabel>{{ t("menuPage.dialogs.item.group") }}</FieldLabel>
           <Select v-model="itemForm.groupId">
-            <SelectTrigger class="w-full" aria-label="所属分组">
-              <SelectValue placeholder="请选择分组" />
+            <SelectTrigger
+              class="w-full"
+              :aria-label="t('menuPage.dialogs.item.group')"
+            >
+              <SelectValue
+                :placeholder="t('menuPage.dialogs.item.selectGroup')"
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
@@ -870,14 +923,16 @@ const operationDescription = computed(() =>
                   :key="group.id"
                   :value="group.id"
                 >
-                  {{ group.name }}
+                  {{ groupLabel(group) }}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </Field>
         <Field>
-          <FieldLabel for="item-route">路由</FieldLabel>
+          <FieldLabel for="item-route">{{
+            t("menuPage.dialogs.item.route")
+          }}</FieldLabel>
           <Input
             id="item-route"
             v-model="itemForm.route"
@@ -889,18 +944,20 @@ const operationDescription = computed(() =>
           />
         </Field>
         <Field>
-          <FieldLabel>图标</FieldLabel>
+          <FieldLabel>{{ t("menuPage.dialogs.item.icon") }}</FieldLabel>
           <IconPicker v-model="itemForm.icon" />
         </Field>
         <Field orientation="horizontal">
           <div class="flex flex-1 flex-col gap-1">
-            <FieldLabel for="item-visible">在侧边栏显示</FieldLabel>
+            <FieldLabel for="item-visible">{{
+              t("menuPage.dialogs.item.visible")
+            }}</FieldLabel>
             <FieldDescription>
               {{
                 editingItem?.permissionCode === "menus" ||
                 editingItem?.permissionCode === "settings"
-                  ? "隐藏后仍可通过 /settings/menu 直接访问并重新显示。"
-                  : "关闭后菜单仍保留权限和路由，只是不在侧边栏展示。"
+                  ? t("menuPage.dialogs.item.criticalHint")
+                  : t("menuPage.dialogs.item.visibleHint")
               }}
             </FieldDescription>
           </div>
@@ -923,24 +980,31 @@ const operationDescription = computed(() =>
     >
       <FieldGroup>
         <Field>
-          <FieldLabel for="operation-name">权限名称</FieldLabel>
+          <FieldLabel for="operation-name">{{
+            t("menuPage.dialogs.operation.name")
+          }}</FieldLabel>
           <Input
             id="operation-name"
             v-model="operationForm.name"
             name="operation-name"
             autocomplete="off"
-            placeholder="如：新增用户"
+            :placeholder="t('menuPage.dialogs.operation.namePlaceholder')"
             required
           />
         </Field>
         <Field v-if="!editingOperation">
-          <FieldLabel>常用动作</FieldLabel>
+          <FieldLabel>{{ t("menuPage.dialogs.operation.preset") }}</FieldLabel>
           <Select
             :model-value="operationForm.verb"
             @update:model-value="handleOperationVerbChange(String($event))"
           >
-            <SelectTrigger class="w-full" aria-label="常用动作">
-              <SelectValue placeholder="选择常用动作" />
+            <SelectTrigger
+              class="w-full"
+              :aria-label="t('menuPage.dialogs.operation.preset')"
+            >
+              <SelectValue
+                :placeholder="t('menuPage.dialogs.operation.presetPlaceholder')"
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
@@ -949,7 +1013,7 @@ const operationDescription = computed(() =>
                   :key="preset.verb"
                   :value="preset.verb"
                 >
-                  {{ preset.label }}
+                  {{ t(`menuPage.verbs.${preset.verb}`) }}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -957,9 +1021,11 @@ const operationDescription = computed(() =>
         </Field>
         <Field orientation="horizontal">
           <div class="flex flex-1 flex-col gap-1">
-            <FieldLabel for="operation-custom">自定义编码</FieldLabel>
+            <FieldLabel for="operation-custom">{{
+              t("menuPage.dialogs.operation.custom")
+            }}</FieldLabel>
             <FieldDescription>
-              关闭时按“菜单编码.动作”自动生成。
+              {{ t("menuPage.dialogs.operation.customHint") }}
             </FieldDescription>
           </div>
           <Switch
@@ -970,7 +1036,9 @@ const operationDescription = computed(() =>
           />
         </Field>
         <Field>
-          <FieldLabel for="operation-code">权限编码</FieldLabel>
+          <FieldLabel for="operation-code">{{
+            t("menuPage.dialogs.operation.code")
+          }}</FieldLabel>
           <Input
             id="operation-code"
             v-model="operationForm.code"
@@ -980,10 +1048,10 @@ const operationDescription = computed(() =>
             :disabled="!operationForm.custom || !!editingOperation"
             required
             pattern="^[a-z0-9_.-]+$"
-            title="只能包含小写字母、数字、点、下划线和连字符"
+            :title="t('menuPage.dialogs.operation.codePattern')"
           />
           <FieldDescription>
-            编码用于后端鉴权，请与代码中的权限码保持一致。
+            {{ t("menuPage.dialogs.operation.codeHint") }}
           </FieldDescription>
         </Field>
       </FieldGroup>

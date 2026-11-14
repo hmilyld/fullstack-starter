@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useSortable } from "@dnd-kit/vue/sortable"
 import {
   ChevronDown,
@@ -53,6 +54,12 @@ const emit = defineEmits<{
   (e: "delete-operation", operation: MenuOperation): void
 }>()
 
+const { t } = useI18n()
+const label = computed(() =>
+  props.item.isSystem
+    ? t(`nav.items.${props.item.permissionCode}`, props.item.name)
+    : props.item.name
+)
 const element = ref<HTMLElement | null>(null)
 const handle = ref<HTMLElement | null>(null)
 
@@ -75,7 +82,9 @@ const actions = computed<RowAction[]>(() => {
   const result: RowAction[] = []
   if (props.canEdit) {
     result.push({
-      label: props.item.hidden ? "在侧边栏显示" : "隐藏菜单",
+      label: props.item.hidden
+        ? t("menuPage.actions.showInSidebar")
+        : t("menuPage.actions.hideMenu"),
       icon: props.item.hidden ? Eye : EyeOff,
       disabled: props.mutationsDisabled,
       onSelect: () => emit("toggle-hidden", props.item),
@@ -84,13 +93,13 @@ const actions = computed<RowAction[]>(() => {
   if (props.canReorder) {
     result.push(
       {
-        label: "上移",
+        label: t("menuPage.actions.up"),
         icon: ChevronUp,
         disabled: !props.canMoveUp || props.mutationsDisabled,
         onSelect: () => emit("move-up"),
       },
       {
-        label: "下移",
+        label: t("menuPage.actions.down"),
         icon: ChevronDown,
         disabled: !props.canMoveDown || props.mutationsDisabled,
         onSelect: () => emit("move-down"),
@@ -99,7 +108,7 @@ const actions = computed<RowAction[]>(() => {
   }
   if (props.canDelete && !props.item.isSystem) {
     result.push({
-      label: "删除",
+      label: t("menuPage.actions.delete"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -129,7 +138,14 @@ const actions = computed<RowAction[]>(() => {
           variant="ghost"
           size="icon-xs"
           :aria-expanded="expanded"
-          :aria-label="`${expanded ? '收起' : '展开'} ${item.name} 的操作权限`"
+          :aria-label="
+            t('menuPage.aria.toggleOperations', {
+              action: expanded
+                ? t('menuPage.actions.collapse')
+                : t('menuPage.actions.expand'),
+              name: label,
+            })
+          "
           @click="emit('toggle')"
         >
           <ChevronRight
@@ -142,27 +158,31 @@ const actions = computed<RowAction[]>(() => {
           variant="ghost"
           size="icon-xs"
           class="cursor-grab touch-none"
-          :aria-label="`拖动 ${item.name} 排序`"
+          :aria-label="t('menuPage.aria.dragItem', { name: label })"
         >
           <GripVertical />
         </Button>
         <MenuIcon :name="item.icon" class="size-4 shrink-0" />
         <div class="flex min-w-0 flex-col">
           <div class="flex min-w-0 items-center gap-1.5">
-            <span class="truncate text-sm font-medium">{{ item.name }}</span>
-            <Badge v-if="item.isSystem" variant="outline">内置</Badge>
+            <span class="truncate text-sm font-medium">{{ label }}</span>
+            <Badge v-if="item.isSystem" variant="outline">{{
+              t("menuPage.builtIn")
+            }}</Badge>
             <Badge v-if="item.hidden" variant="secondary" class="lg:hidden">
-              已隐藏
+              {{ t("menuPage.hidden") }}
             </Badge>
             <span class="text-xs text-muted-foreground">
-              {{ item.operations.length }} 个操作
+              {{
+                t("menuPage.operationCount", { count: item.operations.length })
+              }}
             </span>
           </div>
         </div>
       </div>
     </TableCell>
     <TableCell>
-      <Badge>菜单</Badge>
+      <Badge>{{ t("menuPage.menuType") }}</Badge>
     </TableCell>
     <TableCell>
       <div class="flex min-w-0 flex-col">
@@ -189,7 +209,7 @@ const actions = computed<RowAction[]>(() => {
             )
           "
         />
-        {{ item.hidden ? "已隐藏" : "显示中" }}
+        {{ item.hidden ? t("menuPage.hidden") : t("menuPage.visible") }}
       </span>
     </TableCell>
     <TableCell class="sticky right-0 bg-inherit text-right">
@@ -198,7 +218,7 @@ const actions = computed<RowAction[]>(() => {
           v-if="canCreateOperation"
           variant="ghost"
           size="icon-sm"
-          :aria-label="`新增 ${item.name} 的操作权限`"
+          :aria-label="t('menuPage.aria.addOperation', { name: label })"
           :disabled="mutationsDisabled"
           @click="emit('add-operation', item)"
         >
@@ -208,13 +228,16 @@ const actions = computed<RowAction[]>(() => {
           v-if="canEdit"
           variant="ghost"
           size="icon-sm"
-          :aria-label="`编辑 ${item.name}`"
+          :aria-label="t('menuPage.aria.editItem', { name: label })"
           :disabled="mutationsDisabled"
           @click="emit('edit', item)"
         >
           <Pencil />
         </Button>
-        <RowActions :actions="actions" :label="`${item.name} 的操作`" />
+        <RowActions
+          :actions="actions"
+          :label="t('menuPage.itemActions', { name: label })"
+        />
       </div>
     </TableCell>
   </tr>

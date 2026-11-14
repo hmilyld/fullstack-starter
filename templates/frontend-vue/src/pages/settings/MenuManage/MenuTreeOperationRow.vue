@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import { KeyRound, Pencil, Trash2 } from "@lucide/vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,8 @@ const emit = defineEmits<{
   (e: "edit", operation: MenuOperation): void
   (e: "delete", operation: MenuOperation): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -32,7 +35,7 @@ const emit = defineEmits<{
       </div>
     </TableCell>
     <TableCell>
-      <Badge variant="secondary">操作</Badge>
+      <Badge variant="secondary">{{ t("menuPage.operationType") }}</Badge>
     </TableCell>
     <TableCell>
       <span class="truncate font-mono text-xs">{{ operation.code }}</span>
@@ -46,7 +49,9 @@ const emit = defineEmits<{
           v-if="canEdit"
           variant="ghost"
           size="icon-sm"
-          :aria-label="`编辑 ${operation.name}`"
+          :aria-label="
+            t('menuPage.aria.editOperation', { name: operation.name })
+          "
           :disabled="mutationsDisabled"
           @click="emit('edit', operation)"
         >
@@ -56,7 +61,9 @@ const emit = defineEmits<{
           v-if="canDelete"
           variant="ghost"
           size="icon-sm"
-          :aria-label="`删除 ${operation.name}`"
+          :aria-label="
+            t('menuPage.aria.deleteOperation', { name: operation.name })
+          "
           :disabled="mutationsDisabled"
           @click="emit('delete', operation)"
         >
