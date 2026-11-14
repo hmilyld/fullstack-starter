@@ -529,6 +529,18 @@ const en = {
     icon: "Icon rail",
     offcanvas: "Drawer",
   },
+  dateTime: {
+    placeholder: "Select date and time",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
+    selectDate: "Select date",
+    time: "Time",
+    hour: "Hour",
+    minute: "Minute",
+    now: "Now",
+    clear: "Clear",
+    done: "Done",
+  },
 } satisfies MessageCatalog
 
 export default en

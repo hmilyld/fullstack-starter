@@ -484,6 +484,18 @@ const zhCN = {
     icon: "图标栏",
     offcanvas: "抽屉",
   },
+  dateTime: {
+    placeholder: "选择日期时间",
+    previousMonth: "上个月",
+    nextMonth: "下个月",
+    selectDate: "选择日期",
+    time: "时间",
+    hour: "小时",
+    minute: "分钟",
+    now: "此刻",
+    clear: "清除",
+    done: "完成",
+  },
 }
 
 export type MessageCatalog = typeof zhCN

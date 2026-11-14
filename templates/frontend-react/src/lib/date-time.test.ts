@@ -7,6 +7,7 @@ import {
   formatMonthLabel,
   parseDateTimeInput,
   toDateTimeInput,
+  weekdayLabels,
 } from "./date-time"
 
 describe("parseDateTimeInput", () => {
@@ -88,5 +89,33 @@ describe("buildMonthCells", () => {
 describe("formatMonthLabel", () => {
   it("输出中文年月", () => {
     expect(formatMonthLabel(2026, 11)).toBe("2026 年 11 月")
+  })
+
+  it("英文不包含中文年月", () => {
+    const label = formatMonthLabel(2026, 11, "en")
+    expect(label).toContain("2026")
+    expect(label).not.toMatch(/[\u4e00-\u9fff]/)
+  })
+})
+
+describe("locale-aware formatting", () => {
+  it("中文日期时间格式保持不变", () => {
+    expect(formatDateTimeInput("2026-11-12T08:30", "zh-CN")).toBe(
+      "2026/11/12 08:30"
+    )
+  })
+
+  it("英文日期时间不包含中文", () => {
+    const label = formatDateTimeInput("2026-11-12T08:30", "en")
+    expect(label).toContain("2026")
+    expect(label).toContain("08:30")
+    expect(label).not.toMatch(/[\u4e00-\u9fff]/)
+  })
+
+  it("英文星期使用短名称", () => {
+    const labels = weekdayLabels("en")
+    expect(labels).toHaveLength(7)
+    expect(labels[0]).toBe("Mon")
+    expect(labels.join("")).not.toMatch(/[\u4e00-\u9fff]/)
   })
 })
