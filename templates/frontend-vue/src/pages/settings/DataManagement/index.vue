@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import { Check, Copy, Download, FileArchive, Upload } from "@lucide/vue"
 import LoadingButton from "@/components/shared/LoadingButton.vue"
@@ -39,13 +40,7 @@ type ImportJob = {
   status: ImportStatus
 }
 
-const IMPORT_STATUS_LABELS: Record<ImportStatus["status"], string> = {
-  queued: "排队中",
-  running: "导入中",
-  success: "导入完成",
-  failed: "导入失败",
-}
-
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToast()
@@ -80,7 +75,7 @@ async function handleExport() {
       password: result.password,
     }
   } catch (error) {
-    toast.error((error as Error).message || "导出失败")
+    toast.error((error as Error).message || t("dataPage.export.failed"))
   }
   exportLoading.value = false
 }
@@ -89,7 +84,7 @@ async function copyPassword() {
   if (!exportResult.value) return
   await navigator.clipboard.writeText(exportResult.value.password)
   passwordCopied.value = true
-  toast.success("密码已复制")
+  toast.success(t("dataPage.exportDialog.copied"))
 }
 
 function closeExport() {
@@ -126,12 +121,12 @@ async function pollImport() {
     importJob.value.status = response.data
     if (response.data.status === "success") {
       stopPolling()
-      toast.success(response.data.message || "导入完成")
+      toast.success(response.data.message || t("dataPage.import.success"))
       auth.logout()
       await router.replace("/login")
     } else if (response.data.status === "failed") {
       stopPolling()
-      toast.error(response.data.message || "导入失败")
+      toast.error(response.data.message || t("dataPage.import.failed"))
       importJob.value = null
       importOpen.value = false
     }
@@ -146,7 +141,7 @@ async function handleStartImport() {
   try {
     const response = await startImport(importFile.value, importPassword.value)
     if (response.code !== 0) {
-      toast.error(response.message || "导入任务创建失败")
+      toast.error(response.message || t("dataPage.import.createFailed"))
       return
     }
     importJob.value = {
@@ -155,7 +150,7 @@ async function handleStartImport() {
       status: {
         id: response.data.jobId,
         status: "queued",
-        message: "等待导入",
+        message: t("dataPage.import.waiting"),
         progress: 0,
       },
     }
@@ -163,10 +158,14 @@ async function handleStartImport() {
     pollTimer = window.setInterval(pollImport, 1000)
     await pollImport()
   } catch (error) {
-    toast.error((error as Error).message || "导入任务创建失败")
+    toast.error((error as Error).message || t("dataPage.import.createFailed"))
   } finally {
     importLoading.value = false
   }
+}
+
+function importStatusLabel(status: ImportStatus["status"]) {
+  return t(`dataPage.status.${status}`)
 }
 
 function importBadgeVariant(status: ImportStatus["status"]) {
@@ -182,7 +181,10 @@ function handleImportOpenChange(open: boolean) {
 
 <template>
   <div class="flex flex-col gap-(--page-gap)">
-    <PageHeader title="数据管理" description="导出或恢复当前系统的完整数据。" />
+    <PageHeader
+      :title="t('dataPage.title')"
+      :description="t('dataPage.description')"
+    />
 
     <div class="grid gap-6 md:grid-cols-2">
       <Card v-if="auth.hasPermission('data_management.export')">
@@ -194,9 +196,9 @@ function handleImportOpenChange(open: boolean) {
               <Download class="size-5 text-primary" />
             </div>
             <div>
-              <CardTitle>导出数据</CardTitle>
+              <CardTitle>{{ t("dataPage.export.title") }}</CardTitle>
               <CardDescription>
-                生成加密压缩包并下载到当前设备。
+                {{ t("dataPage.export.description") }}
               </CardDescription>
             </div>
           </div>
@@ -208,7 +210,7 @@ function handleImportOpenChange(open: boolean) {
             @click="handleExport"
           >
             <Download data-icon="inline-start" />
-            生成并下载
+            {{ t("dataPage.export.action") }}
           </LoadingButton>
         </CardContent>
       </Card>
@@ -222,9 +224,9 @@ function handleImportOpenChange(open: boolean) {
               <Upload class="size-5 text-destructive" />
             </div>
             <div>
-              <CardTitle>导入数据</CardTitle>
+              <CardTitle>{{ t("dataPage.import.title") }}</CardTitle>
               <CardDescription>
-                使用同版本导出包覆盖当前系统数据。
+                {{ t("dataPage.import.description") }}
               </CardDescription>
             </div>
           </div>
@@ -236,7 +238,7 @@ function handleImportOpenChange(open: boolean) {
             @click="disposeImport"
           >
             <Upload data-icon="inline-start" />
-            选择导入包
+            {{ t("dataPage.import.open") }}
           </Button>
         </CardContent>
       </Card>
@@ -245,9 +247,9 @@ function handleImportOpenChange(open: boolean) {
     <Dialog :open="!!exportResult" @update:open="handleExportOpenChange">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>导出完成</DialogTitle>
+          <DialogTitle>{{ t("dataPage.exportDialog.title") }}</DialogTitle>
           <DialogDescription>
-            该密码只显示一次，关闭后无法再次查看。请先复制并妥善保存。
+            {{ t("dataPage.exportDialog.description") }}
           </DialogDescription>
         </DialogHeader>
         <div class="flex flex-col gap-3">
@@ -260,7 +262,9 @@ function handleImportOpenChange(open: boolean) {
             </span>
           </div>
           <Field>
-            <FieldLabel for="export-password">压缩密码</FieldLabel>
+            <FieldLabel for="export-password">{{
+              t("dataPage.exportDialog.password")
+            }}</FieldLabel>
             <div class="flex items-center gap-2">
               <Input
                 id="export-password"
@@ -273,7 +277,7 @@ function handleImportOpenChange(open: boolean) {
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="复制压缩密码"
+                :aria-label="t('dataPage.exportDialog.copyAria')"
                 @click="copyPassword"
               >
                 <Check v-if="passwordCopied" />
@@ -283,7 +287,9 @@ function handleImportOpenChange(open: boolean) {
           </Field>
         </div>
         <DialogFooter>
-          <Button @click="closeExport">我已保存</Button>
+          <Button @click="closeExport">{{
+            t("dataPage.exportDialog.saved")
+          }}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -291,15 +297,16 @@ function handleImportOpenChange(open: boolean) {
     <Dialog :open="importOpen" @update:open="handleImportOpenChange">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>导入完整数据</DialogTitle>
+          <DialogTitle>{{ t("dataPage.importDialog.title") }}</DialogTitle>
           <DialogDescription>
-            导入会覆盖用户、角色、配置、AI
-            密钥、审计日志和菜单数据，并使所有登录会话失效。
+            {{ t("dataPage.importDialog.description") }}
           </DialogDescription>
         </DialogHeader>
         <div class="flex flex-col gap-4">
           <Field>
-            <FieldLabel for="import-file">导出包</FieldLabel>
+            <FieldLabel for="import-file">{{
+              t("dataPage.importDialog.file")
+            }}</FieldLabel>
             <Input
               id="import-file"
               name="import-file"
@@ -311,7 +318,9 @@ function handleImportOpenChange(open: boolean) {
             />
           </Field>
           <Field>
-            <FieldLabel for="import-password">压缩密码</FieldLabel>
+            <FieldLabel for="import-password">{{
+              t("dataPage.importDialog.password")
+            }}</FieldLabel>
             <Input
               id="import-password"
               v-model="importPassword"
@@ -321,7 +330,7 @@ function handleImportOpenChange(open: boolean) {
               :disabled="!!importJob"
             />
             <FieldDescription>
-              密码遗失后无法恢复，只能重新导出。
+              {{ t("dataPage.importDialog.passwordHint") }}
             </FieldDescription>
           </Field>
           <div
@@ -331,7 +340,7 @@ function handleImportOpenChange(open: boolean) {
             <div class="flex items-center justify-between gap-2 text-sm">
               <div class="flex items-center gap-2">
                 <Badge :variant="importBadgeVariant(importJob.status.status)">
-                  {{ IMPORT_STATUS_LABELS[importJob.status.status] }}
+                  {{ importStatusLabel(importJob.status.status) }}
                 </Badge>
                 <span class="text-muted-foreground">
                   {{ importJob.status.message }}
@@ -348,7 +357,7 @@ function handleImportOpenChange(open: boolean) {
             :disabled="!!importJob"
             @click="importOpen = false"
           >
-            取消
+            {{ t("dataPage.importDialog.cancel") }}
           </Button>
           <LoadingButton
             variant="destructive"
@@ -356,7 +365,7 @@ function handleImportOpenChange(open: boolean) {
             :disabled="!importFile || !importPassword || !!importJob"
             @click="handleStartImport"
           >
-            确认导入
+            {{ t("dataPage.importDialog.confirm") }}
           </LoadingButton>
         </DialogFooter>
       </DialogContent>
