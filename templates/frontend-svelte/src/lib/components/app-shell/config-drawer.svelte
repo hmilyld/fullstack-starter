@@ -14,28 +14,35 @@
     type SidebarCollapsible,
     type SidebarVariant,
   } from "#lib/hooks/use-layout-config.svelte.js"
+  import { t } from "#lib/i18n.js"
   import { getTheme, setTheme } from "#lib/stores/theme.svelte.js"
 
   type ThemeValue = "light" | "dark" | "system"
 
   const layout = useLayoutConfig()
 
-  const themes: { value: ThemeValue; label: string; icon: typeof Sun }[] = [
-    { value: "light", label: "浅色", icon: Sun },
-    { value: "dark", label: "深色", icon: Moon },
-    { value: "system", label: "跟随系统", icon: Monitor },
-  ]
+  const themes: {
+    value: ThemeValue
+    label: string
+    icon: typeof Sun
+  }[] = $derived([
+    { value: "light", label: $t("appearance.light"), icon: Sun },
+    { value: "dark", label: $t("appearance.dark"), icon: Moon },
+    { value: "system", label: $t("appearance.system"), icon: Monitor },
+  ])
 
-  const variants: { value: SidebarVariant; label: string }[] = [
-    { value: "sidebar", label: "默认" },
-    { value: "floating", label: "浮动" },
-    { value: "inset", label: "内嵌" },
-  ]
+  const variants: { value: SidebarVariant; label: string }[] = $derived([
+    { value: "sidebar", label: $t("appearance.default") },
+    { value: "floating", label: $t("appearance.floating") },
+    { value: "inset", label: $t("appearance.inset") },
+  ])
 
-  const collapsibles: { value: SidebarCollapsible; label: string }[] = [
-    { value: "icon", label: "图标栏" },
-    { value: "offcanvas", label: "抽屉" },
-  ]
+  const collapsibles: { value: SidebarCollapsible; label: string }[] = $derived(
+    [
+      { value: "icon", label: $t("appearance.icon") },
+      { value: "offcanvas", label: $t("appearance.offcanvas") },
+    ]
+  )
 </script>
 
 <Sheet>
@@ -45,8 +52,8 @@
         {...props}
         variant="ghost"
         size="icon-sm"
-        aria-label="外观设置"
-        title="外观设置"
+        aria-label={$t("common.appearance")}
+        title={$t("common.appearance")}
       >
         <Settings2 />
       </Button>
@@ -54,15 +61,17 @@
   </SheetTrigger>
   <SheetContent class="w-80">
     <SheetHeader>
-      <SheetTitle>外观</SheetTitle>
-      <SheetDescription>
-        调整主题、侧栏样式与折叠方式，设置会保存在本机。
-      </SheetDescription>
+      <SheetTitle>{$t("appearance.title")}</SheetTitle>
+      <SheetDescription>{$t("appearance.description")}</SheetDescription>
     </SheetHeader>
     <div class="flex flex-col gap-6 px-4 pb-6">
       <section class="flex flex-col gap-2">
-        <h3 class="text-sm font-medium">主题</h3>
-        <div class="grid grid-cols-3 gap-2" role="group" aria-label="主题">
+        <h3 class="text-sm font-medium">{$t("appearance.theme")}</h3>
+        <div
+          class="grid grid-cols-3 gap-2"
+          role="group"
+          aria-label={$t("appearance.theme")}
+        >
           {#each themes as item (item.value)}
             {@const Icon = item.icon}
             <Button
@@ -80,8 +89,12 @@
       </section>
 
       <section class="flex flex-col gap-2">
-        <h3 class="text-sm font-medium">侧栏样式</h3>
-        <div class="grid grid-cols-3 gap-2" role="group" aria-label="侧栏样式">
+        <h3 class="text-sm font-medium">{$t("appearance.sidebar")}</h3>
+        <div
+          class="grid grid-cols-3 gap-2"
+          role="group"
+          aria-label={$t("appearance.sidebar")}
+        >
           {#each variants as item (item.value)}
             <Button
               type="button"
@@ -97,8 +110,12 @@
       </section>
 
       <section class="flex flex-col gap-2">
-        <h3 class="text-sm font-medium">折叠方式</h3>
-        <div class="grid grid-cols-3 gap-2" role="group" aria-label="折叠方式">
+        <h3 class="text-sm font-medium">{$t("appearance.collapse")}</h3>
+        <div
+          class="grid grid-cols-3 gap-2"
+          role="group"
+          aria-label={$t("appearance.collapse")}
+        >
           {#each collapsibles as item (item.value)}
             <Button
               type="button"

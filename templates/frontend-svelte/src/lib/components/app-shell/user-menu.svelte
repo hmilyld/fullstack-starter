@@ -25,6 +25,7 @@
     DropdownMenuTrigger,
   } from "#lib/components/ui/dropdown-menu/index.js"
   import { Spinner } from "#lib/components/ui/spinner/index.js"
+  import { t } from "#lib/i18n.js"
   import { auth } from "#lib/stores/auth.svelte.js"
   import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
@@ -54,7 +55,7 @@
           {...props}
           variant="ghost"
           class="gap-2 rounded-full pr-2 pl-1"
-          aria-label={`${user.name} 的账户菜单`}
+          aria-label={$t("userMenu.aria", { name: user.name })}
         >
           <Avatar class="size-7">
             {#if user.avatar}
@@ -104,27 +105,27 @@
           onSelect={() => goto(resolve("settings/profile?tab=profile"))}
         >
           <UserCog />
-          个人设置
+          {$t("userMenu.profile")}
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => goto(resolve("settings/profile?tab=security"))}
         >
           <KeyRound />
-          密码修改
+          {$t("userMenu.password")}
         </DropdownMenuItem>
         {#if auth.hasPermission("permissions")}
           <DropdownMenuItem
             onSelect={() => goto(resolve("settings/permission"))}
           >
             <ShieldCheck />
-            权限总览
+            {$t("userMenu.permissions")}
           </DropdownMenuItem>
         {/if}
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem disabled={loggingOut} onSelect={handleLogout}>
         {#if loggingOut}<Spinner />{:else}<LogOut />{/if}
-        {loggingOut ? "退出中…" : "退出登录"}
+        {loggingOut ? $t("userMenu.loggingOut") : $t("userMenu.logout")}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
