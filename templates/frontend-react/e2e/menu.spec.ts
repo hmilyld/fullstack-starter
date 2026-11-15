@@ -162,10 +162,7 @@ test("drags a menu card on compact viewports", async ({ page }) => {
   )
   await page.mouse.up()
 
-  const cards = await page
-    .getByRole("main")
-    .locator("div.rounded-xl.border.bg-background")
-    .allTextContents()
+  const cards = await page.locator("[data-menu-item]").allTextContents()
   const usersIndex = cards.findIndex((text) => text.includes("用户管理"))
   const menusIndex = cards.findIndex((text) => text.includes("菜单与权限"))
   expect(usersIndex).toBeGreaterThan(menusIndex)

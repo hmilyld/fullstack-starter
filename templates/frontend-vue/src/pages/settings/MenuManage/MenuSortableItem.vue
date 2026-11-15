@@ -155,6 +155,7 @@ const panelId = computed(() => `operation-panel-${props.item.permissionCode}`)
 <template>
   <div
     ref="element"
+    :data-menu-item="item.permissionCode"
     :class="
       cn(
         'rounded-xl border bg-background',

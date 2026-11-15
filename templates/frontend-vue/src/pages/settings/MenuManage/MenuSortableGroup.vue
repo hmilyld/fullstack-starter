@@ -185,16 +185,10 @@ const actions = computed<RowAction[]>(() => {
           </div>
         </div>
       </CardHeader>
-      <CardContent class="p-2">
-        <div
-          ref="dropElement"
-          :class="
-            cn(
-              'flex flex-col gap-1 transition-colors',
-              isDropTarget && 'rounded-lg bg-muted/40'
-            )
-          "
-        >
+      <CardContent
+        :class="cn('p-2 transition-colors', isDropTarget && 'bg-muted/40')"
+      >
+        <div ref="dropElement" class="flex flex-col gap-1">
           <MenuSortableItem
             v-for="(item, itemIndex) in group.items"
             :key="item.permissionCode"
