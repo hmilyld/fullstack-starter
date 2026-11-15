@@ -154,7 +154,7 @@
       value="profile"
       class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
     >
-      <Card variant="plain">
+      <Card variant="plain" class="max-w-2xl">
         <CardHeader>
           <CardTitle>{$t("profilePage.profileTitle")}</CardTitle>
           <CardDescription
@@ -213,7 +213,7 @@
       value="security"
       class="flex min-w-0 flex-1 flex-col gap-(--page-gap) lg:gap-8"
     >
-      <Card variant="plain">
+      <Card variant="plain" class="max-w-2xl">
         <CardHeader>
           <CardTitle>{$t("profilePage.securityTitle")}</CardTitle>
           <CardDescription

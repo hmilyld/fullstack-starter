@@ -14,7 +14,7 @@
   bind:this={ref}
   data-slot="card-title"
   class={cn(
-    "font-heading text-base leading-normal font-medium group-data-[size=sm]/card:text-sm",
+    "font-heading text-base leading-none font-semibold tracking-tight",
     className
   )}
   {...restProps}

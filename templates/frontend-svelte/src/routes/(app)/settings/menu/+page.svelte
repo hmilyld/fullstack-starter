@@ -1160,263 +1160,252 @@
         {/each}
       </div>
     {:else}
-      <div class="overflow-clip rounded-xl border bg-card">
-        <Table class="min-w-[600px] table-fixed">
-          <TableHeader>
-            <TableRow class="bg-muted/50 hover:bg-muted/50">
-              <TableHead class="w-[35%]"
-                >{$t("menuPage.columns.name")}</TableHead
+      <Table class="min-w-[600px] table-fixed">
+        <TableHeader>
+          <TableRow class="bg-muted/50 hover:bg-muted/50">
+            <TableHead class="w-[35%]">{$t("menuPage.columns.name")}</TableHead>
+            <TableHead class="w-[10%]">{$t("menuPage.columns.type")}</TableHead>
+            <TableHead class="w-[27%]"
+              >{$t("menuPage.columns.routeOrCode")}</TableHead
+            >
+            <TableHead class="hidden w-[12%] lg:table-cell"
+              >{$t("menuPage.columns.marker")}</TableHead
+            >
+            <TableHead class="sticky right-0 w-[16%] bg-muted/50 text-right"
+              >{$t("menuPage.columns.actions")}</TableHead
+            >
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {#each visibleGroups as group (group.id)}
+            <tr
+              data-menu-group={group.id}
+              class="border-b bg-muted/40 transition-colors hover:bg-muted/60"
+            >
+              <TableCell class="p-2">
+                <div class="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={$t("menuPage.aria.toggleGroup", {
+                      action: tableCollapsedGroups.has(group.id)
+                        ? $t("menuPage.actions.expand")
+                        : $t("menuPage.actions.collapse"),
+                      name: groupLabel(group),
+                    })}
+                    onclick={() => toggleGroup(group.id)}
+                  >
+                    <ChevronRight
+                      class={tableCollapsedGroups.has(group.id)
+                        ? ""
+                        : "rotate-90"}
+                    />
+                  </Button>
+                  <span class="font-medium">{groupLabel(group)}</span>
+                </div>
+              </TableCell>
+              <TableCell
+                ><Badge variant="secondary">{$t("menuPage.groupType")}</Badge
+                ></TableCell
               >
-              <TableHead class="w-[10%]"
-                >{$t("menuPage.columns.type")}</TableHead
+              <TableCell class="font-mono text-xs text-muted-foreground"
+                >{group.id}</TableCell
               >
-              <TableHead class="w-[27%]"
-                >{$t("menuPage.columns.routeOrCode")}</TableHead
+              <TableCell
+                class="hidden text-xs text-muted-foreground lg:table-cell"
               >
-              <TableHead class="hidden w-[12%] lg:table-cell"
-                >{$t("menuPage.columns.marker")}</TableHead
-              >
-              <TableHead class="sticky right-0 w-[16%] bg-muted/50 text-right"
-                >{$t("menuPage.columns.actions")}</TableHead
-              >
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {#each visibleGroups as group (group.id)}
-              <tr
-                data-menu-group={group.id}
-                class="border-b bg-muted/40 transition-colors hover:bg-muted/60"
-              >
-                <TableCell class="p-2">
-                  <div class="flex items-center gap-1">
+                {group.isSystem
+                  ? $t("menuPage.builtIn")
+                  : $t("rolesPage.custom")}
+              </TableCell>
+              <TableCell class="sticky right-0 bg-inherit text-right">
+                <div class="flex items-center justify-end gap-1">
+                  {#if reorderEnabled}
                     <Button
                       variant="ghost"
                       size="icon-xs"
-                      aria-label={$t("menuPage.aria.toggleGroup", {
-                        action: tableCollapsedGroups.has(group.id)
-                          ? $t("menuPage.actions.expand")
-                          : $t("menuPage.actions.collapse"),
+                      aria-label={$t("menuPage.aria.dragGroup", {
                         name: groupLabel(group),
                       })}
-                      onclick={() => toggleGroup(group.id)}
+                      onpointerdown={(event) =>
+                        startDrag(event, {
+                          type: "group",
+                          groupId: group.id,
+                        })}
                     >
-                      <ChevronRight
-                        class={tableCollapsedGroups.has(group.id)
-                          ? ""
-                          : "rotate-90"}
-                      />
+                      <GripVertical />
                     </Button>
-                    <span class="font-medium">{groupLabel(group)}</span>
-                  </div>
-                </TableCell>
-                <TableCell
-                  ><Badge variant="secondary">{$t("menuPage.groupType")}</Badge
-                  ></TableCell
+                  {/if}
+                  {#if canCreate}
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onclick={() => openCreateItem(group.id)}
+                    >
+                      <Plus />
+                      {$t("menuPage.actions.addMenu")}
+                    </Button>
+                  {/if}
+                  <RowActions
+                    actions={buildGroupActions(group)}
+                    label={$t("menuPage.groupActions", {
+                      name: groupLabel(group),
+                    })}
+                  />
+                </div>
+              </TableCell>
+            </tr>
+
+            {#if !tableCollapsedGroups.has(group.id)}
+              {#each group.items as item, itemIndex (item.permissionCode)}
+                <tr
+                  data-menu-item={item.permissionCode}
+                  data-group-id={group.id}
+                  class="border-b transition-colors hover:bg-muted/50"
                 >
-                <TableCell class="font-mono text-xs text-muted-foreground"
-                  >{group.id}</TableCell
-                >
-                <TableCell
-                  class="hidden text-xs text-muted-foreground lg:table-cell"
-                >
-                  {group.isSystem
-                    ? $t("menuPage.builtIn")
-                    : $t("rolesPage.custom")}
-                </TableCell>
-                <TableCell class="sticky right-0 bg-muted/40 text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    {#if reorderEnabled}
+                  <TableCell class="p-2">
+                    <div
+                      class="ml-4 flex min-w-0 items-center gap-1.5 border-l border-border/70 pl-3"
+                    >
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={$t("menuPage.aria.dragGroup", {
-                          name: groupLabel(group),
+                        aria-label={$t("menuPage.aria.toggleOperations", {
+                          action: expanded.has(item.permissionCode)
+                            ? $t("menuPage.actions.collapse")
+                            : $t("menuPage.actions.expand"),
+                          name: menuLabel(item),
                         })}
-                        onpointerdown={(event) =>
-                          startDrag(event, {
-                            type: "group",
-                            groupId: group.id,
-                          })}
+                        onclick={() => toggleExpanded(item.permissionCode)}
                       >
-                        <GripVertical />
+                        <ChevronRight
+                          class={expanded.has(item.permissionCode)
+                            ? "rotate-90"
+                            : ""}
+                        />
                       </Button>
-                    {/if}
-                    {#if canCreate}
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onclick={() => openCreateItem(group.id)}
-                      >
-                        <Plus />
-                        {$t("menuPage.actions.addMenu")}
-                      </Button>
-                    {/if}
-                    <RowActions
-                      actions={buildGroupActions(group)}
-                      label={$t("menuPage.groupActions", {
-                        name: groupLabel(group),
-                      })}
-                    />
-                  </div>
-                </TableCell>
-              </tr>
-
-              {#if !tableCollapsedGroups.has(group.id)}
-                {#each group.items as item, itemIndex (item.permissionCode)}
-                  <tr
-                    data-menu-item={item.permissionCode}
-                    data-group-id={group.id}
-                    class="border-b transition-colors hover:bg-muted/50"
+                      <span class="text-sm font-medium">{menuLabel(item)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell><Badge>{$t("menuPage.menuType")}</Badge></TableCell
                   >
-                    <TableCell class="p-2">
-                      <div class="flex items-center gap-1 pl-4">
+                  <TableCell>
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-sm">{item.route}</span>
+                      <span class="font-mono text-[11px] text-muted-foreground"
+                        >{item.permissionCode}</span
+                      >
+                    </div>
+                  </TableCell>
+                  <TableCell class="hidden lg:table-cell">
+                    {#if item.hidden}<Badge variant="outline"
+                        >{$t("menuPage.hidden")}</Badge
+                      >{:else}<span class="text-xs text-muted-foreground"
+                        >—</span
+                      >{/if}
+                  </TableCell>
+                  <TableCell class="sticky right-0 bg-inherit text-right">
+                    <div class="flex items-center justify-end gap-1">
+                      {#if reorderEnabled}
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={$t("menuPage.aria.toggleOperations", {
-                            action: expanded.has(item.permissionCode)
-                              ? $t("menuPage.actions.collapse")
-                              : $t("menuPage.actions.expand"),
+                          aria-label={$t("menuPage.aria.dragItem", {
                             name: menuLabel(item),
                           })}
-                          onclick={() => toggleExpanded(item.permissionCode)}
+                          onpointerdown={(event) =>
+                            startDrag(event, {
+                              type: "item",
+                              groupId: group.id,
+                              permissionCode: item.permissionCode,
+                            })}
                         >
-                          <ChevronRight
-                            class={expanded.has(item.permissionCode)
-                              ? "rotate-90"
-                              : ""}
-                          />
+                          <GripVertical />
                         </Button>
-                        <span class="text-sm font-medium"
-                          >{menuLabel(item)}</span
-                        >
-                      </div>
-                    </TableCell>
-                    <TableCell
-                      ><Badge>{$t("menuPage.menuType")}</Badge></TableCell
-                    >
-                    <TableCell>
-                      <div class="flex flex-col gap-0.5">
-                        <span class="text-sm">{item.route}</span>
-                        <span
-                          class="font-mono text-[11px] text-muted-foreground"
-                          >{item.permissionCode}</span
-                        >
-                      </div>
-                    </TableCell>
-                    <TableCell class="hidden lg:table-cell">
-                      {#if item.hidden}<Badge variant="outline"
-                          >{$t("menuPage.hidden")}</Badge
-                        >{:else}<span class="text-xs text-muted-foreground"
-                          >—</span
-                        >{/if}
-                    </TableCell>
-                    <TableCell class="sticky right-0 bg-card text-right">
-                      <div class="flex items-center justify-end gap-1">
-                        {#if reorderEnabled}
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label={$t("menuPage.aria.dragItem", {
-                              name: menuLabel(item),
-                            })}
-                            onpointerdown={(event) =>
-                              startDrag(event, {
-                                type: "item",
-                                groupId: group.id,
-                                permissionCode: item.permissionCode,
-                              })}
-                          >
-                            <GripVertical />
-                          </Button>
-                        {/if}
-                        {#if canEdit}
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={$t("menuPage.aria.editItem", {
-                              name: menuLabel(item),
-                            })}
-                            onclick={() => openEditItem(item)}
-                          >
-                            <KeyRound />
-                          </Button>
-                        {/if}
-                        <RowActions
-                          actions={buildMenuActions(
-                            item,
-                            itemIndex,
-                            group.items.length
-                          )}
-                          label={$t("menuPage.itemActions", {
+                      {/if}
+                      {#if canEdit}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={$t("menuPage.aria.editItem", {
                             name: menuLabel(item),
                           })}
-                        />
-                      </div>
-                    </TableCell>
-                  </tr>
-                  {#if expanded.has(item.permissionCode)}
-                    {#each item.operations as operation (operation.code)}
-                      <tr
-                        class="border-b bg-muted/10 transition-colors last:border-0 hover:bg-muted/20"
+                          onclick={() => openEditItem(item)}
+                        >
+                          <KeyRound />
+                        </Button>
+                      {/if}
+                      <RowActions
+                        actions={buildMenuActions(
+                          item,
+                          itemIndex,
+                          group.items.length
+                        )}
+                        label={$t("menuPage.itemActions", {
+                          name: menuLabel(item),
+                        })}
+                      />
+                    </div>
+                  </TableCell>
+                </tr>
+                {#if expanded.has(item.permissionCode)}
+                  {#each item.operations as operation (operation.code)}
+                    <tr
+                      class="border-b bg-muted/10 transition-colors last:border-0 hover:bg-muted/20"
+                    >
+                      <TableCell class="p-2"
+                        ><div
+                          class="ml-10 flex min-w-0 items-center gap-2 border-l border-border/60 pl-3"
+                        >
+                          <span class="truncate text-sm">{operation.name}</span>
+                        </div></TableCell
                       >
-                        <TableCell class="p-2 pl-12 text-sm"
-                          >{operation.name}</TableCell
-                        >
-                        <TableCell
-                          ><Badge variant="secondary"
-                            >{$t("menuPage.operationType")}</Badge
-                          ></TableCell
-                        >
-                        <TableCell
-                          class="font-mono text-xs text-muted-foreground"
-                          >{operation.code}</TableCell
-                        >
-                        <TableCell class="hidden lg:table-cell"></TableCell>
-                        <TableCell
-                          class="sticky right-0 bg-muted/10 text-right"
-                        >
-                          <div class="flex items-center justify-end gap-1">
-                            {#if canEditOperation}
-                              <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                aria-label={$t("menuPage.aria.editOperation", {
-                                  name: operation.name,
-                                })}
-                                onclick={() =>
-                                  openEditOperation(item, operation)}
-                              >
-                                <KeyRound />
-                              </Button>
-                            {/if}
-                            {#if canDeleteOperation}
-                              <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                aria-label={$t(
-                                  "menuPage.aria.deleteOperation",
-                                  {
-                                    name: operation.name,
-                                  }
-                                )}
-                                onclick={() =>
-                                  handleDeleteOperation(item, operation)}
-                              >
-                                <Plus class="rotate-45" />
-                              </Button>
-                            {/if}
-                          </div>
-                        </TableCell>
-                      </tr>
-                    {/each}
-                  {/if}
-                {/each}
-              {/if}
-            {/each}
-          </TableBody>
-        </Table>
-      </div>
+                      <TableCell
+                        ><Badge variant="secondary"
+                          >{$t("menuPage.operationType")}</Badge
+                        ></TableCell
+                      >
+                      <TableCell class="font-mono text-xs text-muted-foreground"
+                        >{operation.code}</TableCell
+                      >
+                      <TableCell class="hidden lg:table-cell"></TableCell>
+                      <TableCell class="sticky right-0 bg-inherit text-right">
+                        <div class="flex items-center justify-end gap-1">
+                          {#if canEditOperation}
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label={$t("menuPage.aria.editOperation", {
+                                name: operation.name,
+                              })}
+                              onclick={() => openEditOperation(item, operation)}
+                            >
+                              <KeyRound />
+                            </Button>
+                          {/if}
+                          {#if canDeleteOperation}
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label={$t("menuPage.aria.deleteOperation", {
+                                name: operation.name,
+                              })}
+                              onclick={() =>
+                                handleDeleteOperation(item, operation)}
+                            >
+                              <Trash2 />
+                            </Button>
+                          {/if}
+                        </div>
+                      </TableCell>
+                    </tr>
+                  {/each}
+                {/if}
+              {/each}
+            {/if}
+          {/each}
+        </TableBody>
+      </Table>
     {/if}
   </ListShell>
 

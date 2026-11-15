@@ -15,9 +15,10 @@
     useSidebar,
   } from "#lib/components/ui/sidebar/index.js"
   import { page } from "$app/state"
+  import { cn } from "#lib/utils.js"
 
   type NavItem = { title: string; url: string; icon: string }
-  type NavGroup = { label: string; items: NavItem[] }
+  type NavGroup = { id: string; label: string; items: NavItem[] }
 
   let { groups }: { groups: NavGroup[] } = $props()
 
@@ -42,7 +43,7 @@
   const activeGroup = $derived(
     groups.find((group) =>
       group.items.some((item) => isActivePath(page.url.pathname, item.url))
-    )?.label
+    )?.id
   )
 
   function isActivePath(pathname: string, url: string) {
@@ -50,13 +51,13 @@
   }
 
   function isOpen(group: NavGroup) {
-    return group.label === activeGroup || !closedGroups.includes(group.label)
+    return group.id === activeGroup || !closedGroups.includes(group.id)
   }
 
   function toggleGroup(group: NavGroup, value: boolean) {
     const next = value
-      ? closedGroups.filter((label) => label !== group.label)
-      : [...closedGroups, group.label]
+      ? closedGroups.filter((id) => id !== group.id)
+      : [...closedGroups, group.id]
     closedGroups = next
     try {
       window.localStorage.setItem(CLOSED_GROUPS_KEY, JSON.stringify(next))
@@ -70,25 +71,31 @@
   }
 </script>
 
-{#each groups as group (group.label)}
+{#each groups as group (group.id)}
   <Collapsible
     open={iconMode || isOpen(group)}
     disabled={iconMode}
     onOpenChange={(value) => toggleGroup(group, value)}
   >
     <SidebarGroup>
-      <SidebarGroupLabel class="p-0">
-        <CollapsibleTrigger
-          class="group/label flex h-8 w-full items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-        >
-          <span class="truncate">{group.label}</span>
-          <ChevronRight
-            class={[
-              "size-3.5 shrink-0 opacity-0 transition-[opacity,transform] duration-200 group-hover/label:opacity-60 focus-visible:opacity-100",
-              (iconMode || isOpen(group)) && "rotate-90",
-            ]}
-          />
-        </CollapsibleTrigger>
+      <SidebarGroupLabel>
+        {#snippet child({ props })}
+          <CollapsibleTrigger
+            {...props}
+            class={cn(
+              "group/label w-full justify-between hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-[3px] focus-visible:ring-sidebar-ring",
+              typeof props.class === "string" ? props.class : ""
+            )}
+          >
+            <span class="truncate">{group.label}</span>
+            <ChevronRight
+              class={[
+                "size-3.5 shrink-0 opacity-0 transition-[opacity,transform] duration-200 group-hover/label:opacity-60 focus-visible:opacity-100",
+                (iconMode || isOpen(group)) && "rotate-90",
+              ]}
+            />
+          </CollapsibleTrigger>
+        {/snippet}
       </SidebarGroupLabel>
       <CollapsibleContent data-slot="collapsible-content">
         <SidebarMenu>

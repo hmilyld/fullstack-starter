@@ -269,9 +269,8 @@
       {/if}
     {/snippet}
 
-    {#if list.items.length > 0}
-      <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-      {#snippet footer()}
+    {#snippet footer()}
+      {#if list.items.length > 0}
         <TablePagination
           page={list.page}
           totalPages={list.totalPages}
@@ -285,8 +284,8 @@
             list.setPage(1)
           }}
         />
-      {/snippet}
-    {/if}
+      {/if}
+    {/snippet}
 
     <DataList
       items={list.items}
