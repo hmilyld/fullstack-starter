@@ -46,6 +46,7 @@ function parseChangelog(text: string): ChangelogSection[] {
 }
 
 function formatSection(section: ChangelogSection): string {
+  if (!section.body) return `${section.heading}\n\n_No changes in this section._\n`;
   return `${section.heading}\n\n${section.body}\n`;
 }
 
@@ -81,7 +82,7 @@ if (checkOnly) {
     fail(`CHANGELOG.md has duplicate sections: ${[...new Set(duplicate)].join(', ')}`);
   }
   const empty = sections
-    .filter((section) => section.body.length === 0)
+    .filter((section) => section.name !== 'Unreleased' && section.body.length === 0)
     .map((section) => section.name);
   if (empty.length > 0) {
     fail(`CHANGELOG.md has empty sections: ${empty.join(', ')}`);

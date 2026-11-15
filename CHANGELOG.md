@@ -7,6 +7,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-11-15
+
 ### Added
 
 - Runtime Chinese/English localization across the React, Vue and Svelte frontends, including document titles, PWA metadata and localized API errors from both backends.
@@ -53,6 +55,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Dashboard, users, roles, permissions, menus, system settings, AI models, audit logs and data management.
 - PWA support and single-image Docker deployment.
 
-[Unreleased]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.0...v2.0.2
 [2.0.0]: https://github.com/hmilyld/fullstack-starter/releases/tag/v2.0.0
