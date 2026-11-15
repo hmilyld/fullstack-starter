@@ -99,7 +99,6 @@
       <TableHeader
         class={cn(
           "[&_th]:border-b [&_th]:border-border [&_th]:bg-card",
-          "pointer-events-none [&_button]:pointer-events-auto",
           stickyHeader && "[&_th]:sticky [&_th]:top-16 [&_th]:z-10"
         )}
       >

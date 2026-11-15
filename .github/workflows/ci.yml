@@ -59,6 +59,9 @@ jobs:
       - name: Verify version consistency
         run: pnpm run sync:version:check
 
+      - name: Verify changelog
+        run: pnpm run changelog:check
+
   frontend:
     name: Frontend (${{ matrix.name }})
     runs-on: ubuntu-latest

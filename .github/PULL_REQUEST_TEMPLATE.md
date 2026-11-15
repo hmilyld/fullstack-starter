@@ -21,6 +21,7 @@
 - [ ] `pnpm run sync:permissions:catalog`, `pnpm run sync:design:check`, and `pnpm run sync:version:check` pass
 - [ ] Changed template tests pass, and I generated a project to smoke-test it
 - [ ] Documentation updated: root `README.md`, `docs/zh/`, and `docs/en/` when behaviour changes
+- [ ] User-visible changes are listed in `CHANGELOG.md` under `Unreleased`
 - [ ] UI changes include a screenshot or recording
 - [ ] No secrets, local databases, `node_modules`, or build artifacts are included
 - [ ] API changes updated `docs/contract/api.md` first and both backends together

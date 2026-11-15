@@ -25,15 +25,14 @@
   const navigation = useNavigation()
   const layout = useLayoutConfig()
 
-  const siteName = $derived(
-    siteConfig.config?.siteName || $t("pwa.defaultName")
-  )
+  const siteName = $derived(siteConfig.config?.siteName || $t("common.admin"))
   const siteDescription = $derived(
     siteConfig.config?.siteDescription || $t("common.adminDescription")
   )
 
   const groups = $derived(
     navigation.groups.map((group) => ({
+      id: group.id,
       label: $t(`nav.groups.${group.id}`, { defaultValue: group.name }),
       items: group.items.map((item) => ({
         title: $t(`nav.items.${item.permissionCode}`, {

@@ -103,7 +103,7 @@ export function TablePagination({
           </label>
         )}
       </div>
-      <Pagination className="mx-0 w-auto justify-end">
+      <Pagination className="md:mx-0 md:w-auto md:justify-end">
         <PaginationContent>
           <PaginationItem className="hidden md:flex">
             <Button

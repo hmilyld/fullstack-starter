@@ -32,6 +32,32 @@ jobs:
         id: version
         run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
 
+      - name: Show release notes
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            section="$VERSION"
+            label="$VERSION"
+          else
+            section="Unreleased"
+            label="${VERSION}-edge"
+          fi
+          notes="$RUNNER_TEMP/release-notes.md"
+          ./node_modules/.bin/tsx scripts/changelog.ts --section "$section" > "$notes"
+          echo "section=$section" >> "$GITHUB_OUTPUT"
+          echo "label=$label" >> "$GITHUB_OUTPUT"
+          echo "path=$notes" >> "$GITHUB_OUTPUT"
+          echo "::group::Release notes ($section)"
+          cat "$notes"
+          echo "::endgroup::"
+          {
+            echo "### Release notes: $section"
+            echo
+            sed '1d' "$notes"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify tag matches package.json
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -76,6 +102,7 @@ jobs:
           cp -a "$RUNNER_TEMP/generated-svelte/demo-svelte/frontend" "$RUNNER_TEMP/image/svelte"
           cp -a "$RUNNER_TEMP/generated-react/demo-react/backend" "$RUNNER_TEMP/image/backend"
           cp .github/demo/Dockerfile .github/demo/nginx.conf .github/demo/.dockerignore "$RUNNER_TEMP/image/"
+          cp "${{ steps.notes.outputs.path }}" "$RUNNER_TEMP/image/RELEASE_NOTES.md"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
@@ -93,9 +120,12 @@ jobs:
           context: ${{ runner.temp }}/image
           push: true
           tags: ${{ steps.image.outputs.tags }}
+          build-args: |
+            APP_VERSION=${{ steps.notes.outputs.label }}
+            APP_REVISION=${{ github.sha }}
           labels: |
             org.opencontainers.image.title=${{ github.repository }}
-            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.version=${{ steps.notes.outputs.label }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha

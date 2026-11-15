@@ -47,7 +47,14 @@ RUN mvn package -DskipTests -B
 # ── 阶段 5: 运行环境 ──
 FROM eclipse-temurin:21-jre-alpine
 
+ARG APP_VERSION=dev
+ARG APP_REVISION=unknown
+LABEL org.opencontainers.image.version="${APP_VERSION}"
+LABEL org.opencontainers.image.revision="${APP_REVISION}"
+
 WORKDIR /app
+
+ENV APP_VERSION="${APP_VERSION}"
 
 # 安装 Nginx 与时区数据（东八区）
 RUN apk add --no-cache nginx tzdata
@@ -67,6 +74,9 @@ COPY nginx.conf /etc/nginx/http.d/default.conf
 # 复制后端 JAR
 COPY --from=backend-builder /app/target/*.jar /app/app.jar
 
+# 版本镜像构建时由 CI 写入当前版本的更新内容
+COPY RELEASE_NOTES.md /app/RELEASE_NOTES.md
+
 VOLUME ["/app/data"]
 
 EXPOSE 5173 5174 5175
@@ -75,6 +85,15 @@ EXPOSE 5173 5174 5175
 COPY --chmod=755 <<'STARTUP' /app/startup.sh
 #!/bin/sh
 set -e
+
+# 输出当前镜像的版本与更新内容
+if [ -s /app/RELEASE_NOTES.md ]; then
+  printf '\n========================================\n'
+  printf ' Fullstack Forge %s\n' "${APP_VERSION:-dev}"
+  printf '========================================\n'
+  cat /app/RELEASE_NOTES.md
+  printf '========================================\n\n'
+fi
 
 # 确保数据目录存在
 mkdir -p /app/data

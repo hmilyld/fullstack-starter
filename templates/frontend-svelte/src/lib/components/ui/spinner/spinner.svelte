@@ -1,5 +1,6 @@
 <script lang="ts">
   import Loader2Icon from "@lucide/svelte/icons/loader-2"
+  import { t } from "#lib/i18n.js"
   import { cn } from "#lib/utils.js"
   import type { SVGAttributes } from "svelte/elements"
 
@@ -12,7 +13,7 @@
     color,
     stroke,
     className: legacyClassName,
-    "aria-label": ariaLabel = "Loading",
+    "aria-label": ariaLabel = $t("common.loading"),
     ...restProps
   }: SVGAttributes<SVGSVGElement> = $props()
 </script>

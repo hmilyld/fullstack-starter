@@ -1,6 +1,6 @@
 {
   "name": "@hmilyld/create-fullstack-app",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Scaffold a production-ready full-stack admin app with React, Vue or Svelte and FastAPI or Spring Boot.",
   "keywords": [
     "scaffolding",
@@ -34,6 +34,7 @@
     "dist",
     "templates",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "type": "module",
@@ -59,7 +60,9 @@
     "sync:permissions:check": "tsx scripts/sync-permission-docs.ts --check",
     "sync:permissions:catalog": "tsx scripts/sync-permission-docs.ts --catalog-only",
     "sync:design:check": "tsx scripts/check-design-sync.ts",
-    "prepublishOnly": "npm run build && npm test && npm run sync:version:check"
+    "changelog:show": "tsx scripts/changelog.ts",
+    "changelog:check": "tsx scripts/changelog.ts --check",
+    "prepublishOnly": "npm run build && npm test && npm run sync:version:check && npm run changelog:check"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1",

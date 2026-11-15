@@ -89,6 +89,7 @@ Generated projects include `dev.sh`, `build.sh`, `Dockerfile` and `docker-compos
 - **English**: [`docs/en/README.md`](https://github.com/hmilyld/fullstack-starter/blob/main/docs/en/README.md)
 - **简体中文**: [`docs/zh/README.md`](https://github.com/hmilyld/fullstack-starter/blob/main/docs/zh/README.md)
 - **Online documentation**: <https://fullstack.hmilyld.com>
+- **Changelog**: [`CHANGELOG.md`](https://github.com/hmilyld/fullstack-starter/blob/main/CHANGELOG.md)
 - **API contract**: [`docs/contract/api.md`](https://github.com/hmilyld/fullstack-starter/blob/main/docs/contract/api.md)
 
 ## Repository structure
@@ -120,6 +121,7 @@ pnpm test
 pnpm run sync:permissions:catalog
 pnpm run sync:design:check
 pnpm run sync:version:check
+pnpm run changelog:check
 
 # Frontend templates
 cd templates/frontend-react && npm test && npm run build
@@ -141,6 +143,7 @@ See [CONTRIBUTING.md](https://github.com/hmilyld/fullstack-starter/blob/main/CON
 - [Code of Conduct](https://github.com/hmilyld/fullstack-starter/blob/main/CODE_OF_CONDUCT.md)
 - [Security policy](https://github.com/hmilyld/fullstack-starter/blob/main/SECURITY.md)
 - [Release process](https://github.com/hmilyld/fullstack-starter/blob/main/RELEASING.md)
+- [Changelog](https://github.com/hmilyld/fullstack-starter/blob/main/CHANGELOG.md)
 - [Discussions](https://github.com/hmilyld/fullstack-starter/discussions) and [issues](https://github.com/hmilyld/fullstack-starter/issues)
 
 ## License

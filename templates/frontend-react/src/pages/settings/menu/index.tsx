@@ -387,6 +387,7 @@ function SortableMenuItem({
     <div
       ref={setNodeRef}
       style={style}
+      data-menu-item={item.permissionCode}
       className={cn(
         "rounded-xl border bg-background",
         isDragging && "relative z-10 opacity-70"

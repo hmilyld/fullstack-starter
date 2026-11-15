@@ -186,57 +186,47 @@ const actions = computed<RowAction[]>(() => {
         </div>
       </CardHeader>
       <CardContent
-        :class="
-          cn(
-            'flex flex-col gap-1 p-2 transition-colors',
-            isDropTarget && 'bg-muted/40'
-          )
-        "
+        :class="cn('p-2 transition-colors', isDropTarget && 'bg-muted/40')"
       >
-        <MenuSortableItem
-          v-for="(item, itemIndex) in group.items"
-          :key="item.permissionCode"
-          :item="item"
-          :group-id="group.id"
-          :index="itemIndex"
-          :can-reorder="canReorder"
-          :can-edit="canEdit"
-          :can-delete="canDelete"
-          :can-create-operation="canCreateOperation"
-          :can-edit-operation="canEditOperation"
-          :can-delete-operation="canDeleteOperation"
-          :mutations-disabled="mutationsDisabled"
-          :expanded="expanded.has(item.permissionCode)"
-          :can-move-up="itemIndex > 0"
-          :can-move-down="itemIndex < group.items.length - 1"
-          @edit="emit('edit-item', $event)"
-          @delete="emit('delete-item', $event)"
-          @move-up="emit('move-item', group.id, item.permissionCode, -1)"
-          @move-down="emit('move-item', group.id, item.permissionCode, 1)"
-          @toggle-expanded="emit('toggle-expanded', $event)"
-          @toggle-hidden="emit('toggle-hidden', $event)"
-          @add-operation="emit('add-operation', $event)"
-          @edit-operation="handleEditOperation"
-          @delete-operation="handleDeleteOperation"
-        />
-        <div
-          v-if="group.items.length === 0"
-          ref="dropElement"
-          :class="
-            cn(
-              'rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground',
-              isDropTarget && 'bg-muted/40'
-            )
-          "
-        >
-          {{ t("menuPage.emptyMenu") }}
+        <div ref="dropElement" class="flex flex-col gap-1">
+          <MenuSortableItem
+            v-for="(item, itemIndex) in group.items"
+            :key="item.permissionCode"
+            :item="item"
+            :group-id="group.id"
+            :index="itemIndex"
+            :can-reorder="canReorder"
+            :can-edit="canEdit"
+            :can-delete="canDelete"
+            :can-create-operation="canCreateOperation"
+            :can-edit-operation="canEditOperation"
+            :can-delete-operation="canDeleteOperation"
+            :mutations-disabled="mutationsDisabled"
+            :expanded="expanded.has(item.permissionCode)"
+            :can-move-up="itemIndex > 0"
+            :can-move-down="itemIndex < group.items.length - 1"
+            @edit="emit('edit-item', $event)"
+            @delete="emit('delete-item', $event)"
+            @move-up="emit('move-item', group.id, item.permissionCode, -1)"
+            @move-down="emit('move-item', group.id, item.permissionCode, 1)"
+            @toggle-expanded="emit('toggle-expanded', $event)"
+            @toggle-hidden="emit('toggle-hidden', $event)"
+            @add-operation="emit('add-operation', $event)"
+            @edit-operation="handleEditOperation"
+            @delete-operation="handleDeleteOperation"
+          />
+          <div
+            v-if="group.items.length === 0"
+            :class="
+              cn(
+                'rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground',
+                isDropTarget && 'bg-muted/40'
+              )
+            "
+          >
+            {{ t("menuPage.emptyMenu") }}
+          </div>
         </div>
-        <div
-          v-else
-          ref="dropElement"
-          aria-hidden="true"
-          :class="cn('h-4 rounded-lg', isDropTarget && 'bg-muted/40')"
-        />
       </CardContent>
     </Card>
   </div>
