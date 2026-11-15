@@ -140,6 +140,7 @@ Generated projects use a **single Docker image** containing Nginx + backend:
    - Feature list, module table and API tables in `docs/zh/README.md` and its English counterpart `docs/en/README.md`
    - This `AGENTS.md` (conventions and business-logic rules must match the code)
    - `generateReadme()` in `src/generator.ts` (the generated project's README)
+   - `CHANGELOG.md` for user-visible changes (add them under `Unreleased`; `pnpm run changelog:check` must pass)
    - Screenshots: `docs/images/` and the docs site's `public/shots/` hold the same set (README and the site share them); re-capture both after UI changes
    - The Astro Starlight site lives in the sibling repository `../fullstack-starter-docs`; its pages must match the templates just like `docs/`
 4. Test: `pnpm run dev` → select option → verify generated project builds; `pnpm test` covers all six combinations

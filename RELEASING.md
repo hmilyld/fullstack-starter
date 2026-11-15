@@ -19,6 +19,19 @@ pnpm run sync:version:check
 
 Do not edit those copies by hand.
 
+Move the entries under `## [Unreleased]` in `CHANGELOG.md` into a new
+`## [X.Y.Z] - YYYY-MM-DD` section, then verify the changelog:
+
+```bash
+pnpm run changelog:check
+pnpm run changelog:show
+```
+
+The release image build prints the matching changelog section in the CI log,
+adds it to the build summary, and ships it as `/app/RELEASE_NOTES.md`; the
+container prints that section on startup. `:edge` builds use the
+`## [Unreleased]` section instead.
+
 ## 2. Verify
 
 ```bash
