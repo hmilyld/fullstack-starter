@@ -127,6 +127,50 @@ test("drags a menu row to reorder", async ({ page }) => {
   expect(usersIndex).toBeGreaterThan(menusIndex)
 })
 
+test("drags a menu card on compact viewports", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockApi(page)
+  await seedAuth(page)
+
+  await page.goto("/settings/menu")
+  await expect(page.getByText("/settings/user")).toBeVisible()
+
+  const source = page.getByRole("button", {
+    name: "拖动 用户管理 排序",
+    exact: true,
+  })
+  const target = page.getByRole("button", {
+    name: "拖动 菜单与权限 排序",
+    exact: true,
+  })
+  const sourceBox = await source.boundingBox()
+  const targetBox = await target.boundingBox()
+  expect(sourceBox).not.toBeNull()
+  expect(targetBox).not.toBeNull()
+  if (!sourceBox || !targetBox) return
+
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2,
+    sourceBox.y + sourceBox.height / 2
+  )
+  await page.mouse.down()
+  await page.mouse.move(sourceBox.x + 10, sourceBox.y + 10, { steps: 5 })
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + targetBox.height / 2,
+    { steps: 10 }
+  )
+  await page.mouse.up()
+
+  const cards = await page
+    .getByRole("main")
+    .locator("div.rounded-xl.border.bg-background")
+    .allTextContents()
+  const usersIndex = cards.findIndex((text) => text.includes("用户管理"))
+  const menusIndex = cards.findIndex((text) => text.includes("菜单与权限"))
+  expect(usersIndex).toBeGreaterThan(menusIndex)
+})
+
 test("collapses and expands a group", async ({ page }) => {
   await mockApi(page)
   await seedAuth(page)
