@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { useI18n } from "vue-i18n"
 import {
   Database,
   MonitorSmartphone,
@@ -7,40 +8,25 @@ import {
   ShieldCheck,
 } from "@lucide/vue"
 import BrandMark from "@/components/BrandMark.vue"
-import { DEFAULT_SITE_NAME } from "@/lib/pwa"
+import LanguageSwitcher from "@/components/LanguageSwitcher.vue"
 import { useSiteConfigStore } from "@/stores/site-config"
 
+const { t } = useI18n()
 const siteConfig = useSiteConfigStore()
 
 const siteName = computed(
-  () => siteConfig.config?.siteName || DEFAULT_SITE_NAME
+  () => siteConfig.config?.siteName || t("authShell.fallbackName")
 )
 const siteDescription = computed(
-  () => siteConfig.config?.siteDescription || "登录后管理用户、角色与系统设置"
+  () => siteConfig.config?.siteDescription || t("authShell.fallbackDescription")
 )
 
 const capabilities = [
-  {
-    icon: ShieldCheck,
-    label: "细粒度权限",
-    description: "菜单与操作级授权",
-  },
-  {
-    icon: ScrollText,
-    label: "操作审计",
-    description: "写操作与拦截留痕",
-  },
-  {
-    icon: Database,
-    label: "数据管理",
-    description: "加密导入与导出",
-  },
-  {
-    icon: MonitorSmartphone,
-    label: "多端适配",
-    description: "手机 / 平板 / 桌面",
-  },
-]
+  { icon: ShieldCheck, key: "rbac" },
+  { icon: ScrollText, key: "audit" },
+  { icon: Database, key: "data" },
+  { icon: MonitorSmartphone, key: "responsive" },
+] as const
 </script>
 
 <template>
@@ -77,13 +63,13 @@ const capabilities = [
           <p
             class="text-3xl leading-[1.15] font-semibold tracking-tight text-balance xl:text-4xl"
           >
-            把用户、权限与数据，<br />
-            收进一个工作台。
+            {{ t("authShell.headlineLine1") }}<br />
+            {{ t("authShell.headlineLine2") }}
           </p>
           <p
             class="max-w-md text-sm leading-relaxed text-primary-foreground/60 dark:text-muted-foreground"
           >
-            用户、角色、菜单权限、审计与数据管理，共用同一套权限模型。
+            {{ t("authShell.subtitle") }}
           </p>
         </div>
 
@@ -92,7 +78,7 @@ const capabilities = [
         >
           <div
             v-for="item in capabilities"
-            :key="item.label"
+            :key="item.key"
             class="flex items-start gap-2.5 bg-primary p-3.5 dark:bg-background"
           >
             <component
@@ -100,9 +86,11 @@ const capabilities = [
               class="mt-0.5 size-4 shrink-0 opacity-70"
             />
             <div class="min-w-0">
-              <p class="text-sm font-medium">{{ item.label }}</p>
+              <p class="text-sm font-medium">
+                {{ t(`authShell.capabilities.${item.key}.label`) }}
+              </p>
               <p class="mt-0.5 text-xs leading-relaxed opacity-60">
-                {{ item.description }}
+                {{ t(`authShell.capabilities.${item.key}.description`) }}
               </p>
             </div>
           </div>
@@ -111,13 +99,18 @@ const capabilities = [
 
       <section class="flex flex-col justify-center p-5 py-8 sm:p-8 lg:p-12">
         <div class="mx-auto flex w-full max-w-sm flex-col gap-6">
-          <div class="flex items-center gap-3 lg:hidden">
-            <BrandMark class="size-9" />
-            <div class="flex min-w-0 flex-col">
-              <p class="truncate text-sm font-semibold">{{ siteName }}</p>
-              <p class="line-clamp-1 text-xs text-muted-foreground">
-                {{ siteDescription }}
-              </p>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3 lg:hidden">
+              <BrandMark class="size-9" />
+              <div class="flex min-w-0 flex-col">
+                <p class="truncate text-sm font-semibold">{{ siteName }}</p>
+                <p class="line-clamp-1 text-xs text-muted-foreground">
+                  {{ siteDescription }}
+                </p>
+              </div>
+            </div>
+            <div class="ml-auto">
+              <LanguageSwitcher />
             </div>
           </div>
           <slot />

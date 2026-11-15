@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { useSearchParams } from "react-router"
 import {
   RotateCcwIcon,
@@ -42,7 +43,7 @@ import { useColumnVisibility } from "@/hooks/use-column-visibility"
 import { useTableDensity } from "@/hooks/use-table-density"
 import { usePagedList } from "@/hooks/use-paged-list"
 import { useUrlPage } from "@/hooks/use-url-list-state"
-import { formatDateTimeInput } from "@/lib/date-time"
+import { formatDateTimeInput, type DateTimeLocale } from "@/lib/date-time"
 import { formatDateTime } from "@/lib/format"
 import type { AuditFilterKey, AuditFilters, AuditLog } from "@/types/audit-log"
 
@@ -57,33 +58,6 @@ const EMPTY_FILTERS: AuditFilters = {
   endTime: "",
 }
 
-const FILTER_LABELS: Record<AuditFilterKey, string> = {
-  userId: "用户 ID",
-  status: "状态",
-  action: "动作",
-  startTime: "开始时间",
-  endTime: "结束时间",
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  success: "成功",
-  fail: "失败",
-  permission_denied: "权限不足",
-}
-
-function getStatusBadge(status: AuditLog["status"]) {
-  if (status === "success") return <Badge variant="success">成功</Badge>
-  if (status === "fail") return <Badge variant="destructive">失败</Badge>
-  return <Badge variant="warning">权限不足</Badge>
-}
-
-function formatFilterValue(key: AuditFilterKey, value: string) {
-  if (key === "status") return STATUS_LABELS[value] ?? value
-  if (key === "startTime" || key === "endTime")
-    return formatDateTimeInput(value)
-  return value
-}
-
 const FILTER_KEYS: AuditFilterKey[] = [
   "userId",
   "status",
@@ -93,6 +67,8 @@ const FILTER_KEYS: AuditFilterKey[] = [
 ]
 
 export function AuditLogPage() {
+  const { t, i18n } = useTranslation()
+  const locale: DateTimeLocale = i18n.resolvedLanguage === "en" ? "en" : "zh-CN"
   const [searchParams, setSearchParams] = useSearchParams()
   const query: AuditFilters = {
     userId: searchParams.get("userId") ?? "",
@@ -171,11 +147,34 @@ export function AuditLogPage() {
     writeSingleFilter(key, "")
   }
 
+  function filterLabel(key: AuditFilterKey) {
+    return t(`auditLogPage.filters.${key}`)
+  }
+
+  function statusLabel(status: string) {
+    return t(`auditLogPage.status.${status}`, { defaultValue: status })
+  }
+
+  function getStatusBadge(status: AuditLog["status"]) {
+    if (status === "success")
+      return <Badge variant="success">{statusLabel(status)}</Badge>
+    if (status === "fail")
+      return <Badge variant="destructive">{statusLabel(status)}</Badge>
+    return <Badge variant="warning">{statusLabel(status)}</Badge>
+  }
+
+  function formatFilterValue(key: AuditFilterKey, value: string) {
+    if (key === "status") return statusLabel(value)
+    if (key === "startTime" || key === "endTime")
+      return formatDateTimeInput(value, locale)
+    return value
+  }
+
   const activeFilters = (Object.keys(query) as AuditFilterKey[])
     .filter((key) => query[key] !== "")
     .map((key) => ({
       key,
-      label: FILTER_LABELS[key],
+      label: filterLabel(key),
       value: formatFilterValue(key, query[key]),
     }))
 
@@ -183,52 +182,69 @@ export function AuditLogPage() {
     return (
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         <Field>
-          <FieldLabel htmlFor={`${prefix}-user`}>用户 ID</FieldLabel>
+          <FieldLabel htmlFor={`${prefix}-user`}>
+            {t("auditLogPage.filters.userId")}
+          </FieldLabel>
           <Input
             name="audit-user"
             autoComplete="off"
             spellCheck={false}
             id={`${prefix}-user`}
             value={draft.userId}
-            placeholder="例如：1"
+            placeholder={t("auditLogPage.userPlaceholder")}
             onChange={(event) => updateDraft("userId", event.target.value)}
           />
         </Field>
         <Field>
-          <FieldLabel>状态</FieldLabel>
+          <FieldLabel>{t("auditLogPage.filters.status")}</FieldLabel>
           <Select
             value={draft.status || "all"}
             onValueChange={(value) =>
               updateDraft("status", value === "all" ? "" : value)
             }
           >
-            <SelectTrigger className="w-full" aria-label="状态">
-              <SelectValue placeholder="全部状态" />
+            <SelectTrigger
+              className="w-full"
+              aria-label={t("auditLogPage.filters.status")}
+            >
+              <SelectValue placeholder={t("auditLogPage.allStatuses")} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="success">成功</SelectItem>
-                <SelectItem value="fail">失败</SelectItem>
-                <SelectItem value="permission_denied">权限不足</SelectItem>
+                <SelectItem value="all">
+                  {t("auditLogPage.allStatuses")}
+                </SelectItem>
+                <SelectItem value="success">
+                  {t("auditLogPage.status.success")}
+                </SelectItem>
+                <SelectItem value="fail">
+                  {t("auditLogPage.status.fail")}
+                </SelectItem>
+                <SelectItem value="permission_denied">
+                  {t("auditLogPage.status.permission_denied")}
+                </SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </Field>
         <Field>
-          <FieldLabel htmlFor={`${prefix}-action`}>动作</FieldLabel>
+          <FieldLabel htmlFor={`${prefix}-action`}>
+            {t("auditLogPage.filters.action")}
+          </FieldLabel>
           <Input
             name="audit-action"
             autoComplete="off"
             spellCheck={false}
             id={`${prefix}-action`}
             value={draft.action}
-            placeholder="例如：users.create"
+            placeholder={t("auditLogPage.actionPlaceholder")}
             onChange={(event) => updateDraft("action", event.target.value)}
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor={`${prefix}-start`}>开始时间</FieldLabel>
+          <FieldLabel htmlFor={`${prefix}-start`}>
+            {t("auditLogPage.filters.startTime")}
+          </FieldLabel>
           <DateTimeField
             id={`${prefix}-start`}
             name="audit-start"
@@ -237,7 +253,9 @@ export function AuditLogPage() {
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor={`${prefix}-end`}>结束时间</FieldLabel>
+          <FieldLabel htmlFor={`${prefix}-end`}>
+            {t("auditLogPage.filters.endTime")}
+          </FieldLabel>
           <DateTimeField
             id={`${prefix}-end`}
             name="audit-end"
@@ -252,27 +270,27 @@ export function AuditLogPage() {
   const columns: DataColumn<AuditLog>[] = [
     {
       key: "createdAt",
-      header: "时间",
+      header: t("auditLogPage.columns.time"),
       cellClassName: "whitespace-nowrap text-muted-foreground",
-      cell: (log) => formatDateTime(log.createdAt),
+      cell: (log) => formatDateTime(log.createdAt, locale),
     },
     {
       key: "username",
-      header: "操作者",
+      header: t("auditLogPage.columns.username"),
       hideable: true,
       headClassName: "hidden md:table-cell",
       cellClassName: "hidden md:table-cell",
-      cell: (log) => log.username || "未知",
+      cell: (log) => log.username || t("auditLogPage.unknown"),
     },
     {
       key: "action",
-      header: "动作",
+      header: t("auditLogPage.columns.action"),
       cellClassName: "font-mono text-xs",
       cell: (log) => log.action,
     },
     {
       key: "ip",
-      header: "IP",
+      header: t("auditLogPage.columns.ip"),
       hideable: true,
       headClassName: "hidden lg:table-cell",
       cellClassName: "hidden text-muted-foreground lg:table-cell",
@@ -280,12 +298,12 @@ export function AuditLogPage() {
     },
     {
       key: "status",
-      header: "状态",
+      header: t("auditLogPage.columns.status"),
       cell: (log) => getStatusBadge(log.status),
     },
     {
       key: "detail",
-      header: "详情",
+      header: t("auditLogPage.columns.detail"),
       hideable: true,
       headClassName: "hidden xl:table-cell",
       cellClassName:
@@ -300,19 +318,21 @@ export function AuditLogPage() {
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
-        title="审计日志"
-        description="查看系统的写操作与权限拦截记录。"
+        title={t("auditLogPage.title")}
+        description={t("auditLogPage.description")}
       />
 
       <ListShell
-        description={`共 ${list.total} 条记录`}
+        description={t("auditLogPage.listDescription", {
+          total: list.total,
+        })}
         footer={
           list.items.length > 0 ? (
             <TablePagination
               page={list.page}
               totalPages={list.totalPages}
               total={list.total}
-              itemLabel="条记录"
+              itemLabel={t("auditLogPage.entityName")}
               pageSize={pageSize}
               pageSizeOptions={PAGE_SIZE_OPTIONS}
               onPageSizeChange={(size) => {
@@ -330,11 +350,11 @@ export function AuditLogPage() {
             <div className="flex items-center gap-2">
               <Button onClick={handleSearch}>
                 <SearchIcon data-icon="inline-start" />
-                查询
+                {t("auditLogPage.search")}
               </Button>
               <Button variant="outline" onClick={handleReset}>
                 <RotateCcwIcon data-icon="inline-start" />
-                重置
+                {t("auditLogPage.reset")}
               </Button>
               <ColumnToggle
                 columns={columns}
@@ -352,31 +372,37 @@ export function AuditLogPage() {
               onClick={() => setFilterOpen(true)}
             >
               <SlidersHorizontalIcon data-icon="inline-start" />
-              筛选
+              {t("auditLogPage.filterButton")}
               {activeFilters.length > 0 ? ` · ${activeFilters.length}` : ""}
             </Button>
             <Button className="flex-1" onClick={handleSearch}>
               <SearchIcon data-icon="inline-start" />
-              查询
+              {t("auditLogPage.search")}
             </Button>
           </div>
           {activeFilters.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground">当前筛选：</span>
+              <span className="text-xs text-muted-foreground">
+                {t("auditLogPage.currentFilters")}
+              </span>
               {activeFilters.map((filter) => (
                 <Button
                   key={filter.key}
                   variant="secondary"
                   size="xs"
                   onClick={() => removeFilter(filter.key)}
-                  aria-label={`移除筛选：${filter.label}`}
+                  aria-label={t("auditLogPage.removeFilterAria", {
+                    label: filter.label,
+                  })}
                 >
-                  {filter.label}：{filter.value}
+                  {filter.label}
+                  {t("auditLogPage.filterSeparator")}
+                  {filter.value}
                   <XIcon data-icon="inline-end" />
                 </Button>
               ))}
               <Button variant="ghost" size="xs" onClick={handleReset}>
-                清除全部
+                {t("auditLogPage.clearAll")}
               </Button>
             </div>
           )}
@@ -388,9 +414,9 @@ export function AuditLogPage() {
             className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0"
           >
             <SheetHeader className="border-b p-4 pr-14">
-              <SheetTitle>筛选条件</SheetTitle>
+              <SheetTitle>{t("auditLogPage.sheetTitle")}</SheetTitle>
               <SheetDescription>
-                按用户、状态、动作或时间范围筛选审计记录。
+                {t("auditLogPage.sheetDescription")}
               </SheetDescription>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
@@ -405,7 +431,7 @@ export function AuditLogPage() {
                   setFilterOpen(false)
                 }}
               >
-                重置
+                {t("auditLogPage.reset")}
               </Button>
               <Button
                 className="flex-1"
@@ -414,7 +440,7 @@ export function AuditLogPage() {
                   setFilterOpen(false)
                 }}
               >
-                应用筛选
+                {t("auditLogPage.apply")}
               </Button>
             </SheetFooter>
           </SheetContent>
@@ -432,16 +458,16 @@ export function AuditLogPage() {
             icon: activeFilters.length > 0 ? SearchXIcon : ShieldAlertIcon,
             title:
               activeFilters.length > 0
-                ? "没有符合条件的记录"
-                : "还没有审计记录",
+                ? t("auditLogPage.emptySearchTitle")
+                : t("auditLogPage.emptyTitle"),
             description:
               activeFilters.length > 0
-                ? "试着放宽筛选条件，或清除筛选后重试。"
-                : "系统的写操作和权限拦截会自动记录在这里。",
+                ? t("auditLogPage.emptySearchDescription")
+                : t("auditLogPage.emptyDescription"),
             action:
               activeFilters.length > 0 ? (
                 <Button variant="outline" onClick={handleReset}>
-                  清除筛选
+                  {t("auditLogPage.clearFilter")}
                 </Button>
               ) : null,
           }}
@@ -450,10 +476,10 @@ export function AuditLogPage() {
               key={log.id}
               title={log.action}
               badges={getStatusBadge(log.status)}
-              subtitle={formatDateTime(log.createdAt)}
+              subtitle={formatDateTime(log.createdAt, locale)}
               meta={
                 <>
-                  <span>{log.username || "未知"}</span>
+                  <span>{log.username || t("auditLogPage.unknown")}</span>
                   <span>{log.ip || "-"}</span>
                   {log.detail && (
                     <span className="w-full truncate">{log.detail}</span>

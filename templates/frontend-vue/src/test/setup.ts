@@ -1,6 +1,15 @@
 import "@testing-library/jest-dom/vitest"
 
-import { afterEach, vi } from "vitest"
+import { config } from "@vue/test-utils"
+import { afterEach, beforeEach, vi } from "vitest"
+
+import i18n from "@/lib/i18n"
+
+config.global.plugins = [i18n]
+
+beforeEach(() => {
+  i18n.global.locale.value = "zh-CN"
+})
 
 afterEach(() => {
   document.body.innerHTML = ""

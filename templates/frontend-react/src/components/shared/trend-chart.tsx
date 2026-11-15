@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 export type TrendPoint = {
   label: string
@@ -12,6 +13,7 @@ export type TrendPoint = {
  * 与 Vue 端 TrendChart 保持同一套坐标与视觉。
  */
 export function TrendChart({ points }: { points: TrendPoint[] }) {
+  const { t } = useTranslation()
   const gradientId = React.useId().replace(/:/g, "")
   const max = Math.max(
     1,
@@ -59,7 +61,7 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
             role="img"
-            aria-label="近 7 天操作趋势"
+            aria-label={t("trendChart.ariaLabel")}
           >
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -107,7 +109,11 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
                   left: `${xAt(index)}%`,
                   top: `${yAt(point.success)}%`,
                 }}
-                title={`${point.label}：成功 ${point.success} 次，失败或被拦截 ${point.failed} 次`}
+                title={t("trendChart.pointTitle", {
+                  label: point.label,
+                  success: point.success,
+                  failed: point.failed,
+                })}
               />
             ))}
           </div>
@@ -126,12 +132,12 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
       </div>
 
       <table className="sr-only">
-        <caption>近 7 天操作趋势</caption>
+        <caption>{t("trendChart.caption")}</caption>
         <thead>
           <tr>
-            <th scope="col">日期</th>
-            <th scope="col">成功</th>
-            <th scope="col">失败或被拦截</th>
+            <th scope="col">{t("trendChart.date")}</th>
+            <th scope="col">{t("trendChart.success")}</th>
+            <th scope="col">{t("trendChart.failed")}</th>
           </tr>
         </thead>
         <tbody>

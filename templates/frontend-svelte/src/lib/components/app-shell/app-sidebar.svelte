@@ -18,23 +18,27 @@
     onNavigationRefresh,
     useNavigation,
   } from "#lib/hooks/use-navigation.svelte.js"
-  import { DEFAULT_SITE_NAME } from "#lib/pwa.js"
+  import { t } from "#lib/i18n.js"
   import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const sidebar = useSidebar()
   const navigation = useNavigation()
   const layout = useLayoutConfig()
 
-  const siteName = $derived(siteConfig.config?.siteName || DEFAULT_SITE_NAME)
+  const siteName = $derived(
+    siteConfig.config?.siteName || $t("pwa.defaultName")
+  )
   const siteDescription = $derived(
-    siteConfig.config?.siteDescription || "运营管理后台"
+    siteConfig.config?.siteDescription || $t("common.adminDescription")
   )
 
   const groups = $derived(
     navigation.groups.map((group) => ({
-      label: group.name,
+      label: $t(`nav.groups.${group.id}`, { defaultValue: group.name }),
       items: group.items.map((item) => ({
-        title: item.name,
+        title: $t(`nav.items.${item.permissionCode}`, {
+          defaultValue: item.name,
+        }),
         url: item.route,
         icon: item.icon,
       })),
@@ -83,7 +87,7 @@
       onclick={openCommandMenu}
     >
       <Search class="size-3.5 shrink-0" />
-      <span>快速查找</span>
+      <span>{$t("common.quickFind")}</span>
       <kbd
         class="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground"
       >

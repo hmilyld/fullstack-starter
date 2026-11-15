@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import {
   DndContext,
@@ -87,6 +88,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { OPERATION_PRESETS, buildOperationCode } from "@/lib/access-tree"
 import { groupSortableId, itemSortableId, type DragData } from "@/lib/menu-tree"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -99,6 +101,29 @@ import type {
 } from "@/types/menu"
 
 const NAVIGATION_REFRESH_EVENT = "navigation-refresh"
+
+/** 内置菜单/分组使用导航目录中的翻译，自定义名称保持后端数据 */
+function useMenuLabel() {
+  const { t } = useTranslation()
+  return React.useCallback(
+    (item: { isSystem?: boolean; permissionCode?: string; name: string }) =>
+      item.isSystem && item.permissionCode
+        ? t(`nav.items.${item.permissionCode}`, { defaultValue: item.name })
+        : item.name,
+    [t]
+  )
+}
+
+function useGroupLabel() {
+  const { t } = useTranslation()
+  return React.useCallback(
+    (group: { isSystem?: boolean; id: string; name: string }) =>
+      group.isSystem
+        ? t(`nav.groups.${group.id}`, { defaultValue: group.name })
+        : group.name,
+    [t]
+  )
+}
 
 type DeleteTarget =
   | { type: "group"; id: string; name: string }
@@ -264,6 +289,9 @@ function SortableMenuItem({
   onEditOperation: (item: MenuItem, operation: MenuOperation) => void
   onDeleteOperation: (item: MenuItem, operation: MenuOperation) => void
 }) {
+  const { t } = useTranslation()
+  const menuLabel = useMenuLabel()
+  const name = menuLabel(item)
   const {
     attributes,
     listeners,
@@ -289,13 +317,15 @@ function SortableMenuItem({
   const actions: RowAction[] = []
   if (canEdit) {
     actions.push({
-      label: item.hidden ? "在侧边栏显示" : "隐藏菜单",
+      label: item.hidden
+        ? t("menuPage.actions.showInSidebar")
+        : t("menuPage.actions.hideMenu"),
       icon: item.hidden ? EyeIcon : EyeOffIcon,
       disabled: mutationsDisabled,
       onSelect: () => onToggleHidden(item),
     })
     actions.push({
-      label: "编辑",
+      label: t("menuPage.actions.edit"),
       icon: PencilIcon,
       disabled: mutationsDisabled,
       onSelect: () => onEdit(item),
@@ -304,13 +334,13 @@ function SortableMenuItem({
   if (canReorder) {
     actions.push(
       {
-        label: "上移",
+        label: t("menuPage.actions.up"),
         icon: ChevronUpIcon,
         disabled: !canMoveUp || mutationsDisabled,
         onSelect: onMoveUp,
       },
       {
-        label: "下移",
+        label: t("menuPage.actions.down"),
         icon: ChevronDownIcon,
         disabled: !canMoveDown || mutationsDisabled,
         onSelect: onMoveDown,
@@ -319,7 +349,7 @@ function SortableMenuItem({
   }
   if (canDelete && !item.isSystem) {
     actions.push({
-      label: "删除",
+      label: t("menuPage.actions.delete"),
       icon: Trash2Icon,
       destructive: true,
       separatorBefore: true,
@@ -332,7 +362,7 @@ function SortableMenuItem({
     const result: RowAction[] = []
     if (canEditOperation) {
       result.push({
-        label: "编辑",
+        label: t("menuPage.actions.edit"),
         icon: PencilIcon,
         disabled: mutationsDisabled,
         onSelect: () => onEditOperation(item, operation),
@@ -340,7 +370,7 @@ function SortableMenuItem({
     }
     if (canDeleteOperation) {
       result.push({
-        label: "删除",
+        label: t("menuPage.actions.delete"),
         icon: Trash2Icon,
         destructive: true,
         separatorBefore: true,
@@ -369,7 +399,7 @@ function SortableMenuItem({
               variant="ghost"
               size="icon-xs"
               className="cursor-grab touch-none"
-              aria-label={`拖动 ${item.name} 排序`}
+              aria-label={t("menuPage.aria.dragItem", { name })}
               {...attributes}
               {...listeners}
             >
@@ -379,9 +409,13 @@ function SortableMenuItem({
           <MenuIcon name={item.icon} className="size-4 shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-              <p className="truncate text-sm font-medium">{item.name}</p>
-              {item.isSystem && <Badge variant="outline">内置</Badge>}
-              {item.hidden && <Badge variant="secondary">已隐藏</Badge>}
+              <p className="truncate text-sm font-medium">{name}</p>
+              {item.isSystem && (
+                <Badge variant="outline">{t("menuPage.builtIn")}</Badge>
+              )}
+              {item.hidden && (
+                <Badge variant="secondary">{t("menuPage.hidden")}</Badge>
+              )}
             </div>
             <p className="truncate text-xs text-muted-foreground">
               {item.route}
@@ -395,17 +429,27 @@ function SortableMenuItem({
             className="max-md:h-11 max-md:w-11 max-md:px-0"
             aria-expanded={expanded}
             aria-controls={panelId}
-            aria-label={`${expanded ? "收起" : "展开"} ${item.name} 的操作权限`}
+            aria-label={t("menuPage.aria.toggleOperations", {
+              action: expanded
+                ? t("menuPage.actions.collapse")
+                : t("menuPage.actions.expand"),
+              name,
+            })}
             onClick={() => onToggleExpanded(item.permissionCode)}
           >
             <ChevronRightIcon
               className={cn("transition-transform", expanded && "rotate-90")}
             />
             <span className="hidden md:inline">
-              {item.operations.length} 个操作
+              {t("menuPage.operationCount", {
+                count: item.operations.length,
+              })}
             </span>
           </Button>
-          <RowActions actions={actions} label={`${item.name} 的操作`} />
+          <RowActions
+            actions={actions}
+            label={t("menuPage.itemActions", { name })}
+          />
         </div>
       </div>
 
@@ -413,7 +457,7 @@ function SortableMenuItem({
         <div id={panelId} className="border-t bg-muted/20 px-3 py-2">
           <div className="flex items-center justify-between gap-2 pb-1">
             <p className="text-xs font-medium text-muted-foreground">
-              操作权限
+              {t("menuPage.operationPermissions")}
             </p>
             {canCreateOperation && (
               <Button
@@ -424,13 +468,13 @@ function SortableMenuItem({
                 onClick={() => onAddOperation(item)}
               >
                 <PlusIcon data-icon="inline-start" />
-                新增操作
+                {t("menuPage.addOperation")}
               </Button>
             )}
           </div>
           {item.operations.length === 0 ? (
             <p className="px-1 py-2 text-xs text-muted-foreground">
-              还没有操作权限，添加后可在角色管理中分配。
+              {t("menuPage.noOperations")}
             </p>
           ) : (
             <div className="flex flex-col gap-1">
@@ -451,7 +495,9 @@ function SortableMenuItem({
                   </div>
                   <RowActions
                     actions={buildOperationActions(operation)}
-                    label={`${operation.name} 的操作`}
+                    label={t("menuPage.itemActions", {
+                      name: operation.name,
+                    })}
                   />
                 </div>
               ))}
@@ -520,6 +566,9 @@ function SortableGroup({
   onEditOperation: (item: MenuItem, operation: MenuOperation) => void
   onDeleteOperation: (item: MenuItem, operation: MenuOperation) => void
 }) {
+  const { t } = useTranslation()
+  const groupLabel = useGroupLabel()
+  const name = groupLabel(group)
   const {
     attributes,
     listeners,
@@ -545,7 +594,7 @@ function SortableGroup({
   const actions: RowAction[] = []
   if (canEdit) {
     actions.push({
-      label: "编辑分组",
+      label: t("menuPage.actions.editGroup"),
       icon: PencilIcon,
       disabled: mutationsDisabled,
       onSelect: () => onEditGroup(group),
@@ -554,13 +603,13 @@ function SortableGroup({
   if (canReorder) {
     actions.push(
       {
-        label: "上移分组",
+        label: t("menuPage.actions.moveUpGroup"),
         icon: ChevronUpIcon,
         disabled: !canMoveUp || mutationsDisabled,
         onSelect: onMoveUp,
       },
       {
-        label: "下移分组",
+        label: t("menuPage.actions.moveDownGroup"),
         icon: ChevronDownIcon,
         disabled: !canMoveDown || mutationsDisabled,
         onSelect: onMoveDown,
@@ -569,7 +618,7 @@ function SortableGroup({
   }
   if (canDelete && !group.isSystem) {
     actions.push({
-      label: "删除分组",
+      label: t("menuPage.actions.deleteGroup"),
       icon: Trash2Icon,
       destructive: true,
       separatorBefore: true,
@@ -592,15 +641,17 @@ function SortableGroup({
                 variant="ghost"
                 size="icon-xs"
                 className="cursor-grab touch-none"
-                aria-label={`拖动 ${group.name} 分组排序`}
+                aria-label={t("menuPage.aria.dragGroup", { name })}
                 {...attributes}
                 {...listeners}
               >
                 <GripVerticalIcon />
               </Button>
             )}
-            <CardTitle className="truncate">{group.name}</CardTitle>
-            {group.isSystem && <Badge variant="outline">内置</Badge>}
+            <CardTitle className="truncate">{name}</CardTitle>
+            {group.isSystem && (
+              <Badge variant="outline">{t("menuPage.builtIn")}</Badge>
+            )}
           </div>
           <div className="flex items-center gap-1">
             {canCreate && (
@@ -608,15 +659,20 @@ function SortableGroup({
                 variant="ghost"
                 size="sm"
                 className="max-md:w-8 max-md:px-0"
-                aria-label="新增菜单"
+                aria-label={t("menuPage.actions.addMenu")}
                 disabled={mutationsDisabled}
                 onClick={() => onCreateItem(group.id)}
               >
                 <PlusIcon data-icon="inline-start" />
-                <span className="hidden md:inline">新增菜单</span>
+                <span className="hidden md:inline">
+                  {t("menuPage.actions.addMenu")}
+                </span>
               </Button>
             )}
-            <RowActions actions={actions} label={`${group.name} 分组的操作`} />
+            <RowActions
+              actions={actions}
+              label={t("menuPage.groupActions", { name })}
+            />
           </div>
         </div>
       </CardHeader>
@@ -662,7 +718,7 @@ function SortableGroup({
         </SortableContext>
         {group.items.length === 0 && (
           <div className="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-            暂无菜单
+            {t("menuPage.emptyMenu")}
           </div>
         )}
       </CardContent>
@@ -671,6 +727,9 @@ function SortableGroup({
 }
 
 export function MenuPage() {
+  const { t } = useTranslation()
+  const menuLabel = useMenuLabel()
+  const groupLabel = useGroupLabel()
   const { hasPermission } = useAuth()
   const isCompact = useIsMobile()
   const [config, setConfig] = React.useState<MenuConfig | null>(null)
@@ -739,7 +798,7 @@ export function MenuPage() {
       setLoading(false)
       return true
     }
-    setError(response.message || "加载菜单失败")
+    setError(response.message || translate("menuPage.loadFailed"))
     setLoading(false)
     return false
   }, [])
@@ -754,10 +813,13 @@ export function MenuPage() {
     if (!query) return config.groups
     return config.groups
       .map((group) => {
-        const groupMatch = group.name.toLowerCase().includes(query)
+        const groupMatch =
+          group.name.toLowerCase().includes(query) ||
+          groupLabel(group).toLowerCase().includes(query)
         const items = group.items.filter((item) => {
           const itemMatch =
             item.name.toLowerCase().includes(query) ||
+            menuLabel(item).toLowerCase().includes(query) ||
             item.permissionCode.toLowerCase().includes(query) ||
             item.route.toLowerCase().includes(query)
           const operationMatch = item.operations.some(
@@ -771,7 +833,7 @@ export function MenuPage() {
         return { ...group, items: groupMatch ? group.items : items }
       })
       .filter((group): group is MenuGroup => group !== null)
-  }, [config, search])
+  }, [config, search, groupLabel, menuLabel])
 
   React.useEffect(() => {
     const query = search.trim().toLowerCase()
@@ -847,7 +909,7 @@ export function MenuPage() {
         })),
       })
       if (response.code !== 0) {
-        appToast.error(response.message || "保存失败")
+        appToast.error(response.message || t("menuPage.toasts.saveFailed"))
         await load()
         return
       }
@@ -935,13 +997,17 @@ export function MenuPage() {
         ? await updateMenuGroup(editingGroup.id, groupName)
         : await createMenuGroup(groupName)
       if (response.code !== 0) {
-        appToast.error(response.message || "操作失败")
+        appToast.error(response.message || t("menuPage.toasts.operationFailed"))
         return
       }
       setGroupOpen(false)
       await load()
       window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-      appToast.success(editingGroup ? "分组已更新" : "分组已创建")
+      appToast.success(
+        editingGroup
+          ? t("menuPage.toasts.groupUpdated")
+          : t("menuPage.toasts.groupCreated")
+      )
     } finally {
       setSubmitting(false)
       savingRef.current = false
@@ -1008,13 +1074,17 @@ export function MenuPage() {
           })
         : await createMenuItem(itemForm)
       if (response.code !== 0) {
-        appToast.error(response.message || "操作失败")
+        appToast.error(response.message || t("menuPage.toasts.operationFailed"))
         return
       }
       setItemOpen(false)
       await load()
       window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-      appToast.success(editingItem ? "菜单已更新" : "菜单已创建")
+      appToast.success(
+        editingItem
+          ? t("menuPage.toasts.menuUpdated")
+          : t("menuPage.toasts.menuCreated")
+      )
     } finally {
       setSubmitting(false)
       savingRef.current = false
@@ -1029,15 +1099,19 @@ export function MenuPage() {
     try {
       const response = await updateMenuItem(item.permissionCode, { hidden })
       if (response.code !== 0) {
-        appToast.error(response.message || "操作失败")
+        appToast.error(response.message || t("menuPage.toasts.operationFailed"))
         return false
       }
       if (!(await load())) {
-        appToast.error("菜单状态已保存，但列表刷新失败，请重试")
+        appToast.error(t("menuPage.toasts.hiddenSavedReloadFailed"))
         return false
       }
       window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
-      appToast.success(hidden ? "菜单已隐藏" : "菜单已显示")
+      appToast.success(
+        hidden
+          ? t("menuPage.toasts.menuHidden")
+          : t("menuPage.toasts.menuShown")
+      )
       return true
     } finally {
       savingRef.current = false
@@ -1129,12 +1203,12 @@ export function MenuPage() {
     event.preventDefault()
     if (!operationMenu || savingRef.current) return
     if (!operationForm.name.trim()) {
-      appToast.error("请输入权限名称")
+      appToast.error(t("menuPage.dialogs.operation.nameRequired"))
       return
     }
     const code = operationForm.code.trim()
     if (!editingOperation && !code) {
-      appToast.error("请输入权限编码")
+      appToast.error(t("menuPage.dialogs.operation.codeRequired"))
       return
     }
 
@@ -1154,10 +1228,14 @@ export function MenuPage() {
             parent: operationMenu.permissionCode,
           })
       if (response.code !== 0) {
-        appToast.error(response.message || "操作失败")
+        appToast.error(response.message || t("menuPage.toasts.operationFailed"))
         return
       }
-      appToast.success(editingOperation ? "操作权限已更新" : "操作权限已创建")
+      appToast.success(
+        editingOperation
+          ? t("menuPage.toasts.operationUpdated")
+          : t("menuPage.toasts.operationCreated")
+      )
       setOperationOpen(false)
       await load()
     } finally {
@@ -1181,7 +1259,7 @@ export function MenuPage() {
             ? await deleteMenuItem(target.id)
             : await deletePermission(target.id)
       if (response.code !== 0) {
-        appToast.error(response.message || "删除失败")
+        appToast.error(response.message || t("menuPage.toasts.deleteFailed"))
         return
       }
       setDeleteTarget(null)
@@ -1189,7 +1267,7 @@ export function MenuPage() {
       if (target.type !== "operation") {
         window.dispatchEvent(new Event(NAVIGATION_REFRESH_EVENT))
       }
-      appToast.success("删除成功")
+      appToast.success(t("menuPage.toasts.deleteSuccess"))
     } finally {
       setDeleteLoading(false)
       savingRef.current = false
@@ -1200,20 +1278,22 @@ export function MenuPage() {
   const deleteDescription =
     deleteTarget?.type === "item"
       ? deleteTarget.operationCount > 0
-        ? `删除后将同时移除 ${deleteTarget.operationCount} 个操作权限，并从相关角色中移除授权。`
-        : "对应菜单权限和角色授权也会被删除。"
+        ? t("menuPage.delete.itemWithOperations", {
+            count: deleteTarget.operationCount,
+          })
+        : t("menuPage.delete.item")
       : deleteTarget?.type === "operation"
-        ? "删除后，已授予该权限的角色会同步失去此权限。"
+        ? t("menuPage.delete.operation")
         : deleteTarget?.type === "group"
-          ? "仅空分组可以删除。"
+          ? t("menuPage.delete.group")
           : undefined
 
   if (loading) {
     return (
       <div className="flex flex-col gap-(--page-gap)">
         <PageHeader
-          title="菜单与权限"
-          description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
+          title={t("menuPage.title")}
+          description={t("menuPage.description")}
         />
         <PageFormSkeleton />
       </div>
@@ -1224,10 +1304,13 @@ export function MenuPage() {
     return (
       <div className="flex flex-col gap-(--page-gap)">
         <PageHeader
-          title="菜单与权限"
-          description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
+          title={t("menuPage.title")}
+          description={t("menuPage.description")}
         />
-        <ErrorState message={error || "加载菜单失败"} onRetry={load} />
+        <ErrorState
+          message={error || t("menuPage.loadFailed")}
+          onRetry={load}
+        />
       </div>
     )
   }
@@ -1249,12 +1332,16 @@ export function MenuPage() {
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
-        title="菜单与权限"
-        description="维护侧边栏结构与显示状态，并管理每个菜单下的操作权限。"
+        title={t("menuPage.title")}
+        description={t("menuPage.description")}
       />
 
       <ListShell
-        description={`共 ${config.groups.length} 个分组，${totalMenus} 个菜单，${totalOperations} 个操作权限`}
+        description={t("menuPage.listDescription", {
+          groups: config.groups.length,
+          menus: totalMenus,
+          operations: totalOperations,
+        })}
         actions={
           <>
             <InputGroup className="w-full md:w-64">
@@ -1262,8 +1349,8 @@ export function MenuPage() {
                 name="q"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="搜索菜单或操作权限…"
-                aria-label="搜索菜单"
+                placeholder={t("menuPage.searchPlaceholder")}
+                aria-label={t("menuPage.searchAria")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -1272,13 +1359,15 @@ export function MenuPage() {
               </InputGroupAddon>
             </InputGroup>
             {saving && (
-              <span className="text-xs text-muted-foreground">正在保存…</span>
+              <span className="text-xs text-muted-foreground">
+                {t("menuPage.saving")}
+              </span>
             )}
             {canViewOverview && (
               <Button asChild variant="outline" className="w-full md:w-auto">
                 <Link to="/settings/permission">
                   <KeyRoundIcon data-icon="inline-start" />
-                  权限总览
+                  {t("menuPage.overview")}
                 </Link>
               </Button>
             )}
@@ -1290,12 +1379,12 @@ export function MenuPage() {
                 onClick={openCreateGroup}
               >
                 <PlusIcon data-icon="inline-start" />
-                新增分组
+                {t("menuPage.addGroup")}
               </Button>
             )}
             {search.trim() && (
               <span className="text-xs text-muted-foreground">
-                搜索时暂停拖拽
+                {t("menuPage.dragPaused")}
               </span>
             )}
           </>
@@ -1305,24 +1394,24 @@ export function MenuPage() {
 
         {config.groups.length === 0 ? (
           <EmptyState
-            title="还没有菜单分组"
-            description="先创建一个分组，再把菜单入口放进去。"
+            title={t("menuPage.emptyGroupTitle")}
+            description={t("menuPage.emptyGroupDescription")}
             action={
               canCreate ? (
                 <Button onClick={openCreateGroup}>
                   <PlusIcon data-icon="inline-start" />
-                  新增分组
+                  {t("menuPage.addGroup")}
                 </Button>
               ) : null
             }
           />
         ) : visibleGroups.length === 0 ? (
           <EmptyState
-            title="没有匹配的菜单"
-            description="换个关键词，或清空搜索条件后再试。"
+            title={t("menuPage.emptySearchTitle")}
+            description={t("menuPage.emptySearchDescription")}
             action={
               <Button variant="outline" onClick={() => setSearch("")}>
-                清空搜索
+                {t("menuPage.clearSearch")}
               </Button>
             }
           />
@@ -1445,14 +1534,20 @@ export function MenuPage() {
       <FormDialog
         open={groupOpen}
         onOpenChange={setGroupOpen}
-        title={editingGroup ? "编辑分组" : "新增分组"}
-        description="分组名称仅用于侧边栏展示。"
+        title={
+          editingGroup
+            ? t("menuPage.dialogs.group.editTitle")
+            : t("menuPage.dialogs.group.addTitle")
+        }
+        description={t("menuPage.dialogs.group.description")}
         submitting={submitting}
         onSubmit={submitGroup}
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="group-name">分组名称</FieldLabel>
+            <FieldLabel htmlFor="group-name">
+              {t("menuPage.dialogs.group.name")}
+            </FieldLabel>
             <Input
               name="group-name"
               autoComplete="off"
@@ -1468,14 +1563,20 @@ export function MenuPage() {
       <FormDialog
         open={itemOpen}
         onOpenChange={setItemOpen}
-        title={editingItem ? "编辑菜单" : "新增菜单"}
-        description="菜单路由需要由前端页面提供。"
+        title={
+          editingItem
+            ? t("menuPage.dialogs.item.editTitle")
+            : t("menuPage.dialogs.item.addTitle")
+        }
+        description={t("menuPage.dialogs.item.description")}
         submitting={submitting}
         onSubmit={submitItem}
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="item-code">权限编码</FieldLabel>
+            <FieldLabel htmlFor="item-code">
+              {t("menuPage.dialogs.item.code")}
+            </FieldLabel>
             <Input
               name="item-code"
               autoComplete="off"
@@ -1491,11 +1592,13 @@ export function MenuPage() {
               disabled={!!editingItem}
               required
               pattern="^[a-z0-9_.-]+$"
-              title="只能包含小写字母、数字、点、下划线和连字符"
+              title={t("menuPage.dialogs.item.codePattern")}
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="item-name">菜单名称</FieldLabel>
+            <FieldLabel htmlFor="item-name">
+              {t("menuPage.dialogs.item.name")}
+            </FieldLabel>
             <Input
               name="item-name"
               autoComplete="off"
@@ -1508,21 +1611,26 @@ export function MenuPage() {
             />
           </Field>
           <Field>
-            <FieldLabel>所属分组</FieldLabel>
+            <FieldLabel>{t("menuPage.dialogs.item.group")}</FieldLabel>
             <Select
               value={itemForm.groupId}
               onValueChange={(value) =>
                 setItemForm((form) => ({ ...form, groupId: value }))
               }
             >
-              <SelectTrigger className="w-full" aria-label="所属分组">
-                <SelectValue placeholder="请选择分组" />
+              <SelectTrigger
+                className="w-full"
+                aria-label={t("menuPage.dialogs.item.group")}
+              >
+                <SelectValue
+                  placeholder={t("menuPage.dialogs.item.selectGroup")}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {config.groups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>
-                      {group.name}
+                      {groupLabel(group)}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -1530,7 +1638,9 @@ export function MenuPage() {
             </Select>
           </Field>
           <Field>
-            <FieldLabel htmlFor="item-route">路由</FieldLabel>
+            <FieldLabel htmlFor="item-route">
+              {t("menuPage.dialogs.item.route")}
+            </FieldLabel>
             <Input
               name="item-route"
               autoComplete="off"
@@ -1545,7 +1655,7 @@ export function MenuPage() {
             />
           </Field>
           <Field>
-            <FieldLabel>图标</FieldLabel>
+            <FieldLabel>{t("menuPage.dialogs.item.icon")}</FieldLabel>
             <IconPicker
               value={itemForm.icon}
               onChange={(icon) => setItemForm((form) => ({ ...form, icon }))}
@@ -1553,12 +1663,14 @@ export function MenuPage() {
           </Field>
           <Field orientation="horizontal">
             <div className="flex flex-1 flex-col gap-1">
-              <FieldLabel htmlFor="item-visible">在侧边栏显示</FieldLabel>
+              <FieldLabel htmlFor="item-visible">
+                {t("menuPage.dialogs.item.visible")}
+              </FieldLabel>
               <FieldDescription>
                 {editingItem?.permissionCode === "menus" ||
                 editingItem?.permissionCode === "settings"
-                  ? "隐藏后仍可通过 /settings/menu 直接访问并重新显示。"
-                  : "关闭后菜单仍保留权限和路由，只是不在侧边栏展示。"}
+                  ? t("menuPage.dialogs.item.criticalHint")
+                  : t("menuPage.dialogs.item.visibleHint")}
               </FieldDescription>
             </div>
             <Switch
@@ -1575,10 +1687,17 @@ export function MenuPage() {
       <FormDialog
         open={operationOpen}
         onOpenChange={setOperationOpen}
-        title={editingOperation ? "编辑操作权限" : "新增操作权限"}
+        title={
+          editingOperation
+            ? t("menuPage.dialogs.operation.editTitle")
+            : t("menuPage.dialogs.operation.addTitle")
+        }
         description={
           operationMenu
-            ? `所属菜单：${operationMenu.name}（${operationMenu.permissionCode}）`
+            ? t("menuPage.dialogs.operation.description", {
+                name: menuLabel(operationMenu),
+                code: operationMenu.permissionCode,
+              })
             : undefined
         }
         submitting={submitting}
@@ -1586,12 +1705,14 @@ export function MenuPage() {
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="operation-name">权限名称</FieldLabel>
+            <FieldLabel htmlFor="operation-name">
+              {t("menuPage.dialogs.operation.name")}
+            </FieldLabel>
             <Input
               name="operation-name"
               autoComplete="off"
               id="operation-name"
-              placeholder="如：新增用户"
+              placeholder={t("menuPage.dialogs.operation.namePlaceholder")}
               value={operationForm.name}
               onChange={(event) =>
                 setOperationForm((form) => ({
@@ -1604,19 +1725,26 @@ export function MenuPage() {
           </Field>
           {!editingOperation && (
             <Field>
-              <FieldLabel>常用动作</FieldLabel>
+              <FieldLabel>{t("menuPage.dialogs.operation.preset")}</FieldLabel>
               <Select
                 value={operationForm.verb}
                 onValueChange={handleOperationVerbChange}
               >
-                <SelectTrigger className="w-full" aria-label="常用动作">
-                  <SelectValue placeholder="选择常用动作" />
+                <SelectTrigger
+                  className="w-full"
+                  aria-label={t("menuPage.dialogs.operation.preset")}
+                >
+                  <SelectValue
+                    placeholder={t(
+                      "menuPage.dialogs.operation.presetPlaceholder"
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     {OPERATION_PRESETS.map((preset) => (
                       <SelectItem key={preset.verb} value={preset.verb}>
-                        {preset.label}
+                        {t(`menuPage.verbs.${preset.verb}`)}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -1626,9 +1754,11 @@ export function MenuPage() {
           )}
           <Field orientation="horizontal">
             <div className="flex flex-1 flex-col gap-1">
-              <FieldLabel htmlFor="operation-custom">自定义编码</FieldLabel>
+              <FieldLabel htmlFor="operation-custom">
+                {t("menuPage.dialogs.operation.custom")}
+              </FieldLabel>
               <FieldDescription>
-                关闭时按“菜单编码.动作”自动生成。
+                {t("menuPage.dialogs.operation.customHint")}
               </FieldDescription>
             </div>
             <Switch
@@ -1639,7 +1769,9 @@ export function MenuPage() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="operation-code">权限编码</FieldLabel>
+            <FieldLabel htmlFor="operation-code">
+              {t("menuPage.dialogs.operation.code")}
+            </FieldLabel>
             <Input
               name="operation-code"
               autoComplete="off"
@@ -1655,10 +1787,10 @@ export function MenuPage() {
               disabled={!operationForm.custom || !!editingOperation}
               required
               pattern="^[a-z0-9_.-]+$"
-              title="只能包含小写字母、数字、点、下划线和连字符"
+              title={t("menuPage.dialogs.operation.codePattern")}
             />
             <FieldDescription>
-              编码用于后端鉴权，请与代码中的权限码保持一致。
+              {t("menuPage.dialogs.operation.codeHint")}
             </FieldDescription>
           </Field>
         </FieldGroup>
@@ -1677,7 +1809,7 @@ export function MenuPage() {
 
       <ConfirmHideDialog
         open={!!hideConfirmTarget}
-        targetName={hideConfirmTarget?.name || ""}
+        targetName={hideConfirmTarget ? menuLabel(hideConfirmTarget) : ""}
         loading={hideConfirmLoading}
         onOpenChange={(open) => {
           if (!open) {

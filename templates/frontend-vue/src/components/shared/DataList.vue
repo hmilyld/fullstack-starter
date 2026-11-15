@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends { id: string }">
 import type { Component } from "vue"
+import { useI18n } from "vue-i18n"
 import EmptyState from "@/components/shared/EmptyState.vue"
 import ErrorState from "@/components/shared/ErrorState.vue"
 import InlineError from "@/components/shared/InlineError.vue"
@@ -56,6 +57,7 @@ withDefaults(
 )
 
 const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -132,7 +134,7 @@ const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
                     <Button
                       variant="ghost"
                       size="icon-xs"
-                      aria-label="列选项"
+                      :aria-label="t('common.table.columnOptions')"
                       class="-mr-1 opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100"
                     >
                       <MoreHorizontal />
@@ -140,7 +142,7 @@ const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem @select="emit('hide-column', column.key)">
-                      隐藏此列
+                      {{ t("common.table.hideColumn") }}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

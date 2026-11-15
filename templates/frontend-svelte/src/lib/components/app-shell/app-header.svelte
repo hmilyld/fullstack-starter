@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Search } from "@lucide/svelte"
   import ConfigDrawer from "#lib/components/app-shell/config-drawer.svelte"
+  import LanguageSwitcher from "#lib/components/app-shell/language-switcher.svelte"
   import ThemeToggle from "#lib/components/app-shell/theme-toggle.svelte"
   import UserMenu from "#lib/components/app-shell/user-menu.svelte"
   import { openCommandMenu } from "#lib/hooks/use-command-menu.svelte.js"
@@ -18,8 +19,12 @@
   import { buildBreadcrumbs } from "#lib/routes.js"
   import { cn } from "#lib/utils.js"
   import { page } from "$app/state"
+  import { locale, t } from "#lib/i18n.js"
 
-  const crumbs = $derived(buildBreadcrumbs(page.url.pathname))
+  const crumbs = $derived.by(() => {
+    void $locale
+    return buildBreadcrumbs(page.url.pathname)
+  })
   const currentCrumb = $derived(crumbs[crumbs.length - 1])
   let scrolled = $state(false)
 
@@ -40,7 +45,7 @@
     class="mx-auto flex h-14 w-full max-w-(--layout-max) items-center gap-2 px-(--layout-gutter) md:h-16"
   >
     <div class="flex min-w-0 items-center gap-2">
-      <SidebarTrigger class="-ml-1" aria-label="切换侧边栏" />
+      <SidebarTrigger class="-ml-1" aria-label={$t("sidebar.toggle")} />
       <Separator
         orientation="vertical"
         class="mr-1 hidden h-5 self-center md:block"
@@ -48,7 +53,9 @@
       <Breadcrumb class="hidden md:block">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">管理后台</BreadcrumbLink>
+            <BreadcrumbLink href="/dashboard"
+              >{$t("common.admin")}</BreadcrumbLink
+            >
           </BreadcrumbItem>
           {#each crumbs as crumb, index (crumb.path)}
             <BreadcrumbSeparator />
@@ -65,7 +72,7 @@
         </BreadcrumbList>
       </Breadcrumb>
       <span class="truncate text-sm font-medium md:hidden">
-        {currentCrumb?.label ?? "管理后台"}
+        {currentCrumb?.label ?? $t("common.admin")}
       </span>
     </div>
 
@@ -77,7 +84,7 @@
         onclick={openCommandMenu}
       >
         <Search class="size-4 shrink-0" />
-        <span class="truncate">搜索…</span>
+        <span class="truncate">{$t("common.search")}</span>
         <kbd
           class="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px]"
         >
@@ -88,11 +95,12 @@
         variant="ghost"
         size="icon-sm"
         class="lg:hidden"
-        aria-label="搜索页面或菜单"
+        aria-label={$t("common.searchAria")}
         onclick={openCommandMenu}
       >
         <Search />
       </Button>
+      <LanguageSwitcher />
       <ThemeToggle />
       <ConfigDrawer />
       <Separator

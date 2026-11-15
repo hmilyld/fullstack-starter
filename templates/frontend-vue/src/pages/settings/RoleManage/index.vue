@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { Lock, Pencil, Plus, Search, ShieldCheck, Trash2 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
 import ColumnToggle from "@/components/shared/ColumnToggle.vue"
@@ -44,12 +45,18 @@ import { useToast } from "@/composables/use-toast"
 import RolePermissionPicker from "@/pages/settings/RoleManage/RolePermissionPicker.vue"
 import type { Permission } from "@/types/permission"
 import type { Role } from "@/types/role"
+import { translateOr } from "@/lib/label"
 
 const DEFAULT_PAGE_SIZE = 8
 const PAGE_SIZE_OPTIONS = [8, 16, 32]
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const toast = useToast()
+
+function roleLabel(role: Role) {
+  return translateOr(`roles.${role.id}`, role.name)
+}
 
 const pageSize = ref(DEFAULT_PAGE_SIZE)
 const { search, page, setSearch, setPage } = useUrlListState()
@@ -85,9 +92,13 @@ async function loadPermissions() {
     getPermissions({ type: "operation" }),
   ])
   if (menuRes.code === 0) menuPermissions.value = menuRes.data
-  else permissionsError.value = menuRes.message || "加载菜单权限失败"
+  else
+    permissionsError.value =
+      menuRes.message || t("rolePermissions.loadMenuFailed")
   if (opRes.code === 0) operationPermissions.value = opRes.data
-  else permissionsError.value = opRes.message || "加载操作权限失败"
+  else
+    permissionsError.value =
+      opRes.message || t("rolePermissions.loadOperationFailed")
   permissionsLoading.value = false
 }
 
@@ -131,10 +142,14 @@ async function handleEditSubmit() {
     : await createRole(payload)
   editSubmitting.value = false
   if (res.code !== 0) {
-    toast.error(res.message || "操作失败")
+    toast.error(res.message || t("rolesPage.toasts.operationFailed"))
     return
   }
-  toast.success(editingRole.value ? "保存成功" : "创建成功")
+  toast.success(
+    editingRole.value
+      ? t("rolesPage.toasts.saveSuccess")
+      : t("rolesPage.toasts.createSuccess")
+  )
   editOpen.value = false
   refreshList()
 }
@@ -150,10 +165,10 @@ async function handleDeleteConfirm() {
   const res = await apiDeleteRole(deleteTarget.value.id)
   deleteSubmitting.value = false
   if (res.code !== 0) {
-    toast.error(res.message || "删除失败")
+    toast.error(res.message || t("rolesPage.toasts.deleteFailed"))
     return
   }
-  toast.success("删除成功")
+  toast.success(t("rolesPage.toasts.deleteSuccess"))
   deleteOpen.value = false
   refreshList()
 }
@@ -162,14 +177,14 @@ function buildRoleActions(role: Role): RowAction[] {
   const actions: RowAction[] = []
   if (auth.hasPermission("roles.edit")) {
     actions.push({
-      label: "编辑",
+      label: t("rolesPage.actions.edit"),
       icon: Pencil,
       onSelect: () => handleEdit(role),
     })
   }
   if (!role.isPreset && auth.hasPermission("roles.delete")) {
     actions.push({
-      label: "删除",
+      label: t("rolesPage.actions.delete"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -179,31 +194,31 @@ function buildRoleActions(role: Role): RowAction[] {
   return actions
 }
 
-const columns: DataColumn[] = [
-  { key: "name", header: "角色名称" },
+const columns = computed<DataColumn[]>(() => [
+  { key: "name", header: t("rolesPage.headers.name") },
   {
     key: "description",
-    header: "描述",
+    header: t("rolesPage.headers.description"),
     hideable: true,
     headClass: "hidden md:table-cell",
     cellClass: "hidden text-muted-foreground md:table-cell",
   },
   {
     key: "permissions",
-    header: "权限数",
+    header: t("rolesPage.headers.permissionCount"),
     hideable: true,
     headClass: "hidden lg:table-cell",
     cellClass: "hidden lg:table-cell",
   },
-  { key: "type", header: "类型" },
+  { key: "type", header: t("rolesPage.headers.type") },
   {
     key: "actions",
-    header: "操作",
+    header: t("rolesPage.headers.actions"),
     pinRight: true,
     headClass: "text-right",
     cellClass: "text-right",
   },
-]
+])
 
 const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
   "roles",
@@ -216,17 +231,20 @@ const hasRoles = computed(() => roles.value.length > 0)
 
 <template>
   <div class="flex flex-col gap-(--page-gap)">
-    <PageHeader title="角色管理" description="管理系统角色及其权限分配。" />
+    <PageHeader
+      :title="t('rolesPage.title')"
+      :description="t('rolesPage.description')"
+    />
 
-    <ListShell :description="`共 ${total} 个角色`">
+    <ListShell :description="t('rolesPage.listDescription', { total })">
       <template #actions>
         <InputGroup class="w-full md:w-64">
           <InputGroupInput
             name="q"
             autocomplete="off"
             :spellcheck="false"
-            placeholder="搜索角色名称…"
-            aria-label="搜索角色"
+            :placeholder="t('rolesPage.searchPlaceholder')"
+            :aria-label="t('rolesPage.searchAria')"
             :model-value="search"
             @update:model-value="setSearch(String($event))"
           />
@@ -247,7 +265,7 @@ const hasRoles = computed(() => roles.value.length > 0)
           @click="handleAdd"
         >
           <Plus data-icon="inline-start" />
-          新增角色
+          {{ t("rolesPage.addRole") }}
         </Button>
       </template>
 
@@ -256,7 +274,7 @@ const hasRoles = computed(() => roles.value.length > 0)
           :page="currentPage"
           :total-pages="totalPages"
           :total="total"
-          item-label="个角色"
+          :item-label="t('rolesPage.entityName')"
           :page-size="pageSize"
           :page-size-options="PAGE_SIZE_OPTIONS"
           @page-change="setListPage"
@@ -278,10 +296,12 @@ const hasRoles = computed(() => roles.value.length > 0)
         :skeleton-col-span="5"
         :empty="{
           icon: ShieldCheck,
-          title: debouncedSearch ? '没有匹配的角色' : '还没有角色',
+          title: debouncedSearch
+            ? t('rolesPage.emptySearchTitle')
+            : t('rolesPage.emptyTitle'),
           description: debouncedSearch
-            ? '换个关键词，或清空搜索条件后再试。'
-            : '创建角色并分配权限，再把角色授予用户。',
+            ? t('rolesPage.emptySearchDescription')
+            : t('rolesPage.emptyDescription'),
         }"
         @retry="refreshList"
         @hide-column="toggle"
@@ -292,28 +312,34 @@ const hasRoles = computed(() => roles.value.length > 0)
             variant="outline"
             @click="setSearch('')"
           >
-            清空搜索
+            {{ t("rolesPage.clearSearch") }}
           </Button>
           <Button
             v-else-if="auth.hasPermission('roles.create')"
             @click="handleAdd"
           >
             <Plus data-icon="inline-start" />
-            新增角色
+            {{ t("rolesPage.addRole") }}
           </Button>
         </template>
 
         <template #card="{ row }">
           <RecordCard
-            :title="row.name"
-            :subtitle="row.description || '暂无描述'"
+            :title="roleLabel(row)"
+            :subtitle="row.description || t('rolesPage.noDescription')"
           >
             <template #badges>
-              <Badge v-if="row.isPreset" variant="outline">预设</Badge>
-              <Badge v-else variant="secondary">自定义</Badge>
-              <Badge variant="secondary"
-                >{{ row.permissions.length }} 项权限</Badge
-              >
+              <Badge v-if="row.isPreset" variant="outline">{{
+                t("rolesPage.preset")
+              }}</Badge>
+              <Badge v-else variant="secondary">{{
+                t("rolesPage.custom")
+              }}</Badge>
+              <Badge variant="secondary">{{
+                t("rolesPage.permissionCount", {
+                  count: row.permissions.length,
+                })
+              }}</Badge>
             </template>
             <template #actions>
               <RowActions :actions="buildRoleActions(row)" />
@@ -322,7 +348,7 @@ const hasRoles = computed(() => roles.value.length > 0)
         </template>
 
         <template #cell-name="{ row }">
-          <span class="font-medium">{{ row.name }}</span>
+          <span class="font-medium">{{ roleLabel(row) }}</span>
         </template>
         <template #cell-description="{ row }">
           {{ row.description || "-" }}
@@ -333,9 +359,9 @@ const hasRoles = computed(() => roles.value.length > 0)
         <template #cell-type="{ row }">
           <Badge v-if="row.isPreset" variant="outline">
             <Lock />
-            预设
+            {{ t("rolesPage.preset") }}
           </Badge>
-          <Badge v-else variant="secondary">自定义</Badge>
+          <Badge v-else variant="secondary">{{ t("rolesPage.custom") }}</Badge>
         </template>
         <template #cell-actions="{ row }">
           <div class="flex items-center justify-end gap-1">
@@ -346,11 +372,15 @@ const hasRoles = computed(() => roles.value.length > 0)
               @click="handleEdit(row)"
             >
               <Pencil />
-              <span class="sr-only">编辑 {{ row.name }}</span>
+              <span class="sr-only">{{
+                t("rolesPage.editSrOnly", { name: roleLabel(row) })
+              }}</span>
             </Button>
             <RowActions
               :actions="
-                buildRoleActions(row).filter((item) => item.label !== '编辑')
+                buildRoleActions(row).filter(
+                  (item) => item.label !== t('rolesPage.actions.edit')
+                )
               "
             />
           </div>
@@ -360,9 +390,15 @@ const hasRoles = computed(() => roles.value.length > 0)
 
     <FormDialog
       :open="editOpen"
-      :title="editingRole ? '编辑角色' : '新增角色'"
+      :title="
+        editingRole
+          ? t('rolesPage.edit.editTitle')
+          : t('rolesPage.edit.addTitle')
+      "
       :description="
-        editingRole ? '修改角色信息和权限分配。' : '填写角色信息并分配权限。'
+        editingRole
+          ? t('rolesPage.edit.editDescription')
+          : t('rolesPage.edit.addDescription')
       "
       :submitting="editSubmitting"
       class="sm:w-[calc(100%_-_2rem)] sm:max-w-4xl"
@@ -374,31 +410,37 @@ const hasRoles = computed(() => roles.value.length > 0)
           class="@md/field-group:grid @md/field-group:grid-cols-2 @md/field-group:items-start @md/field-group:gap-4"
         >
           <Field>
-            <FieldLabel for="role-name">角色名称</FieldLabel>
+            <FieldLabel for="role-name">{{
+              t("rolesPage.edit.name")
+            }}</FieldLabel>
             <Input
               id="role-name"
               v-model="editForm.name"
               name="role-name"
               autocomplete="off"
-              placeholder="请输入角色名称"
+              :placeholder="t('rolesPage.edit.namePlaceholder')"
               required
             />
           </Field>
           <Field>
-            <FieldLabel for="role-desc">描述</FieldLabel>
+            <FieldLabel for="role-desc">{{
+              t("rolesPage.edit.description")
+            }}</FieldLabel>
             <Input
               id="role-desc"
               v-model="editForm.description"
               name="role-desc"
               autocomplete="off"
-              placeholder="请输入角色描述"
+              :placeholder="t('rolesPage.edit.descriptionPlaceholder')"
             />
           </Field>
         </div>
       </FieldGroup>
 
       <FieldSet class="mt-6 gap-3">
-        <FieldLegend variant="label" class="mb-0">权限分配</FieldLegend>
+        <FieldLegend variant="label" class="mb-0">{{
+          t("rolesPage.edit.permissions")
+        }}</FieldLegend>
         <RolePermissionPicker
           v-model="editPermissions"
           :menu-permissions="menuPermissions"
@@ -413,7 +455,7 @@ const hasRoles = computed(() => roles.value.length > 0)
     <ConfirmDeleteDialog
       :open="deleteOpen"
       :target-name="deleteTarget?.name ?? ''"
-      description="已分配该角色的用户将失去对应权限。"
+      :description="t('rolesPage.deleteDescription')"
       :loading="deleteSubmitting"
       @update:open="deleteOpen = $event"
       @confirm="handleDeleteConfirm"

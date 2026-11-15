@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { Badge } from "@/components/ui/badge"
 import type { Role } from "@/types/role"
 
@@ -9,9 +11,14 @@ export function RoleBadge({
   roleId: string
   roles: Role[]
 }) {
+  const { t } = useTranslation()
   const role = roles.find((item) => item.id === roleId)
   const variant =
     roleId === "admin" ? "default" : role?.isPreset ? "secondary" : "outline"
 
-  return <Badge variant={variant}>{role?.name ?? "未知角色"}</Badge>
+  const label = role
+    ? t(`roles.${role.id}`, { defaultValue: role.name })
+    : t("roles.unknown")
+
+  return <Badge variant={variant}>{label}</Badge>
 }

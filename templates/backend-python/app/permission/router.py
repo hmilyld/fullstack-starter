@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import require_permission
+from app.core.i18n import localize_message
 from app.core.schemas import ApiResponse
 from app.permission import service
 from app.permission.schemas import (
@@ -41,10 +42,14 @@ async def create_permission(
 
 @router.post("/sync")
 async def sync_permissions_route(
+    req: Request,
     current_user: Annotated[User, Depends(require_permission("permissions.create"))],
     db: DbSession,
 ) -> ApiResponse[PermissionSyncResult]:
-    return ApiResponse(data=await service.sync_catalog(db), message="权限同步完成")
+    return ApiResponse(
+        data=await service.sync_catalog(db),
+        message=localize_message("权限同步完成", req),
+    )
 
 
 @router.put("/{code}")

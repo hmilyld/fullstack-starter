@@ -1,10 +1,7 @@
+import { translate } from "#lib/i18n.js"
 import type { PublicConfig } from "#lib/types/system.js"
 
 export type PwaTheme = "light" | "dark"
-
-export const DEFAULT_SITE_NAME = "管理系统"
-export const DEFAULT_SITE_DESCRIPTION =
-  "基于 Svelte 5 + shadcn-svelte 的后台管理框架"
 
 export type PwaManifest = {
   name: string
@@ -31,17 +28,21 @@ export type PwaManifest = {
 /** 根据站点配置与当前主题生成 manifest，避免写死站点名和颜色 */
 export function buildPwaManifest(
   config: PublicConfig | null,
-  theme: PwaTheme
+  theme: PwaTheme,
+  lang = "zh-CN"
 ): PwaManifest {
-  const name = config?.siteName?.trim() || DEFAULT_SITE_NAME
+  const name =
+    config?.siteName?.trim() || translate("pwa.defaultName", { lng: lang })
   const shortName = [...name].slice(0, 12).join("")
   const background = theme === "dark" ? "#0a0a0a" : "#ffffff"
 
   return {
     name,
     short_name: shortName,
-    description: config?.siteDescription?.trim() || DEFAULT_SITE_DESCRIPTION,
-    lang: "zh-CN",
+    description:
+      config?.siteDescription?.trim() ||
+      translate("pwa.defaultDescription", { lng: lang }),
+    lang,
     dir: "ltr",
     id: "/",
     start_url: "/",

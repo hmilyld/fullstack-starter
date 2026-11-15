@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useDroppable } from "@dnd-kit/vue"
 import { useSortable } from "@dnd-kit/vue/sortable"
 import {
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import type { MenuGroup } from "@/types/menu"
+import { translateOr } from "@/lib/label"
 import {
   groupSortableId,
   type MenuDragData,
@@ -45,6 +47,12 @@ const emit = defineEmits<{
   (e: "move-down"): void
 }>()
 
+const { t } = useI18n()
+const label = computed(() =>
+  props.group.isSystem
+    ? translateOr(`nav.groups.${props.group.id}`, props.group.name)
+    : props.group.name
+)
 const element = ref<HTMLElement | null>(null)
 const handle = ref<HTMLElement | null>(null)
 const dropElement = ref<HTMLElement | null>(null)
@@ -77,13 +85,13 @@ const actions = computed<RowAction[]>(() => {
   if (props.canReorder) {
     result.push(
       {
-        label: "上移分组",
+        label: t("menuPage.actions.moveUpGroup"),
         icon: ChevronUp,
         disabled: !props.canMoveUp || props.mutationsDisabled,
         onSelect: () => emit("move-up"),
       },
       {
-        label: "下移分组",
+        label: t("menuPage.actions.moveDownGroup"),
         icon: ChevronDown,
         disabled: !props.canMoveDown || props.mutationsDisabled,
         onSelect: () => emit("move-down"),
@@ -92,7 +100,7 @@ const actions = computed<RowAction[]>(() => {
   }
   if (props.canDelete && !props.group.isSystem) {
     result.push({
-      label: "删除分组",
+      label: t("menuPage.actions.deleteGroup"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -121,7 +129,17 @@ const actions = computed<RowAction[]>(() => {
           variant="ghost"
           size="icon-xs"
           :aria-expanded="!collapsed"
-          :aria-label="`${collapsed ? '展开' : '收起'} ${group.name} 分组`"
+          :aria-label="
+            collapsed
+              ? t('menuPage.aria.toggleGroup', {
+                  action: t('menuPage.actions.expand'),
+                  name: label,
+                })
+              : t('menuPage.aria.toggleGroup', {
+                  action: t('menuPage.actions.collapse'),
+                  name: label,
+                })
+          "
           @click="emit('toggle')"
         >
           <ChevronRight
@@ -134,19 +152,21 @@ const actions = computed<RowAction[]>(() => {
           variant="ghost"
           size="icon-xs"
           class="cursor-grab touch-none"
-          :aria-label="`拖动 ${group.name} 分组排序`"
+          :aria-label="t('menuPage.aria.dragGroup', { name: label })"
         >
           <GripVertical />
         </Button>
-        <span class="truncate text-sm font-medium">{{ group.name }}</span>
-        <Badge v-if="group.isSystem" variant="outline">内置</Badge>
+        <span class="truncate text-sm font-medium">{{ label }}</span>
+        <Badge v-if="group.isSystem" variant="outline">{{
+          t("menuPage.builtIn")
+        }}</Badge>
         <span class="text-xs text-muted-foreground">
-          {{ group.items.length }} 个菜单
+          {{ t("menuPage.itemCount", { count: group.items.length }) }}
         </span>
       </div>
     </TableCell>
     <TableCell>
-      <Badge variant="outline">分组</Badge>
+      <Badge variant="outline">{{ t("menuPage.groupType") }}</Badge>
     </TableCell>
     <TableCell class="text-muted-foreground">—</TableCell>
     <TableCell class="hidden text-muted-foreground lg:table-cell">
@@ -158,7 +178,7 @@ const actions = computed<RowAction[]>(() => {
           v-if="canCreate"
           variant="ghost"
           size="icon-sm"
-          :aria-label="`在 ${group.name} 下新增菜单`"
+          :aria-label="t('menuPage.aria.addMenuUnder', { name: label })"
           :disabled="mutationsDisabled"
           @click="emit('create-item', group.id)"
         >
@@ -168,13 +188,16 @@ const actions = computed<RowAction[]>(() => {
           v-if="canEdit"
           variant="ghost"
           size="icon-sm"
-          :aria-label="`编辑 ${group.name} 分组`"
+          :aria-label="t('menuPage.aria.editGroup', { name: label })"
           :disabled="mutationsDisabled"
           @click="emit('edit', group)"
         >
           <Pencil />
         </Button>
-        <RowActions :actions="actions" :label="`${group.name} 分组的操作`" />
+        <RowActions
+          :actions="actions"
+          :label="t('menuPage.groupActions', { name: label })"
+        />
       </div>
     </TableCell>
   </tr>

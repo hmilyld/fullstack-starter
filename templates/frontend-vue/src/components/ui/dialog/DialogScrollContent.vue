@@ -2,6 +2,7 @@
 import type { DialogContentEmits, DialogContentProps } from "reka-ui"
 
 import type { HTMLAttributes } from "vue"
+import { useI18n } from "vue-i18n"
 import { XIcon } from "@lucide/vue"
 import { reactiveOmit } from "@vueuse/core"
 import { cn } from "@/lib/utils"
@@ -21,6 +22,7 @@ const props = defineProps<
   DialogContentProps & { class?: HTMLAttributes["class"] }
 >()
 const emits = defineEmits<DialogContentEmits>()
+const { t } = useI18n()
 
 const delegatedProps = reactiveOmit(props, "class")
 
@@ -59,7 +61,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
           class="absolute top-4 right-4 rounded-md p-0.5 transition-colors hover:bg-secondary"
         >
           <XIcon class="h-4 w-4" />
-          <span class="sr-only">关闭</span>
+          <span class="sr-only">{{ t("common.close") }}</span>
         </DialogClose>
       </DialogContent>
     </DialogOverlay>

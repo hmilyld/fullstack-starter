@@ -2,6 +2,7 @@
   import { Save } from "@lucide/svelte"
   import LoadingButton from "#lib/components/shared/loading-button.svelte"
   import { CardFooter } from "#lib/components/ui/card/index.js"
+  import { t } from "#lib/i18n.js"
 
   let {
     dirty,
@@ -27,6 +28,6 @@
     {label}
   </LoadingButton>
   <span class="text-xs text-muted-foreground">
-    {dirty ? "有未保存的修改" : "已保存"}
+    {dirty ? $t("systemPage.unsaved") : $t("systemPage.saved")}
   </span>
 </CardFooter>

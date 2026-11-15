@@ -2,6 +2,7 @@ package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.i18n.MessageResolver;
 import com.hmilyld.fullstack.dto.LoginRequest;
 import com.hmilyld.fullstack.dto.LoginResponse;
 import com.hmilyld.fullstack.dto.RegisterRequest;
@@ -18,13 +19,14 @@ public class AuthController {
 
   @Autowired private AuthService authService;
   @Autowired private RateLimiter rateLimiter;
+  @Autowired private MessageResolver messageResolver;
 
   @PostMapping("/login")
   public ApiResponse<LoginResponse> login(
       @RequestBody @Valid LoginRequest req, HttpServletRequest request) {
     String clientIp = getClientIp(request);
     if (rateLimiter.isRateLimited("login:" + clientIp)) {
-      return ApiResponse.error("登录尝试过于频繁，请稍后再试");
+      return ApiResponse.error(messageResolver.localize("登录尝试过于频繁，请稍后再试"));
     }
     return authService.login(req.getAccount(), req.getPassword(), clientIp);
   }
@@ -34,7 +36,7 @@ public class AuthController {
       @RequestBody @Valid RegisterRequest req, HttpServletRequest request) {
     String clientIp = getClientIp(request);
     if (rateLimiter.isRateLimited("register:" + clientIp)) {
-      return ApiResponse.error("注册尝试过于频繁，请稍后再试");
+      return ApiResponse.error(messageResolver.localize("注册尝试过于频繁，请稍后再试"));
     }
     return authService.register(req.getUsername(), req.getEmail(), req.getPassword(), clientIp);
   }

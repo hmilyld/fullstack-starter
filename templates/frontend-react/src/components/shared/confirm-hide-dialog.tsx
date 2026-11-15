@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,20 +27,23 @@ export function ConfirmHideDialog({
   onConfirm,
   loading,
 }: ConfirmHideDialogProps) {
+  const { t } = useTranslation()
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确认隐藏菜单</AlertDialogTitle>
+          <AlertDialogTitle>{t("common.confirmHide.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            隐藏{" "}
+            {t("common.confirmHide.prefix")}{" "}
             <span className="font-medium text-foreground">{targetName}</span>{" "}
-            后，侧边栏将不再显示该入口。如果这是「菜单与权限」或「系统设置」入口，你仍可通过
-            /settings/menu 直接访问并重新显示。
+            {t("common.confirmHide.suffix")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogCancel>
+            {t("common.confirmHide.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault()
@@ -48,7 +52,7 @@ export function ConfirmHideDialog({
             disabled={loading}
           >
             {loading && <Spinner data-icon="inline-start" />}
-            隐藏
+            {t("common.confirmHide.confirm")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

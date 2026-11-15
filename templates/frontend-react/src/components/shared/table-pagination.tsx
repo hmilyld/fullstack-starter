@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -55,12 +56,14 @@ export function TablePagination({
   page,
   totalPages,
   total,
-  itemLabel = "条记录",
+  itemLabel,
   pageSize,
   pageSizeOptions = [10, 20, 50],
   onPageSizeChange,
   onPageChange,
 }: TablePaginationProps) {
+  const { t } = useTranslation()
+  const label = itemLabel ?? t("common.pagination.records")
   const pageItems = getPageItems(page, totalPages)
   const showPageSize = pageSize !== undefined && onPageSizeChange !== undefined
 
@@ -68,11 +71,16 @@ export function TablePagination({
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
         <p>
-          共 {total} {itemLabel}，第 {page} / {totalPages} 页
+          {t("common.pagination.summary", {
+            total,
+            itemLabel: label,
+            page,
+            totalPages,
+          })}
         </p>
         {showPageSize && (
           <label className="flex items-center gap-2 text-xs">
-            每页
+            {t("common.pagination.perPage")}
             <Select
               value={String(pageSize)}
               onValueChange={(value) => onPageSizeChange(Number(value))}
@@ -80,14 +88,14 @@ export function TablePagination({
               <SelectTrigger
                 size="sm"
                 className="h-8 w-[76px]"
-                aria-label="每页显示条数"
+                aria-label={t("common.pagination.perPageAria")}
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {pageSizeOptions.map((option) => (
                   <SelectItem key={option} value={String(option)}>
-                    {option} 条
+                    {t("common.pagination.items", { count: option })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -103,7 +111,7 @@ export function TablePagination({
               size="icon-sm"
               disabled={page <= 1}
               onClick={() => onPageChange(1)}
-              aria-label="第一页"
+              aria-label={t("common.pagination.first")}
             >
               <ChevronsLeftIcon />
             </Button>
@@ -116,7 +124,7 @@ export function TablePagination({
               onClick={() => onPageChange(page - 1)}
             >
               <ChevronLeftIcon data-icon="inline-start" />
-              上一页
+              {t("common.pagination.previous")}
             </Button>
           </PaginationItem>
           {pageItems.map((item, index) =>
@@ -147,7 +155,7 @@ export function TablePagination({
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
             >
-              下一页
+              {t("common.pagination.next")}
               <ChevronRightIcon data-icon="inline-end" />
             </Button>
           </PaginationItem>
@@ -157,7 +165,7 @@ export function TablePagination({
               size="icon-sm"
               disabled={page >= totalPages}
               onClick={() => onPageChange(totalPages)}
-              aria-label="最后一页"
+              aria-label={t("common.pagination.last")}
             >
               <ChevronsRightIcon />
             </Button>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useSortable } from "@dnd-kit/vue/sortable"
 import {
   ChevronDown,
@@ -20,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { MenuItem, MenuOperation } from "@/types/menu"
+import { translateOr } from "@/lib/label"
 import {
   itemSortableId,
   type MenuDragData,
@@ -53,6 +55,12 @@ const emit = defineEmits<{
   (e: "delete-operation", item: MenuItem, operation: MenuOperation): void
 }>()
 
+const { t } = useI18n()
+const label = computed(() =>
+  props.item.isSystem
+    ? translateOr(`nav.items.${props.item.permissionCode}`, props.item.name)
+    : props.item.name
+)
 const element = ref<HTMLElement | null>(null)
 const handle = ref<HTMLElement | null>(null)
 
@@ -75,13 +83,15 @@ const actions = computed<RowAction[]>(() => {
   const result: RowAction[] = []
   if (props.canEdit) {
     result.push({
-      label: props.item.hidden ? "在侧边栏显示" : "隐藏菜单",
+      label: props.item.hidden
+        ? t("menuPage.actions.showInSidebar")
+        : t("menuPage.actions.hideMenu"),
       icon: props.item.hidden ? Eye : EyeOff,
       disabled: props.mutationsDisabled,
       onSelect: () => emit("toggle-hidden", props.item),
     })
     result.push({
-      label: "编辑",
+      label: t("menuPage.actions.edit"),
       icon: Pencil,
       disabled: props.mutationsDisabled,
       onSelect: () => emit("edit", props.item),
@@ -90,13 +100,13 @@ const actions = computed<RowAction[]>(() => {
   if (props.canReorder) {
     result.push(
       {
-        label: "上移",
+        label: t("menuPage.actions.up"),
         icon: ChevronUp,
         disabled: !props.canMoveUp || props.mutationsDisabled,
         onSelect: () => emit("move-up"),
       },
       {
-        label: "下移",
+        label: t("menuPage.actions.down"),
         icon: ChevronDown,
         disabled: !props.canMoveDown || props.mutationsDisabled,
         onSelect: () => emit("move-down"),
@@ -105,7 +115,7 @@ const actions = computed<RowAction[]>(() => {
   }
   if (props.canDelete && !props.item.isSystem) {
     result.push({
-      label: "删除",
+      label: t("menuPage.actions.delete"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -120,7 +130,7 @@ function operationActions(operation: MenuOperation): RowAction[] {
   const result: RowAction[] = []
   if (props.canEditOperation) {
     result.push({
-      label: "编辑",
+      label: t("menuPage.actions.edit"),
       icon: Pencil,
       disabled: props.mutationsDisabled,
       onSelect: () => emit("edit-operation", props.item, operation),
@@ -128,7 +138,7 @@ function operationActions(operation: MenuOperation): RowAction[] {
   }
   if (props.canDeleteOperation) {
     result.push({
-      label: "删除",
+      label: t("menuPage.actions.delete"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -160,16 +170,20 @@ const panelId = computed(() => `operation-panel-${props.item.permissionCode}`)
           variant="ghost"
           size="icon-xs"
           class="cursor-grab touch-none"
-          :aria-label="`拖动 ${item.name} 排序`"
+          :aria-label="t('menuPage.aria.dragItem', { name: label })"
         >
           <GripVertical />
         </Button>
         <MenuIcon :name="item.icon" class="size-4 shrink-0" />
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-            <p class="truncate text-sm font-medium">{{ item.name }}</p>
-            <Badge v-if="item.isSystem" variant="outline">内置</Badge>
-            <Badge v-if="item.hidden" variant="secondary">已隐藏</Badge>
+            <p class="truncate text-sm font-medium">{{ label }}</p>
+            <Badge v-if="item.isSystem" variant="outline">{{
+              t("menuPage.builtIn")
+            }}</Badge>
+            <Badge v-if="item.hidden" variant="secondary">{{
+              t("menuPage.hidden")
+            }}</Badge>
           </div>
           <p class="truncate text-xs text-muted-foreground">{{ item.route }}</p>
         </div>
@@ -181,23 +195,37 @@ const panelId = computed(() => `operation-panel-${props.item.permissionCode}`)
           class="max-md:h-11 max-md:w-11 max-md:px-0"
           :aria-expanded="expanded"
           :aria-controls="panelId"
-          :aria-label="`${expanded ? '收起' : '展开'} ${item.name} 的操作权限`"
+          :aria-label="
+            t('menuPage.aria.toggleOperations', {
+              action: expanded
+                ? t('menuPage.actions.collapse')
+                : t('menuPage.actions.expand'),
+              name: label,
+            })
+          "
           @click="emit('toggle-expanded', item.permissionCode)"
         >
           <ChevronRight
             :class="cn('transition-transform', expanded && 'rotate-90')"
           />
           <span class="hidden md:inline">
-            {{ item.operations.length }} 个操作
+            {{
+              t("menuPage.operationCount", { count: item.operations.length })
+            }}
           </span>
         </Button>
-        <RowActions :actions="actions" :label="`${item.name} 的操作`" />
+        <RowActions
+          :actions="actions"
+          :label="t('menuPage.itemActions', { name: label })"
+        />
       </div>
     </div>
 
     <div v-if="expanded" :id="panelId" class="border-t bg-muted/20 px-3 py-2">
       <div class="flex items-center justify-between gap-2 pb-1">
-        <p class="text-xs font-medium text-muted-foreground">操作权限</p>
+        <p class="text-xs font-medium text-muted-foreground">
+          {{ t("menuPage.operationPermissions") }}
+        </p>
         <Button
           v-if="canCreateOperation"
           type="button"
@@ -207,14 +235,14 @@ const panelId = computed(() => `operation-panel-${props.item.permissionCode}`)
           @click="emit('add-operation', item)"
         >
           <Plus data-icon="inline-start" />
-          新增操作
+          {{ t("menuPage.addOperation") }}
         </Button>
       </div>
       <p
         v-if="item.operations.length === 0"
         class="px-1 py-2 text-xs text-muted-foreground"
       >
-        还没有操作权限，添加后可在角色管理中分配。
+        {{ t("menuPage.noOperations") }}
       </p>
       <div v-else class="flex flex-col gap-1">
         <div
@@ -234,7 +262,7 @@ const panelId = computed(() => `operation-panel-${props.item.permissionCode}`)
           </div>
           <RowActions
             :actions="operationActions(operation)"
-            :label="`${operation.name} 的操作`"
+            :label="t('menuPage.itemActions', { name: operation.name })"
           />
         </div>
       </div>

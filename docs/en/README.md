@@ -14,11 +14,12 @@ More screens (login, user management, settings, audit logs) are in the [root REA
 - ⚙️ **Choose a backend**: Python (FastAPI) or Java (Spring Boot)
 - 🔐 **Authentication built in**: login, registration, logout (Python uses JWT, Java uses Sa-Token), maintenance mode, and manual review
 - 🧩 **Complete modules**: users, roles, permissions, menus, system settings, AI models and presets, audit logs, data management, dashboard
+- 🌐 **Internationalization**: Chinese (default) and English runtime switch, persisted in the browser; API errors follow `Accept-Language`
 - 🐳 **Docker ready**: single-image deployment with an Nginx reverse proxy
 - 📊 **Works out of the box**: dashboard stats, user/role/permission CRUD, paginated search, personal settings
 - 🧭 **List experience**: per-table column visibility and row density (remembered), page size, sticky headers, multi-select bulk actions, a ⌘K command palette (with recent pages), an appearance drawer (theme / sidebar variant), and an unsaved-changes warning
 - 🎛 **Design spec**: blue-grey neutrals with a deep navy primary, Inter / Manrope, a 6/8/10/14/18 radius scale; tokens and component rules live in `templates/frontend-react/DESIGN.md` (the Vue and Svelte templates are identical)
-- 🗓 **Date-time control**: a custom Chinese calendar with hour/minute inputs (native `datetime-local` renders English `mm/dd/yyyy` and has an inconsistent box model across browsers)
+- 🗓 **Date-time control**: a custom calendar with hour/minute inputs; month and weekday labels follow the active locale (native `datetime-local` fixes the format and has an inconsistent box model across browsers)
 
 ## Features of the Generated Project
 

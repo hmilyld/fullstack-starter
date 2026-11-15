@@ -1,9 +1,7 @@
 import type { PublicConfig } from "@/types/system"
+import i18n from "@/lib/i18n"
 
 export type PwaTheme = "light" | "dark"
-
-const DEFAULT_NAME = "管理系统"
-const DEFAULT_DESCRIPTION = "基于 React + shadcn/ui 的后台管理框架"
 
 export type PwaManifest = {
   name: string
@@ -30,17 +28,22 @@ export type PwaManifest = {
 /** 根据站点配置与当前主题生成 manifest，避免写死站点名和颜色 */
 export function buildPwaManifest(
   config: PublicConfig | null,
-  theme: PwaTheme
+  theme: PwaTheme,
+  lang = "zh-CN"
 ): PwaManifest {
-  const name = config?.siteName?.trim() || DEFAULT_NAME
+  const name =
+    config?.siteName?.trim() || i18n.t("pwa.defaultName", { lng: lang })
   const shortName = [...name].slice(0, 12).join("")
   const background = theme === "dark" ? "#0a0a0a" : "#ffffff"
+  const description =
+    config?.siteDescription?.trim() ||
+    i18n.t("pwa.defaultDescription", { lng: lang })
 
   return {
     name,
     short_name: shortName,
-    description: config?.siteDescription?.trim() || DEFAULT_DESCRIPTION,
-    lang: "zh-CN",
+    description,
+    lang,
     dir: "ltr",
     id: "/",
     start_url: "/",

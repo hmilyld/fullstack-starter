@@ -32,10 +32,12 @@
   import { getAuditLogs } from "#lib/api/audit-log.js"
   import { formatDateTimeInput } from "#lib/date-time.js"
   import { formatDateTime } from "#lib/format.js"
+  import { locale, t } from "#lib/i18n.js"
   import { useColumnVisibility } from "#lib/hooks/use-column-visibility.svelte.js"
   import { usePagedList } from "#lib/hooks/use-paged-list.svelte.js"
   import { useTableDensity } from "#lib/hooks/use-table-density.svelte.js"
   import { useUrlPage } from "#lib/hooks/use-url-list-state.svelte.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
   import type {
     AuditFilterKey,
     AuditFilters,
@@ -53,20 +55,6 @@
     endTime: "",
   }
 
-  const FILTER_LABELS: Record<AuditFilterKey, string> = {
-    userId: "用户 ID",
-    status: "状态",
-    action: "动作",
-    startTime: "开始时间",
-    endTime: "结束时间",
-  }
-
-  const STATUS_LABELS: Record<string, string> = {
-    success: "成功",
-    fail: "失败",
-    permission_denied: "权限不足",
-  }
-
   const FILTER_KEYS: AuditFilterKey[] = [
     "userId",
     "status",
@@ -77,37 +65,41 @@
 
   type AuditLogPath = "settings/audit-log" | `settings/audit-log?${string}`
 
-  const columns: DataColumn[] = [
+  const columns: DataColumn[] = $derived([
     {
       key: "createdAt",
-      header: "时间",
+      header: $t("auditLogPage.columns.time"),
       cellClass: "whitespace-nowrap text-muted-foreground",
     },
     {
       key: "username",
-      header: "操作者",
+      header: $t("auditLogPage.columns.username"),
       hideable: true,
       headClass: "hidden md:table-cell",
       cellClass: "hidden md:table-cell",
     },
-    { key: "action", header: "动作", cellClass: "font-mono text-xs" },
+    {
+      key: "action",
+      header: $t("auditLogPage.columns.action"),
+      cellClass: "font-mono text-xs",
+    },
     {
       key: "ip",
-      header: "IP",
+      header: $t("auditLogPage.columns.ip"),
       hideable: true,
       headClass: "hidden lg:table-cell",
       cellClass: "hidden text-muted-foreground lg:table-cell",
     },
-    { key: "status", header: "状态" },
+    { key: "status", header: $t("auditLogPage.columns.status") },
     {
       key: "detail",
-      header: "详情",
+      header: $t("auditLogPage.columns.detail"),
       hideable: true,
       headClass: "hidden xl:table-cell",
       cellClass:
         "hidden max-w-[240px] truncate text-muted-foreground xl:table-cell",
     },
-  ]
+  ])
 
   function readQuery(input: string | null): string {
     return input ?? ""
@@ -208,9 +200,9 @@
   }
 
   function formatFilterValue(key: AuditFilterKey, value: string) {
-    if (key === "status") return STATUS_LABELS[value] ?? value
+    if (key === "status") return statusLabel(value as AuditLog["status"])
     if (key === "startTime" || key === "endTime")
-      return formatDateTimeInput(value)
+      return formatDateTimeInput(value, $locale)
     return value
   }
 
@@ -219,13 +211,13 @@
       .filter((key) => query[key] !== "")
       .map((key) => ({
         key,
-        label: FILTER_LABELS[key],
+        label: $t(`auditLogPage.filters.${key}`),
         value: formatFilterValue(key, query[key]),
       }))
   )
 
   function statusLabel(status: AuditLog["status"]) {
-    return STATUS_LABELS[status] ?? status
+    return $t(`auditLogPage.status.${status}`, { defaultValue: status })
   }
 
   function statusBadgeVariant(
@@ -237,7 +229,12 @@
   }
 </script>
 
-<svelte:head><title>审计日志 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title
+    >{$t("auditLogPage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
+  ></svelte:head
+>
 
 {#snippet statusBadge(row: AuditLog)}
   <Badge variant={statusBadgeVariant(row.status)}>
@@ -246,16 +243,19 @@
 {/snippet}
 
 <div class="flex flex-col gap-(--page-gap)">
-  <PageHeader title="审计日志" description="查看系统的写操作与权限拦截记录。" />
+  <PageHeader
+    title={$t("auditLogPage.title")}
+    description={$t("auditLogPage.description")}
+  />
 
-  <ListShell description={`共 ${total} 条记录`}>
+  <ListShell description={$t("auditLogPage.listDescription", { total })}>
     {#snippet footer()}
       {#if hasLogs}
         <TablePagination
           page={currentPage}
           {totalPages}
           {total}
-          itemLabel="条记录"
+          itemLabel={$t("auditLogPage.entityName")}
           {pageSize}
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           onPageChange={list.setPage}
@@ -273,11 +273,11 @@
         <div class="flex items-center gap-2">
           <Button onclick={handleSearch}>
             <Search data-icon="inline-start" />
-            查询
+            {$t("auditLogPage.search")}
           </Button>
           <Button variant="outline" onclick={handleReset}>
             <RotateCcw data-icon="inline-start" />
-            重置
+            {$t("auditLogPage.reset")}
           </Button>
           <ColumnToggle
             {columns}
@@ -298,30 +298,34 @@
           onclick={() => (filterOpen = true)}
         >
           <SlidersHorizontal data-icon="inline-start" />
-          筛选
+          {$t("auditLogPage.filterButton")}
           {activeFilters.length > 0 ? ` · ${activeFilters.length}` : ""}
         </Button>
         <Button class="flex-1" onclick={handleSearch}>
           <Search data-icon="inline-start" />
-          查询
+          {$t("auditLogPage.search")}
         </Button>
       </div>
       {#if activeFilters.length > 0}
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs text-muted-foreground">当前筛选：</span>
+          <span class="text-xs text-muted-foreground"
+            >{$t("auditLogPage.currentFilters")}</span
+          >
           {#each activeFilters as filter (filter.key)}
             <Button
               variant="secondary"
               size="xs"
-              aria-label={`移除筛选：${filter.label}`}
+              aria-label={$t("auditLogPage.removeFilterAria", {
+                label: filter.label,
+              })}
               onclick={() => removeFilter(filter.key)}
             >
-              {filter.label}：{filter.value}
+              {filter.label}{$t("auditLogPage.filterSeparator")}{filter.value}
               <X data-icon="inline-end" />
             </Button>
           {/each}
           <Button variant="ghost" size="xs" onclick={handleReset}>
-            清除全部
+            {$t("auditLogPage.clearAll")}
           </Button>
         </div>
       {/if}
@@ -333,19 +337,21 @@
         class="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0"
       >
         <SheetHeader class="border-b p-4 pr-14">
-          <SheetTitle>筛选条件</SheetTitle>
-          <SheetDescription>
-            按用户、状态、动作或时间范围筛选审计记录。
-          </SheetDescription>
+          <SheetTitle>{$t("auditLogPage.sheetTitle")}</SheetTitle>
+          <SheetDescription
+            >{$t("auditLogPage.sheetDescription")}</SheetDescription
+          >
         </SheetHeader>
         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
           <AuditFilterFields bind:value={draft} prefix="audit-mobile" />
         </div>
         <SheetFooter class="flex-row gap-2 border-t p-4">
           <Button variant="outline" class="flex-1" onclick={resetAndClose}>
-            重置
+            {$t("auditLogPage.reset")}
           </Button>
-          <Button class="flex-1" onclick={searchAndClose}>应用筛选</Button>
+          <Button class="flex-1" onclick={searchAndClose}
+            >{$t("auditLogPage.apply")}</Button
+          >
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -360,28 +366,35 @@
       empty={{
         icon: activeFilters.length > 0 ? SearchX : ShieldAlert,
         title:
-          activeFilters.length > 0 ? "没有符合条件的记录" : "还没有审计记录",
+          activeFilters.length > 0
+            ? $t("auditLogPage.emptySearchTitle")
+            : $t("auditLogPage.emptyTitle"),
         description:
           activeFilters.length > 0
-            ? "试着放宽筛选条件，或清除筛选后重试。"
-            : "系统的写操作和权限拦截会自动记录在这里。",
+            ? $t("auditLogPage.emptySearchDescription")
+            : $t("auditLogPage.emptyDescription"),
       }}
       onRetry={() => list.refresh()}
       onHideColumn={columnState.toggle}
     >
       {#snippet emptyAction()}
         {#if activeFilters.length > 0}
-          <Button variant="outline" onclick={handleReset}>清除筛选</Button>
+          <Button variant="outline" onclick={handleReset}
+            >{$t("auditLogPage.clearFilter")}</Button
+          >
         {/if}
       {/snippet}
 
       {#snippet card(log: AuditLog)}
-        <RecordCard title={log.action} subtitle={formatDateTime(log.createdAt)}>
+        <RecordCard
+          title={log.action}
+          subtitle={formatDateTime(log.createdAt, $locale)}
+        >
           {#snippet badges()}
             {@render statusBadge(log)}
           {/snippet}
           {#snippet meta()}
-            <span>{log.username || "未知"}</span>
+            <span>{log.username || $t("auditLogPage.unknown")}</span>
             <span>{log.ip || "-"}</span>
             {#if log.detail}
               <span class="w-full truncate">{log.detail}</span>
@@ -392,9 +405,9 @@
 
       {#snippet cell(key: string, log: AuditLog)}
         {#if key === "createdAt"}
-          {formatDateTime(log.createdAt)}
+          {formatDateTime(log.createdAt, $locale)}
         {:else if key === "username"}
-          {log.username || "未知"}
+          {log.username || $t("auditLogPage.unknown")}
         {:else if key === "action"}
           {log.action}
         {:else if key === "ip"}

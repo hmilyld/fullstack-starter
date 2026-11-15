@@ -3,6 +3,7 @@ package com.hmilyld.fullstack.controller;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.i18n.MessageResolver;
 import com.hmilyld.fullstack.data.DataImportExecutor;
 import com.hmilyld.fullstack.data.DataOperationState;
 import com.hmilyld.fullstack.service.DataManagementService;
@@ -25,6 +26,7 @@ public class DataManagementController {
   @Autowired private DataManagementService dataManagementService;
   @Autowired private DataOperationState operationState;
   @Autowired private DataImportExecutor importExecutor;
+  @Autowired private MessageResolver messageResolver;
 
   @PostConstruct
   public void cleanupStaleFiles() {
@@ -63,7 +65,7 @@ public class DataManagementController {
     Long ownerId = Long.parseLong(StpUtil.getLoginId().toString());
     DataOperationState.ImportJob job = operationState.beginJob(ownerId);
     if (job == null) {
-      return ApiResponse.error("数据操作正在进行，请稍后重试");
+      return ApiResponse.error(messageResolver.localize("数据操作正在进行，请稍后重试"));
     }
     Path upload;
     try {
@@ -107,7 +109,7 @@ public class DataManagementController {
   public ApiResponse<Map<String, Object>> importStatus(
       @PathVariable String jobId, @RequestHeader("X-Import-Job-Token") String jobToken) {
     DataOperationState.ImportJob job = operationState.getJob(jobId, jobToken);
-    if (job == null) return ApiResponse.error("导入任务不存在");
+    if (job == null) return ApiResponse.error(messageResolver.localize("导入任务不存在"));
     return ApiResponse.success(
         Map.of(
             "id",

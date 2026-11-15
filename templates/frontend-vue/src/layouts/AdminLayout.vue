@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import { RouterView } from "vue-router"
 import AppSidebar from "@/components/AppSidebar.vue"
 import AppHeader from "@/components/AppHeader.vue"
 import CommandMenu from "@/components/CommandMenu.vue"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
+const { t } = useI18n()
 const defaultOpen = window.matchMedia("(min-width: 1280px)").matches
 // 构建时注入，值来自 package.json
 const appVersion = __APP_VERSION__
@@ -16,7 +18,7 @@ const appVersion = __APP_VERSION__
       href="#main-content"
       class="sr-only rounded-lg bg-background px-3 py-2 text-sm font-medium ring-[3px] ring-ring focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
     >
-      跳到主内容
+      {{ t("common.skipToContent") }}
     </a>
     <AppSidebar />
     <SidebarInset>

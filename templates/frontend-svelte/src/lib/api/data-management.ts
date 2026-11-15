@@ -1,4 +1,5 @@
 import { apiClient } from "#lib/api/client.js"
+import { translate } from "#lib/i18n.js"
 import type {
   ExportResult,
   ImportJobHandle,
@@ -8,7 +9,7 @@ import type {
 export async function exportData(): Promise<ExportResult> {
   const response = await apiClient.download("/data/export", { method: "POST" })
   const password = response.headers.get("X-Export-Password")
-  if (!password) throw new Error("服务器未返回导出密码")
+  if (!password) throw new Error(translate("errors.exportPasswordMissing"))
 
   return {
     blob: response.blob,

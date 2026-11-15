@@ -1,3 +1,4 @@
+import { translate } from "#lib/i18n.js"
 import type {
   ApiResponse,
   PaginatedData,
@@ -57,11 +58,11 @@ export function usePagedList<T, P extends ListParams = ListParams>({
         items = res.data.list
         total = res.data.total
       } else {
-        error = res.message || "加载数据失败"
+        error = res.message || translate("common.loadFailed")
       }
     } catch (err) {
       if (id === requestId) {
-        error = (err as Error).message || "加载数据失败"
+        error = (err as Error).message || translate("common.loadFailed")
       }
     } finally {
       if (id === requestId) loading = false

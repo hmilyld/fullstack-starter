@@ -8,6 +8,7 @@
     DropdownMenuItem,
     DropdownMenuTrigger,
   } from "#lib/components/ui/dropdown-menu/index.js"
+  import { t } from "#lib/i18n.js"
   import { setTheme } from "#lib/stores/theme.svelte.js"
 </script>
 
@@ -21,19 +22,20 @@
         <Moon
           class="absolute scale-0 rotate-90 transition-transform dark:scale-100 dark:rotate-0"
         />
-        <span class="sr-only">切换主题</span>
+        <span class="sr-only">{$t("common.theme")}</span>
       </Button>
     {/snippet}
   </DropdownMenuTrigger>
   <DropdownMenuContent align="end">
     <DropdownMenuGroup>
       <DropdownMenuItem onSelect={() => setTheme("light")}
-        >浅色</DropdownMenuItem
+        >{$t("appearance.light")}</DropdownMenuItem
       >
-      <DropdownMenuItem onSelect={() => setTheme("dark")}>深色</DropdownMenuItem
+      <DropdownMenuItem onSelect={() => setTheme("dark")}
+        >{$t("appearance.dark")}</DropdownMenuItem
       >
       <DropdownMenuItem onSelect={() => setTheme("system")}
-        >跟随系统</DropdownMenuItem
+        >{$t("appearance.system")}</DropdownMenuItem
       >
     </DropdownMenuGroup>
   </DropdownMenuContent>

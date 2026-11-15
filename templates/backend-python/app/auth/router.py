@@ -10,6 +10,7 @@ from app.auth.service import register as register_service
 from app.core import audit
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.i18n import localize_message
 from app.core.schemas import ApiResponse
 from app.user.models import User
 
@@ -33,7 +34,7 @@ async def register(
 ) -> ApiResponse[LoginResponse]:
     payload = await register_service(db, request, audit.get_client_ip(req))
     if payload is None:
-        return ApiResponse(message="注册成功，请等待管理员审核")
+        return ApiResponse(message=localize_message("注册成功，请等待管理员审核", req))
     return ApiResponse(data=payload)
 
 

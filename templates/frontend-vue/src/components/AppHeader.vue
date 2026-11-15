@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink, useRoute } from "vue-router"
 import { Search } from "@lucide/vue"
 import ConfigDrawer from "@/components/ConfigDrawer.vue"
+import LanguageSwitcher from "@/components/LanguageSwitcher.vue"
 import ThemeToggle from "@/components/ThemeToggle.vue"
 import UserMenu from "@/components/UserMenu.vue"
 import { openCommandMenu } from "@/composables/use-command-menu"
@@ -20,6 +22,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { buildBreadcrumbs } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
+const { t } = useI18n()
 const route = useRoute()
 const crumbs = computed(() => buildBreadcrumbs(route.path))
 const currentCrumb = computed(() => crumbs.value[crumbs.value.length - 1])
@@ -27,6 +30,11 @@ const scrolled = ref(false)
 
 function onScroll() {
   scrolled.value = window.scrollY > 10
+}
+
+function crumbLabel(crumb: { path: string; label: string }) {
+  const segment = crumb.path.split("/").filter(Boolean).pop() ?? ""
+  return t(`routes.${segment}`, crumb.label)
 }
 
 onMounted(() => {
@@ -61,7 +69,7 @@ onUnmounted(() => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink as-child>
-                <RouterLink to="/dashboard">管理后台</RouterLink>
+                <RouterLink to="/dashboard">{{ t("common.admin") }}</RouterLink>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <template v-for="(crumb, index) in crumbs" :key="crumb.path">
@@ -70,17 +78,19 @@ onUnmounted(() => {
                 <BreadcrumbPage
                   v-if="index === crumbs.length - 1 || !crumb.hasRoute"
                 >
-                  {{ crumb.label }}
+                  {{ crumbLabel(crumb) }}
                 </BreadcrumbPage>
                 <BreadcrumbLink v-else as-child>
-                  <RouterLink :to="crumb.path">{{ crumb.label }}</RouterLink>
+                  <RouterLink :to="crumb.path">{{
+                    crumbLabel(crumb)
+                  }}</RouterLink>
                 </BreadcrumbLink>
               </BreadcrumbItem>
             </template>
           </BreadcrumbList>
         </Breadcrumb>
         <span class="truncate text-sm font-medium md:hidden">
-          {{ currentCrumb?.label ?? "管理后台" }}
+          {{ currentCrumb ? crumbLabel(currentCrumb) : t("common.admin") }}
         </span>
       </div>
 
@@ -92,7 +102,7 @@ onUnmounted(() => {
           @click="openCommandMenu"
         >
           <Search class="size-4 shrink-0" />
-          <span class="truncate">搜索…</span>
+          <span class="truncate">{{ t("common.search") }}</span>
           <kbd
             class="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px]"
           >
@@ -103,11 +113,12 @@ onUnmounted(() => {
           variant="ghost"
           size="icon-sm"
           class="lg:hidden"
-          aria-label="搜索页面或菜单"
+          :aria-label="t('common.searchAria')"
           @click="openCommandMenu"
         >
           <Search />
         </Button>
+        <LanguageSwitcher />
         <ThemeToggle />
         <ConfigDrawer />
         <Separator

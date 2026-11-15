@@ -59,7 +59,7 @@ The same rules in Java form, enforced by `mvn spotless:check` and `ContractTest`
 ## Coding Style
 
 - **Language**: TypeScript (ESM, `"type": "module"`)
-- **Templates**: All UI text in **Chinese**. API responses use `{ code: 0, message: "success", data }`
+- **Templates**: Default UI text is **Chinese (zh-CN)**; all three frontends ship runtime `zh-CN`/`en` catalogs and English is opt-in (see Internationalization). API responses use `{ code: 0, message: "success", data }`
 - **Naming**: TS/JS uses `camelCase` variables, `PascalCase` components. Python schemas use `camelCase` (roleId), ORM uses `snake_case` (role_id)
 
 ## Business Logic Conventions
@@ -97,6 +97,17 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - Domain files must not import each other; shared behaviour belongs in `lib/`, `hooks/` (React) or `composables/` (Vue).
 - Keep `api/` flat by default. Only when one domain exceeds ~150 lines or needs a second file, promote `api/<domain>.ts` to `api/<domain>/index.ts` plus siblings. Do not nest ahead of need.
 - React and Vue share byte-identical `src/api/` and `src/types/`; keep them in sync when changing either. The Svelte template keeps the same domain files and export signatures under `src/lib/api` and `src/lib/types`, using `#lib` imports with `.js` extensions.
+
+### Internationalization (frontend-react / frontend-vue / frontend-svelte)
+
+- All three frontends use runtime catalogs: React `src/locales/{zh-CN,en}.ts` with `useTranslation()`, Vue `src/locales/{zh-CN,en}.ts` with `useI18n()`, and Svelte `src/lib/locales/{zh-CN,en}.ts` with `$t` / `translate()`. New or edited user-facing text must go through the catalog; do not hardcode UI strings.
+- The default locale is `zh-CN`; English is opt-in. Locale is stored in `app.locale`, applied to `document.documentElement.lang` and the PWA manifest, and never prefixed to routes.
+- Keep the catalog key structure aligned across React, Vue and Svelte; add or rename keys in all three `zh-CN`/`en` pairs together.
+- Built-in menu, group, role and operation labels resolve by code/id to catalog keys; custom names and API data remain as sent by the backend.
+- The clients send `Accept-Language` on API requests. Both backends localize API-visible exception/validation messages (default zh-CN, safe fallback for unmapped messages and user data).
+- Date/time display follows the active locale; keep the zh-CN formatting and tests unchanged.
+- Built-in permission names in the RBAC screens (permission overview, role picker) resolve by code through `permissionNames.<code>` with `.` replaced by `_`; custom permission names and operation names in the menu editor stay backend data.
+- Never pass a backend-provided name as a vue-i18n default message (`t(key, name)`): the default message is compiled too, so `@`, `|` and `{}` in the name throw or truncate. Use `translateOr()` from `templates/frontend-vue/src/lib/label.ts`.
 
 ## Frontend Responsive Rules (frontend-react / frontend-vue / frontend-svelte)
 

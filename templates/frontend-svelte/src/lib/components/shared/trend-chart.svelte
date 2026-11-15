@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "#lib/i18n.js"
+
   type TrendPoint = {
     label: string
     success: number
@@ -49,7 +51,11 @@
       label: point.label,
       x: xAt(index),
       y: yAt(point.success),
-      text: `${point.label}：成功 ${point.success} 次，失败或被拦截 ${point.failed} 次`,
+      text: $t("trendChart.pointTitle", {
+        label: point.label,
+        success: point.success,
+        failed: point.failed,
+      }),
     }))
   )
 </script>
@@ -75,7 +81,7 @@
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
         role="img"
-        aria-label="近 7 天操作趋势"
+        aria-label={$t("trendChart.ariaLabel")}
       >
         <defs>
           <linearGradient id="trend-fill-svelte" x1="0" y1="0" x2="0" y2="1">
@@ -129,12 +135,12 @@
   </div>
 
   <table class="sr-only">
-    <caption>近 7 天操作趋势</caption>
+    <caption>{$t("trendChart.caption")}</caption>
     <thead>
       <tr>
-        <th scope="col">日期</th>
-        <th scope="col">成功</th>
-        <th scope="col">失败或被拦截</th>
+        <th scope="col">{$t("trendChart.date")}</th>
+        <th scope="col">{$t("trendChart.success")}</th>
+        <th scope="col">{$t("trendChart.failed")}</th>
       </tr>
     </thead>
     <tbody>

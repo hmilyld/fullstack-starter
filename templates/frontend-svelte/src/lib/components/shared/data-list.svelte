@@ -20,6 +20,7 @@
     TableHeader,
     TableRow,
   } from "#lib/components/ui/table/index.js"
+  import { t } from "#lib/i18n.js"
   import { cn } from "#lib/utils.js"
   import type { DataColumn } from "#lib/components/shared/data-column.js"
 
@@ -126,7 +127,7 @@
                           {...props}
                           variant="ghost"
                           size="icon-xs"
-                          aria-label="列选项"
+                          aria-label={$t("common.table.columnOptions")}
                           class="-mr-1 opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100"
                         >
                           <MoreHorizontal />
@@ -137,7 +138,7 @@
                       <DropdownMenuItem
                         onSelect={() => onHideColumn(column.key)}
                       >
-                        隐藏此列
+                        {$t("common.table.hideColumn")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

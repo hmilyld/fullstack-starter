@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue"
 import { computed, nextTick, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { Calendar, ChevronLeft, ChevronRight, X } from "@lucide/vue"
 import {
   Popover,
@@ -15,11 +16,11 @@ import {
   parseDateTimeInput,
   toDateTimeInput,
   todayKey,
+  weekdayLabels,
+  type DateTimeLocale,
   type DateTimeParts,
 } from "@/lib/date-time"
 import { cn } from "@/lib/utils"
-
-const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"]
 
 /** 方向键在日历里移动的天数 */
 const ARROW_STEPS: Record<string, number> = {
@@ -29,22 +30,28 @@ const ARROW_STEPS: Record<string, number> = {
   ArrowDown: 7,
 }
 
-const props = withDefaults(
-  defineProps<{
-    modelValue: string
-    id?: string
-    /** 保留表单字段名的语义，值以隐藏域提交 */
-    name?: string
-    placeholder?: string
-    disabled?: boolean
-    class?: HTMLAttributes["class"]
-  }>(),
-  { placeholder: "选择日期时间" }
-)
+const props = defineProps<{
+  modelValue: string
+  id?: string
+  /** 保留表单字段名的语义，值以隐藏域提交 */
+  name?: string
+  placeholder?: string
+  disabled?: boolean
+  class?: HTMLAttributes["class"]
+}>()
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: string): void
 }>()
+
+const { t, locale } = useI18n()
+const dateLocale = computed<DateTimeLocale>(() =>
+  String(locale.value).startsWith("en") ? "en" : "zh-CN"
+)
+const weekdays = computed(() => weekdayLabels(dateLocale.value))
+const resolvedPlaceholder = computed(
+  () => props.placeholder ?? t("dateTime.placeholder")
+)
 
 const pad = (value: number) => String(value).padStart(2, "0")
 const clamp = (value: number, min: number, max: number) =>
@@ -231,7 +238,11 @@ function clear() {
         "
       >
         <span class="truncate tabular-nums">
-          {{ modelValue ? formatDateTimeInput(modelValue) : placeholder }}
+          {{
+            modelValue
+              ? formatDateTimeInput(modelValue, dateLocale)
+              : resolvedPlaceholder
+          }}
         </span>
         <Calendar
           class="size-4 shrink-0 text-muted-foreground"
@@ -245,18 +256,18 @@ function clear() {
         <div class="flex items-center justify-between">
           <button
             type="button"
-            aria-label="上个月"
+            :aria-label="t('dateTime.previousMonth')"
             class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
             @click="shiftMonth(-1)"
           >
             <ChevronLeft class="size-4" />
           </button>
           <span class="text-sm font-medium tabular-nums">
-            {{ formatMonthLabel(view.year, view.month) }}
+            {{ formatMonthLabel(view.year, view.month, dateLocale) }}
           </span>
           <button
             type="button"
-            aria-label="下个月"
+            :aria-label="t('dateTime.nextMonth')"
             class="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
             @click="shiftMonth(1)"
           >
@@ -266,7 +277,7 @@ function clear() {
 
         <div class="grid grid-cols-7">
           <span
-            v-for="label in WEEKDAYS"
+            v-for="label in weekdays"
             :key="label"
             class="flex h-7 items-center justify-center text-xs text-muted-foreground"
           >
@@ -277,7 +288,7 @@ function clear() {
         <div
           ref="gridRef"
           role="group"
-          aria-label="选择日期"
+          :aria-label="t('dateTime.selectDate')"
           class="grid grid-cols-7 gap-y-0.5 [@media(pointer:coarse)]:gap-y-1"
           @keydown="handleGridKeyDown"
         >
@@ -307,9 +318,11 @@ function clear() {
         </div>
 
         <div class="flex items-center gap-2 border-t pt-2.5">
-          <span class="text-xs text-muted-foreground">时间</span>
+          <span class="text-xs text-muted-foreground">{{
+            t("dateTime.time")
+          }}</span>
           <input
-            aria-label="小时"
+            :aria-label="t('dateTime.hour')"
             inputmode="numeric"
             autocomplete="off"
             :value="hourText"
@@ -321,7 +334,7 @@ function clear() {
           />
           <span class="text-sm text-muted-foreground">:</span>
           <input
-            aria-label="分钟"
+            :aria-label="t('dateTime.minute')"
             inputmode="numeric"
             autocomplete="off"
             :value="minuteText"
@@ -336,7 +349,7 @@ function clear() {
             class="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
             @click="setNow"
           >
-            此刻
+            {{ t("dateTime.now") }}
           </button>
         </div>
 
@@ -348,14 +361,14 @@ function clear() {
             @click="clear"
           >
             <X class="size-3.5" />
-            清除
+            {{ t("dateTime.clear") }}
           </button>
           <button
             type="button"
             class="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-4"
             @click="open = false"
           >
-            完成
+            {{ t("dateTime.done") }}
           </button>
         </div>
       </div>

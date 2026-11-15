@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import { Spinner } from "@/components/ui/spinner"
 import {
   AlertDialog,
@@ -27,29 +28,35 @@ const emit = defineEmits<{
   (e: "update:open", value: boolean): void
   (e: "confirm"): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <AlertDialog :open="open" @update:open="emit('update:open', $event)">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>确认删除</AlertDialogTitle>
+        <AlertDialogTitle>{{
+          t("common.confirmDelete.title")
+        }}</AlertDialogTitle>
         <AlertDialogDescription>
-          确定要删除
+          {{ t("common.confirmDelete.prefix") }}
           <span class="font-medium text-foreground">{{ targetName }}</span>
-          吗？此操作不可撤销。
+          {{ t("common.confirmDelete.suffix") }}
           <template v-if="description"> {{ description }}</template>
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel>取消</AlertDialogCancel>
+        <AlertDialogCancel>{{
+          t("common.confirmDelete.cancel")
+        }}</AlertDialogCancel>
         <AlertDialogAction
           variant="destructive"
           :disabled="loading"
           @click.prevent="emit('confirm')"
         >
           <Spinner v-if="loading" data-icon="inline-start" />
-          删除
+          {{ t("common.confirmDelete.confirm") }}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

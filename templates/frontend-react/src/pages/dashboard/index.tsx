@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import {
   ActivityIcon,
@@ -34,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getAuditLogs } from "@/api/audit-log"
 import { getDashboardActivity, getDashboardStats } from "@/api/dashboard"
 import { useAuth } from "@/lib/auth-context"
+import { translate } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import type { AuditLog } from "@/types/audit-log"
 import type { ActivityItem, DashboardStats } from "@/types/dashboard"
@@ -41,29 +43,29 @@ import type { ActivityItem, DashboardStats } from "@/types/dashboard"
 const QUICK_LINKS = [
   {
     href: "/settings/user",
-    label: "用户管理",
-    description: "维护团队成员及其角色",
+    labelKey: "dashboard.links.users.label",
+    descriptionKey: "dashboard.links.users.description",
     icon: UsersIcon,
     permission: "users",
   },
   {
     href: "/settings/role",
-    label: "角色管理",
-    description: "分配角色与权限",
+    labelKey: "dashboard.links.roles.label",
+    descriptionKey: "dashboard.links.roles.description",
     icon: ShieldCheckIcon,
     permission: "roles",
   },
   {
     href: "/settings/audit-log",
-    label: "审计日志",
-    description: "查看写操作与权限拦截",
+    labelKey: "dashboard.links.audit.label",
+    descriptionKey: "dashboard.links.audit.description",
     icon: FileTextIcon,
     permission: "audit_logs",
   },
   {
     href: "/settings/data",
-    label: "数据管理",
-    description: "导出或恢复系统数据",
+    labelKey: "dashboard.links.data.label",
+    descriptionKey: "dashboard.links.data.description",
     icon: DatabaseIcon,
     permission: "data_management.export",
   },
@@ -118,6 +120,7 @@ function buildTrend(logs: AuditLog[]): TrendPoint[] {
 }
 
 export function DashboardPage() {
+  const { t, i18n } = useTranslation()
   const { hasPermission } = useAuth()
   const [stats, setStats] = React.useState<DashboardStats | null>(null)
   const [activity, setActivity] = React.useState<ActivityItem[]>([])
@@ -146,7 +149,11 @@ export function DashboardPage() {
     if (activityRes.code === 0) setActivity(activityRes.data)
     if (auditRes && auditRes.code === 0) setLogs(auditRes.data.list)
     if (statsRes.code !== 0 || activityRes.code !== 0) {
-      setError(statsRes.message || activityRes.message || "加载数据失败")
+      setError(
+        statsRes.message ||
+          activityRes.message ||
+          translate("dashboard.loadFailed")
+      )
     }
     setLoading(false)
     setTrendLoading(false)
@@ -164,30 +171,34 @@ export function DashboardPage() {
   const statItems = stats
     ? [
         {
-          title: "总用户数",
-          value: new Intl.NumberFormat("zh-CN").format(stats.totalUsers),
-          hint: "全部账号",
+          title: t("dashboard.stats.totalUsers"),
+          value: new Intl.NumberFormat(i18n.resolvedLanguage).format(
+            stats.totalUsers
+          ),
+          hint: t("dashboard.stats.allAccounts"),
           icon: UsersIcon,
           demo: false,
         },
         {
-          title: "当前活跃",
-          value: new Intl.NumberFormat("zh-CN").format(stats.activeNow),
-          hint: "最近活跃会话",
+          title: t("dashboard.stats.activeNow"),
+          value: new Intl.NumberFormat(i18n.resolvedLanguage).format(
+            stats.activeNow
+          ),
+          hint: t("dashboard.stats.recentSessions"),
           icon: ActivityIcon,
           demo: true,
         },
         {
-          title: "收入",
+          title: t("dashboard.stats.revenue"),
           value: stats.revenue,
-          hint: "本月累计",
+          hint: t("dashboard.stats.monthTotal"),
           icon: DollarSignIcon,
           demo: true,
         },
         {
-          title: "增长率",
+          title: t("dashboard.stats.growth"),
           value: stats.growth,
-          hint: "较上月",
+          hint: t("dashboard.stats.vsLastMonth"),
           icon: TrendingUpIcon,
           demo: true,
         },
@@ -196,17 +207,21 @@ export function DashboardPage() {
 
   const quickLinks = QUICK_LINKS.filter((link) =>
     hasPermission(link.permission)
-  )
+  ).map((link) => ({
+    ...link,
+    label: t(link.labelKey),
+    description: t(link.descriptionKey),
+  }))
 
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
-        title="仪表盘"
-        description="系统概览：账号规模、活跃度与最近操作。"
+        title={t("dashboard.title")}
+        description={t("dashboard.description")}
         actions={
           <Button variant="outline" onClick={load} disabled={loading}>
             <RefreshCwIcon data-icon="inline-start" />
-            刷新
+            {t("dashboard.refresh")}
           </Button>
         }
       />
@@ -250,7 +265,7 @@ export function DashboardPage() {
                             variant="outline"
                             className="h-4 px-1.5 text-[10px] font-normal"
                           >
-                            演示数据
+                            {t("dashboard.demoData")}
                           </Badge>
                         )}
                       </div>
@@ -263,23 +278,23 @@ export function DashboardPage() {
             <Card className="lg:col-span-4">
               <CardHeader className="flex flex-row items-start justify-between gap-4">
                 <div className="grid gap-1.5">
-                  <CardTitle>近 7 天操作趋势</CardTitle>
+                  <CardTitle>{t("dashboard.trendTitle")}</CardTitle>
                   <CardDescription>
                     {canReadAudit
-                      ? `共 ${weekTotal} 次写操作，按天统计。`
-                      : "按天统计审计日志中的写操作，用于判断系统活跃度。"}
+                      ? t("dashboard.trendDescription", { count: weekTotal })
+                      : t("dashboard.trendDescriptionNoAudit")}
                   </CardDescription>
                 </div>
                 {canReadAudit && weekTotal > 0 && (
                   <div className="flex shrink-0 items-center gap-3 pt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <span className="size-2 rounded-full bg-chart-1" />
-                      成功 {weekSuccess}
+                      {t("dashboard.trendSuccess", { count: weekSuccess })}
                     </span>
                     {weekFailed > 0 && (
                       <span className="flex items-center gap-1.5">
                         <span className="size-2 rounded-full bg-destructive" />
-                        失败 {weekFailed}
+                        {t("dashboard.trendFailed", { count: weekFailed })}
                       </span>
                     )}
                   </div>
@@ -289,9 +304,11 @@ export function DashboardPage() {
                 {!canReadAudit ? (
                   <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center">
                     <ShieldCheckIcon className="size-5 text-muted-foreground" />
-                    <p className="text-sm font-medium">趋势需要审计权限</p>
+                    <p className="text-sm font-medium">
+                      {t("dashboard.noAuditTitle")}
+                    </p>
                     <p className="max-w-xs text-xs text-muted-foreground">
-                      当前账号没有「审计日志」权限，无法读取操作记录。联系管理员为该角色授予权限后即可查看。
+                      {t("dashboard.noAuditDescription")}
                     </p>
                   </div>
                 ) : trendLoading ? (
@@ -299,9 +316,11 @@ export function DashboardPage() {
                 ) : weekTotal === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center">
                     <ActivityIcon className="size-5 text-muted-foreground" />
-                    <p className="text-sm font-medium">最近 7 天没有写操作</p>
+                    <p className="text-sm font-medium">
+                      {t("dashboard.emptyTrendTitle")}
+                    </p>
                     <p className="max-w-xs text-xs text-muted-foreground">
-                      用户新增、修改、删除等操作会出现在这里。
+                      {t("dashboard.emptyTrendDescription")}
                     </p>
                   </div>
                 ) : (
@@ -312,8 +331,10 @@ export function DashboardPage() {
 
             <Card className="lg:col-span-3">
               <CardHeader>
-                <CardTitle>最近动态</CardTitle>
-                <CardDescription>工作区中的最新操作记录。</CardDescription>
+                <CardTitle>{t("dashboard.recentTitle")}</CardTitle>
+                <CardDescription>
+                  {t("dashboard.recentDescription")}
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex-1">
                 {loading ? (
@@ -337,8 +358,8 @@ export function DashboardPage() {
                 ) : activity.length === 0 ? (
                   <EmptyState
                     icon={ActivityIcon}
-                    title="暂无动态"
-                    description="系统产生操作记录后会显示在这里。"
+                    title={t("dashboard.emptyRecentTitle")}
+                    description={t("dashboard.emptyRecentDescription")}
                     className="border-0 py-8"
                   />
                 ) : (
@@ -375,7 +396,7 @@ export function DashboardPage() {
                   to="/settings/audit-log"
                   className="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring"
                 >
-                  查看全部审计日志
+                  {t("dashboard.viewAll")}
                   <ArrowRightIcon className="size-4" />
                 </Link>
               </CardFooter>
@@ -385,8 +406,10 @@ export function DashboardPage() {
           {quickLinks.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>快捷入口</CardTitle>
-                <CardDescription>只显示您有权限访问的页面。</CardDescription>
+                <CardTitle>{t("dashboard.quickTitle")}</CardTitle>
+                <CardDescription>
+                  {t("dashboard.quickDescription")}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -418,7 +441,7 @@ export function DashboardPage() {
 
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <InfoIcon className="size-3.5 shrink-0" />
-            “当前活跃”“收入”“增长率”与“最近动态”来自后端的占位接口，接入真实统计后请替换。
+            {t("dashboard.placeholderNote")}
           </p>
         </>
       )}

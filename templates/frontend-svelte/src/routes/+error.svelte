@@ -3,22 +3,33 @@
   import EmptyState from "#lib/components/shared/empty-state.svelte"
   import { Button } from "#lib/components/ui/button/index.js"
   import { page } from "$app/state"
+  import { t } from "#lib/i18n.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const isNotFound = $derived(page.status === 404)
 </script>
+
+<svelte:head>
+  <title
+    >{isNotFound ? $t("errors.notFoundTitle") : $t("errors.pageLoadFailed")}
+    · {siteConfig.config?.siteName?.trim() || $t("pwa.defaultName")}</title
+  >
+</svelte:head>
 
 <div class="flex min-h-svh items-center justify-center p-6">
   <EmptyState
     class="max-w-lg"
     icon={TriangleAlert}
-    title={isNotFound ? "页面不存在" : "页面加载失败"}
+    title={isNotFound
+      ? $t("errors.notFoundTitle")
+      : $t("errors.pageLoadFailed")}
     description={isNotFound
-      ? "你访问的页面可能已被移动或删除。"
-      : "页面遇到问题，请返回仪表盘后重试。"}
+      ? $t("errors.notFoundDescription")
+      : $t("errors.pageLoadDescription")}
   >
     <!-- eslint-disable-next-line svelte/no-useless-children-snippet -->
     {#snippet children()}
-      <Button href="/dashboard">返回仪表盘</Button>
+      <Button href="/dashboard">{$t("errors.backToDashboard")}</Button>
     {/snippet}
   </EmptyState>
 </div>

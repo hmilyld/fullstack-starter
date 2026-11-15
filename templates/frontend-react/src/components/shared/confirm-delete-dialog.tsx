@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import type { ReactNode } from "react"
 import {
   AlertDialog,
@@ -28,20 +29,24 @@ export function ConfirmDeleteDialog({
   onConfirm,
   loading,
 }: ConfirmDeleteDialogProps) {
+  const { t } = useTranslation()
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确认删除</AlertDialogTitle>
+          <AlertDialogTitle>{t("common.confirmDelete.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            确定要删除{" "}
+            {t("common.confirmDelete.prefix")}{" "}
             <span className="font-medium text-foreground">{targetName}</span>{" "}
-            吗？此操作不可撤销。
+            {t("common.confirmDelete.suffix")}
             {description && <>{description}</>}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogCancel>
+            {t("common.confirmDelete.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={(e) => {
@@ -51,7 +56,7 @@ export function ConfirmDeleteDialog({
             disabled={loading}
           >
             {loading && <Spinner data-icon="inline-start" />}
-            删除
+            {t("common.confirmDelete.confirm")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

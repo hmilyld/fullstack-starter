@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import {
   ChevronRightIcon,
@@ -34,14 +35,17 @@ import { useUrlListState } from "@/hooks/use-url-list-state"
 import {
   buildPermissionTree,
   filterPermissionTree,
+  permissionNameKey,
   type PermissionTreeNode,
 } from "@/lib/access-tree"
 import { useAuth } from "@/lib/auth-context"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
 
 export function PermissionPage() {
+  const { t } = useTranslation()
   const { hasPermission } = useAuth()
   const [menuPermissions, setMenuPermissions] = React.useState<Permission[]>([])
   const [operationPermissions, setOperationPermissions] = React.useState<
@@ -61,9 +65,10 @@ export function PermissionPage() {
       getPermissions({ type: "operation" }),
     ])
     if (menuRes.code === 0) setMenuPermissions(menuRes.data)
-    else setError(menuRes.message || "加载菜单权限失败")
+    else setError(menuRes.message || translate("permissionPage.loadMenuFailed"))
     if (opRes.code === 0) setOperationPermissions(opRes.data)
-    else setError(opRes.message || "加载操作权限失败")
+    else
+      setError(opRes.message || translate("permissionPage.loadOperationFailed"))
     setTableLoading(false)
   }, [])
 
@@ -72,9 +77,19 @@ export function PermissionPage() {
   }, [loadData])
 
   const tree = React.useMemo(() => {
-    const fullTree = buildPermissionTree(menuPermissions, operationPermissions)
+    const fullTree = buildPermissionTree(
+      menuPermissions,
+      operationPermissions
+    ).map((node) => ({
+      ...node,
+      name: t(permissionNameKey(node.code), { defaultValue: node.name }),
+      children: node.children.map((child) => ({
+        ...child,
+        name: t(permissionNameKey(child.code), { defaultValue: child.name }),
+      })),
+    }))
     return filterPermissionTree(fullTree, search)
-  }, [menuPermissions, operationPermissions, search])
+  }, [menuPermissions, operationPermissions, search, t])
 
   React.useEffect(() => {
     if (search) {
@@ -96,11 +111,15 @@ export function PermissionPage() {
     const res = await syncPermissions()
     setSyncing(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "同步失败")
+      appToast.error(res.message || t("permissionPage.syncFailed"))
       return
     }
     appToast.success(
-      `同步成功：新增 ${res.data.added.length} 个，更新 ${res.data.updated.length} 个，管理员授予 ${res.data.granted.length} 个`
+      t("permissionPage.syncSuccess", {
+        added: res.data.added.length,
+        updated: res.data.updated.length,
+        granted: res.data.granted.length,
+      })
     )
     void loadData()
   }
@@ -110,20 +129,23 @@ export function PermissionPage() {
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
-        title="权限总览"
-        description="只读查看菜单权限与操作权限；日常维护请前往菜单与权限。"
+        title={t("permissionPage.title")}
+        description={t("permissionPage.description")}
         actions={
           <Button asChild variant="outline">
             <Link to="/settings/menu">
               <KeyRoundIcon data-icon="inline-start" />
-              菜单与权限
+              {t("permissionPage.menuLink")}
             </Link>
           </Button>
         }
       />
 
       <ListShell
-        description={`共 ${menuPermissions.length} 个菜单权限，${operationPermissions.length} 个操作权限`}
+        description={t("permissionPage.listDescription", {
+          menus: menuPermissions.length,
+          ops: operationPermissions.length,
+        })}
         actions={
           <>
             <InputGroup className="w-full md:w-64">
@@ -131,8 +153,8 @@ export function PermissionPage() {
                 name="q"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="搜索编码或名称…"
-                aria-label="搜索权限"
+                placeholder={t("permissionPage.searchPlaceholder")}
+                aria-label={t("permissionPage.searchAria")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -148,7 +170,7 @@ export function PermissionPage() {
                 className="w-full md:w-auto"
               >
                 {!syncing && <RefreshCwIcon data-icon="inline-start" />}
-                同步权限
+                {t("permissionPage.sync")}
               </LoadingButton>
             )}
           </>
@@ -165,20 +187,26 @@ export function PermissionPage() {
         ) : !hasPermissions ? (
           <EmptyState
             icon={KeyRoundIcon}
-            title={search ? "没有匹配的权限" : "还没有权限"}
+            title={
+              search
+                ? t("permissionPage.emptySearchTitle")
+                : t("permissionPage.emptyTitle")
+            }
             description={
               search
-                ? "换个关键词，或清空搜索条件后再试。"
-                : "在菜单与权限中新增菜单后，会自动生成对应的菜单权限。"
+                ? t("permissionPage.emptySearchDescription")
+                : t("permissionPage.emptyDescription")
             }
             action={
               search ? (
                 <Button variant="outline" onClick={() => setSearch("")}>
-                  清空搜索
+                  {t("permissionPage.clearSearch")}
                 </Button>
               ) : (
                 <Button asChild>
-                  <Link to="/settings/menu">前往菜单与权限</Link>
+                  <Link to="/settings/menu">
+                    {t("permissionPage.goToMenus")}
+                  </Link>
                 </Button>
               )
             }
@@ -186,7 +214,7 @@ export function PermissionPage() {
         ) : (
           <>
             <p className="px-1 text-xs text-muted-foreground">
-              隐藏菜单仍会出现在这里；隐藏只影响侧边栏展示，不影响权限与路由访问。
+              {t("permissionPage.hiddenNote")}
             </p>
 
             <div className="flex flex-col gap-2 md:hidden">
@@ -199,7 +227,9 @@ export function PermissionPage() {
                       <div className="flex min-w-0 flex-col gap-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{node.name}</span>
-                          <Badge variant="default">菜单</Badge>
+                          <Badge variant="default">
+                            {t("permissionPage.menuType")}
+                          </Badge>
                         </div>
                         <code className="truncate text-xs text-muted-foreground">
                           {node.code}
@@ -208,7 +238,12 @@ export function PermissionPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`${isExpanded ? "收起" : "展开"} ${node.name}`}
+                        aria-label={t(
+                          isExpanded
+                            ? "permissionPage.collapseAria"
+                            : "permissionPage.expandAria",
+                          { name: node.name }
+                        )}
                         aria-expanded={isExpanded}
                         onClick={() => toggleExpand(node.code)}
                       >
@@ -239,7 +274,7 @@ export function PermissionPage() {
                         ))}
                         {node.children.length === 0 && (
                           <p className="px-2 py-3 text-sm text-muted-foreground">
-                            暂无操作权限
+                            {t("permissionPage.noOperations")}
                           </p>
                         )}
                       </div>
@@ -253,9 +288,15 @@ export function PermissionPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[45%]">权限名称</TableHead>
-                    <TableHead className="w-[45%]">权限编码</TableHead>
-                    <TableHead className="w-[10%]">类型</TableHead>
+                    <TableHead className="w-[45%]">
+                      {t("permissionPage.nameHeader")}
+                    </TableHead>
+                    <TableHead className="w-[45%]">
+                      {t("permissionPage.codeHeader")}
+                    </TableHead>
+                    <TableHead className="w-[10%]">
+                      {t("permissionPage.typeHeader")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -271,7 +312,12 @@ export function PermissionPage() {
                                 variant="ghost"
                                 size="icon-xs"
                                 aria-expanded={isExpanded}
-                                aria-label={`${isExpanded ? "收起" : "展开"} ${node.name}`}
+                                aria-label={t(
+                                  isExpanded
+                                    ? "permissionPage.collapseAria"
+                                    : "permissionPage.expandAria",
+                                  { name: node.name }
+                                )}
                                 onClick={() => toggleExpand(node.code)}
                               >
                                 <ChevronRightIcon
@@ -288,7 +334,9 @@ export function PermissionPage() {
                             {node.code}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="default">菜单</Badge>
+                            <Badge variant="default">
+                              {t("permissionPage.menuType")}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -304,7 +352,9 @@ export function PermissionPage() {
                                 {child.code}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="secondary">操作</Badge>
+                                <Badge variant="secondary">
+                                  {t("permissionPage.operationType")}
+                                </Badge>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -313,7 +363,7 @@ export function PermissionPage() {
                           <TableRow>
                             <TableCell colSpan={3}>
                               <div className="pl-9 text-sm text-muted-foreground">
-                                暂无操作权限
+                                {t("permissionPage.noOperations")}
                               </div>
                             </TableCell>
                           </TableRow>

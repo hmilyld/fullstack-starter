@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { useSearchParams } from "react-router"
 import { KeyRoundIcon, UserRoundIcon } from "lucide-react"
 
@@ -31,14 +32,27 @@ import { useAuth } from "@/lib/auth-context"
 import { appToast } from "@/lib/toast"
 
 const PROFILE_TABS = [
-  { value: "profile", title: "基本资料", icon: UserRoundIcon },
-  { value: "security", title: "密码修改", icon: KeyRoundIcon },
-]
+  {
+    value: "profile",
+    titleKey: "profilePage.tabs.profile",
+    icon: UserRoundIcon,
+  },
+  {
+    value: "security",
+    titleKey: "profilePage.tabs.security",
+    icon: KeyRoundIcon,
+  },
+] as const
 
 export function ProfilePage() {
+  const { t } = useTranslation()
   const { user, updateUser } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const isWide = useMediaQuery("(min-width: 1024px)")
+  const tabs = PROFILE_TABS.map((tab) => ({
+    ...tab,
+    title: t(tab.titleKey),
+  }))
   const activeTab =
     searchParams.get("tab") === "security" ? "security" : "profile"
 
@@ -69,21 +83,21 @@ export function ProfilePage() {
     const res = await updateMe({ name, email })
     setProfileSaving(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "保存失败")
+      appToast.error(res.message || t("profilePage.saveFailed"))
       return
     }
     updateUser({ name, email })
-    appToast.success("保存成功")
+    appToast.success(t("profilePage.saveSuccess"))
   }
 
   async function handlePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (newPassword.length < 6) {
-      setPasswordError("新密码至少 6 位")
+      setPasswordError(t("profilePage.passwordMin"))
       return
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError("两次输入的密码不一致")
+      setPasswordError(t("profilePage.passwordMismatch"))
       return
     }
 
@@ -92,10 +106,10 @@ export function ProfilePage() {
     const res = await changePassword({ currentPassword, newPassword })
     setPasswordSaving(false)
     if (res.code !== 0) {
-      setPasswordError(res.message || "修改失败")
+      setPasswordError(res.message || t("profilePage.passwordFailed"))
       return
     }
-    appToast.success("密码修改成功")
+    appToast.success(t("profilePage.passwordSuccess"))
     setCurrentPassword("")
     setNewPassword("")
     setConfirmPassword("")
@@ -107,7 +121,10 @@ export function ProfilePage() {
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <UnsavedChangesGuard when={profileDirty || passwordDirty} />
-      <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
+      <PageHeader
+        title={t("profilePage.title")}
+        description={t("profilePage.description")}
+      />
 
       <Separator />
 
@@ -117,7 +134,7 @@ export function ProfilePage() {
         orientation={isWide ? "vertical" : "horizontal"}
         className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-12"
       >
-        <SettingsNav items={PROFILE_TABS} />
+        <SettingsNav items={tabs} />
 
         <TabsContent
           value="profile"
@@ -125,30 +142,36 @@ export function ProfilePage() {
         >
           <Card variant="plain" className="max-w-2xl">
             <CardHeader>
-              <CardTitle>基本资料</CardTitle>
-              <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
+              <CardTitle>{t("profilePage.profileTitle")}</CardTitle>
+              <CardDescription>
+                {t("profilePage.profileDescription")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form id="profile-form" onSubmit={handleProfileSubmit}>
                 <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="name">姓名</FieldLabel>
+                    <FieldLabel htmlFor="name">
+                      {t("profilePage.name")}
+                    </FieldLabel>
                     <Input
                       id="name"
                       name="name"
-                      placeholder="请输入姓名"
+                      placeholder={t("profilePage.namePlaceholder")}
                       autoComplete="name"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="email">邮箱</FieldLabel>
+                    <FieldLabel htmlFor="email">
+                      {t("profilePage.email")}
+                    </FieldLabel>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="请输入邮箱"
+                      placeholder={t("profilePage.emailPlaceholder")}
                       autoComplete="email"
                       spellCheck={false}
                       value={email}
@@ -166,7 +189,7 @@ export function ProfilePage() {
                 disabled={!profileDirty}
                 className="w-full md:w-auto"
               >
-                保存更改
+                {t("profilePage.save")}
               </LoadingButton>
             </CardFooter>
           </Card>
@@ -178,19 +201,21 @@ export function ProfilePage() {
         >
           <Card variant="plain" className="max-w-2xl">
             <CardHeader>
-              <CardTitle>密码修改</CardTitle>
+              <CardTitle>{t("profilePage.securityTitle")}</CardTitle>
               <CardDescription>
-                修改后需要重新登录其他设备上的会话。
+                {t("profilePage.securityDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form id="password-form" onSubmit={handlePasswordSubmit}>
                 <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="current-password">当前密码</FieldLabel>
+                    <FieldLabel htmlFor="current-password">
+                      {t("profilePage.currentPassword")}
+                    </FieldLabel>
                     <PasswordInput
                       id="current-password"
-                      placeholder="请输入当前密码"
+                      placeholder={t("profilePage.currentPasswordPlaceholder")}
                       autoComplete="current-password"
                       value={currentPassword}
                       onChange={(event) => {
@@ -201,10 +226,12 @@ export function ProfilePage() {
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="new-password">新密码</FieldLabel>
+                    <FieldLabel htmlFor="new-password">
+                      {t("profilePage.newPassword")}
+                    </FieldLabel>
                     <PasswordInput
                       id="new-password"
-                      placeholder="至少 6 位"
+                      placeholder={t("profilePage.newPasswordPlaceholder")}
                       autoComplete="new-password"
                       value={newPassword}
                       onChange={(event) => {
@@ -216,11 +243,11 @@ export function ProfilePage() {
                   </Field>
                   <Field data-invalid={!!passwordError}>
                     <FieldLabel htmlFor="confirm-password">
-                      确认新密码
+                      {t("profilePage.confirmPassword")}
                     </FieldLabel>
                     <PasswordInput
                       id="confirm-password"
-                      placeholder="请再次输入新密码"
+                      placeholder={t("profilePage.confirmPasswordPlaceholder")}
                       autoComplete="new-password"
                       value={confirmPassword}
                       onChange={(event) => {
@@ -243,7 +270,7 @@ export function ProfilePage() {
                 disabled={!currentPassword || !newPassword || !confirmPassword}
                 className="w-full md:w-auto"
               >
-                更新密码
+                {t("profilePage.updatePassword")}
               </LoadingButton>
             </CardFooter>
           </Card>

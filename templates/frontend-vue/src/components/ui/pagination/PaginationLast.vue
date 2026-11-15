@@ -2,6 +2,7 @@
 import type { PaginationLastProps } from "reka-ui"
 
 import type { HTMLAttributes } from "vue"
+import { useI18n } from "vue-i18n"
 import type { ButtonVariants } from "@/components/ui/button"
 import { ChevronsRightIcon } from "@lucide/vue"
 import { reactiveOmit } from "@vueuse/core"
@@ -21,6 +22,7 @@ const props = withDefaults(
   }
 )
 
+const { t } = useI18n()
 const delegatedProps = reactiveOmit(props, "class", "size")
 const forwarded = useForwardProps(delegatedProps)
 </script>
@@ -32,7 +34,7 @@ const forwarded = useForwardProps(delegatedProps)
     v-bind="forwarded"
   >
     <slot>
-      <span class="hidden sm:block">末页</span>
+      <span class="hidden sm:block">{{ t("common.pagination.last") }}</span>
       <ChevronsRightIcon data-icon="inline-end" />
     </slot>
   </PaginationLast>

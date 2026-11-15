@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { MoreHorizontalIcon, type LucideIcon } from "lucide-react"
 
 import { EmptyState } from "@/components/shared/empty-state"
@@ -85,6 +86,7 @@ export function DataList<T>({
   density = "comfortable",
   skeletonColSpan = 5,
 }: DataListProps<T>) {
+  const { t } = useTranslation()
   const hasItems = items.length > 0
 
   return (
@@ -147,7 +149,7 @@ export function DataList<T>({
                               <Button
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label="列选项"
+                                aria-label={t("common.table.columnOptions")}
                                 className="-mr-1 opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 [@media(pointer:coarse)]:opacity-100"
                               >
                                 <MoreHorizontalIcon />
@@ -157,7 +159,7 @@ export function DataList<T>({
                               <DropdownMenuItem
                                 onSelect={() => onHideColumn(column.key)}
                               >
-                                隐藏此列
+                                {t("common.table.hideColumn")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

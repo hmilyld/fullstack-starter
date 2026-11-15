@@ -10,6 +10,7 @@
     DialogHeader,
     DialogTitle,
   } from "#lib/components/ui/dialog/index.js"
+  import { t } from "#lib/i18n.js"
   import { cn } from "#lib/utils.js"
 
   let {
@@ -17,8 +18,8 @@
     title,
     description,
     submitting = false,
-    submitLabel = "保存",
-    cancelLabel = "取消",
+    submitLabel,
+    cancelLabel,
     onSubmit,
     children,
     class: className,
@@ -65,10 +66,10 @@
           disabled={submitting}
           onclick={() => (open = false)}
         >
-          {cancelLabel}
+          {cancelLabel ?? $t("common.cancel")}
         </Button>
         <LoadingButton type="submit" loading={submitting}>
-          {submitLabel}
+          {submitLabel ?? $t("common.save")}
         </LoadingButton>
       </DialogFooter>
     </form>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { Columns3Icon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -28,6 +29,7 @@ export function ColumnToggle({
   onReset,
   className,
 }: ColumnToggleProps) {
+  const { t } = useTranslation()
   const hideable = columns.filter((column) => column.hideable)
   if (hideable.length === 0) return null
 
@@ -35,11 +37,12 @@ export function ColumnToggle({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className={cn("w-full md:w-fit", className)}>
-          <Columns3Icon data-icon="inline-start" />列
+          <Columns3Icon data-icon="inline-start" />
+          {t("common.table.columns")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel>显示列</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("common.table.showColumns")}</DropdownMenuLabel>
         {hideable.map((column) => (
           <DropdownMenuCheckboxItem
             key={column.key}
@@ -51,7 +54,9 @@ export function ColumnToggle({
           </DropdownMenuCheckboxItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={onReset}>恢复默认</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onReset}>
+          {t("common.table.resetColumns")}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

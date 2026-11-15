@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import i18n from "@/lib/i18n"
 import type { ApiResponse, PaginatedData, QueryParams } from "@/types/common"
 
 export type ListParams = QueryParams
@@ -58,11 +59,11 @@ export function usePagedList<T, P extends ListParams = ListParams>({
         setItems(res.data.list)
         setTotal(res.data.total)
       } else {
-        setError(res.message || "加载数据失败")
+        setError(res.message || i18n.t("common.loadFailed"))
       }
     } catch (err) {
       if (id === requestId.current) {
-        setError((err as Error).message || "加载数据失败")
+        setError((err as Error).message || i18n.t("common.loadFailed"))
       }
     } finally {
       if (id === requestId.current) setLoading(false)

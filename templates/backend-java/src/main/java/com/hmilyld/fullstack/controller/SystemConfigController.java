@@ -2,6 +2,7 @@ package com.hmilyld.fullstack.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.hmilyld.fullstack.common.ApiResponse;
+import com.hmilyld.fullstack.common.i18n.MessageResolver;
 import com.hmilyld.fullstack.dto.SystemConfigResponse;
 import com.hmilyld.fullstack.dto.SystemConfigUpdateRequest;
 import com.hmilyld.fullstack.dto.TestEmailRequest;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class SystemConfigController {
 
   @Autowired private SystemConfigService systemConfigService;
+  @Autowired private MessageResolver messageResolver;
 
   @GetMapping("/config")
   @SaCheckPermission("settings")
@@ -47,7 +49,7 @@ public class SystemConfigController {
       helper.setTo(req.getEmail());
       helper.setText("这是一封测试邮件，说明您的邮件配置已成功生效。");
       mailSender.send(message);
-      return new ApiResponse<>(0, "测试邮件发送成功", null);
+      return new ApiResponse<>(0, messageResolver.localize("测试邮件发送成功"), null);
     } catch (Exception e) {
       throw mapMailError(e);
     }

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import {
   CheckIcon,
   CopyIcon,
@@ -34,6 +35,7 @@ import { exportData, getImportStatus, startImport } from "@/api/data-management"
 import type { ExportResult, ImportStatus } from "@/types/data-management"
 import { useAuth } from "@/lib/auth-context"
 import { saveBlob } from "@/lib/download"
+import { translate } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 
 /** 导出成功后展示给用户的信息（文件已保存到本地） */
@@ -45,11 +47,11 @@ type ImportJob = {
   status: ImportStatus
 }
 
-const IMPORT_STATUS_LABELS: Record<ImportStatus["status"], string> = {
-  queued: "排队中",
-  running: "导入中",
-  success: "导入完成",
-  failed: "导入失败",
+const IMPORT_STATUS_KEYS: Record<ImportStatus["status"], string> = {
+  queued: "dataPage.status.queued",
+  running: "dataPage.status.running",
+  success: "dataPage.status.success",
+  failed: "dataPage.status.failed",
 }
 
 function getImportBadgeVariant(status: ImportStatus["status"]) {
@@ -59,6 +61,7 @@ function getImportBadgeVariant(status: ImportStatus["status"]) {
 }
 
 export function DataManagementPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { hasPermission, logout } = useAuth()
   const [exportLoading, setExportLoading] = React.useState(false)
@@ -83,7 +86,7 @@ export function DataManagementPage() {
         password: result.password,
       })
     } catch (error) {
-      appToast.error((error as Error).message || "导出失败")
+      appToast.error((error as Error).message || t("dataPage.export.failed"))
     }
     setExportLoading(false)
   }
@@ -92,7 +95,7 @@ export function DataManagementPage() {
     if (!exportResult) return
     await navigator.clipboard.writeText(exportResult.password)
     setPasswordCopied(true)
-    appToast.success("密码已复制")
+    appToast.success(t("dataPage.exportDialog.copied"))
   }
 
   async function handleStartImport() {
@@ -101,7 +104,7 @@ export function DataManagementPage() {
     try {
       const response = await startImport(importFile, importPassword)
       if (response.code !== 0) {
-        appToast.error(response.message || "导入任务创建失败")
+        appToast.error(response.message || t("dataPage.import.createFailed"))
         return
       }
       setImportJob({
@@ -110,12 +113,14 @@ export function DataManagementPage() {
         status: {
           id: response.data.jobId,
           status: "queued",
-          message: "等待导入",
+          message: t("dataPage.import.waiting"),
           progress: 0,
         },
       })
     } catch (error) {
-      appToast.error((error as Error).message || "导入任务创建失败")
+      appToast.error(
+        (error as Error).message || t("dataPage.import.createFailed")
+      )
     } finally {
       setImportLoading(false)
     }
@@ -135,11 +140,15 @@ export function DataManagementPage() {
           current ? { ...current, status: response.data } : current
         )
         if (response.data.status === "success") {
-          appToast.success(response.data.message || "导入完成")
+          appToast.success(
+            response.data.message || translate("dataPage.import.success")
+          )
           logout()
           navigate("/login", { replace: true })
         } else if (response.data.status === "failed") {
-          appToast.error(response.data.message || "导入失败")
+          appToast.error(
+            response.data.message || translate("dataPage.import.failed")
+          )
           setImportJob(null)
           setImportOpen(false)
         }
@@ -158,8 +167,8 @@ export function DataManagementPage() {
   return (
     <div className="flex flex-col gap-(--page-gap)">
       <PageHeader
-        title="数据管理"
-        description="导出或恢复当前系统的完整数据。"
+        title={t("dataPage.title")}
+        description={t("dataPage.description")}
       />
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -171,9 +180,9 @@ export function DataManagementPage() {
                   <DownloadIcon className="size-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle>导出数据</CardTitle>
+                  <CardTitle>{t("dataPage.export.title")}</CardTitle>
                   <CardDescription>
-                    生成加密压缩包并下载到当前设备。
+                    {t("dataPage.export.description")}
                   </CardDescription>
                 </div>
               </div>
@@ -185,7 +194,7 @@ export function DataManagementPage() {
                 className="w-full md:w-auto"
               >
                 <DownloadIcon data-icon="inline-start" />
-                生成并下载
+                {t("dataPage.export.action")}
               </LoadingButton>
             </CardContent>
           </Card>
@@ -199,9 +208,9 @@ export function DataManagementPage() {
                   <UploadIcon className="size-5 text-destructive" />
                 </div>
                 <div>
-                  <CardTitle>导入数据</CardTitle>
+                  <CardTitle>{t("dataPage.import.title")}</CardTitle>
                   <CardDescription>
-                    使用同版本导出包覆盖当前系统数据。
+                    {t("dataPage.import.description")}
                   </CardDescription>
                 </div>
               </div>
@@ -217,7 +226,7 @@ export function DataManagementPage() {
                 }}
               >
                 <UploadIcon data-icon="inline-start" />
-                选择导入包
+                {t("dataPage.import.open")}
               </Button>
             </CardContent>
           </Card>
@@ -235,9 +244,9 @@ export function DataManagementPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>导出完成</DialogTitle>
+            <DialogTitle>{t("dataPage.exportDialog.title")}</DialogTitle>
             <DialogDescription>
-              该密码只显示一次，关闭后无法再次查看。请先复制并妥善保存。
+              {t("dataPage.exportDialog.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
@@ -248,7 +257,9 @@ export function DataManagementPage() {
               </span>
             </div>
             <Field>
-              <FieldLabel htmlFor="export-password">压缩密码</FieldLabel>
+              <FieldLabel htmlFor="export-password">
+                {t("dataPage.exportDialog.password")}
+              </FieldLabel>
               <div className="flex items-center gap-2">
                 <Input
                   name="export-password"
@@ -261,7 +272,7 @@ export function DataManagementPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="复制压缩密码"
+                  aria-label={t("dataPage.exportDialog.copyAria")}
                   onClick={copyPassword}
                 >
                   {passwordCopied ? <CheckIcon /> : <CopyIcon />}
@@ -276,7 +287,7 @@ export function DataManagementPage() {
                 setPasswordCopied(false)
               }}
             >
-              我已保存
+              {t("dataPage.exportDialog.saved")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -290,15 +301,16 @@ export function DataManagementPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>导入完整数据</DialogTitle>
+            <DialogTitle>{t("dataPage.importDialog.title")}</DialogTitle>
             <DialogDescription>
-              导入会覆盖用户、角色、配置、AI
-              密钥、审计日志和菜单数据，并使所有登录会话失效。
+              {t("dataPage.importDialog.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <Field>
-              <FieldLabel htmlFor="import-file">导出包</FieldLabel>
+              <FieldLabel htmlFor="import-file">
+                {t("dataPage.importDialog.file")}
+              </FieldLabel>
               <Input
                 name="import-file"
                 autoComplete="off"
@@ -312,7 +324,9 @@ export function DataManagementPage() {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="import-password">压缩密码</FieldLabel>
+              <FieldLabel htmlFor="import-password">
+                {t("dataPage.importDialog.password")}
+              </FieldLabel>
               <Input
                 name="import-password"
                 id="import-password"
@@ -323,7 +337,7 @@ export function DataManagementPage() {
                 onChange={(event) => setImportPassword(event.target.value)}
               />
               <FieldDescription>
-                密码遗失后无法恢复，只能重新导出。
+                {t("dataPage.importDialog.passwordHint")}
               </FieldDescription>
             </Field>
             {importJob && (
@@ -333,7 +347,7 @@ export function DataManagementPage() {
                     <Badge
                       variant={getImportBadgeVariant(importJob.status.status)}
                     >
-                      {IMPORT_STATUS_LABELS[importJob.status.status]}
+                      {t(IMPORT_STATUS_KEYS[importJob.status.status])}
                     </Badge>
                     <span className="text-muted-foreground">
                       {importJob.status.message}
@@ -353,7 +367,7 @@ export function DataManagementPage() {
               disabled={!!importJob}
               onClick={() => setImportOpen(false)}
             >
-              取消
+              {t("dataPage.importDialog.cancel")}
             </Button>
             <LoadingButton
               variant="destructive"
@@ -361,7 +375,7 @@ export function DataManagementPage() {
               disabled={!importFile || !importPassword || !!importJob}
               onClick={handleStartImport}
             >
-              确认导入
+              {t("dataPage.importDialog.confirm")}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useMediaQuery } from "@vueuse/core"
 import { KeyRound, UserRound } from "@lucide/vue"
 import { useRoute, useRouter } from "vue-router"
@@ -29,6 +30,7 @@ import { changePassword, updateMe } from "@/api/user"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
@@ -36,10 +38,14 @@ const toast = useToast()
 
 const isWide = useMediaQuery("(min-width: 1024px)")
 
-const profileTabs = [
-  { value: "profile", title: "基本资料", icon: UserRound },
-  { value: "security", title: "密码修改", icon: KeyRound },
-]
+const profileTabs = computed(() => [
+  { value: "profile", title: t("profilePage.tabs.profile"), icon: UserRound },
+  {
+    value: "security",
+    title: t("profilePage.tabs.security"),
+    icon: KeyRound,
+  },
+])
 const activeTab = computed(() =>
   route.query.tab === "security" ? "security" : "profile"
 )
@@ -73,20 +79,20 @@ async function handleProfileSubmit() {
   const res = await updateMe({ name: name.value, email: email.value })
   profileSaving.value = false
   if (res.code !== 0) {
-    toast.error(res.message || "保存失败")
+    toast.error(res.message || t("profilePage.saveFailed"))
     return
   }
   auth.updateUser({ name: name.value, email: email.value })
-  toast.success("保存成功")
+  toast.success(t("profilePage.saveSuccess"))
 }
 
 async function handlePasswordSubmit() {
   if (newPassword.value.length < 6) {
-    passwordError.value = "新密码至少 6 位"
+    passwordError.value = t("profilePage.passwordMin")
     return
   }
   if (newPassword.value !== confirmPassword.value) {
-    passwordError.value = "两次输入的密码不一致"
+    passwordError.value = t("profilePage.passwordMismatch")
     return
   }
 
@@ -98,10 +104,10 @@ async function handlePasswordSubmit() {
   })
   passwordSaving.value = false
   if (res.code !== 0) {
-    passwordError.value = res.message || "修改失败"
+    passwordError.value = res.message || t("profilePage.passwordFailed")
     return
   }
-  toast.success("密码修改成功")
+  toast.success(t("profilePage.passwordSuccess"))
   currentPassword.value = ""
   newPassword.value = ""
   confirmPassword.value = ""
@@ -118,7 +124,10 @@ async function handlePasswordSubmit() {
         confirmPassword !== ''
       "
     />
-    <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
+    <PageHeader
+      :title="t('profilePage.title')"
+      :description="t('profilePage.description')"
+    />
 
     <Separator />
 
@@ -136,30 +145,36 @@ async function handlePasswordSubmit() {
       >
         <Card variant="plain" class="max-w-2xl">
           <CardHeader>
-            <CardTitle>基本资料</CardTitle>
-            <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
+            <CardTitle>{{ t("profilePage.profileTitle") }}</CardTitle>
+            <CardDescription>{{
+              t("profilePage.profileDescription")
+            }}</CardDescription>
           </CardHeader>
           <CardContent>
             <form id="profile-form" @submit.prevent="handleProfileSubmit">
               <FieldGroup>
                 <Field>
-                  <FieldLabel for="name">姓名</FieldLabel>
+                  <FieldLabel for="name">{{
+                    t("profilePage.name")
+                  }}</FieldLabel>
                   <Input
                     id="name"
                     v-model="name"
                     name="name"
-                    placeholder="请输入姓名"
+                    :placeholder="t('profilePage.namePlaceholder')"
                     autocomplete="name"
                   />
                 </Field>
                 <Field>
-                  <FieldLabel for="email">邮箱</FieldLabel>
+                  <FieldLabel for="email">{{
+                    t("profilePage.email")
+                  }}</FieldLabel>
                   <Input
                     id="email"
                     v-model="email"
                     name="email"
                     type="email"
-                    placeholder="请输入邮箱"
+                    :placeholder="t('profilePage.emailPlaceholder')"
                     autocomplete="email"
                     :spellcheck="false"
                   />
@@ -175,7 +190,7 @@ async function handlePasswordSubmit() {
               :disabled="!profileDirty"
               class="w-full md:w-auto"
             >
-              保存更改
+              {{ t("profilePage.save") }}
             </LoadingButton>
           </CardFooter>
         </Card>
@@ -187,42 +202,48 @@ async function handlePasswordSubmit() {
       >
         <Card variant="plain" class="max-w-2xl">
           <CardHeader>
-            <CardTitle>密码修改</CardTitle>
+            <CardTitle>{{ t("profilePage.securityTitle") }}</CardTitle>
             <CardDescription>
-              修改后需要重新登录其他设备上的会话。
+              {{ t("profilePage.securityDescription") }}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form id="password-form" @submit.prevent="handlePasswordSubmit">
               <FieldGroup>
                 <Field>
-                  <FieldLabel for="current-password">当前密码</FieldLabel>
+                  <FieldLabel for="current-password">{{
+                    t("profilePage.currentPassword")
+                  }}</FieldLabel>
                   <PasswordInput
                     id="current-password"
                     v-model="currentPassword"
-                    placeholder="请输入当前密码"
+                    :placeholder="t('profilePage.currentPasswordPlaceholder')"
                     autocomplete="current-password"
                     required
                     @update:model-value="clearPasswordError"
                   />
                 </Field>
                 <Field>
-                  <FieldLabel for="new-password">新密码</FieldLabel>
+                  <FieldLabel for="new-password">{{
+                    t("profilePage.newPassword")
+                  }}</FieldLabel>
                   <PasswordInput
                     id="new-password"
                     v-model="newPassword"
-                    placeholder="至少 6 位"
+                    :placeholder="t('profilePage.newPasswordPlaceholder')"
                     autocomplete="new-password"
                     required
                     @update:model-value="clearPasswordError"
                   />
                 </Field>
                 <Field :data-invalid="!!passwordError">
-                  <FieldLabel for="confirm-password">确认新密码</FieldLabel>
+                  <FieldLabel for="confirm-password">{{
+                    t("profilePage.confirmPassword")
+                  }}</FieldLabel>
                   <PasswordInput
                     id="confirm-password"
                     v-model="confirmPassword"
-                    placeholder="请再次输入新密码"
+                    :placeholder="t('profilePage.confirmPasswordPlaceholder')"
                     autocomplete="new-password"
                     :aria-invalid="!!passwordError"
                     required
@@ -243,7 +264,7 @@ async function handlePasswordSubmit() {
               :disabled="!currentPassword || !newPassword || !confirmPassword"
               class="w-full md:w-auto"
             >
-              更新密码
+              {{ t("profilePage.updatePassword") }}
             </LoadingButton>
           </CardFooter>
         </Card>

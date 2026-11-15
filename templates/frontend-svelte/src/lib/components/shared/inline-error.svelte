@@ -7,15 +7,18 @@
     AlertTitle,
   } from "#lib/components/ui/alert/index.js"
   import { Button } from "#lib/components/ui/button/index.js"
+  import { t } from "#lib/i18n.js"
 
   let { message, onRetry }: { message: string; onRetry: () => void } = $props()
 </script>
 
 <Alert variant="destructive" class="mb-4">
   <CircleAlert />
-  <AlertTitle>刷新失败</AlertTitle>
+  <AlertTitle>{$t("common.refreshFailed")}</AlertTitle>
   <AlertDescription>{message}</AlertDescription>
   <AlertAction>
-    <Button variant="outline" size="xs" onclick={onRetry}>重试</Button>
+    <Button variant="outline" size="xs" onclick={onRetry}
+      >{$t("common.retry")}</Button
+    >
   </AlertAction>
 </Alert>

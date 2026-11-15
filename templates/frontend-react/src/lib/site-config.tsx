@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { getPublicConfig } from "@/api/system"
 import type { PublicConfig } from "@/types/system"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,6 +19,7 @@ export function SiteConfigProvider({
 }: {
   children: React.ReactNode
 }) {
+  const { t } = useTranslation()
   const [config, setConfig] = React.useState<PublicConfig | null>(null)
   const [loading, setLoading] = React.useState(true)
 
@@ -44,9 +46,8 @@ export function SiteConfigProvider({
   React.useEffect(() => {
     if (!config) return
 
-    const siteName = config.siteName || "管理系统"
-    const description =
-      config.siteDescription || "基于 React + shadcn/ui 的后台管理框架"
+    const siteName = config.siteName || t("common.admin")
+    const description = config.siteDescription || t("common.adminDescription")
 
     document.title = siteName
 
@@ -57,7 +58,7 @@ export function SiteConfigProvider({
       document.head.appendChild(metaDesc)
     }
     metaDesc.setAttribute("content", description)
-  }, [config])
+  }, [config, t])
 
   if (loading) {
     return (

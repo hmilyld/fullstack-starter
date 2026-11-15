@@ -14,12 +14,13 @@
     SelectTrigger,
     SelectValue,
   } from "#lib/components/ui/select/index.js"
+  import { t } from "#lib/i18n.js"
 
   let {
     page,
     totalPages,
     total,
-    itemLabel = "条记录",
+    itemLabel,
     pageSize,
     pageSizeOptions = [10, 20, 50],
     onPageChange,
@@ -61,7 +62,7 @@
   const pageSizeItems = $derived(
     pageSizeOptions.map((option) => ({
       value: String(option),
-      label: `${option} 条`,
+      label: $t("common.pagination.items", { count: option }),
     }))
   )
 </script>
@@ -70,10 +71,17 @@
   <div
     class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground"
   >
-    <p>共 {total} {itemLabel}，第 {page} / {totalPages} 页</p>
+    <p>
+      {$t("common.pagination.summary", {
+        total,
+        itemLabel: itemLabel ?? $t("common.pagination.records"),
+        page,
+        totalPages,
+      })}
+    </p>
     {#if pageSize !== undefined && onPageSizeChange}
       <label class="flex items-center gap-2 text-xs">
-        每页
+        {$t("common.pagination.perPage")}
         <Select
           type="single"
           items={pageSizeItems}
@@ -85,14 +93,17 @@
           <SelectTrigger
             size="sm"
             class="h-8 w-[76px]"
-            aria-label="每页显示条数"
+            aria-label={$t("common.pagination.perPageAria")}
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {#each pageSizeOptions as option (option)}
-              <SelectItem value={String(option)} label={`${option} 条`}>
-                {option} 条
+              <SelectItem
+                value={String(option)}
+                label={$t("common.pagination.items", { count: option })}
+              >
+                {$t("common.pagination.items", { count: option })}
               </SelectItem>
             {/each}
           </SelectContent>
@@ -102,7 +113,7 @@
   </div>
 
   <nav
-    aria-label="分页"
+    aria-label={$t("common.pagination.navigation")}
     class="mx-auto flex w-full justify-center md:mx-0 md:w-auto md:justify-end"
   >
     <ul class="flex items-center gap-1">
@@ -111,7 +122,7 @@
           variant="ghost"
           size="icon-sm"
           disabled={page <= 1}
-          aria-label="第一页"
+          aria-label={$t("common.pagination.first")}
           onclick={() => onPageChange(1)}
         >
           <ChevronsLeft />
@@ -125,7 +136,7 @@
           onclick={() => onPageChange(page - 1)}
         >
           <ChevronLeft data-icon="inline-start" />
-          上一页
+          {$t("common.pagination.previous")}
         </Button>
       </li>
       {#each pageItems as item, index (`${item}-${index}`)}
@@ -153,7 +164,7 @@
           disabled={page >= totalPages}
           onclick={() => onPageChange(page + 1)}
         >
-          下一页
+          {$t("common.pagination.next")}
           <ChevronRight data-icon="inline-end" />
         </Button>
       </li>
@@ -162,7 +173,7 @@
           variant="ghost"
           size="icon-sm"
           disabled={page >= totalPages}
-          aria-label="最后一页"
+          aria-label={$t("common.pagination.last")}
           onclick={() => onPageChange(totalPages)}
         >
           <ChevronsRight />

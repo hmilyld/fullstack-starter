@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import { RouterLink } from "vue-router"
 import { Compass } from "@lucide/vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
 import { Button } from "@/components/ui/button"
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -10,12 +13,14 @@ import { Button } from "@/components/ui/button"
     <EmptyState
       class="max-w-lg"
       :icon="Compass"
-      title="页面不存在"
-      description="地址可能已更改，或者您没有访问该页面的权限。"
+      :title="t('errors.notFoundTitle')"
+      :description="t('errors.notFoundDescription')"
     >
       <template #action>
         <Button as-child>
-          <RouterLink to="/dashboard">返回仪表盘</RouterLink>
+          <RouterLink to="/dashboard">{{
+            t("errors.backToDashboard")
+          }}</RouterLink>
         </Button>
       </template>
     </EmptyState>

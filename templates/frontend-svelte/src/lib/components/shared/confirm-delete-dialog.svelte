@@ -10,6 +10,7 @@
     AlertDialogHeader,
     AlertDialogTitle,
   } from "#lib/components/ui/alert-dialog/index.js"
+  import { t } from "#lib/i18n.js"
 
   let {
     open = $bindable(false),
@@ -29,17 +30,17 @@
 <AlertDialog bind:open>
   <AlertDialogContent>
     <AlertDialogHeader>
-      <AlertDialogTitle>确认删除</AlertDialogTitle>
+      <AlertDialogTitle>{$t("common.confirmDelete.title")}</AlertDialogTitle>
       <AlertDialogDescription>
-        确定要删除
+        {$t("common.confirmDelete.prefix")}
         <span class="font-medium text-foreground">{targetName}</span>
-        吗？此操作不可撤销。
+        {$t("common.confirmDelete.suffix")}
         {#if description}
           {description}{/if}
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
-      <AlertDialogCancel>取消</AlertDialogCancel>
+      <AlertDialogCancel>{$t("common.confirmDelete.cancel")}</AlertDialogCancel>
       <AlertDialogAction
         variant="destructive"
         disabled={loading}
@@ -49,7 +50,7 @@
         }}
       >
         {#if loading}<Spinner data-icon="inline-start" />{/if}
-        删除
+        {$t("common.confirmDelete.confirm")}
       </AlertDialogAction>
     </AlertDialogFooter>
   </AlertDialogContent>

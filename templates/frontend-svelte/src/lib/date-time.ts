@@ -1,5 +1,7 @@
 /** 日期时间控件共用的解析与格式化，值格式固定为 `YYYY-MM-DDTHH:mm` */
 
+export type DateTimeLocale = "zh-CN" | "en"
+
 export type DateTimeParts = {
   year: number
   /** 1-12 */
@@ -47,16 +49,46 @@ export function toDateTimeInput(parts: DateTimeParts) {
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(parts.hour)}:${pad(parts.minute)}`
 }
 
-/** 展示用：`2026/11/12 08:30`，与表格、筛选 chip 的分隔符一致 */
-export function formatDateTimeInput(value: string) {
+/** 展示用：中文为 `2026/11/12 08:30`，与表格、筛选 chip 的分隔符一致 */
+export function formatDateTimeInput(
+  value: string,
+  locale: DateTimeLocale = "zh-CN"
+) {
   const parts = parseDateTimeInput(value)
   if (!parts) return value
-  return `${parts.year}/${pad(parts.month)}/${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}`
+  if (locale === "zh-CN") {
+    return `${parts.year}/${pad(parts.month)}/${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}`
+  }
+  const date = new Date(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute
+  )
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(date)
+    .replace(", ", " ")
 }
 
-/** 展示用：`2026 年 11 月` */
-export function formatMonthLabel(year: number, month: number) {
-  return `${year} 年 ${month} 月`
+/** 展示用：中文为 `2026 年 11 月`，英文为 `November 2026` */
+export function formatMonthLabel(
+  year: number,
+  month: number,
+  locale: DateTimeLocale = "zh-CN"
+) {
+  if (locale === "zh-CN") return `${year} 年 ${month} 月`
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+  }).format(new Date(year, month - 1, 1))
 }
 
 export function daysInMonth(year: number, month: number) {
@@ -100,4 +132,17 @@ export function nowParts(): DateTimeParts {
     hour: now.getHours(),
     minute: now.getMinutes(),
   }
+}
+
+const CHINESE_WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"]
+
+/** 周一起始的星期表头；中文保持单字，英文使用 Intl 的短名称 */
+export function weekdayLabels(locale: DateTimeLocale = "zh-CN") {
+  if (locale === "zh-CN") return CHINESE_WEEKDAYS
+  // 2024-01-01 是周一
+  return Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(locale, { weekday: "short" }).format(
+      new Date(2024, 0, 1 + index)
+    )
+  )
 }

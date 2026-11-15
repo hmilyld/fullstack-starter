@@ -16,4 +16,10 @@ describe("formatDateTime", () => {
     expect(result).toContain("2026")
     expect(result).not.toBe("2026-11-07T12:00:00Z")
   })
+
+  it("formats with the requested locale", () => {
+    const result = formatDateTime("2026-11-07T12:00:00Z", "en")
+    expect(result).toContain("2026")
+    expect(result).not.toMatch(/[\u4e00-\u9fff]/)
+  })
 })

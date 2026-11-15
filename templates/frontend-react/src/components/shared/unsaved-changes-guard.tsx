@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import * as React from "react"
 import { useBlocker } from "react-router"
 
@@ -17,6 +18,7 @@ import {
  * 只挂载在表单页，`when` 变化时自动登记/解除。
  */
 export function UnsavedChangesGuard({ when }: { when: boolean }) {
+  const { t } = useTranslation()
   // 只拦截离开当前页面的跳转；同一页面的 tab / 查询参数变化不算离开
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -42,15 +44,15 @@ export function UnsavedChangesGuard({ when }: { when: boolean }) {
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>放弃未保存的修改？</AlertDialogTitle>
+          <AlertDialogTitle>{t("common.unsaved.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            当前页面还有未保存的内容，离开后这些修改会丢失。
+            {t("common.unsaved.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>留在本页</AlertDialogCancel>
+          <AlertDialogCancel>{t("common.unsaved.stay")}</AlertDialogCancel>
           <AlertDialogAction onClick={() => blocker.proceed?.()}>
-            放弃修改
+            {t("common.unsaved.discard")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

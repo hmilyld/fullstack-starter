@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { X } from "@lucide/vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ (e: "clear"): void }>()
 
+const { t } = useI18n()
 const barRef = ref<HTMLElement | null>(null)
 const announcement = ref("")
 let timer: number | undefined
@@ -24,7 +26,10 @@ watch(
       announcement.value = ""
       return
     }
-    announcement.value = `已选中 ${props.count} ${props.entityName}，批量操作可用`
+    announcement.value = t("common.bulk.selected", {
+      count: props.count,
+      entityName: props.entityName,
+    })
     timer = window.setTimeout(() => {
       announcement.value = ""
     }, 3000)
@@ -79,7 +84,7 @@ onUnmounted(() => {
       v-if="count > 0"
       ref="barRef"
       role="toolbar"
-      :aria-label="`批量操作，已选 ${count} ${entityName}`"
+      :aria-label="t('common.bulk.aria', { count, entityName })"
       tabindex="-1"
       class="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 pb-[env(safe-area-inset-bottom)] md:bottom-6"
       @keydown="handleBarKeyDown"
@@ -91,8 +96,8 @@ onUnmounted(() => {
           variant="ghost"
           size="icon-xs"
           class="rounded-full"
-          aria-label="清除选择"
-          title="清除选择（Esc）"
+          :aria-label="t('common.bulk.clear')"
+          :title="t('common.bulk.clearTitle')"
           @click="emit('clear')"
         >
           <X />

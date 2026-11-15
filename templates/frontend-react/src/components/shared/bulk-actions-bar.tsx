@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { createPortal } from "react-dom"
 import { XIcon } from "lucide-react"
 
@@ -25,6 +26,7 @@ export function BulkActionsBar({
   onClear,
   children,
 }: BulkActionsBarProps) {
+  const { t } = useTranslation()
   const barRef = React.useRef<HTMLDivElement>(null)
   const [announcement, setAnnouncement] = React.useState("")
 
@@ -33,10 +35,10 @@ export function BulkActionsBar({
       setAnnouncement("")
       return
     }
-    setAnnouncement(`已选中 ${count} ${entityName}，批量操作可用`)
+    setAnnouncement(t("common.bulk.selected", { count, entityName }))
     const timer = window.setTimeout(() => setAnnouncement(""), 3000)
     return () => window.clearTimeout(timer)
-  }, [count, entityName])
+  }, [count, entityName, t])
 
   React.useEffect(() => {
     if (count === 0) return
@@ -87,7 +89,7 @@ export function BulkActionsBar({
       <div
         ref={barRef}
         role="toolbar"
-        aria-label={`批量操作，已选 ${count} ${entityName}`}
+        aria-label={t("common.bulk.aria", { count, entityName })}
         tabIndex={-1}
         onKeyDown={handleBarKeyDown}
         className={cn(
@@ -101,8 +103,8 @@ export function BulkActionsBar({
             variant="ghost"
             size="icon-xs"
             onClick={onClear}
-            aria-label="清除选择"
-            title="清除选择（Esc）"
+            aria-label={t("common.bulk.clear")}
+            title={t("common.bulk.clearTitle")}
             className="rounded-full"
           >
             <XIcon />

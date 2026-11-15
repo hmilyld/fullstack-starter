@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import {
   ChevronsUpDown,
@@ -25,6 +26,7 @@ import { useAuthStore } from "@/stores/auth"
 import { useSiteConfigStore } from "@/stores/site-config"
 
 /** 顶栏右上角的账户菜单：个人设置、密码修改、权限总览、退出登录 */
+const { t } = useI18n()
 const auth = useAuthStore()
 const siteConfig = useSiteConfigStore()
 const router = useRouter()
@@ -52,7 +54,7 @@ async function handleLogout() {
       <Button
         variant="ghost"
         class="gap-2 rounded-full pr-2 pl-1"
-        :aria-label="`${user.name} 的账户菜单`"
+        :aria-label="t('userMenu.aria', { name: user.name })"
       >
         <Avatar class="size-7">
           <AvatarImage
@@ -97,27 +99,27 @@ async function handleLogout() {
           @select="router.push('/settings/profile?tab=profile')"
         >
           <UserCog />
-          个人设置
+          {{ t("userMenu.profile") }}
         </DropdownMenuItem>
         <DropdownMenuItem
           @select="router.push('/settings/profile?tab=security')"
         >
           <KeyRound />
-          密码修改
+          {{ t("userMenu.password") }}
         </DropdownMenuItem>
         <DropdownMenuItem
           v-if="auth.hasPermission('permissions')"
           @select="router.push('/settings/permission')"
         >
           <ShieldCheck />
-          权限总览
+          {{ t("userMenu.permissions") }}
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem :disabled="loggingOut" @select="handleLogout">
         <Spinner v-if="loggingOut" />
         <LogOut v-else />
-        {{ loggingOut ? "退出中…" : "退出登录" }}
+        {{ loggingOut ? t("userMenu.loggingOut") : t("userMenu.logout") }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

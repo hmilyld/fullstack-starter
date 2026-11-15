@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import {
   KeyIcon,
   PencilIcon,
@@ -80,8 +81,11 @@ function generatePassword(length = 12) {
 }
 
 export function UsersPage() {
+  const { t } = useTranslation()
   const { hasPermission, user: currentUser } = useAuth()
   const [roles, setRoles] = React.useState<Role[]>([])
+  const roleLabel = (role: Role) =>
+    t(`roles.${role.id}`, { defaultValue: role.name })
 
   const { search, page, setSearch, setPage } = useUrlListState()
   const debouncedSearch = useDebouncedValue(search)
@@ -179,10 +183,14 @@ export function UsersPage() {
       : await createUser(payload)
     setEditSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "操作失败")
+      appToast.error(res.message || t("users.toasts.operationFailed"))
       return
     }
-    appToast.success(editingUser ? "保存成功" : "创建成功")
+    appToast.success(
+      editingUser
+        ? t("users.toasts.saveSuccess")
+        : t("users.toasts.createSuccess")
+    )
     setEditOpen(false)
     list.refresh()
   }
@@ -199,10 +207,10 @@ export function UsersPage() {
     const res = await updateUser(roleTarget.id, { roleId: roleValue })
     setRoleSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "操作失败")
+      appToast.error(res.message || t("users.toasts.operationFailed"))
       return
     }
-    appToast.success("角色已更新")
+    appToast.success(t("users.toasts.roleUpdated"))
     setRoleOpen(false)
     list.refresh()
   }
@@ -238,10 +246,12 @@ export function UsersPage() {
     )
     setBulkSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "批量操作失败")
+      appToast.error(res.message || t("users.toasts.bulkFailed"))
       return
     }
-    appToast.success(`已更新 ${selectedIds.size} 位用户的角色`)
+    appToast.success(
+      t("users.toasts.bulkRoleSuccess", { count: selectedIds.size })
+    )
     setBulkRoleOpen(false)
     setSelectedIds(new Set())
     list.refresh()
@@ -258,10 +268,10 @@ export function UsersPage() {
     const res = await apiDeleteUser(deleteTarget.id)
     setDeleteSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "删除失败")
+      appToast.error(res.message || t("users.toasts.deleteFailed"))
       return
     }
-    appToast.success("删除成功")
+    appToast.success(t("users.toasts.deleteSuccess"))
     setDeleteOpen(false)
     list.refresh()
   }
@@ -276,7 +286,7 @@ export function UsersPage() {
         res.data.list.filter((user) => user.roleId === "pending_review")
       )
     } else {
-      appToast.error(res.message || "加载待审核用户失败")
+      appToast.error(res.message || t("users.toasts.pendingLoadFailed"))
     }
     setPendingLoading(false)
   }
@@ -307,10 +317,12 @@ export function UsersPage() {
     )
     setPendingSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "审核失败")
+      appToast.error(res.message || t("users.toasts.reviewFailed"))
       return
     }
-    appToast.success(`已通过 ${selectedPending.size} 位用户审核`)
+    appToast.success(
+      t("users.toasts.approveSuccess", { count: selectedPending.size })
+    )
     setPendingOpen(false)
     list.refresh()
   }
@@ -326,12 +338,14 @@ export function UsersPage() {
 
     const failed = results.filter((res) => res.code !== 0).length
     if (failed > 0) {
-      appToast.error(`${failed} 位用户拒绝失败`)
+      appToast.error(t("users.toasts.rejectFailed", { count: failed }))
       await openPending()
       return
     }
 
-    appToast.success(`已拒绝 ${selectedPending.size} 位用户`)
+    appToast.success(
+      t("users.toasts.rejectSuccess", { count: selectedPending.size })
+    )
     setPendingOpen(false)
     list.refresh()
   }
@@ -348,44 +362,44 @@ export function UsersPage() {
     const res = await resetPassword(resetTarget.id, newPassword)
     setResetSubmitting(false)
     if (res.code !== 0) {
-      appToast.error(res.message || "重置失败")
+      appToast.error(res.message || t("users.toasts.resetFailed"))
       return
     }
-    appToast.success("密码已重置")
+    appToast.success(t("users.toasts.resetSuccess"))
     setResetOpen(false)
   }
 
   async function copyPassword() {
     await navigator.clipboard.writeText(newPassword)
-    appToast.success("密码已复制到剪贴板")
+    appToast.success(t("users.toasts.passwordCopied"))
   }
 
   function buildUserActions(user: User): RowAction[] {
     const actions: RowAction[] = []
     if (hasPermission("users.edit")) {
       actions.push({
-        label: "编辑",
+        label: t("users.actions.edit"),
         icon: PencilIcon,
         onSelect: () => handleEdit(user),
       })
     }
     if (hasPermission("users.assign_role")) {
       actions.push({
-        label: "维护角色",
+        label: t("users.actions.role"),
         icon: ShieldIcon,
         onSelect: () => handleRole(user),
       })
     }
     if (hasPermission("users.edit")) {
       actions.push({
-        label: "重置密码",
+        label: t("users.actions.reset"),
         icon: KeyIcon,
         onSelect: () => openReset(user),
       })
     }
     if (hasPermission("users.delete") && user.id !== currentUser?.id) {
       actions.push({
-        label: "删除",
+        label: t("users.actions.delete"),
         icon: Trash2Icon,
         destructive: true,
         separatorBefore: true,
@@ -406,7 +420,7 @@ export function UsersPage() {
         <Checkbox
           checked={allSelected ? true : someSelected ? "indeterminate" : false}
           onCheckedChange={(checked) => toggleAll(checked === true)}
-          aria-label="全选当前页用户"
+          aria-label={t("users.selectAllCurrent")}
         />
       ),
       headClassName: "w-10",
@@ -414,13 +428,13 @@ export function UsersPage() {
         <Checkbox
           checked={selectedIds.has(user.id)}
           onCheckedChange={() => toggleSelected(user.id)}
-          aria-label={`选择 ${user.name}`}
+          aria-label={t("users.selectUser", { name: user.name })}
         />
       ),
     },
     {
       key: "username",
-      header: "用户名",
+      header: t("users.headers.username"),
       cell: (user) => (
         <div className="flex items-center gap-3">
           <Avatar className="size-8">
@@ -438,7 +452,7 @@ export function UsersPage() {
     },
     {
       key: "name",
-      header: "姓名",
+      header: t("users.headers.name"),
       hideable: true,
       headClassName: "hidden md:table-cell",
       cellClassName: "hidden md:table-cell",
@@ -446,7 +460,7 @@ export function UsersPage() {
     },
     {
       key: "email",
-      header: "邮箱",
+      header: t("users.headers.email"),
       hideable: true,
       headClassName: "hidden lg:table-cell",
       cellClassName: "hidden text-muted-foreground lg:table-cell",
@@ -454,12 +468,12 @@ export function UsersPage() {
     },
     {
       key: "role",
-      header: "角色",
+      header: t("users.headers.role"),
       cell: (user) => <RoleBadge roleId={user.roleId} roles={roles} />,
     },
     {
       key: "actions",
-      header: "操作",
+      header: t("users.headers.actions"),
       pinRight: true,
       headClassName: "text-right",
       cellClassName: "text-right",
@@ -472,12 +486,14 @@ export function UsersPage() {
               onClick={() => handleEdit(user)}
             >
               <PencilIcon />
-              <span className="sr-only">编辑 {user.name}</span>
+              <span className="sr-only">
+                {t("users.editSrOnly", { name: user.name })}
+              </span>
             </Button>
           )}
           <RowActions
             actions={buildUserActions(user).filter(
-              (action) => action.label !== "编辑"
+              (action) => action.label !== t("users.actions.edit")
             )}
           />
         </div>
@@ -501,7 +517,7 @@ export function UsersPage() {
                 : false
           }
           onCheckedChange={toggleAllPending}
-          aria-label="选择全部待审核用户"
+          aria-label={t("users.selectAllPending")}
         />
       ),
       headClassName: "w-12",
@@ -509,21 +525,32 @@ export function UsersPage() {
         <Checkbox
           checked={selectedPending.has(user.id)}
           onCheckedChange={() => togglePending(user.id)}
-          aria-label={`选择 ${user.name}`}
+          aria-label={t("users.selectUser", { name: user.name })}
         />
       ),
     },
-    { key: "username", header: "用户名", cell: (user) => user.username },
-    { key: "name", header: "姓名", cell: (user) => user.name },
-    { key: "email", header: "邮箱", cell: (user) => user.email },
+    {
+      key: "username",
+      header: t("users.headers.username"),
+      cell: (user) => user.username,
+    },
+    { key: "name", header: t("users.headers.name"), cell: (user) => user.name },
+    {
+      key: "email",
+      header: t("users.headers.email"),
+      cell: (user) => user.email,
+    },
   ]
 
   return (
     <div className="flex flex-col gap-(--page-gap)">
-      <PageHeader title="用户管理" description="管理团队成员及其角色权限。" />
+      <PageHeader
+        title={t("users.title")}
+        description={t("users.description")}
+      />
 
       <ListShell
-        description={`共 ${list.total} 位用户`}
+        description={t("users.listDescription", { total: list.total })}
         actions={
           <>
             <InputGroup className="w-full md:w-64">
@@ -531,8 +558,8 @@ export function UsersPage() {
                 name="q"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="搜索用户名、姓名或邮箱…"
-                aria-label="搜索用户"
+                placeholder={t("users.searchPlaceholder")}
+                aria-label={t("users.searchAria")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -550,7 +577,7 @@ export function UsersPage() {
             {hasPermission("users.create") && (
               <Button onClick={handleAdd} className="w-full md:w-auto">
                 <PlusIcon data-icon="inline-start" />
-                新增用户
+                {t("users.addUser")}
               </Button>
             )}
             {hasPermission("users.edit") && (
@@ -559,7 +586,7 @@ export function UsersPage() {
                 onClick={openPending}
                 className="w-full md:w-auto"
               >
-                待审核
+                {t("users.pendingReview")}
               </Button>
             )}
           </>
@@ -570,7 +597,7 @@ export function UsersPage() {
               page={list.page}
               totalPages={list.totalPages}
               total={list.total}
-              itemLabel="位用户"
+              itemLabel={t("users.entityName")}
               pageSize={pageSize}
               pageSizeOptions={PAGE_SIZE_OPTIONS}
               onPageSizeChange={(size) => {
@@ -592,18 +619,20 @@ export function UsersPage() {
           onHideColumn={table.toggle}
           empty={{
             icon: UsersIcon,
-            title: debouncedSearch ? "没有匹配的用户" : "还没有用户",
+            title: debouncedSearch
+              ? t("users.emptySearchTitle")
+              : t("users.emptyTitle"),
             description: debouncedSearch
-              ? "换个关键词，或清空搜索条件后再试。"
-              : "创建第一位用户，或等待注册审核通过。",
+              ? t("users.emptySearchDescription")
+              : t("users.emptyDescription"),
             action: debouncedSearch ? (
               <Button variant="outline" onClick={() => setSearch("")}>
-                清空搜索
+                {t("users.clearSearch")}
               </Button>
             ) : hasPermission("users.create") ? (
               <Button onClick={handleAdd}>
                 <PlusIcon data-icon="inline-start" />
-                新增用户
+                {t("users.addUser")}
               </Button>
             ) : null,
           }}
@@ -614,7 +643,7 @@ export function UsersPage() {
                 <Checkbox
                   checked={selectedIds.has(user.id)}
                   onCheckedChange={() => toggleSelected(user.id)}
-                  aria-label={`选择 ${user.name}`}
+                  aria-label={t("users.selectUser", { name: user.name })}
                   className="mt-0.5"
                 />
               }
@@ -644,12 +673,12 @@ export function UsersPage() {
 
       <BulkActionsBar
         count={selectedIds.size}
-        entityName="位用户"
+        entityName={t("users.entityName")}
         onClear={() => setSelectedIds(new Set())}
       >
         {hasPermission("users.assign_role") && (
           <Button size="sm" onClick={() => setBulkRoleOpen(true)}>
-            批量维护角色
+            {t("users.bulkRole.action")}
           </Button>
         )}
       </BulkActionsBar>
@@ -657,10 +686,12 @@ export function UsersPage() {
       <FormDialog
         open={bulkRoleOpen}
         onOpenChange={setBulkRoleOpen}
-        title="批量维护角色"
-        description={`将为已选的 ${selectedIds.size} 位用户设置同一角色。`}
+        title={t("users.bulkRole.title")}
+        description={t("users.bulkRole.description", {
+          count: selectedIds.size,
+        })}
         submitting={bulkSubmitting}
-        submitLabel="保存"
+        submitLabel={t("users.bulkRole.save")}
         onSubmit={(event) => {
           event.preventDefault()
           void handleBulkRoleSubmit()
@@ -668,15 +699,17 @@ export function UsersPage() {
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="bulk-role">角色</FieldLabel>
+            <FieldLabel htmlFor="bulk-role">
+              {t("users.bulkRole.role")}
+            </FieldLabel>
             <Select value={bulkRoleId} onValueChange={setBulkRoleId}>
               <SelectTrigger id="bulk-role" className="w-full">
-                <SelectValue placeholder="选择角色" />
+                <SelectValue placeholder={t("users.bulkRole.selectRole")} />
               </SelectTrigger>
               <SelectContent>
                 {roles.map((role) => (
                   <SelectItem key={role.id} value={role.id}>
-                    {role.name}
+                    {roleLabel(role)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -688,23 +721,31 @@ export function UsersPage() {
       <FormDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        title={editingUser ? "编辑用户" : "新增用户"}
+        title={
+          editingUser ? t("users.edit.editTitle") : t("users.edit.addTitle")
+        }
         description={
-          editingUser ? "修改用户的基本信息。" : "填写以下信息创建新用户。"
+          editingUser
+            ? t("users.edit.editDescription")
+            : t("users.edit.addDescription")
         }
         submitting={editSubmitting}
-        submitLabel={editingUser ? "保存" : "创建"}
+        submitLabel={
+          editingUser ? t("users.edit.save") : t("users.edit.create")
+        }
         onSubmit={handleEditSubmit}
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="username">用户名</FieldLabel>
+            <FieldLabel htmlFor="username">
+              {t("users.edit.username")}
+            </FieldLabel>
             <Input
               name="username"
               autoComplete="off"
               spellCheck={false}
               id="username"
-              placeholder="请输入用户名"
+              placeholder={t("users.edit.usernamePlaceholder")}
               value={editForm.username}
               onChange={(event) =>
                 setEditForm((form) => ({
@@ -716,12 +757,12 @@ export function UsersPage() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="name">姓名</FieldLabel>
+            <FieldLabel htmlFor="name">{t("users.edit.name")}</FieldLabel>
             <Input
               name="name"
               autoComplete="off"
               id="name"
-              placeholder="请输入姓名"
+              placeholder={t("users.edit.namePlaceholder")}
               value={editForm.name}
               onChange={(event) =>
                 setEditForm((form) => ({ ...form, name: event.target.value }))
@@ -730,14 +771,14 @@ export function UsersPage() {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="email">邮箱</FieldLabel>
+            <FieldLabel htmlFor="email">{t("users.edit.email")}</FieldLabel>
             <Input
               name="email"
               autoComplete="off"
               spellCheck={false}
               id="email"
               type="email"
-              placeholder="请输入邮箱"
+              placeholder={t("users.edit.emailPlaceholder")}
               value={editForm.email}
               onChange={(event) =>
                 setEditForm((form) => ({ ...form, email: event.target.value }))
@@ -747,21 +788,24 @@ export function UsersPage() {
           </Field>
           {hasPermission("users.assign_role") && (
             <Field>
-              <FieldLabel>角色</FieldLabel>
+              <FieldLabel>{t("users.edit.role")}</FieldLabel>
               <Select
                 value={editForm.roleId}
                 onValueChange={(value) =>
                   setEditForm((form) => ({ ...form, roleId: value }))
                 }
               >
-                <SelectTrigger className="w-full" aria-label="角色">
-                  <SelectValue placeholder="请选择角色" />
+                <SelectTrigger
+                  className="w-full"
+                  aria-label={t("users.edit.role")}
+                >
+                  <SelectValue placeholder={t("users.edit.selectRole")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     {roles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>
-                        {role.name}
+                        {roleLabel(role)}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -775,18 +819,12 @@ export function UsersPage() {
       <FormDialog
         open={roleOpen}
         onOpenChange={setRoleOpen}
-        title="维护角色"
-        description={
-          <>
-            为{" "}
-            <span className="font-medium text-foreground">
-              {roleTarget?.name}
-            </span>{" "}
-            修改角色。
-          </>
-        }
+        title={t("users.role.title")}
+        description={t("users.role.description", {
+          name: roleTarget?.name ?? "",
+        })}
         submitting={roleSubmitting}
-        submitLabel="确认修改"
+        submitLabel={t("users.role.confirm")}
         onSubmit={(event) => {
           event.preventDefault()
           void handleRoleSubmit()
@@ -794,7 +832,7 @@ export function UsersPage() {
       >
         <FieldGroup>
           <Field>
-            <FieldLabel>当前角色</FieldLabel>
+            <FieldLabel>{t("users.role.current")}</FieldLabel>
             <div>
               {roleTarget && (
                 <RoleBadge roleId={roleTarget.roleId} roles={roles} />
@@ -802,16 +840,19 @@ export function UsersPage() {
             </div>
           </Field>
           <Field>
-            <FieldLabel>新角色</FieldLabel>
+            <FieldLabel>{t("users.role.new")}</FieldLabel>
             <Select value={roleValue} onValueChange={setRoleValue}>
-              <SelectTrigger className="w-full" aria-label="新角色">
-                <SelectValue placeholder="请选择角色" />
+              <SelectTrigger
+                className="w-full"
+                aria-label={t("users.role.new")}
+              >
+                <SelectValue placeholder={t("users.role.selectRole")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {roles.map((role) => (
                     <SelectItem key={role.id} value={role.id}>
-                      {role.name}
+                      {roleLabel(role)}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -832,15 +873,14 @@ export function UsersPage() {
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>重置密码</DialogTitle>
+            <DialogTitle>{t("users.reset.title")}</DialogTitle>
             <DialogDescription>
-              为 <span className="font-medium">{resetTarget?.name}</span>{" "}
-              重置密码
+              {t("users.reset.description", { name: resetTarget?.name ?? "" })}
             </DialogDescription>
           </DialogHeader>
           <FieldGroup>
             <Field>
-              <FieldLabel>新密码</FieldLabel>
+              <FieldLabel>{t("users.reset.newPassword")}</FieldLabel>
               <div className="flex gap-2">
                 <Input
                   name="newPassword"
@@ -852,17 +892,17 @@ export function UsersPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="重新生成密码"
+                  aria-label={t("users.reset.regenerate")}
                   onClick={() => setNewPassword(generatePassword())}
                 >
                   <RefreshCwIcon />
                 </Button>
                 <Button variant="outline" onClick={copyPassword}>
-                  复制
+                  {t("users.reset.copy")}
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                请将密码发送给用户。
+                {t("users.reset.hint")}
               </p>
             </Field>
           </FieldGroup>
@@ -871,7 +911,7 @@ export function UsersPage() {
               onClick={handleResetSubmit}
               loading={resetSubmitting}
             >
-              确认重置
+              {t("users.reset.confirm")}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -880,10 +920,12 @@ export function UsersPage() {
       <Dialog open={pendingOpen} onOpenChange={setPendingOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>待审核用户</DialogTitle>
+            <DialogTitle>{t("users.pending.title")}</DialogTitle>
             <DialogDescription>
-              共 {pendingUsers.length} 位用户等待审核，已选择{" "}
-              {selectedPending.size} 位。
+              {t("users.pending.description", {
+                total: pendingUsers.length,
+                selected: selectedPending.size,
+              })}
             </DialogDescription>
           </DialogHeader>
           <DataList
@@ -898,8 +940,8 @@ export function UsersPage() {
             skeletonColSpan={4}
             empty={{
               icon: UserRoundIcon,
-              title: "暂无待审核用户",
-              description: "开启人工审核后，新注册用户会出现在这里。",
+              title: t("users.pending.emptyTitle"),
+              description: t("users.pending.emptyDescription"),
             }}
             renderCard={(user) => (
               <RecordCard
@@ -909,7 +951,7 @@ export function UsersPage() {
                   <Checkbox
                     checked={selectedPending.has(user.id)}
                     onCheckedChange={() => togglePending(user.id)}
-                    aria-label={`选择 ${user.name}`}
+                    aria-label={t("users.selectUser", { name: user.name })}
                     className="mt-0.5"
                   />
                 }
@@ -922,14 +964,14 @@ export function UsersPage() {
               disabled={selectedPending.size === 0 || pendingSubmitting}
               onClick={() => setRejectOpen(true)}
             >
-              拒绝 ({selectedPending.size})
+              {t("users.pending.reject", { count: selectedPending.size })}
             </Button>
             <LoadingButton
               disabled={selectedPending.size === 0}
               loading={pendingSubmitting}
               onClick={handleBatchApprove}
             >
-              通过 ({selectedPending.size})
+              {t("users.pending.approve", { count: selectedPending.size })}
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -938,8 +980,10 @@ export function UsersPage() {
       <ConfirmDeleteDialog
         open={rejectOpen}
         onOpenChange={setRejectOpen}
-        targetName={`选中的 ${selectedPending.size} 位用户`}
-        description="拒绝后这些账号会被删除。"
+        targetName={t("users.pending.rejectTarget", {
+          count: selectedPending.size,
+        })}
+        description={t("users.pending.rejectDescription")}
         onConfirm={handleBatchReject}
         loading={pendingSubmitting}
       />

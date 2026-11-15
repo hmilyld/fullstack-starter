@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { Fragment } from "react"
 import type { LucideIcon } from "lucide-react"
 import { MoreHorizontalIcon } from "lucide-react"
@@ -25,22 +26,25 @@ export type RowAction = {
 /** 手机端行操作统一收进“更多”菜单，桌面也可复用 */
 export function RowActions({
   actions,
-  label = "更多操作",
+  label,
 }: {
   actions: RowAction[]
   label?: string
 }) {
+  const { t } = useTranslation()
   if (actions.length === 0) return null
+
+  const triggerLabel = label ?? t("common.moreActions")
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={label}>
+        <Button variant="ghost" size="icon-sm" aria-label={triggerLabel}>
           <MoreHorizontalIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel>操作</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
         <DropdownMenuGroup>
           {actions.map((action, index) => (
             <Fragment key={action.label}>

@@ -1,9 +1,13 @@
+import en from "@/locales/en"
+import zhCN from "@/locales/zh-CN"
 import type { PublicConfig } from "@/types/system"
 
 export type PwaTheme = "light" | "dark"
 
-export const DEFAULT_SITE_NAME = "管理系统"
-export const DEFAULT_SITE_DESCRIPTION = "基于 Vue 3 + shadcn-vue 的后台管理框架"
+export type PwaLocale = "zh-CN" | "en"
+
+export const DEFAULT_SITE_NAME = zhCN.pwa.defaultName
+export const DEFAULT_SITE_DESCRIPTION = zhCN.pwa.defaultDescription
 
 export type PwaManifest = {
   name: string
@@ -30,17 +34,20 @@ export type PwaManifest = {
 /** 根据站点配置与当前主题生成 manifest，避免写死站点名和颜色 */
 export function buildPwaManifest(
   config: PublicConfig | null,
-  theme: PwaTheme
+  theme: PwaTheme,
+  lang: PwaLocale = "zh-CN"
 ): PwaManifest {
-  const name = config?.siteName?.trim() || DEFAULT_SITE_NAME
+  const messages = lang === "en" ? en : zhCN
+  const name = config?.siteName?.trim() || messages.pwa.defaultName
   const shortName = [...name].slice(0, 12).join("")
   const background = theme === "dark" ? "#0a0a0a" : "#ffffff"
 
   return {
     name,
     short_name: shortName,
-    description: config?.siteDescription?.trim() || DEFAULT_SITE_DESCRIPTION,
-    lang: "zh-CN",
+    description:
+      config?.siteDescription?.trim() || messages.pwa.defaultDescription,
+    lang,
     dir: "ltr",
     id: "/",
     start_url: "/",

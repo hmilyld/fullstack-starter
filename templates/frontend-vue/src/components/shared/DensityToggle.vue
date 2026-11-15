@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import { Check, Rows3 } from "@lucide/vue"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +17,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ (e: "change", density: TableDensity): void }>()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -24,26 +26,26 @@ const emit = defineEmits<{ (e: "change", density: TableDensity): void }>()
       <Button
         variant="outline"
         size="icon-sm"
-        aria-label="表格密度"
-        title="表格密度"
+        :aria-label="t('common.table.density')"
+        :title="t('common.table.density')"
         :class="triggerClass"
       >
         <Rows3 />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-36">
-      <DropdownMenuLabel>表格密度</DropdownMenuLabel>
+      <DropdownMenuLabel>{{ t("common.table.density") }}</DropdownMenuLabel>
       <DropdownMenuItem @select="emit('change', 'comfortable')">
         <span class="flex size-4 items-center justify-center">
           <Check v-if="density === 'comfortable'" class="size-4" />
         </span>
-        舒适
+        {{ t("common.table.comfortable") }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="emit('change', 'compact')">
         <span class="flex size-4 items-center justify-center">
           <Check v-if="density === 'compact'" class="size-4" />
         </span>
-        紧凑
+        {{ t("common.table.compact") }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

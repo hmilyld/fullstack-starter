@@ -23,6 +23,11 @@ export function buildPermissionTree(
   }))
 }
 
+/** 内置权限名按 code 命中前端目录；自定义权限回退后端名称。 */
+export function permissionNameKey(code: string) {
+  return `permissionNames.${code.replaceAll(".", "_")}`
+}
+
 /** 按名称/编码过滤树；菜单命中时保留全部子项，仅子项命中时只保留命中的子项。 */
 export function filterPermissionTree(
   tree: PermissionTreeNode[],
@@ -47,16 +52,15 @@ export function filterPermissionTree(
 
 export type OperationPreset = {
   verb: string
-  label: string
 }
 
 export const OPERATION_PRESETS: OperationPreset[] = [
-  { verb: "view", label: "查看" },
-  { verb: "create", label: "新增" },
-  { verb: "edit", label: "编辑" },
-  { verb: "delete", label: "删除" },
-  { verb: "export", label: "导出" },
-  { verb: "import", label: "导入" },
+  { verb: "view" },
+  { verb: "create" },
+  { verb: "edit" },
+  { verb: "delete" },
+  { verb: "export" },
+  { verb: "import" },
 ]
 
 export function buildOperationCode(menuCode: string, verb: string): string {

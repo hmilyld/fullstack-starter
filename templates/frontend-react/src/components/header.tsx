@@ -1,9 +1,11 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
 import { SearchIcon } from "lucide-react"
 
 import { openCommandMenu } from "@/components/command-menu"
 import { ConfigDrawer } from "@/components/config-drawer"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
 import {
@@ -21,10 +23,16 @@ import { buildBreadcrumbs } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 export function Header() {
+  const { t } = useTranslation()
   const location = useLocation()
   const crumbs = buildBreadcrumbs(location.pathname)
   const currentCrumb = crumbs[crumbs.length - 1]
   const [scrolled, setScrolled] = React.useState(false)
+
+  function crumbLabel(crumb: { path: string; label: string }) {
+    const segment = crumb.path.split("/").filter(Boolean).pop() ?? ""
+    return t(`routes.${segment}`, { defaultValue: crumb.label })
+  }
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -51,7 +59,7 @@ export function Header() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/dashboard">管理后台</Link>
+                  <Link to="/dashboard">{t("common.admin")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               {crumbs.map((crumb, index) => {
@@ -61,10 +69,10 @@ export function Header() {
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
                       {isLast || !crumb.hasRoute ? (
-                        <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                        <BreadcrumbPage>{crumbLabel(crumb)}</BreadcrumbPage>
                       ) : (
                         <BreadcrumbLink asChild>
-                          <Link to={crumb.path}>{crumb.label}</Link>
+                          <Link to={crumb.path}>{crumbLabel(crumb)}</Link>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
@@ -74,7 +82,7 @@ export function Header() {
             </BreadcrumbList>
           </Breadcrumb>
           <span className="truncate text-sm font-medium md:hidden">
-            {currentCrumb?.label ?? "管理后台"}
+            {currentCrumb ? crumbLabel(currentCrumb) : t("common.admin")}
           </span>
         </div>
 
@@ -86,7 +94,7 @@ export function Header() {
             aria-keyshortcuts="Meta+K Control+K"
           >
             <SearchIcon className="size-4 shrink-0" />
-            <span className="truncate">搜索…</span>
+            <span className="truncate">{t("common.search")}</span>
             <kbd className="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
               ⌘K
             </kbd>
@@ -96,10 +104,11 @@ export function Header() {
             size="icon-sm"
             onClick={openCommandMenu}
             className="lg:hidden"
-            aria-label="搜索页面或菜单"
+            aria-label={t("common.searchAria")}
           >
             <SearchIcon />
           </Button>
+          <LanguageSwitcher />
           <ThemeToggle />
           <ConfigDrawer />
           <Separator

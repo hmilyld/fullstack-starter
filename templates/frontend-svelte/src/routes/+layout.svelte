@@ -1,10 +1,11 @@
 <script lang="ts">
   import "./layout.css"
+  import "#lib/i18n.js"
+  import { t } from "#lib/i18n.js"
   import { siteConfig } from "#lib/stores/site-config.svelte.js"
   import { applyTheme, getResolvedTheme } from "#lib/stores/theme.svelte.js"
   import { useMediaQuery } from "#lib/hooks/use-media-query.svelte.js"
   import { usePwaManifest } from "#lib/hooks/use-pwa-manifest.svelte.js"
-  import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from "#lib/pwa.js"
   import { Toaster } from "svelte-sonner"
   import Skeleton from "#lib/components/ui/skeleton/skeleton.svelte"
 
@@ -17,10 +18,10 @@
     applyTheme(getResolvedTheme())
   })
 
+  // 标题由各页面通过 <svelte:head> 维护（页面名 · 站点名），
+  // 布局只负责站点描述，避免语言或配置刷新时把页面标题覆盖成站点名。
   $effect(() => {
     const config = siteConfig.config
-    if (!config) return
-    document.title = config.siteName || DEFAULT_SITE_NAME
     let metaDesc = document.querySelector<HTMLMetaElement>(
       'meta[name="description"]'
     )
@@ -29,7 +30,8 @@
       metaDesc.name = "description"
       document.head.appendChild(metaDesc)
     }
-    metaDesc.content = config.siteDescription || DEFAULT_SITE_DESCRIPTION
+    metaDesc.content =
+      config?.siteDescription?.trim() || $t("pwa.defaultDescription")
   })
 
   void siteConfig.fetchConfig()

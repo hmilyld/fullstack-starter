@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { useDroppable } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -97,6 +98,10 @@ function GroupRow({
   onDeleteGroup: (group: MenuGroup) => void
   onMoveGroup: (groupId: string, direction: -1 | 1) => void
 }) {
+  const { t } = useTranslation()
+  const name = group.isSystem
+    ? t(`nav.groups.${group.id}`, { defaultValue: group.name })
+    : group.name
   const {
     attributes,
     listeners,
@@ -123,13 +128,13 @@ function GroupRow({
   if (canReorder) {
     actions.push(
       {
-        label: "上移分组",
+        label: t("menuPage.actions.moveUpGroup"),
         icon: ChevronUpIcon,
         disabled: !canMoveUp || mutationsDisabled,
         onSelect: () => onMoveGroup(group.id, -1),
       },
       {
-        label: "下移分组",
+        label: t("menuPage.actions.moveDownGroup"),
         icon: ChevronDownIcon,
         disabled: !canMoveDown || mutationsDisabled,
         onSelect: () => onMoveGroup(group.id, 1),
@@ -138,7 +143,7 @@ function GroupRow({
   }
   if (canDelete && !group.isSystem) {
     actions.push({
-      label: "删除分组",
+      label: t("menuPage.actions.deleteGroup"),
       icon: Trash2Icon,
       destructive: true,
       separatorBefore: true,
@@ -163,7 +168,12 @@ function GroupRow({
             variant="ghost"
             size="icon-xs"
             aria-expanded={!collapsed}
-            aria-label={`${collapsed ? "展开" : "收起"} ${group.name} 分组`}
+            aria-label={t("menuPage.aria.toggleGroup", {
+              action: collapsed
+                ? t("menuPage.actions.expand")
+                : t("menuPage.actions.collapse"),
+              name,
+            })}
             onClick={() => onToggleGroup(group.id)}
           >
             <ChevronRightIcon
@@ -175,22 +185,24 @@ function GroupRow({
               variant="ghost"
               size="icon-xs"
               className="cursor-grab touch-none"
-              aria-label={`拖动 ${group.name} 分组排序`}
+              aria-label={t("menuPage.aria.dragGroup", { name })}
               {...attributes}
               {...listeners}
             >
               <GripVerticalIcon />
             </Button>
           )}
-          <span className="truncate text-sm font-medium">{group.name}</span>
-          {group.isSystem && <Badge variant="outline">内置</Badge>}
+          <span className="truncate text-sm font-medium">{name}</span>
+          {group.isSystem && (
+            <Badge variant="outline">{t("menuPage.builtIn")}</Badge>
+          )}
           <span className="text-xs text-muted-foreground">
-            {group.items.length} 个菜单
+            {t("menuPage.itemCount", { count: group.items.length })}
           </span>
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant="outline">分组</Badge>
+        <Badge variant="outline">{t("menuPage.groupType")}</Badge>
       </TableCell>
       <TableCell className="text-muted-foreground">—</TableCell>
       <TableCell className="hidden text-muted-foreground lg:table-cell">
@@ -202,7 +214,7 @@ function GroupRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={`在 ${group.name} 下新增菜单`}
+              aria-label={t("menuPage.aria.addMenuUnder", { name })}
               disabled={mutationsDisabled}
               onClick={() => onCreateItem(group.id)}
             >
@@ -213,14 +225,17 @@ function GroupRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={`编辑 ${group.name} 分组`}
+              aria-label={t("menuPage.aria.editGroup", { name })}
               disabled={mutationsDisabled}
               onClick={() => onEditGroup(group)}
             >
               <PencilIcon />
             </Button>
           )}
-          <RowActions actions={actions} label={`${group.name} 分组的操作`} />
+          <RowActions
+            actions={actions}
+            label={t("menuPage.groupActions", { name })}
+          />
         </div>
       </TableCell>
     </tr>
@@ -266,6 +281,10 @@ function MenuRow({
   onToggleHidden: (item: MenuItem) => void
   onAddOperation: (item: MenuItem) => void
 }) {
+  const { t } = useTranslation()
+  const name = item.isSystem
+    ? t(`nav.items.${item.permissionCode}`, { defaultValue: item.name })
+    : item.name
   const {
     attributes,
     listeners,
@@ -291,7 +310,9 @@ function MenuRow({
   const actions: RowAction[] = []
   if (canEdit) {
     actions.push({
-      label: item.hidden ? "在侧边栏显示" : "隐藏菜单",
+      label: item.hidden
+        ? t("menuPage.actions.showInSidebar")
+        : t("menuPage.actions.hideMenu"),
       icon: item.hidden ? EyeIcon : EyeOffIcon,
       disabled: mutationsDisabled,
       onSelect: () => onToggleHidden(item),
@@ -300,13 +321,13 @@ function MenuRow({
   if (canReorder) {
     actions.push(
       {
-        label: "上移",
+        label: t("menuPage.actions.up"),
         icon: ChevronUpIcon,
         disabled: !canMoveUp || mutationsDisabled,
         onSelect: () => onMoveItem(groupId, item.permissionCode, -1),
       },
       {
-        label: "下移",
+        label: t("menuPage.actions.down"),
         icon: ChevronDownIcon,
         disabled: !canMoveDown || mutationsDisabled,
         onSelect: () => onMoveItem(groupId, item.permissionCode, 1),
@@ -315,7 +336,7 @@ function MenuRow({
   }
   if (canDelete && !item.isSystem) {
     actions.push({
-      label: "删除",
+      label: t("menuPage.actions.delete"),
       icon: Trash2Icon,
       destructive: true,
       separatorBefore: true,
@@ -339,7 +360,12 @@ function MenuRow({
             variant="ghost"
             size="icon-xs"
             aria-expanded={expanded}
-            aria-label={`${expanded ? "收起" : "展开"} ${item.name} 的操作权限`}
+            aria-label={t("menuPage.aria.toggleOperations", {
+              action: expanded
+                ? t("menuPage.actions.collapse")
+                : t("menuPage.actions.expand"),
+              name,
+            })}
             onClick={() => onToggleExpanded(item.permissionCode)}
           >
             <ChevronRightIcon
@@ -351,7 +377,7 @@ function MenuRow({
               variant="ghost"
               size="icon-xs"
               className="cursor-grab touch-none"
-              aria-label={`拖动 ${item.name} 排序`}
+              aria-label={t("menuPage.aria.dragItem", { name })}
               {...attributes}
               {...listeners}
             >
@@ -361,22 +387,26 @@ function MenuRow({
           <MenuIcon name={item.icon} className="size-4 shrink-0" />
           <div className="flex min-w-0 flex-col">
             <div className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate text-sm font-medium">{item.name}</span>
-              {item.isSystem && <Badge variant="outline">内置</Badge>}
+              <span className="truncate text-sm font-medium">{name}</span>
+              {item.isSystem && (
+                <Badge variant="outline">{t("menuPage.builtIn")}</Badge>
+              )}
               {item.hidden && (
                 <Badge variant="secondary" className="lg:hidden">
-                  已隐藏
+                  {t("menuPage.hidden")}
                 </Badge>
               )}
               <span className="text-xs text-muted-foreground">
-                {item.operations.length} 个操作
+                {t("menuPage.operationCount", {
+                  count: item.operations.length,
+                })}
               </span>
             </div>
           </div>
         </div>
       </TableCell>
       <TableCell>
-        <Badge>菜单</Badge>
+        <Badge>{t("menuPage.menuType")}</Badge>
       </TableCell>
       <TableCell>
         <div className="flex min-w-0 flex-col">
@@ -399,7 +429,7 @@ function MenuRow({
               item.hidden ? "bg-warning" : "bg-muted-foreground"
             )}
           />
-          {item.hidden ? "已隐藏" : "显示中"}
+          {item.hidden ? t("menuPage.hidden") : t("menuPage.visible")}
         </span>
       </TableCell>
       <TableCell className="sticky right-0 bg-inherit text-right">
@@ -408,7 +438,7 @@ function MenuRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={`新增 ${item.name} 的操作权限`}
+              aria-label={t("menuPage.aria.addOperation", { name })}
               disabled={mutationsDisabled}
               onClick={() => onAddOperation(item)}
             >
@@ -419,14 +449,17 @@ function MenuRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={`编辑 ${item.name}`}
+              aria-label={t("menuPage.aria.editItem", { name })}
               disabled={mutationsDisabled}
               onClick={() => onEdit(item)}
             >
               <PencilIcon />
             </Button>
           )}
-          <RowActions actions={actions} label={`${item.name} 的操作`} />
+          <RowActions
+            actions={actions}
+            label={t("menuPage.itemActions", { name })}
+          />
         </div>
       </TableCell>
     </tr>
@@ -450,6 +483,7 @@ function OperationRow({
   onEdit: (item: MenuItem, operation: MenuOperation) => void
   onDelete: (item: MenuItem, operation: MenuOperation) => void
 }) {
+  const { t } = useTranslation()
   return (
     <tr className="border-b bg-muted/10 last:border-0 hover:bg-muted/20">
       <TableCell className="p-2">
@@ -461,7 +495,7 @@ function OperationRow({
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant="secondary">操作</Badge>
+        <Badge variant="secondary">{t("menuPage.operationType")}</Badge>
       </TableCell>
       <TableCell>
         <span className="truncate font-mono text-xs">{operation.code}</span>
@@ -475,7 +509,9 @@ function OperationRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={`编辑 ${operation.name}`}
+              aria-label={t("menuPage.aria.editOperation", {
+                name: operation.name,
+              })}
               disabled={mutationsDisabled}
               onClick={() => onEdit(item, operation)}
             >
@@ -486,7 +522,9 @@ function OperationRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={`删除 ${operation.name}`}
+              aria-label={t("menuPage.aria.deleteOperation", {
+                name: operation.name,
+              })}
               disabled={mutationsDisabled}
               onClick={() => onDelete(item, operation)}
             >
@@ -525,16 +563,25 @@ export function MenuTreeTable({
   onEditOperation,
   onDeleteOperation,
 }: MenuTreeTableProps) {
+  const { t } = useTranslation()
   return (
     <Table className="min-w-[600px] table-fixed">
       <TableHeader>
         <TableRow className="bg-muted/50 hover:bg-muted/50">
-          <TableHead className="w-[35%]">名称</TableHead>
-          <TableHead className="w-[10%]">类型</TableHead>
-          <TableHead className="w-[27%]">路由 / 权限编码</TableHead>
-          <TableHead className="hidden w-[12%] lg:table-cell">标记</TableHead>
+          <TableHead className="w-[35%]">
+            {t("menuPage.columns.name")}
+          </TableHead>
+          <TableHead className="w-[10%]">
+            {t("menuPage.columns.type")}
+          </TableHead>
+          <TableHead className="w-[27%]">
+            {t("menuPage.columns.routeOrCode")}
+          </TableHead>
+          <TableHead className="hidden w-[12%] lg:table-cell">
+            {t("menuPage.columns.marker")}
+          </TableHead>
           <TableHead className="sticky right-0 w-[16%] bg-muted/50 text-right">
-            操作
+            {t("menuPage.columns.actions")}
           </TableHead>
         </TableRow>
       </TableHeader>

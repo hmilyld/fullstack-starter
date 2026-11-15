@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { ChevronRight, Search } from "@lucide/vue"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,9 +19,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useMediaQuery } from "@/composables/use-media-query"
-import { buildPermissionTree, filterPermissionTree } from "@/lib/access-tree"
+import {
+  buildPermissionTree,
+  filterPermissionTree,
+  permissionNameKey,
+} from "@/lib/access-tree"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
+import { translateOr } from "@/lib/label"
 
 const props = defineProps<{
   menuPermissions: Permission[]
@@ -37,6 +43,7 @@ const emit = defineEmits<{
 
 type CheckedState = boolean | "indeterminate"
 
+const { t } = useI18n()
 const isCompact = useMediaQuery("(max-width: 767px)")
 const search = ref("")
 const collapsed = ref<Set<string>>(new Set())
@@ -72,7 +79,16 @@ const selectedCount = computed(
 
 const tree = computed(() =>
   filterPermissionTree(
-    buildPermissionTree(props.menuPermissions, props.operationPermissions),
+    buildPermissionTree(props.menuPermissions, props.operationPermissions).map(
+      (node) => ({
+        ...node,
+        name: translateOr(permissionNameKey(node.code), node.name),
+        children: node.children.map((child) => ({
+          ...child,
+          name: translateOr(permissionNameKey(child.code), child.name),
+        })),
+      })
+    ),
     search.value
   )
 )
@@ -98,11 +114,14 @@ function menuState(menu: Permission): CheckedState {
 
 function menuCountLabel(code: string) {
   const children = childrenOf(code)
-  if (children.length === 0) return "无操作权限"
+  if (children.length === 0) return t("rolePermissions.noOperations")
   const checked = children.filter((child) =>
     selected.value.has(child.code)
   ).length
-  return `${checked}/${children.length} 个操作`
+  return t("rolePermissions.operationCount", {
+    checked,
+    total: children.length,
+  })
 }
 
 function onSearchEnter(event: KeyboardEvent) {
@@ -161,7 +180,7 @@ function clearAll() {
       v-if="loading"
       class="flex h-40 items-center justify-center rounded-xl border text-sm text-muted-foreground"
     >
-      权限加载中…
+      {{ t("rolePermissions.loading") }}
     </div>
     <div
       v-else-if="error"
@@ -169,18 +188,18 @@ function clearAll() {
     >
       <span class="text-destructive">{{ error }}</span>
       <Button type="button" variant="outline" size="sm" @click="emit('retry')">
-        重试
+        {{ t("common.retry") }}
       </Button>
     </div>
     <div
       v-else-if="menuPermissions.length === 0"
       class="flex h-40 items-center justify-center rounded-xl border text-sm text-muted-foreground"
     >
-      暂无可分配的权限
+      {{ t("rolePermissions.empty") }}
     </div>
     <template v-else>
       <p class="text-xs text-muted-foreground">
-        勾选菜单会同时选中其下全部操作，再次点击取消整组；单独勾选操作会保留菜单并显示半选。
+        {{ t("rolePermissions.hint") }}
       </p>
 
       <div
@@ -191,8 +210,8 @@ function clearAll() {
             name="permission-q"
             autocomplete="off"
             :spellcheck="false"
-            placeholder="搜索名称或编码…"
-            aria-label="搜索权限"
+            :placeholder="t('rolePermissions.searchPlaceholder')"
+            :aria-label="t('rolePermissions.searchAria')"
             :model-value="search"
             @update:model-value="search = String($event)"
             @keydown.enter="onSearchEnter"
@@ -204,7 +223,12 @@ function clearAll() {
 
         <div class="flex items-center justify-between gap-2 md:justify-end">
           <span class="text-xs text-muted-foreground" aria-live="polite">
-            已选 {{ selectedCount }} / {{ catalogCodes.size }} 项
+            {{
+              t("rolePermissions.selected", {
+                selected: selectedCount,
+                total: catalogCodes.size,
+              })
+            }}
           </span>
           <div class="flex items-center gap-1">
             <Button
@@ -215,7 +239,7 @@ function clearAll() {
               :disabled="catalogCodes.size === 0"
               @click="selectAll"
             >
-              全选
+              {{ t("rolePermissions.selectAll") }}
             </Button>
             <Button
               type="button"
@@ -225,7 +249,7 @@ function clearAll() {
               :disabled="selectedCount === 0"
               @click="clearAll"
             >
-              清空
+              {{ t("rolePermissions.clear") }}
             </Button>
           </div>
         </div>
@@ -235,9 +259,9 @@ function clearAll() {
         v-if="tree.length === 0"
         class="flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground"
       >
-        <span>没有匹配的权限</span>
+        <span>{{ t("rolePermissions.noMatches") }}</span>
         <Button type="button" variant="outline" size="sm" @click="search = ''">
-          清空搜索
+          {{ t("rolePermissions.clearSearch") }}
         </Button>
       </div>
       <div
@@ -253,7 +277,7 @@ function clearAll() {
             <Checkbox
               :id="`role-permission-menu-${menu.code}`"
               class="mt-0.5"
-              :aria-label="`选择 ${menu.name}`"
+              :aria-label="t('rolePermissions.selectMenu', { name: menu.name })"
               :model-value="menuState(menu)"
               @update:model-value="toggleMenu(menu)"
             />
@@ -282,7 +306,11 @@ function clearAll() {
               size="icon-sm"
               class="shrink-0"
               :aria-expanded="!collapsed.has(menu.code)"
-              :aria-label="`${collapsed.has(menu.code) ? '展开' : '收起'} ${menu.name} 的操作权限`"
+              :aria-label="
+                collapsed.has(menu.code)
+                  ? t('rolePermissions.expandAria', { name: menu.name })
+                  : t('rolePermissions.collapseAria', { name: menu.name })
+              "
               @click="toggleCollapsed(menu.code)"
             >
               <ChevronRight
@@ -308,7 +336,11 @@ function clearAll() {
               <Checkbox
                 :id="`role-permission-op-${operation.code}`"
                 class="mt-0.5"
-                :aria-label="`选择 ${operation.name}`"
+                :aria-label="
+                  t('rolePermissions.selectOperation', {
+                    name: operation.name,
+                  })
+                "
                 :model-value="selected.has(operation.code)"
                 @update:model-value="toggleOperation(operation)"
               />
@@ -334,9 +366,15 @@ function clearAll() {
         <Table class="min-w-[520px]">
           <TableHeader class="sticky top-0 z-10 bg-muted">
             <TableRow class="hover:bg-transparent">
-              <TableHead class="w-[52%]">权限名称</TableHead>
-              <TableHead class="w-[33%]">权限编码</TableHead>
-              <TableHead class="w-[15%]">类型</TableHead>
+              <TableHead class="w-[52%]">{{
+                t("rolePermissions.nameHeader")
+              }}</TableHead>
+              <TableHead class="w-[33%]">{{
+                t("rolePermissions.codeHeader")
+              }}</TableHead>
+              <TableHead class="w-[15%]">{{
+                t("rolePermissions.typeHeader")
+              }}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -346,7 +384,9 @@ function clearAll() {
                   <div class="flex items-center gap-2">
                     <Checkbox
                       :id="`role-permission-menu-${menu.code}`"
-                      :aria-label="`选择 ${menu.name}`"
+                      :aria-label="
+                        t('rolePermissions.selectMenu', { name: menu.name })
+                      "
                       :model-value="menuState(menu)"
                       @update:model-value="toggleMenu(menu)"
                     />
@@ -356,7 +396,13 @@ function clearAll() {
                       variant="ghost"
                       size="icon-xs"
                       :aria-expanded="!collapsed.has(menu.code)"
-                      :aria-label="`${collapsed.has(menu.code) ? '展开' : '收起'} ${menu.name} 的操作权限`"
+                      :aria-label="
+                        collapsed.has(menu.code)
+                          ? t('rolePermissions.expandAria', { name: menu.name })
+                          : t('rolePermissions.collapseAria', {
+                              name: menu.name,
+                            })
+                      "
                       @click="toggleCollapsed(menu.code)"
                     >
                       <ChevronRight
@@ -384,7 +430,7 @@ function clearAll() {
                   {{ menu.code }}
                 </TableCell>
                 <TableCell>
-                  <Badge>菜单</Badge>
+                  <Badge>{{ t("rolePermissions.menuType") }}</Badge>
                 </TableCell>
               </TableRow>
 
@@ -397,7 +443,11 @@ function clearAll() {
                     <div class="flex items-center gap-2 pl-8">
                       <Checkbox
                         :id="`role-permission-op-${operation.code}`"
-                        :aria-label="`选择 ${operation.name}`"
+                        :aria-label="
+                          t('rolePermissions.selectOperation', {
+                            name: operation.name,
+                          })
+                        "
                         :model-value="selected.has(operation.code)"
                         @update:model-value="toggleOperation(operation)"
                       />
@@ -413,7 +463,9 @@ function clearAll() {
                     {{ operation.code }}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">操作</Badge>
+                    <Badge variant="secondary">{{
+                      t("rolePermissions.operationType")
+                    }}</Badge>
                   </TableCell>
                 </TableRow>
               </template>

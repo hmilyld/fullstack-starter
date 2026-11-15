@@ -27,16 +27,26 @@
   import { Tabs, TabsContent } from "#lib/components/ui/tabs/index.js"
   import { changePassword, updateMe } from "#lib/api/user.js"
   import { useMediaQuery } from "#lib/hooks/use-media-query.svelte.js"
+  import { t } from "#lib/i18n.js"
   import { useToast } from "#lib/hooks/use-toast.js"
   import { auth } from "#lib/stores/auth.svelte.js"
+  import { siteConfig } from "#lib/stores/site-config.svelte.js"
 
   const toast = useToast()
   const isWide = useMediaQuery("(min-width: 1024px)")
 
-  const profileTabs = [
-    { value: "profile", title: "基本资料", icon: UserRound },
-    { value: "security", title: "密码修改", icon: KeyRound },
-  ]
+  const profileTabs = $derived([
+    {
+      value: "profile",
+      title: $t("profilePage.tabs.profile"),
+      icon: UserRound,
+    },
+    {
+      value: "security",
+      title: $t("profilePage.tabs.security"),
+      icon: KeyRound,
+    },
+  ])
 
   const activeTab = $derived(
     page.url.searchParams.get("tab") === "security" ? "security" : "profile"
@@ -76,20 +86,20 @@
     const res = await updateMe({ name, email })
     profileSaving = false
     if (res.code !== 0) {
-      toast.error(res.message || "保存失败")
+      toast.error(res.message || $t("profilePage.saveFailed"))
       return
     }
     auth.updateUser({ name, email })
-    toast.success("保存成功")
+    toast.success($t("profilePage.saveSuccess"))
   }
 
   async function handlePasswordSubmit() {
     if (newPassword.length < 6) {
-      passwordError = "新密码至少 6 位"
+      passwordError = $t("profilePage.passwordMin")
       return
     }
     if (newPassword !== confirmPassword) {
-      passwordError = "两次输入的密码不一致"
+      passwordError = $t("profilePage.passwordMismatch")
       return
     }
 
@@ -101,17 +111,22 @@
     })
     passwordSaving = false
     if (res.code !== 0) {
-      passwordError = res.message || "修改失败"
+      passwordError = res.message || $t("profilePage.passwordFailed")
       return
     }
-    toast.success("密码修改成功")
+    toast.success($t("profilePage.passwordSuccess"))
     currentPassword = ""
     newPassword = ""
     confirmPassword = ""
   }
 </script>
 
-<svelte:head><title>个人设置 · 管理系统</title></svelte:head>
+<svelte:head
+  ><title
+    >{$t("profilePage.title")} · {siteConfig.config?.siteName?.trim() ||
+      $t("pwa.defaultName")}</title
+  ></svelte:head
+>
 
 <div class="flex flex-col gap-(--page-gap)">
   <UnsavedChangesGuard
@@ -120,7 +135,10 @@
       newPassword !== "" ||
       confirmPassword !== ""}
   />
-  <PageHeader title="个人设置" description="管理您的账户信息与登录密码。" />
+  <PageHeader
+    title={$t("profilePage.title")}
+    description={$t("profilePage.description")}
+  />
 
   <Separator />
 
@@ -138,8 +156,10 @@
     >
       <Card variant="plain">
         <CardHeader>
-          <CardTitle>基本资料</CardTitle>
-          <CardDescription>更新您的姓名和邮箱地址。</CardDescription>
+          <CardTitle>{$t("profilePage.profileTitle")}</CardTitle>
+          <CardDescription
+            >{$t("profilePage.profileDescription")}</CardDescription
+          >
         </CardHeader>
         <CardContent>
           <form
@@ -151,23 +171,23 @@
           >
             <FieldGroup>
               <Field>
-                <FieldLabel for="name">姓名</FieldLabel>
+                <FieldLabel for="name">{$t("profilePage.name")}</FieldLabel>
                 <Input
                   id="name"
                   bind:value={name}
                   name="name"
-                  placeholder="请输入姓名"
+                  placeholder={$t("profilePage.namePlaceholder")}
                   autocomplete="name"
                 />
               </Field>
               <Field>
-                <FieldLabel for="email">邮箱</FieldLabel>
+                <FieldLabel for="email">{$t("profilePage.email")}</FieldLabel>
                 <Input
                   id="email"
                   bind:value={email}
                   name="email"
                   type="email"
-                  placeholder="请输入邮箱"
+                  placeholder={$t("profilePage.emailPlaceholder")}
                   autocomplete="email"
                   spellcheck={false}
                 />
@@ -183,7 +203,7 @@
             disabled={!profileDirty}
             class="w-full md:w-auto"
           >
-            保存更改
+            {$t("profilePage.save")}
           </LoadingButton>
         </CardFooter>
       </Card>
@@ -195,10 +215,10 @@
     >
       <Card variant="plain">
         <CardHeader>
-          <CardTitle>密码修改</CardTitle>
-          <CardDescription>
-            修改后需要重新登录其他设备上的会话。
-          </CardDescription>
+          <CardTitle>{$t("profilePage.securityTitle")}</CardTitle>
+          <CardDescription
+            >{$t("profilePage.securityDescription")}</CardDescription
+          >
         </CardHeader>
         <CardContent>
           <form
@@ -210,33 +230,39 @@
           >
             <FieldGroup>
               <Field>
-                <FieldLabel for="current-password">当前密码</FieldLabel>
+                <FieldLabel for="current-password"
+                  >{$t("profilePage.currentPassword")}</FieldLabel
+                >
                 <PasswordInput
                   id="current-password"
                   bind:value={currentPassword}
-                  placeholder="请输入当前密码"
+                  placeholder={$t("profilePage.currentPasswordPlaceholder")}
                   autocomplete="current-password"
                   required
                   oninput={clearPasswordError}
                 />
               </Field>
               <Field>
-                <FieldLabel for="new-password">新密码</FieldLabel>
+                <FieldLabel for="new-password"
+                  >{$t("profilePage.newPassword")}</FieldLabel
+                >
                 <PasswordInput
                   id="new-password"
                   bind:value={newPassword}
-                  placeholder="至少 6 位"
+                  placeholder={$t("profilePage.newPasswordPlaceholder")}
                   autocomplete="new-password"
                   required
                   oninput={clearPasswordError}
                 />
               </Field>
               <Field data-invalid={!!passwordError}>
-                <FieldLabel for="confirm-password">确认新密码</FieldLabel>
+                <FieldLabel for="confirm-password"
+                  >{$t("profilePage.confirmPassword")}</FieldLabel
+                >
                 <PasswordInput
                   id="confirm-password"
                   bind:value={confirmPassword}
-                  placeholder="请再次输入新密码"
+                  placeholder={$t("profilePage.confirmPasswordPlaceholder")}
                   autocomplete="new-password"
                   aria-invalid={!!passwordError}
                   required
@@ -257,7 +283,7 @@
             disabled={!currentPassword || !newPassword || !confirmPassword}
             class="w-full md:w-auto"
           >
-            更新密码
+            {$t("profilePage.updatePassword")}
           </LoadingButton>
         </CardFooter>
       </Card>

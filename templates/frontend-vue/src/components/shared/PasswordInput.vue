@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { Eye, EyeOff } from "@lucide/vue"
 import {
   InputGroup,
@@ -14,6 +15,7 @@ defineOptions({
 
 const model = defineModel<string>({ default: "" })
 const visible = ref(false)
+const { t } = useI18n()
 </script>
 
 <template>
@@ -26,7 +28,9 @@ const visible = ref(false)
     <InputGroupAddon align="inline-end">
       <InputGroupButton
         size="icon-xs"
-        :aria-label="visible ? '隐藏密码' : '显示密码'"
+        :aria-label="
+          visible ? t('common.password.hide') : t('common.password.show')
+        "
         @click="visible = !visible"
       >
         <EyeOff v-if="visible" />

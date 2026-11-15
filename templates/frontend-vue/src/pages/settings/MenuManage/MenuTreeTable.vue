@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n"
 import {
   Table,
   TableBody,
@@ -45,18 +46,24 @@ const emit = defineEmits<{
   (e: "edit-operation", item: MenuItem, operation: MenuOperation): void
   (e: "delete-operation", item: MenuItem, operation: MenuOperation): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <Table class="min-w-[600px] table-fixed">
     <TableHeader>
       <TableRow class="bg-muted/50 hover:bg-muted/50">
-        <TableHead class="w-[35%]">名称</TableHead>
-        <TableHead class="w-[10%]">类型</TableHead>
-        <TableHead class="w-[27%]">路由 / 权限编码</TableHead>
-        <TableHead class="hidden w-[12%] lg:table-cell">标记</TableHead>
+        <TableHead class="w-[35%]">{{ t("menuPage.columns.name") }}</TableHead>
+        <TableHead class="w-[10%]">{{ t("menuPage.columns.type") }}</TableHead>
+        <TableHead class="w-[27%]">{{
+          t("menuPage.columns.routeOrCode")
+        }}</TableHead>
+        <TableHead class="hidden w-[12%] lg:table-cell">{{
+          t("menuPage.columns.marker")
+        }}</TableHead>
         <TableHead class="sticky right-0 w-[16%] bg-muted/50 text-right">
-          操作
+          {{ t("menuPage.columns.actions") }}
         </TableHead>
       </TableRow>
     </TableHeader>

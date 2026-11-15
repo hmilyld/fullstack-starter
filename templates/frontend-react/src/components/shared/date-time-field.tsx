@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -20,11 +21,10 @@ import {
   parseDateTimeInput,
   toDateTimeInput,
   todayKey,
+  weekdayLabels,
+  type DateTimeLocale,
 } from "@/lib/date-time"
 import { cn } from "@/lib/utils"
-
-const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"]
-const PLACEHOLDER = "选择日期时间"
 
 /** 方向键在日历里移动的天数 */
 const ARROW_STEPS: Record<string, number> = {
@@ -54,8 +54,8 @@ type DateTimeFieldProps = {
 }
 
 /**
- * 日期时间选择：输入框外观 + 中文月历 + 时分输入。
- * 原生 `input[type=datetime-local]` 在中文界面下固定显示英文
+ * 日期时间选择：输入框外观 + 自绘月历 + 时分输入。
+ * 原生 `input[type=datetime-local]` 固定按浏览器语言显示
  * `mm/dd/yyyy, --:-- --`，且各浏览器的盒模型不一致，这里自绘以保证
  * 与其他输入框同高同宽、文案和深色模式统一。
  */
@@ -64,11 +64,15 @@ export function DateTimeField({
   onChange,
   id,
   name,
-  placeholder = PLACEHOLDER,
+  placeholder,
   disabled,
   className,
   ...a11y
 }: DateTimeFieldProps) {
+  const { t, i18n } = useTranslation()
+  const locale: DateTimeLocale = i18n.resolvedLanguage === "en" ? "en" : "zh-CN"
+  const weekdays = weekdayLabels(locale)
+  const resolvedPlaceholder = placeholder ?? t("dateTime.placeholder")
   const parts = React.useMemo(() => parseDateTimeInput(value), [value])
   const [open, setOpen] = React.useState(false)
   const [view, setView] = React.useState(() => {
@@ -251,7 +255,7 @@ export function DateTimeField({
             {...a11y}
           >
             <span className="truncate tabular-nums">
-              {value ? formatDateTimeInput(value) : placeholder}
+              {value ? formatDateTimeInput(value, locale) : resolvedPlaceholder}
             </span>
             <CalendarIcon
               className="size-4 shrink-0 text-muted-foreground"
@@ -265,18 +269,18 @@ export function DateTimeField({
             <div className="flex items-center justify-between">
               <button
                 type="button"
-                aria-label="上个月"
+                aria-label={t("dateTime.previousMonth")}
                 onClick={() => shiftMonth(-1)}
                 className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
               >
                 <ChevronLeftIcon className="size-4" />
               </button>
               <span className="text-sm font-medium tabular-nums">
-                {formatMonthLabel(view.year, view.month)}
+                {formatMonthLabel(view.year, view.month, locale)}
               </span>
               <button
                 type="button"
-                aria-label="下个月"
+                aria-label={t("dateTime.nextMonth")}
                 onClick={() => shiftMonth(1)}
                 className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-9"
               >
@@ -285,7 +289,7 @@ export function DateTimeField({
             </div>
 
             <div className="grid grid-cols-7">
-              {WEEKDAYS.map((label) => (
+              {weekdays.map((label) => (
                 <span
                   key={label}
                   className="flex h-7 items-center justify-center text-xs text-muted-foreground"
@@ -298,7 +302,7 @@ export function DateTimeField({
             <div
               ref={gridRef}
               role="group"
-              aria-label="选择日期"
+              aria-label={t("dateTime.selectDate")}
               onKeyDown={handleGridKeyDown}
               className="grid grid-cols-7 gap-y-0.5 [@media(pointer:coarse)]:gap-y-1"
             >
@@ -331,9 +335,11 @@ export function DateTimeField({
             </div>
 
             <div className="flex items-center gap-2 border-t pt-2.5">
-              <span className="text-xs text-muted-foreground">时间</span>
+              <span className="text-xs text-muted-foreground">
+                {t("dateTime.time")}
+              </span>
               <input
-                aria-label="小时"
+                aria-label={t("dateTime.hour")}
                 inputMode="numeric"
                 autoComplete="off"
                 value={hourText}
@@ -343,7 +349,7 @@ export function DateTimeField({
               />
               <span className="text-sm text-muted-foreground">:</span>
               <input
-                aria-label="分钟"
+                aria-label={t("dateTime.minute")}
                 inputMode="numeric"
                 autoComplete="off"
                 value={minuteText}
@@ -356,7 +362,7 @@ export function DateTimeField({
                 onClick={setNow}
                 className="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
               >
-                此刻
+                {t("dateTime.now")}
               </button>
             </div>
 
@@ -368,14 +374,14 @@ export function DateTimeField({
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3"
               >
                 <XIcon className="size-3.5" />
-                清除
+                {t("dateTime.clear")}
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-4"
               >
-                完成
+                {t("dateTime.done")}
               </button>
             </div>
           </div>

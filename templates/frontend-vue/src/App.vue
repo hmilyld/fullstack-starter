@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onErrorCaptured, onMounted, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink, RouterView, useRoute } from "vue-router"
 import { TriangleAlert } from "@lucide/vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
@@ -9,10 +10,10 @@ import { Toaster } from "@/components/ui/sonner"
 import { useMediaQuery } from "@/composables/use-media-query"
 import { usePwaManifest } from "@/composables/use-pwa-manifest"
 import { appError, clearAppError, setAppError } from "@/lib/app-error"
-import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useThemeStore } from "@/stores/theme"
 
+const { t, locale } = useI18n()
 const route = useRoute()
 const siteConfig = useSiteConfigStore()
 const themeStore = useThemeStore()
@@ -37,21 +38,19 @@ watch(
 )
 
 watch(
-  () => siteConfig.config,
-  (config) => {
-    if (config) {
-      document.title = config.siteName || DEFAULT_SITE_NAME
-      let metaDesc = document.querySelector('meta[name="description"]')
-      if (!metaDesc) {
-        metaDesc = document.createElement("meta")
-        metaDesc.setAttribute("name", "description")
-        document.head.appendChild(metaDesc)
-      }
-      metaDesc.setAttribute(
-        "content",
-        config.siteDescription || DEFAULT_SITE_DESCRIPTION
-      )
+  [() => siteConfig.config, locale],
+  ([config]) => {
+    document.title = config?.siteName || t("pwa.defaultName")
+    let metaDesc = document.querySelector('meta[name="description"]')
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta")
+      metaDesc.setAttribute("name", "description")
+      document.head.appendChild(metaDesc)
     }
+    metaDesc.setAttribute(
+      "content",
+      config?.siteDescription || t("pwa.defaultDescription")
+    )
   },
   { immediate: true }
 )
@@ -62,14 +61,14 @@ watch(
     <EmptyState
       class="max-w-lg"
       :icon="TriangleAlert"
-      title="页面加载失败"
+      :title="t('errors.pageLoadFailed')"
       :description="appError"
     >
       <template #action>
         <Button as-child>
-          <RouterLink to="/dashboard" @click="clearAppError()"
-            >返回仪表盘</RouterLink
-          >
+          <RouterLink to="/dashboard" @click="clearAppError()">{{
+            t("errors.backToDashboard")
+          }}</RouterLink>
         </Button>
       </template>
     </EmptyState>

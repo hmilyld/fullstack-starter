@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink } from "vue-router"
 import { ChevronRight, KeyRound, RefreshCw, Search } from "@lucide/vue"
 import EmptyState from "@/components/shared/EmptyState.vue"
@@ -29,13 +30,16 @@ import { useUrlListState } from "@/composables/use-url-list-state"
 import {
   buildPermissionTree,
   filterPermissionTree,
+  permissionNameKey,
   type PermissionTreeNode,
 } from "@/lib/access-tree"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 import { cn } from "@/lib/utils"
 import type { Permission } from "@/types/permission"
+import { translateOr } from "@/lib/label"
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const toast = useToast()
 const { search, setSearch } = useUrlListState()
@@ -55,9 +59,9 @@ async function loadData() {
     getPermissions({ type: "operation" }),
   ])
   if (menuRes.code === 0) menuPermissions.value = menuRes.data
-  else error.value = menuRes.message || "加载菜单权限失败"
+  else error.value = menuRes.message || t("permissionPage.loadMenuFailed")
   if (opRes.code === 0) operationPermissions.value = opRes.data
-  else error.value = opRes.message || "加载操作权限失败"
+  else error.value = opRes.message || t("permissionPage.loadOperationFailed")
   tableLoading.value = false
 }
 
@@ -69,7 +73,14 @@ const tree = computed<PermissionTreeNode[]>(() => {
   const fullTree = buildPermissionTree(
     menuPermissions.value,
     operationPermissions.value
-  )
+  ).map((node) => ({
+    ...node,
+    name: translateOr(permissionNameKey(node.code), node.name),
+    children: node.children.map((child) => ({
+      ...child,
+      name: translateOr(permissionNameKey(child.code), child.name),
+    })),
+  }))
   return filterPermissionTree(fullTree, search.value)
 })
 
@@ -95,11 +106,15 @@ async function handleSync() {
   const res = await syncPermissions()
   syncing.value = false
   if (res.code !== 0) {
-    toast.error(res.message || "同步失败")
+    toast.error(res.message || t("permissionPage.syncFailed"))
     return
   }
   toast.success(
-    `同步成功：新增 ${res.data.added.length} 个，更新 ${res.data.updated.length} 个，管理员授予 ${res.data.granted.length} 个`
+    t("permissionPage.syncSuccess", {
+      added: res.data.added.length,
+      updated: res.data.updated.length,
+      granted: res.data.granted.length,
+    })
   )
   void loadData()
 }
@@ -110,21 +125,26 @@ const hasPermissions = computed(() => tree.value.length > 0)
 <template>
   <div class="flex flex-col gap-(--page-gap)">
     <PageHeader
-      title="权限总览"
-      description="只读查看菜单权限与操作权限；日常维护请前往菜单与权限。"
+      :title="t('permissionPage.title')"
+      :description="t('permissionPage.description')"
     >
       <template #actions>
         <Button as-child variant="outline">
           <RouterLink to="/settings/menu">
             <KeyRound data-icon="inline-start" />
-            菜单与权限
+            {{ t("permissionPage.menuLink") }}
           </RouterLink>
         </Button>
       </template>
     </PageHeader>
 
     <ListShell
-      :description="`共 ${menuPermissions.length} 个菜单权限，${operationPermissions.length} 个操作权限`"
+      :description="
+        t('permissionPage.listDescription', {
+          menus: menuPermissions.length,
+          ops: operationPermissions.length,
+        })
+      "
     >
       <template #actions>
         <InputGroup class="w-full md:w-64">
@@ -132,8 +152,8 @@ const hasPermissions = computed(() => tree.value.length > 0)
             name="q"
             autocomplete="off"
             :spellcheck="false"
-            placeholder="搜索编码或名称…"
-            aria-label="搜索权限"
+            :placeholder="t('permissionPage.searchPlaceholder')"
+            :aria-label="t('permissionPage.searchAria')"
             :model-value="search"
             @update:model-value="setSearch(String($event))"
           />
@@ -149,7 +169,7 @@ const hasPermissions = computed(() => tree.value.length > 0)
           @click="handleSync"
         >
           <RefreshCw v-if="!syncing" data-icon="inline-start" />
-          同步权限
+          {{ t("permissionPage.sync") }}
         </LoadingButton>
       </template>
 
@@ -168,26 +188,32 @@ const hasPermissions = computed(() => tree.value.length > 0)
       <EmptyState
         v-else-if="!hasPermissions"
         :icon="KeyRound"
-        :title="search ? '没有匹配的权限' : '还没有权限'"
+        :title="
+          search
+            ? t('permissionPage.emptySearchTitle')
+            : t('permissionPage.emptyTitle')
+        "
         :description="
           search
-            ? '换个关键词，或清空搜索条件后再试。'
-            : '在菜单与权限中新增菜单后，会自动生成对应的菜单权限。'
+            ? t('permissionPage.emptySearchDescription')
+            : t('permissionPage.emptyDescription')
         "
       >
         <template v-if="search || auth.hasPermission('permissions')" #action>
           <Button v-if="search" variant="outline" @click="setSearch('')">
-            清空搜索
+            {{ t("permissionPage.clearSearch") }}
           </Button>
           <Button v-else as-child>
-            <RouterLink to="/settings/menu">前往菜单与权限</RouterLink>
+            <RouterLink to="/settings/menu">{{
+              t("permissionPage.goToMenus")
+            }}</RouterLink>
           </Button>
         </template>
       </EmptyState>
 
       <template v-else>
         <p class="px-1 text-xs text-muted-foreground">
-          隐藏菜单仍会出现在这里；隐藏只影响侧边栏展示，不影响权限与路由访问。
+          {{ t("permissionPage.hiddenNote") }}
         </p>
 
         <div class="flex flex-col gap-2 md:hidden">
@@ -200,7 +226,9 @@ const hasPermissions = computed(() => tree.value.length > 0)
               <div class="flex min-w-0 flex-col gap-1">
                 <div class="flex items-center gap-2">
                   <span class="font-medium">{{ node.name }}</span>
-                  <Badge variant="default">菜单</Badge>
+                  <Badge variant="default">{{
+                    t("permissionPage.menuType")
+                  }}</Badge>
                 </div>
                 <code class="truncate text-xs text-muted-foreground">
                   {{ node.code }}
@@ -209,7 +237,11 @@ const hasPermissions = computed(() => tree.value.length > 0)
               <Button
                 variant="ghost"
                 size="icon-sm"
-                :aria-label="`${expanded.has(node.code) ? '收起' : '展开'} ${node.name}`"
+                :aria-label="
+                  expanded.has(node.code)
+                    ? t('permissionPage.collapseAria', { name: node.name })
+                    : t('permissionPage.expandAria', { name: node.name })
+                "
                 :aria-expanded="expanded.has(node.code)"
                 @click="toggleExpand(node.code)"
               >
@@ -240,7 +272,7 @@ const hasPermissions = computed(() => tree.value.length > 0)
                 v-if="node.children.length === 0"
                 class="px-2 py-3 text-sm text-muted-foreground"
               >
-                暂无操作权限
+                {{ t("permissionPage.noOperations") }}
               </p>
             </div>
           </div>
@@ -250,9 +282,15 @@ const hasPermissions = computed(() => tree.value.length > 0)
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead class="w-[45%]">权限名称</TableHead>
-                <TableHead class="w-[45%]">权限编码</TableHead>
-                <TableHead class="w-[10%]">类型</TableHead>
+                <TableHead class="w-[45%]">{{
+                  t("permissionPage.nameHeader")
+                }}</TableHead>
+                <TableHead class="w-[45%]">{{
+                  t("permissionPage.codeHeader")
+                }}</TableHead>
+                <TableHead class="w-[10%]">{{
+                  t("permissionPage.typeHeader")
+                }}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -264,7 +302,15 @@ const hasPermissions = computed(() => tree.value.length > 0)
                         variant="ghost"
                         size="icon-xs"
                         :aria-expanded="expanded.has(node.code)"
-                        :aria-label="`${expanded.has(node.code) ? '收起' : '展开'} ${node.name}`"
+                        :aria-label="
+                          expanded.has(node.code)
+                            ? t('permissionPage.collapseAria', {
+                                name: node.name,
+                              })
+                            : t('permissionPage.expandAria', {
+                                name: node.name,
+                              })
+                        "
                         @click="toggleExpand(node.code)"
                       >
                         <ChevronRight
@@ -283,7 +329,9 @@ const hasPermissions = computed(() => tree.value.length > 0)
                     node.code
                   }}</TableCell>
                   <TableCell>
-                    <Badge variant="default">菜单</Badge>
+                    <Badge variant="default">{{
+                      t("permissionPage.menuType")
+                    }}</Badge>
                   </TableCell>
                 </TableRow>
 
@@ -298,13 +346,15 @@ const hasPermissions = computed(() => tree.value.length > 0)
                       {{ child.code }}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">操作</Badge>
+                      <Badge variant="secondary">{{
+                        t("permissionPage.operationType")
+                      }}</Badge>
                     </TableCell>
                   </TableRow>
                   <TableRow v-if="node.children.length === 0">
                     <TableCell :colspan="3">
                       <div class="pl-9 text-sm text-muted-foreground">
-                        暂无操作权限
+                        {{ t("permissionPage.noOperations") }}
                       </div>
                     </TableCell>
                   </TableRow>

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router"
 
 import { AuthShell } from "@/components/shared/auth-shell"
@@ -19,6 +20,7 @@ import { useSiteConfig } from "@/lib/site-config"
 import { appToast } from "@/lib/toast"
 
 export function RegisterPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { login } = useAuth()
   const { config } = useSiteConfig()
@@ -33,7 +35,7 @@ export function RegisterPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (password.length < 6) {
-      setPasswordError("密码至少 6 位")
+      setPasswordError(t("auth.register.passwordMin"))
       return
     }
 
@@ -42,17 +44,17 @@ export function RegisterPage() {
     const res = await register({ username, email, password })
     if (res.code === 0 && res.data?.token) {
       login(res.data.token, res.data.user)
-      appToast.success("注册成功")
+      appToast.success(t("auth.register.success"))
       navigate("/dashboard", { replace: true })
       return
     }
     if (res.code === 0) {
-      appToast.success(res.message || "注册成功，请等待管理员审核")
+      appToast.success(res.message || t("auth.register.successPending"))
       navigate("/login", { replace: true })
       return
     }
 
-    appToast.error(res.message || "注册失败")
+    appToast.error(res.message || t("auth.register.failed"))
     setSubmitting(false)
   }
 
@@ -60,28 +62,38 @@ export function RegisterPage() {
     <AuthShell>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight">创建账号</h1>
-          <p className="text-sm text-muted-foreground">填写以下信息完成注册</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("auth.register.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("auth.register.subtitle")}
+          </p>
         </div>
         {registrationDisabled && (
           <Alert>
-            <AlertTitle>注册功能已关闭</AlertTitle>
-            <AlertDescription>请联系管理员开通注册。</AlertDescription>
+            <AlertTitle>{t("auth.register.disabledTitle")}</AlertTitle>
+            <AlertDescription>
+              {t("auth.register.disabledDescription")}
+            </AlertDescription>
           </Alert>
         )}
         {config?.manualReview && !registrationDisabled && (
           <Alert>
-            <AlertDescription>注册后需管理员审核通过才能登录</AlertDescription>
+            <AlertDescription>
+              {t("auth.register.reviewNotice")}
+            </AlertDescription>
           </Alert>
         )}
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="username">用户名</FieldLabel>
+              <FieldLabel htmlFor="username">
+                {t("auth.register.username")}
+              </FieldLabel>
               <Input
                 id="username"
                 name="username"
-                placeholder="请输入用户名"
+                placeholder={t("auth.register.usernamePlaceholder")}
                 autoComplete="username"
                 spellCheck={false}
                 value={username}
@@ -91,12 +103,14 @@ export function RegisterPage() {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="email">邮箱</FieldLabel>
+              <FieldLabel htmlFor="email">
+                {t("auth.register.email")}
+              </FieldLabel>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="请输入邮箱"
+                placeholder={t("auth.register.emailPlaceholder")}
                 autoComplete="email"
                 spellCheck={false}
                 value={email}
@@ -106,11 +120,13 @@ export function RegisterPage() {
               />
             </Field>
             <Field data-invalid={!!passwordError}>
-              <FieldLabel htmlFor="password">密码</FieldLabel>
+              <FieldLabel htmlFor="password">
+                {t("auth.register.password")}
+              </FieldLabel>
               <PasswordInput
                 id="password"
                 name="password"
-                placeholder="至少 6 位"
+                placeholder={t("auth.register.passwordPlaceholder")}
                 autoComplete="new-password"
                 value={password}
                 aria-invalid={!!passwordError}
@@ -130,15 +146,15 @@ export function RegisterPage() {
                 loading={submitting}
                 disabled={registrationDisabled}
               >
-                注册
+                {t("auth.register.submit")}
               </LoadingButton>
               <FieldDescription className="text-center">
-                已有账号？
+                {t("auth.register.hasAccount")}
                 <Link
                   to="/login"
                   className="underline-offset-4 hover:underline"
                 >
-                  立即登录
+                  {t("auth.register.loginLink")}
                 </Link>
               </FieldDescription>
             </Field>

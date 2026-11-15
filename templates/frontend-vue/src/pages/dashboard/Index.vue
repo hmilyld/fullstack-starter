@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink } from "vue-router"
 import {
   Activity,
@@ -39,35 +40,26 @@ import type { AuditLog } from "@/types/audit-log"
 import type { ActivityItem, DashboardStats } from "@/types/dashboard"
 
 const QUICK_LINKS = [
-  {
-    href: "/settings/user",
-    label: "用户管理",
-    description: "维护团队成员及其角色",
-    icon: Users,
-    permission: "users",
-  },
+  { href: "/settings/user", key: "users", icon: Users, permission: "users" },
   {
     href: "/settings/role",
-    label: "角色管理",
-    description: "分配角色与权限",
+    key: "roles",
     icon: ShieldCheck,
     permission: "roles",
   },
   {
     href: "/settings/audit-log",
-    label: "审计日志",
-    description: "查看写操作与权限拦截",
+    key: "audit",
     icon: FileText,
     permission: "audit_logs",
   },
   {
     href: "/settings/data",
-    label: "数据管理",
-    description: "导出或恢复系统数据",
+    key: "data",
     icon: Database,
     permission: "data_management.export",
   },
-]
+] as const
 
 type TrendPoint = {
   label: string
@@ -76,6 +68,7 @@ type TrendPoint = {
   total: number
 }
 
+const { t, locale } = useI18n()
 const auth = useAuthStore()
 const stats = ref<DashboardStats | null>(null)
 const activity = ref<ActivityItem[]>([])
@@ -138,36 +131,37 @@ const weekFailed = computed(() =>
   trend.value.reduce((sum, point) => sum + point.failed, 0)
 )
 
-const statsNumber = new Intl.NumberFormat("zh-CN")
+const statsNumber = computed(() => new Intl.NumberFormat(locale.value))
 
 const statItems = computed(() => {
   if (!stats.value) return []
+  const numberFormat = statsNumber.value
   return [
     {
-      title: "总用户数",
-      value: statsNumber.format(stats.value.totalUsers),
-      hint: "全部账号",
+      title: t("dashboard.stats.totalUsers"),
+      value: numberFormat.format(stats.value.totalUsers),
+      hint: t("dashboard.stats.allAccounts"),
       icon: Users,
       demo: false,
     },
     {
-      title: "当前活跃",
-      value: statsNumber.format(stats.value.activeNow),
-      hint: "最近活跃会话",
+      title: t("dashboard.stats.activeNow"),
+      value: numberFormat.format(stats.value.activeNow),
+      hint: t("dashboard.stats.recentSessions"),
       icon: Activity,
       demo: true,
     },
     {
-      title: "收入",
+      title: t("dashboard.stats.revenue"),
       value: stats.value.revenue,
-      hint: "本月累计",
+      hint: t("dashboard.stats.monthTotal"),
       icon: DollarSign,
       demo: true,
     },
     {
-      title: "增长率",
+      title: t("dashboard.stats.growth"),
       value: stats.value.growth,
-      hint: "较上月",
+      hint: t("dashboard.stats.vsLastMonth"),
       icon: TrendingUp,
       demo: true,
     },
@@ -197,7 +191,8 @@ async function load() {
   if (activityRes.code === 0) activity.value = activityRes.data
   if (auditRes && auditRes.code === 0) logs.value = auditRes.data.list
   if (statsRes.code !== 0 || activityRes.code !== 0) {
-    error.value = statsRes.message || activityRes.message || "加载数据失败"
+    error.value =
+      statsRes.message || activityRes.message || t("dashboard.loadFailed")
   }
   loading.value = false
   trendLoading.value = false
@@ -211,13 +206,13 @@ onMounted(() => {
 <template>
   <div class="flex flex-col gap-(--page-gap)">
     <PageHeader
-      title="仪表盘"
-      description="系统概览：账号规模、活跃度与最近操作。"
+      :title="t('dashboard.title')"
+      :description="t('dashboard.description')"
     >
       <template #actions>
         <Button variant="outline" :disabled="loading" @click="load">
           <RefreshCw data-icon="inline-start" />
-          刷新
+          {{ t("dashboard.refresh") }}
         </Button>
       </template>
     </PageHeader>
@@ -268,7 +263,7 @@ onMounted(() => {
                   variant="outline"
                   class="h-4 px-1.5 text-[10px] font-normal"
                 >
-                  演示数据
+                  {{ t("dashboard.demoData") }}
                 </Badge>
               </div>
             </CardContent>
@@ -280,12 +275,12 @@ onMounted(() => {
         <Card class="lg:col-span-4">
           <CardHeader class="flex flex-row items-start justify-between gap-4">
             <div class="grid gap-1.5">
-              <CardTitle>近 7 天操作趋势</CardTitle>
+              <CardTitle>{{ t("dashboard.trendTitle") }}</CardTitle>
               <CardDescription>
                 {{
                   canReadAudit
-                    ? `共 ${weekTotal} 次写操作，按天统计。`
-                    : "按天统计审计日志中的写操作，用于判断系统活跃度。"
+                    ? t("dashboard.trendDescription", { count: weekTotal })
+                    : t("dashboard.trendDescriptionNoAudit")
                 }}
               </CardDescription>
             </div>
@@ -295,11 +290,11 @@ onMounted(() => {
             >
               <span class="flex items-center gap-1.5">
                 <span class="size-2 rounded-full bg-chart-1" />
-                成功 {{ weekSuccess }}
+                {{ t("dashboard.trendSuccess", { count: weekSuccess }) }}
               </span>
               <span v-if="weekFailed > 0" class="flex items-center gap-1.5">
                 <span class="size-2 rounded-full bg-destructive" />
-                失败 {{ weekFailed }}
+                {{ t("dashboard.trendFailed", { count: weekFailed }) }}
               </span>
             </div>
           </CardHeader>
@@ -309,9 +304,11 @@ onMounted(() => {
               class="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center"
             >
               <ShieldCheck class="size-5 text-muted-foreground" />
-              <p class="text-sm font-medium">趋势需要审计权限</p>
+              <p class="text-sm font-medium">
+                {{ t("dashboard.noAuditTitle") }}
+              </p>
               <p class="max-w-xs text-xs text-muted-foreground">
-                当前账号没有「审计日志」权限，无法读取操作记录。联系管理员为该角色授予权限后即可查看。
+                {{ t("dashboard.noAuditDescription") }}
               </p>
             </div>
             <Skeleton v-else-if="trendLoading" class="h-full w-full" />
@@ -320,9 +317,11 @@ onMounted(() => {
               class="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center"
             >
               <Activity class="size-5 text-muted-foreground" />
-              <p class="text-sm font-medium">最近 7 天没有写操作</p>
+              <p class="text-sm font-medium">
+                {{ t("dashboard.emptyTrendTitle") }}
+              </p>
               <p class="max-w-xs text-xs text-muted-foreground">
-                用户新增、修改、删除等操作会出现在这里。
+                {{ t("dashboard.emptyTrendDescription") }}
               </p>
             </div>
             <TrendChart v-else :points="trend" />
@@ -331,8 +330,10 @@ onMounted(() => {
 
         <Card class="lg:col-span-3">
           <CardHeader>
-            <CardTitle>最近动态</CardTitle>
-            <CardDescription>工作区中的最新操作记录。</CardDescription>
+            <CardTitle>{{ t("dashboard.recentTitle") }}</CardTitle>
+            <CardDescription>{{
+              t("dashboard.recentDescription")
+            }}</CardDescription>
           </CardHeader>
           <CardContent class="flex-1">
             <div v-if="loading" class="flex flex-col gap-4">
@@ -354,8 +355,8 @@ onMounted(() => {
             <EmptyState
               v-else-if="activity.length === 0"
               :icon="Activity"
-              title="暂无动态"
-              description="系统产生操作记录后会显示在这里。"
+              :title="t('dashboard.emptyRecentTitle')"
+              :description="t('dashboard.emptyRecentDescription')"
               class="border-0 py-8"
             />
             <div v-else class="flex flex-col gap-4">
@@ -390,7 +391,7 @@ onMounted(() => {
               to="/settings/audit-log"
               class="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring"
             >
-              查看全部审计日志
+              {{ t("dashboard.viewAll") }}
               <ArrowRight class="size-4" />
             </RouterLink>
           </CardFooter>
@@ -399,8 +400,10 @@ onMounted(() => {
 
       <Card v-if="quickLinks.length > 0">
         <CardHeader>
-          <CardTitle>快捷入口</CardTitle>
-          <CardDescription>只显示您有权限访问的页面。</CardDescription>
+          <CardTitle>{{ t("dashboard.quickTitle") }}</CardTitle>
+          <CardDescription>{{
+            t("dashboard.quickDescription")
+          }}</CardDescription>
         </CardHeader>
         <CardContent>
           <div class="grid gap-2 sm:grid-cols-2">
@@ -421,9 +424,11 @@ onMounted(() => {
                 <component :is="link.icon" class="size-4" />
               </span>
               <div class="min-w-0 flex-1">
-                <div class="text-sm font-medium">{{ link.label }}</div>
+                <div class="text-sm font-medium">
+                  {{ t(`dashboard.links.${link.key}.label`) }}
+                </div>
                 <div class="truncate text-xs text-muted-foreground">
-                  {{ link.description }}
+                  {{ t(`dashboard.links.${link.key}.description`) }}
                 </div>
               </div>
               <ChevronRight class="size-4 shrink-0 text-muted-foreground" />
@@ -434,7 +439,7 @@ onMounted(() => {
 
       <p class="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Info class="size-3.5 shrink-0" />
-        “当前活跃”“收入”“增长率”与“最近动态”来自后端的占位接口，接入真实统计后请替换。
+        {{ t("dashboard.placeholderNote") }}
       </p>
     </template>
   </div>

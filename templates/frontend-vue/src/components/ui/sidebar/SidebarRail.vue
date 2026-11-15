@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue"
+import { useI18n } from "vue-i18n"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "./utils"
 
@@ -7,6 +8,7 @@ const props = defineProps<{
   class?: HTMLAttributes["class"]
 }>()
 
+const { t } = useI18n()
 const { isMobile, toggleSidebar } = useSidebar()
 </script>
 
@@ -15,9 +17,9 @@ const { isMobile, toggleSidebar } = useSidebar()
     v-if="!isMobile"
     data-sidebar="rail"
     data-slot="sidebar-rail"
-    aria-label="切换侧边栏"
+    :aria-label="t('sidebar.toggle')"
     :tabindex="-1"
-    title="切换侧边栏"
+    :title="t('sidebar.toggle')"
     :class="
       cn(
         'absolute inset-y-0 z-20 hidden w-4 transition-transform ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-0.5 hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2',

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { HTMLAttributes } from "vue"
+import { useI18n } from "vue-i18n"
 
 import { MoreHorizontalIcon } from "@lucide/vue"
 import { cn } from "@/lib/utils"
@@ -7,6 +8,8 @@ import { cn } from "@/lib/utils"
 const props = defineProps<{
   class?: HTMLAttributes["class"]
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -21,6 +24,6 @@ const props = defineProps<{
     <slot>
       <MoreHorizontalIcon />
     </slot>
-    <span class="sr-only">更多</span>
+    <span class="sr-only">{{ t("common.more") }}</span>
   </span>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 import { Pencil, Plus, Search, Star, Trash2 } from "@lucide/vue"
 import ConfirmDeleteDialog from "@/components/shared/ConfirmDeleteDialog.vue"
@@ -49,6 +50,7 @@ import { useAuthStore } from "@/stores/auth"
 import { useToast } from "@/composables/use-toast"
 import type { AiModelPreset } from "@/types/ai-model"
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const toast = useToast()
 const route = useRoute()
@@ -110,7 +112,7 @@ async function loadData() {
   ])
   if (id !== requestId) return
   if (presetsRes.code === 0) presets.value = presetsRes.data
-  else error.value = presetsRes.message || "加载预设模型失败"
+  else error.value = presetsRes.message || t("aiModelPage.preset.loadFailed")
   if (groupsRes.code === 0) groups.value = groupsRes.data
   loading.value = false
 }
@@ -158,10 +160,14 @@ async function handleEditSubmit() {
     : await createAiModelPreset(editForm.value)
   editSubmitting.value = false
   if (res.code !== 0) {
-    toast.error(res.message || "操作失败")
+    toast.error(res.message || t("aiModelPage.toasts.operationFailed"))
     return
   }
-  toast.success(editingPreset.value ? "保存成功" : "创建成功")
+  toast.success(
+    editingPreset.value
+      ? t("aiModelPage.toasts.saveSuccess")
+      : t("aiModelPage.toasts.createSuccess")
+  )
   editOpen.value = false
   await loadData()
 }
@@ -177,10 +183,10 @@ async function handleDeleteConfirm() {
   const res = await apiDeleteAiModelPreset(deleteTarget.value.id)
   deleteSubmitting.value = false
   if (res.code !== 0) {
-    toast.error(res.message || "删除失败")
+    toast.error(res.message || t("aiModelPage.toasts.deleteFailed"))
     return
   }
-  toast.success("删除成功")
+  toast.success(t("aiModelPage.toasts.deleteSuccess"))
   deleteOpen.value = false
   await loadData()
 }
@@ -189,14 +195,14 @@ function buildPresetActions(preset: AiModelPreset): RowAction[] {
   const actions: RowAction[] = []
   if (auth.hasPermission("ai_models.presets.edit")) {
     actions.push({
-      label: "编辑",
+      label: t("common.edit"),
       icon: Pencil,
       onSelect: () => handleEdit(preset),
     })
   }
   if (auth.hasPermission("ai_models.presets.delete")) {
     actions.push({
-      label: "删除",
+      label: t("common.delete"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -213,19 +219,23 @@ function clearFilters() {
   void router.replace({ query: next })
 }
 
-const columns: DataColumn[] = [
-  { key: "group", header: "分组", hideable: true },
-  { key: "alias", header: "别名" },
+const columns = computed<DataColumn[]>(() => [
+  {
+    key: "group",
+    header: t("aiModelPage.labels.group"),
+    hideable: true,
+  },
+  { key: "alias", header: t("aiModelPage.labels.alias") },
   {
     key: "modelName",
-    header: "模型名称",
+    header: t("aiModelPage.labels.modelName"),
     hideable: true,
     headClass: "hidden md:table-cell",
     cellClass: "hidden md:table-cell",
   },
   {
     key: "apiUrl",
-    header: "API 地址",
+    header: t("aiModelPage.labels.apiUrl"),
     hideable: true,
     headClass: "hidden lg:table-cell",
     cellClass:
@@ -233,28 +243,28 @@ const columns: DataColumn[] = [
   },
   {
     key: "description",
-    header: "描述",
+    header: t("aiModelPage.labels.description"),
     hideable: true,
     headClass: "hidden xl:table-cell",
     cellClass:
       "hidden max-w-[150px] truncate text-muted-foreground xl:table-cell",
   },
-  { key: "status", header: "状态" },
+  { key: "status", header: t("aiModelPage.labels.status") },
   {
     key: "sort",
-    header: "排序",
+    header: t("aiModelPage.labels.sort"),
     hideable: true,
     headClass: "hidden lg:table-cell",
     cellClass: "hidden lg:table-cell",
   },
   {
     key: "actions",
-    header: "操作",
+    header: t("aiModelPage.labels.actions"),
     pinRight: true,
     headClass: "text-right",
     cellClass: "text-right",
   },
-]
+])
 
 const { hidden, visibleColumns, toggle, reset } = useColumnVisibility(
   "ai-presets",
@@ -264,7 +274,11 @@ const { density, setDensity } = useTableDensity("ai-presets")
 </script>
 
 <template>
-  <ListShell :description="`共 ${presets.length} 个预设模型`">
+  <ListShell
+    :description="
+      t('aiModelPage.preset.listDescription', { total: presets.length })
+    "
+  >
     <template #actions>
       <Select
         :model-value="selectedGroup || 'all'"
@@ -272,12 +286,17 @@ const { density, setDensity } = useTableDensity("ai-presets")
           setSelectedGroup(String($event) === 'all' ? '' : String($event))
         "
       >
-        <SelectTrigger class="w-full md:w-40" aria-label="按分组筛选">
-          <SelectValue placeholder="全部分组" />
+        <SelectTrigger
+          class="w-full md:w-40"
+          :aria-label="t('aiModelPage.preset.groupFilterAria')"
+        >
+          <SelectValue :placeholder="t('aiModelPage.preset.allGroups')" />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectItem value="all">全部分组</SelectItem>
+            <SelectItem value="all">{{
+              t("aiModelPage.preset.allGroups")
+            }}</SelectItem>
             <SelectItem v-for="group in groups" :key="group" :value="group">
               {{ group }}
             </SelectItem>
@@ -289,8 +308,8 @@ const { density, setDensity } = useTableDensity("ai-presets")
           name="q"
           autocomplete="off"
           :spellcheck="false"
-          placeholder="搜索别名或模型名称…"
-          aria-label="搜索预设模型"
+          :placeholder="t('aiModelPage.preset.searchPlaceholder')"
+          :aria-label="t('aiModelPage.preset.searchAria')"
           :model-value="search"
           @update:model-value="setSearch(String($event))"
         />
@@ -311,7 +330,7 @@ const { density, setDensity } = useTableDensity("ai-presets")
         @click="handleAdd"
       >
         <Plus data-icon="inline-start" />
-        新增预设
+        {{ t("aiModelPage.preset.add") }}
       </Button>
     </template>
 
@@ -326,12 +345,12 @@ const { density, setDensity } = useTableDensity("ai-presets")
         icon: Star,
         title:
           debouncedSearch || selectedGroup
-            ? '没有匹配的预设'
-            : '还没有预设模型',
+            ? t('aiModelPage.preset.emptySearchTitle')
+            : t('aiModelPage.preset.emptyTitle'),
         description:
           debouncedSearch || selectedGroup
-            ? '换个关键词或分组再试。'
-            : '预设在新增模型时用于快速填充模型名称和接口地址。',
+            ? t('aiModelPage.preset.emptySearchDescription')
+            : t('aiModelPage.preset.emptyDescription'),
       }"
       @retry="loadData"
       @hide-column="toggle"
@@ -342,14 +361,14 @@ const { density, setDensity } = useTableDensity("ai-presets")
           variant="outline"
           @click="clearFilters"
         >
-          清除筛选
+          {{ t("aiModelPage.preset.clearFilter") }}
         </Button>
         <Button
           v-else-if="auth.hasPermission('ai_models.presets.create')"
           @click="handleAdd"
         >
           <Plus data-icon="inline-start" />
-          新增预设
+          {{ t("aiModelPage.preset.add") }}
         </Button>
       </template>
 
@@ -358,11 +377,17 @@ const { density, setDensity } = useTableDensity("ai-presets")
           <template #badges>
             <Badge variant="outline">{{ row.group }}</Badge>
             <Badge :variant="row.isActive ? 'success' : 'secondary'">
-              {{ row.isActive ? "启用" : "禁用" }}
+              {{
+                row.isActive
+                  ? t("aiModelPage.labels.active")
+                  : t("aiModelPage.labels.inactive")
+              }}
             </Badge>
           </template>
           <template #meta>
-            <span>排序 {{ row.sortOrder }}</span>
+            <span>{{
+              t("aiModelPage.preset.sortMeta", { order: row.sortOrder })
+            }}</span>
           </template>
           <template #actions>
             <RowActions :actions="buildPresetActions(row)" />
@@ -383,7 +408,11 @@ const { density, setDensity } = useTableDensity("ai-presets")
       </template>
       <template #cell-status="{ row }">
         <Badge :variant="row.isActive ? 'success' : 'secondary'">
-          {{ row.isActive ? "启用" : "禁用" }}
+          {{
+            row.isActive
+              ? t("aiModelPage.labels.active")
+              : t("aiModelPage.labels.inactive")
+          }}
         </Badge>
       </template>
       <template #cell-sort="{ row }">{{ row.sortOrder }}</template>
@@ -396,11 +425,15 @@ const { density, setDensity } = useTableDensity("ai-presets")
             @click="handleEdit(row)"
           >
             <Pencil />
-            <span class="sr-only">编辑 {{ row.alias }}</span>
+            <span class="sr-only">{{
+              t("aiModelPage.preset.editSrOnly", { name: row.alias })
+            }}</span>
           </Button>
           <RowActions
             :actions="
-              buildPresetActions(row).filter((item) => item.label !== '编辑')
+              buildPresetActions(row).filter(
+                (item) => item.label !== t('common.edit')
+              )
             "
           />
         </div>
@@ -410,11 +443,15 @@ const { density, setDensity } = useTableDensity("ai-presets")
 
   <FormDialog
     :open="editOpen"
-    :title="editingPreset ? '编辑预设模型' : '新增预设模型'"
+    :title="
+      editingPreset
+        ? t('aiModelPage.preset.form.editTitle')
+        : t('aiModelPage.preset.form.addTitle')
+    "
     :description="
       editingPreset
-        ? '修改预设模型的配置信息。'
-        : '填写以下信息添加新的预设模型。'
+        ? t('aiModelPage.preset.form.editDescription')
+        : t('aiModelPage.preset.form.addDescription')
     "
     :submitting="editSubmitting"
     class="sm:max-w-lg"
@@ -423,47 +460,55 @@ const { density, setDensity } = useTableDensity("ai-presets")
   >
     <FieldGroup>
       <Field>
-        <FieldLabel for="preset-group">分组</FieldLabel>
+        <FieldLabel for="preset-group">{{
+          t("aiModelPage.preset.form.group")
+        }}</FieldLabel>
         <Input
           id="preset-group"
           v-model="editForm.group"
           name="preset-group"
           autocomplete="off"
-          placeholder="例如：DeepSeek、OpenAI"
+          :placeholder="t('aiModelPage.preset.form.groupPlaceholder')"
           required
         />
         <FieldDescription>
-          用于分类管理，相同分组的模型会显示在一起。
+          {{ t("aiModelPage.preset.form.groupHint") }}
         </FieldDescription>
       </Field>
       <Field>
-        <FieldLabel for="preset-alias">别名</FieldLabel>
+        <FieldLabel for="preset-alias">{{
+          t("aiModelPage.preset.form.alias")
+        }}</FieldLabel>
         <Input
           id="preset-alias"
           v-model="editForm.alias"
           name="preset-alias"
           autocomplete="off"
           :spellcheck="false"
-          placeholder="例如：deepseek-chat"
+          :placeholder="t('aiModelPage.preset.form.aliasPlaceholder')"
           required
           pattern="^[a-zA-Z0-9._-]+$"
-          title="别名只能包含字母、数字、点、下划线和连字符"
+          :title="t('aiModelPage.preset.form.aliasPattern')"
         />
       </Field>
       <Field>
-        <FieldLabel for="preset-model-name">模型名称</FieldLabel>
+        <FieldLabel for="preset-model-name">{{
+          t("aiModelPage.preset.form.modelName")
+        }}</FieldLabel>
         <Input
           id="preset-model-name"
           v-model="editForm.modelName"
           name="preset-model-name"
           autocomplete="off"
           :spellcheck="false"
-          placeholder="例如：deepseek-chat"
+          :placeholder="t('aiModelPage.preset.form.modelNamePlaceholder')"
           required
         />
       </Field>
       <Field>
-        <FieldLabel for="preset-api-url">API 地址</FieldLabel>
+        <FieldLabel for="preset-api-url">{{
+          t("aiModelPage.preset.form.apiUrl")
+        }}</FieldLabel>
         <Input
           id="preset-api-url"
           v-model="editForm.apiUrl"
@@ -471,24 +516,28 @@ const { density, setDensity } = useTableDensity("ai-presets")
           autocomplete="off"
           :spellcheck="false"
           type="url"
-          placeholder="例如：https://api.deepseek.com/v1/chat/completions"
+          :placeholder="t('aiModelPage.preset.form.apiUrlPlaceholder')"
           required
         />
       </Field>
       <Field>
-        <FieldLabel for="preset-description">描述</FieldLabel>
+        <FieldLabel for="preset-description">{{
+          t("aiModelPage.preset.form.description")
+        }}</FieldLabel>
         <Textarea
           id="preset-description"
           v-model="editForm.description"
           name="preset-description"
           autocomplete="off"
-          placeholder="请输入模型描述（可选）"
+          :placeholder="t('aiModelPage.preset.form.descriptionPlaceholder')"
           :rows="2"
         />
       </Field>
       <div class="grid gap-4 md:grid-cols-2">
         <Field>
-          <FieldLabel for="preset-sort-order">排序</FieldLabel>
+          <FieldLabel for="preset-sort-order">{{
+            t("aiModelPage.preset.form.sortOrder")
+          }}</FieldLabel>
           <Input
             id="preset-sort-order"
             :model-value="editForm.sortOrder"
@@ -501,15 +550,17 @@ const { density, setDensity } = useTableDensity("ai-presets")
         </Field>
         <Field orientation="horizontal">
           <div class="flex flex-1 flex-col gap-1">
-            <FieldLabel for="preset-active">启用</FieldLabel>
+            <FieldLabel for="preset-active">{{
+              t("aiModelPage.preset.form.active")
+            }}</FieldLabel>
             <FieldDescription>
-              禁用的预设不会出现在新增模型的快捷选择中。
+              {{ t("aiModelPage.preset.form.activeHint") }}
             </FieldDescription>
           </div>
           <Switch
             id="preset-active"
             v-model="editForm.isActive"
-            aria-label="启用预设"
+            :aria-label="t('aiModelPage.preset.form.activeAria')"
           />
         </Field>
       </div>

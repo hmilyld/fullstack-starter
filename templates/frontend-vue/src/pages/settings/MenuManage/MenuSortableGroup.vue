@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useDroppable } from "@dnd-kit/vue"
 import { useSortable } from "@dnd-kit/vue/sortable"
 import {
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { MenuGroup, MenuItem, MenuOperation } from "@/types/menu"
+import { translateOr } from "@/lib/label"
 import {
   groupSortableId,
   type MenuDragData,
@@ -68,6 +70,12 @@ function handleDeleteOperation(item: MenuItem, operation: MenuOperation) {
   emit("delete-operation", item, operation)
 }
 
+const { t } = useI18n()
+const label = computed(() =>
+  props.group.isSystem
+    ? translateOr(`nav.groups.${props.group.id}`, props.group.name)
+    : props.group.name
+)
 const element = ref<HTMLElement | null>(null)
 const handle = ref<HTMLElement | null>(null)
 const dropElement = ref<HTMLElement | null>(null)
@@ -98,7 +106,7 @@ const actions = computed<RowAction[]>(() => {
   const result: RowAction[] = []
   if (props.canEdit) {
     result.push({
-      label: "编辑分组",
+      label: t("menuPage.actions.editGroup"),
       icon: Pencil,
       disabled: props.mutationsDisabled,
       onSelect: () => emit("edit-group", props.group),
@@ -107,13 +115,13 @@ const actions = computed<RowAction[]>(() => {
   if (props.canReorder) {
     result.push(
       {
-        label: "上移分组",
+        label: t("menuPage.actions.moveUpGroup"),
         icon: ChevronUp,
         disabled: !props.canMoveUp || props.mutationsDisabled,
         onSelect: () => emit("move-up"),
       },
       {
-        label: "下移分组",
+        label: t("menuPage.actions.moveDownGroup"),
         icon: ChevronDown,
         disabled: !props.canMoveDown || props.mutationsDisabled,
         onSelect: () => emit("move-down"),
@@ -122,7 +130,7 @@ const actions = computed<RowAction[]>(() => {
   }
   if (props.canDelete && !props.group.isSystem) {
     result.push({
-      label: "删除分组",
+      label: t("menuPage.actions.deleteGroup"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -146,12 +154,14 @@ const actions = computed<RowAction[]>(() => {
               variant="ghost"
               size="icon-xs"
               class="cursor-grab touch-none"
-              :aria-label="`拖动 ${group.name} 分组排序`"
+              :aria-label="t('menuPage.aria.dragGroup', { name: label })"
             >
               <GripVertical />
             </Button>
-            <CardTitle class="truncate">{{ group.name }}</CardTitle>
-            <Badge v-if="group.isSystem" variant="outline">内置</Badge>
+            <CardTitle class="truncate">{{ label }}</CardTitle>
+            <Badge v-if="group.isSystem" variant="outline">{{
+              t("menuPage.builtIn")
+            }}</Badge>
           </div>
           <div class="flex items-center gap-1">
             <Button
@@ -159,16 +169,18 @@ const actions = computed<RowAction[]>(() => {
               variant="ghost"
               size="sm"
               class="max-md:w-8 max-md:px-0"
-              aria-label="新增菜单"
+              :aria-label="t('menuPage.actions.addMenu')"
               :disabled="mutationsDisabled"
               @click="emit('create-item', group.id)"
             >
               <Plus data-icon="inline-start" />
-              <span class="hidden md:inline">新增菜单</span>
+              <span class="hidden md:inline">{{
+                t("menuPage.actions.addMenu")
+              }}</span>
             </Button>
             <RowActions
               :actions="actions"
-              :label="`${group.name} 分组的操作`"
+              :label="t('menuPage.groupActions', { name: label })"
             />
           </div>
         </div>
@@ -217,7 +229,7 @@ const actions = computed<RowAction[]>(() => {
             )
           "
         >
-          暂无菜单
+          {{ t("menuPage.emptyMenu") }}
         </div>
         <div
           v-else

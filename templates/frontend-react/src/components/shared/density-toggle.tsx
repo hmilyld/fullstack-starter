@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { CheckIcon, Rows3Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -11,9 +12,9 @@ import {
 import { cn } from "@/lib/utils"
 import type { TableDensity } from "@/hooks/use-table-density"
 
-const OPTIONS: { value: TableDensity; label: string }[] = [
-  { value: "comfortable", label: "舒适" },
-  { value: "compact", label: "紧凑" },
+const OPTIONS: { value: TableDensity; labelKey: string }[] = [
+  { value: "comfortable", labelKey: "common.table.comfortable" },
+  { value: "compact", labelKey: "common.table.compact" },
 ]
 
 export function DensityToggle({
@@ -25,21 +26,23 @@ export function DensityToggle({
   onChange: (density: TableDensity) => void
   className?: string
 }) {
+  const { t } = useTranslation()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="表格密度"
-          title="表格密度"
+          aria-label={t("common.table.density")}
+          title={t("common.table.density")}
           className={cn(className)}
         >
           <Rows3Icon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuLabel>表格密度</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("common.table.density")}</DropdownMenuLabel>
         {OPTIONS.map((option) => (
           <DropdownMenuItem
             key={option.value}
@@ -48,7 +51,7 @@ export function DensityToggle({
             <span className="flex size-4 items-center justify-center">
               {density === option.value && <CheckIcon className="size-4" />}
             </span>
-            {option.label}
+            {t(option.labelKey)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

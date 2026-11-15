@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import * as React from "react"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
 
@@ -12,6 +13,7 @@ import {
 export function PasswordInput({
   ...props
 }: Omit<React.ComponentProps<typeof InputGroupInput>, "type">) {
+  const { t } = useTranslation()
   const [visible, setVisible] = React.useState(false)
 
   return (
@@ -20,7 +22,9 @@ export function PasswordInput({
       <InputGroupAddon align="inline-end">
         <InputGroupButton
           size="icon-xs"
-          aria-label={visible ? "隐藏密码" : "显示密码"}
+          aria-label={t(
+            visible ? "common.password.hide" : "common.password.show"
+          )}
           onClick={() => setVisible((value) => !value)}
         >
           {visible ? <EyeOffIcon /> : <EyeIcon />}

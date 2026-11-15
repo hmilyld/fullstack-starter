@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from "vue"
+import { useI18n } from "vue-i18n"
 import { RouterLink } from "vue-router"
 import { Search } from "@lucide/vue"
 import BrandMark from "@/components/BrandMark.vue"
@@ -18,26 +19,28 @@ import {
   onNavigationRefresh,
   useNavigation,
 } from "@/composables/use-navigation"
-import { DEFAULT_SITE_NAME } from "@/lib/pwa"
 import { useSiteConfigStore } from "@/stores/site-config"
+import { translateOr } from "@/lib/label"
 
+const { t } = useI18n()
 const siteConfig = useSiteConfigStore()
 const { isMobile, setOpenMobile } = useSidebar()
 const { groups: navGroups, load } = useNavigation()
 const { variant, collapsible } = useLayoutConfig()
 
 const siteName = computed(
-  () => siteConfig.config?.siteName || DEFAULT_SITE_NAME
+  () => siteConfig.config?.siteName || t("common.admin")
 )
 const siteDescription = computed(
-  () => siteConfig.config?.siteDescription || "运营管理后台"
+  () => siteConfig.config?.siteDescription || t("common.adminDescription")
 )
 
 const groups = computed(() =>
   navGroups.value.map((group) => ({
-    label: group.name,
+    id: group.id,
+    label: translateOr(`nav.groups.${group.id}`, group.name),
     items: group.items.map((item) => ({
-      title: item.name,
+      title: translateOr(`nav.items.${item.permissionCode}`, item.name),
       url: item.route,
       icon: item.icon,
     })),
@@ -93,7 +96,7 @@ onUnmounted(() => {
         @click="openCommandMenu"
       >
         <Search class="size-3.5 shrink-0" />
-        <span>快速查找</span>
+        <span>{{ t("common.quickFind") }}</span>
         <kbd
           class="ml-auto rounded-sm border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground"
         >

@@ -6,27 +6,42 @@
     ShieldCheck,
   } from "@lucide/svelte"
   import BrandMark from "#lib/components/brand-mark.svelte"
-  import { DEFAULT_SITE_NAME } from "#lib/pwa.js"
+  import LanguageSwitcher from "#lib/components/app-shell/language-switcher.svelte"
+  import { t } from "#lib/i18n.js"
   import { siteConfig } from "#lib/stores/site-config.svelte.js"
   import type { Snippet } from "svelte"
 
   let { children }: { children?: Snippet } = $props()
 
-  const siteName = $derived(siteConfig.config?.siteName || DEFAULT_SITE_NAME)
+  const siteName = $derived(
+    siteConfig.config?.siteName || $t("authShell.fallbackName")
+  )
   const siteDescription = $derived(
-    siteConfig.config?.siteDescription || "登录后管理用户、角色与系统设置"
+    siteConfig.config?.siteDescription || $t("authShell.fallbackDescription")
   )
 
-  const capabilities = [
-    { icon: ShieldCheck, label: "细粒度权限", description: "菜单与操作级授权" },
-    { icon: ScrollText, label: "操作审计", description: "写操作与拦截留痕" },
-    { icon: Database, label: "数据管理", description: "加密导入与导出" },
+  const capabilities = $derived([
+    {
+      icon: ShieldCheck,
+      label: $t("authShell.capabilities.rbac.label"),
+      description: $t("authShell.capabilities.rbac.description"),
+    },
+    {
+      icon: ScrollText,
+      label: $t("authShell.capabilities.audit.label"),
+      description: $t("authShell.capabilities.audit.description"),
+    },
+    {
+      icon: Database,
+      label: $t("authShell.capabilities.data.label"),
+      description: $t("authShell.capabilities.data.description"),
+    },
     {
       icon: MonitorSmartphone,
-      label: "多端适配",
-      description: "手机 / 平板 / 桌面",
+      label: $t("authShell.capabilities.responsive.label"),
+      description: $t("authShell.capabilities.responsive.description"),
     },
-  ]
+  ])
 </script>
 
 <main
@@ -62,13 +77,13 @@
         <p
           class="text-3xl leading-[1.15] font-semibold tracking-tight text-balance xl:text-4xl"
         >
-          把用户、权限与数据，<br />
-          收进一个工作台。
+          {$t("authShell.headlineLine1")}<br />
+          {$t("authShell.headlineLine2")}
         </p>
         <p
           class="max-w-md text-sm leading-relaxed text-primary-foreground/60 dark:text-muted-foreground"
         >
-          用户、角色、菜单权限、审计与数据管理，共用同一套权限模型。
+          {$t("authShell.subtitle")}
         </p>
       </div>
 
@@ -94,13 +109,18 @@
 
     <section class="flex flex-col justify-center p-5 py-8 sm:p-8 lg:p-12">
       <div class="mx-auto flex w-full max-w-sm flex-col gap-6">
-        <div class="flex items-center gap-3 lg:hidden">
-          <BrandMark class="size-9" />
-          <div class="flex min-w-0 flex-col">
-            <p class="truncate text-sm font-semibold">{siteName}</p>
-            <p class="line-clamp-1 text-xs text-muted-foreground">
-              {siteDescription}
-            </p>
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-3 lg:hidden">
+            <BrandMark class="size-9" />
+            <div class="flex min-w-0 flex-col">
+              <p class="truncate text-sm font-semibold">{siteName}</p>
+              <p class="line-clamp-1 text-xs text-muted-foreground">
+                {siteDescription}
+              </p>
+            </div>
+          </div>
+          <div class="ml-auto">
+            <LanguageSwitcher />
           </div>
         </div>
         {@render children?.()}
