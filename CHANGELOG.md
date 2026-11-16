@@ -7,6 +7,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Fixed
+
+- Data tables in the three frontend templates now expose their structure to assistive technology: `<th>` carries `scope="col"`, every list table has an accessible caption, and a horizontally scrollable table container can receive keyboard focus.
+- Generated projects and the demo image now serve hashed assets with an immutable cache policy, compress text responses with gzip, and set `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`; the SPA entry HTML stays uncached.
+- The frontend entry HTML declares the supported color schemes before first paint, reducing the white flash when dark mode is active, and adds the `mobile-web-app-capable` alias.
+- Loading spinners stay animated, at a slower rate, under `prefers-reduced-motion` instead of stopping completely.
+
 ## [2.0.5] - 2026-11-16
 
 ### Added

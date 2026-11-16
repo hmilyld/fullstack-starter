@@ -56,6 +56,8 @@ type DataListProps<T> = {
   renderCard: (item: T) => React.ReactNode
   /** 桌面端的列定义（已按显隐过滤） */
   columns: DataColumn<T>[]
+  /** 表格的无障碍名称；缺省用通用文案，页面可覆盖 */
+  label?: string
   /** 传了就会在可隐藏列的列头显示「隐藏此列」 */
   onHideColumn?: (key: string) => void
   /** 表头吸顶（页面滚动场景默认开；弹窗内关闭） */
@@ -80,6 +82,7 @@ export function DataList<T>({
   getKey,
   renderCard,
   columns,
+  label,
   onHideColumn,
   stickyHeader = true,
   bordered = true,
@@ -88,6 +91,7 @@ export function DataList<T>({
 }: DataListProps<T>) {
   const { t } = useTranslation()
   const hasItems = items.length > 0
+  const tableLabel = label ?? t("common.table.region")
 
   return (
     <>
@@ -123,7 +127,7 @@ export function DataList<T>({
               density === "compact" && "[&_td]:py-1.5 [&_th]:h-9"
             )}
           >
-            <Table sticky>
+            <Table sticky label={tableLabel} scrollable={false}>
               <TableHeader
                 className={cn(
                   "[&_th]:border-b [&_th]:border-border [&_th]:bg-card",

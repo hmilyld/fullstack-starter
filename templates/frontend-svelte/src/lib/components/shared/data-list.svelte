@@ -33,6 +33,7 @@
     cell,
     card,
     head,
+    label,
     emptyAction,
     onRetry,
     onHideColumn,
@@ -49,6 +50,8 @@
     cell?: Snippet<[string, T]>
     card?: Snippet<[T]>
     head?: Snippet<[string]>
+    /** 表格的无障碍名称；缺省用通用文案，页面可覆盖 */
+    label?: string
     emptyAction?: Snippet
     onRetry: () => void
     onHideColumn: (key: string) => void
@@ -57,6 +60,8 @@
     density?: "comfortable" | "compact"
     skeletonColSpan?: number
   } = $props()
+
+  const tableLabel = $derived(label ?? $t("common.table.region"))
 </script>
 
 {#if error && items.length > 0}
@@ -95,7 +100,7 @@
       density === "compact" && "[&_td]:py-1.5 [&_th]:h-9"
     )}
   >
-    <Table>
+    <Table label={tableLabel} scrollable={false}>
       <TableHeader
         class={cn(
           "[&_th]:border-b [&_th]:border-border [&_th]:bg-card",

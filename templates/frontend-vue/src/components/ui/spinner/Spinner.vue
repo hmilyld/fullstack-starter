@@ -14,6 +14,7 @@ const { t } = useI18n()
 
 <template>
   <Loader2Icon
+    data-slot="spinner"
     role="status"
     :aria-label="t('common.loading')"
     :class="cn('size-4 animate-spin', props.class)"

@@ -452,11 +452,40 @@ function generateNginxConf(projectPath: string): Promise<void> {
     server_name localhost;
     client_max_body_size 1g;
 
+    # 压缩前端资源与接口 JSON
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    # 安全响应头。注意：子 location 里一旦出现 add_header 就会覆盖这些 server 级配置，
+    # 因此 /assets/ 中重复声明；需要 CSP 时在这里追加即可。
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    # add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'" always;
+
+    # 带 hash 的构建产物可长期缓存；重复安全头，避免被本 location 覆盖
+    location /assets/ {
+        root /usr/share/nginx/html;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    }
+
+    # 入口 HTML 不缓存，发布后立即生效
+    location = /index.html {
+        root /usr/share/nginx/html;
+        expires -1;
+    }
+
     # 前端静态文件
     location / {
         root /usr/share/nginx/html;
         index index.html index.htm;
         try_files $uri $uri/ /index.html;
+        expires 1h;
     }
 
     # 后端 API 代理（同一容器内）

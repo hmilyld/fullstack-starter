@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends { id: string }">
-import type { Component } from "vue"
+import { computed, type Component } from "vue"
 import { useI18n } from "vue-i18n"
 import EmptyState from "@/components/shared/EmptyState.vue"
 import ErrorState from "@/components/shared/ErrorState.vue"
@@ -33,12 +33,14 @@ export type DataColumn = {
   pinRight?: boolean
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     items: T[]
     loading: boolean
     error: string | null
     columns: DataColumn[]
+    /** 表格的无障碍名称；缺省用通用文案，页面可覆盖 */
+    label?: string
     empty: { icon?: Component; title: string; description?: string }
     /** 表头吸顶（页面滚动场景默认开；弹窗内关闭） */
     stickyHeader?: boolean
@@ -58,6 +60,7 @@ withDefaults(
 
 const emit = defineEmits<{ retry: []; "hide-column": [key: string] }>()
 const { t } = useI18n()
+const tableLabel = computed(() => props.label ?? t("common.table.region"))
 </script>
 
 <template>
@@ -105,7 +108,7 @@ const { t } = useI18n()
         )
       "
     >
-      <Table sticky>
+      <Table sticky :label="tableLabel" :scrollable="false">
         <TableHeader
           :class="
             cn(

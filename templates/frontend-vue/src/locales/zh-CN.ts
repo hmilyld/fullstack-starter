@@ -44,6 +44,7 @@ const zhCN = {
       density: "表格密度",
       comfortable: "舒适",
       compact: "紧凑",
+      region: "数据列表",
     },
     bulk: {
       selected: "已选中 {count} {entityName}，批量操作可用",

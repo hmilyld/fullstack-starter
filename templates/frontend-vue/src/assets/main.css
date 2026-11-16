@@ -357,3 +357,11 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* 加载图标在减少动效时放慢而不是停住，用户仍能看出任务在进行 */
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="spinner"] {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

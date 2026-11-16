@@ -46,6 +46,7 @@ const en = {
       density: "Table density",
       comfortable: "Comfortable",
       compact: "Compact",
+      region: "Data table",
     },
     bulk: {
       selected: "{{count}} {{entityName}} selected; bulk actions are available",

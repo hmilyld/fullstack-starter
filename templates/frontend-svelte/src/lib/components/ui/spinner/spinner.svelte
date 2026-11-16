@@ -19,6 +19,7 @@
 </script>
 
 <Loader2Icon
+  data-slot="spinner"
   {role}
   {...name != null ? { name } : {}}
   {...color != null ? { color } : {}}
