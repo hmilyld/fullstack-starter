@@ -396,6 +396,16 @@ function generateDockerCompose(projectPath: string, backend: BackendType): Promi
       ? `      - JWT_SECRET_KEY=\${JWT_SECRET_KEY:?请通过环境变量 JWT_SECRET_KEY 设置一个强随机密钥}
 `
       : '';
+  // 域名 / HTTPS 反代部署时，浏览器发送的 Origin 是公网地址，必须显式放行。
+  // 否则 Java 栈的登录 POST 会被 Spring 的 CORS 过滤器直接拒绝为 403。
+  const corsHint =
+    backend === 'python'
+      ? `      # 部署到域名 / HTTPS 反向代理后，把公网来源加入 CORS 白名单（JSON 数组）：
+      # - CORS_ORIGINS=["https://your-domain.example"]
+`
+      : `      # 部署到域名 / HTTPS 反向代理后，把公网来源加入 CORS 白名单（逗号分隔）：
+      # - APP_CORS_ORIGINS=https://your-domain.example
+`;
   const content = `services:
   app:
     build: .
@@ -403,7 +413,7 @@ function generateDockerCompose(projectPath: string, backend: BackendType): Promi
       - "5173:5173"
     environment:
       - TZ=Asia/Shanghai
-${secret}    volumes:
+${secret}${corsHint}    volumes:
       - app-data:/app/data
     restart: unless-stopped
 
@@ -535,6 +545,38 @@ docker run -d -p 5173:5173 ${projectName}
 
 # 或使用 docker compose
 docker compose up -d`;
+  const corsDeployNote =
+    backend === 'python'
+      ? `### 域名 / HTTPS 反向代理
+
+通过域名提供服务时，浏览器发出的 \`Origin\` 是公网地址。如果前端与 API 跨源访问，
+需要把公网来源加入后端 CORS 白名单，否则浏览器会拦截响应：
+
+\`\`\`yaml
+services:
+  app:
+    environment:
+      - CORS_ORIGINS=["https://admin.example.com"]   # 多个来源写成 JSON 数组
+\`\`\`
+
+修改后重新创建容器：\`docker compose up -d\`（\`restart\` 不会重新读取环境变量）。
+
+`
+      : `### 域名 / HTTPS 反向代理
+
+通过域名和 HTTPS 对外提供服务时，浏览器发出的 \`Origin\` 是公网地址，而镜像默认只允许本机开发地址。
+必须把公网来源加入后端 CORS 白名单，否则登录等 POST 请求会被 Spring 拒绝为 \`403 Invalid CORS request\`：
+
+\`\`\`yaml
+services:
+  app:
+    environment:
+      - APP_CORS_ORIGINS=https://admin.example.com   # 多个域名用逗号分隔
+\`\`\`
+
+修改后重新创建容器：\`docker compose up -d\`（\`restart\` 不会重新读取环境变量）。
+
+`;
 
   const content = `# ${projectName}
 
@@ -594,7 +636,7 @@ ${dockerRun}
 
 访问 http://localhost:5173
 
-### 默认账号
+${corsDeployNote}### 默认账号
 
 > 注意: 默认密码 \`123456\` 仅用于开发调试，生产部署后请立即修改密码。
 

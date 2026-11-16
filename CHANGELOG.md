@@ -7,6 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Fixed
+
+- Generated projects and their Docker Compose file now document the CORS allowlist needed behind a domain or HTTPS reverse proxy. Without `APP_CORS_ORIGINS` (Java) or `CORS_ORIGINS` (Python), the Java stack rejects login POST requests with `403 Invalid CORS request` because the browser's public `Origin` is not in the default localhost-only allowlist.
+
 ## [2.0.4] - 2026-11-16
 
 ### Fixed

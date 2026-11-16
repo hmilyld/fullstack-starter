@@ -137,6 +137,12 @@ my-project/
 | Development | 5173 | 8088 |
 | Docker | 5173 | 8088 |
 
+> **Domain / HTTPS reverse proxy**: the browser sends an `Origin` with the public address. Add it
+> to the backend CORS allowlist when deploying: set `APP_CORS_ORIGINS=https://your-domain` for the
+> Java stack (comma-separated for several origins) or `CORS_ORIGINS=["https://your-domain"]` for
+> Python (JSON array). Otherwise the Java stack rejects login POST requests with
+> `403 Invalid CORS request`.
+
 ## Development Guide
 
 ### Modifying Templates

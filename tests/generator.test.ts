@@ -84,6 +84,13 @@ for (const { frontend, backend } of combos) {
       assert.match(nginx, /listen 5173;/);
       assert.match(nginx, /proxy_pass http:\/\/127\.0\.0\.1:8088/);
 
+      // Domain / HTTPS deployments must be told how to allow the public origin.
+      const compose = await read(path.join(projectPath, 'docker-compose.yml'));
+      assert.match(
+        compose,
+        backend === 'java' ? /APP_CORS_ORIGINS=https:\/\// : /CORS_ORIGINS=\["https:\/\//
+      );
+
       // The generated frontend keeps the repository version.
       const frontendPackage = JSON.parse(
         await read(path.join(projectPath, 'frontend', 'package.json'))
@@ -130,6 +137,10 @@ for (const { frontend, backend } of combos) {
       assert.match(readme, /# demo-app/);
       assert.match(readme, new RegExp(frontendLabels[frontend]));
       assert.match(readme, new RegExp(escapeRegExp(backendLabels[backend])));
+      assert.match(readme, backend === 'java' ? /APP_CORS_ORIGINS/ : /CORS_ORIGINS/);
+      if (backend === 'java') {
+        assert.match(readme, /403 Invalid CORS request/);
+      }
 
       // Local build/runtime artifacts must never leak into a generated project.
       for (const artifact of [

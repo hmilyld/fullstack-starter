@@ -135,6 +135,11 @@ my-project/
 | 开发 | 5173 | 8088 |
 | Docker | 5173 | 8088 |
 
+> **域名 / HTTPS 反向代理**：浏览器发出的 `Origin` 是公网地址。部署时需把它加入后端 CORS
+> 白名单——Java 栈设置 `APP_CORS_ORIGINS=https://你的域名`（多个用逗号分隔），Python 栈设置
+> `CORS_ORIGINS=["https://你的域名"]`（JSON 数组）。否则 Java 栈的登录等 POST 请求会被
+> Spring 拒绝为 `403 Invalid CORS request`。
+
 ## 开发指南
 
 ### 修改模板
