@@ -46,8 +46,12 @@ const { t } = useI18n()
         <AlertDialogCancel>{{
           t("common.confirmHide.cancel")
         }}</AlertDialogCancel>
-        <AlertDialogAction :disabled="loading" @click.prevent="emit('confirm')">
-          <Spinner v-if="loading" data-icon="inline-start" />
+        <AlertDialogAction
+          :disabled="loading"
+          :aria-busy="loading"
+          @click.prevent="emit('confirm')"
+        >
+          <Spinner v-if="loading" data-icon="inline-start" decorative />
           {{ t("common.confirmHide.confirm") }}
         </AlertDialogAction>
       </AlertDialogFooter>

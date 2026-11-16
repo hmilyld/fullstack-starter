@@ -28,6 +28,6 @@
   class={cn(className)}
   {...restProps}
 >
-  {#if loading}<Spinner data-icon="inline-start" />{/if}
+  {#if loading}<Spinner data-icon="inline-start" decorative />{/if}
   {@render children?.()}
 </Button>

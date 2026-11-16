@@ -50,8 +50,9 @@ export function ConfirmHideDialog({
               onConfirm()
             }}
             disabled={loading}
+            aria-busy={loading}
           >
-            {loading && <Spinner data-icon="inline-start" />}
+            {loading && <Spinner data-icon="inline-start" decorative />}
             {t("common.confirmHide.confirm")}
           </AlertDialogAction>
         </AlertDialogFooter>

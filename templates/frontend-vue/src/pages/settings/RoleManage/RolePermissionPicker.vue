@@ -361,7 +361,10 @@ function clearAll() {
       </div>
       <div
         v-else
-        class="max-h-[min(50vh,440px)] scroll-pt-10 overflow-auto overscroll-contain rounded-xl border [&_[data-slot=table-container]]:overflow-visible"
+        role="region"
+        :aria-label="t('rolePermissions.tableLabel')"
+        :tabindex="0"
+        class="max-h-[min(50vh,440px)] scroll-pt-10 overflow-auto overscroll-contain rounded-xl border focus-visible:ring-2 focus-visible:ring-ring [&_[data-slot=table-container]]:overflow-visible"
       >
         <Table class="min-w-[520px]">
           <TableHeader class="sticky top-0 z-10 bg-muted">

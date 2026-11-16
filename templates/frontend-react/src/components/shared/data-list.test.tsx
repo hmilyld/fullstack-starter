@@ -77,4 +77,12 @@ describe("DataList", () => {
     expect(screen.getByText("加载失败")).toBeInTheDocument()
     expect(screen.getByText("卡片 张三")).toBeInTheDocument()
   })
+
+  it("表格暴露无障碍名称，列头声明作用域", () => {
+    renderList({ items })
+    const table = screen.getByRole("table", { name: "数据列表" })
+    expect(
+      within(table).getByRole("columnheader", { name: "姓名" })
+    ).toHaveAttribute("scope", "col")
+  })
 })

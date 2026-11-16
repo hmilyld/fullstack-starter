@@ -53,9 +53,10 @@ const { t } = useI18n()
         <AlertDialogAction
           variant="destructive"
           :disabled="loading"
+          :aria-busy="loading"
           @click.prevent="emit('confirm')"
         >
-          <Spinner v-if="loading" data-icon="inline-start" />
+          <Spinner v-if="loading" data-icon="inline-start" decorative />
           {{ t("common.confirmDelete.confirm") }}
         </AlertDialogAction>
       </AlertDialogFooter>

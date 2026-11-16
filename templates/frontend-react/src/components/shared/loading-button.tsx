@@ -13,7 +13,7 @@ export function LoadingButton({
 }: LoadingButtonProps) {
   return (
     <Button aria-busy={loading} disabled={disabled || loading} {...props}>
-      {loading && <Spinner data-icon="inline-start" />}
+      {loading && <Spinner data-icon="inline-start" decorative />}
       {children}
     </Button>
   )

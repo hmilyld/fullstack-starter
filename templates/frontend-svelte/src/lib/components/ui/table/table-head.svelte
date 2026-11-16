@@ -5,6 +5,7 @@
   let {
     ref = $bindable(null),
     class: className,
+    scope = "col",
     children,
     ...restProps
   }: WithElementRef<HTMLThAttributes> = $props()
@@ -13,6 +14,7 @@
 <th
   bind:this={ref}
   data-slot="table-head"
+  {scope}
   class={cn(
     "h-11 px-4 text-left align-middle text-[13px] font-medium whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0",
     className

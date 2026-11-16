@@ -4,6 +4,7 @@ import {
   buildMonthCells,
   daysInMonth,
   formatDateTimeInput,
+  formatDayLabel,
   formatMonthLabel,
   parseDateTimeInput,
   toDateTimeInput,
@@ -117,5 +118,16 @@ describe("locale-aware formatting", () => {
     expect(labels).toHaveLength(7)
     expect(labels[0]).toBe("Mon")
     expect(labels.join("")).not.toMatch(/[\u4e00-\u9fff]/)
+  })
+
+  it("日历格子的无障碍文案包含完整日期与星期", () => {
+    // 用 UTC 构造日期，避免测试机时区把 1 月 1 日退到上一年
+    expect(formatDayLabel("2026-01-01", "zh-CN")).toContain("2026年1月1日")
+    expect(formatDayLabel("2026-11-12", "zh-CN")).toContain("星期四")
+
+    const en = formatDayLabel("2026-11-12", "en")
+    expect(en).toContain("2026")
+    expect(en).toMatch(/Thursday/i)
+    expect(en).not.toMatch(/[\u4e00-\u9fff]/)
   })
 })

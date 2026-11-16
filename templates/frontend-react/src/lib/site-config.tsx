@@ -4,6 +4,7 @@ import { getPublicConfig } from "@/api/system"
 import type { PublicConfig } from "@/types/system"
 import { Skeleton } from "@/components/ui/skeleton"
 import { applySiteDefaultLocale } from "@/lib/i18n"
+import { setSiteName } from "@/lib/page-title"
 
 type SiteConfigContextType = {
   config: PublicConfig | null
@@ -52,7 +53,7 @@ export function SiteConfigProvider({
     const siteName = config.siteName || t("common.admin")
     const description = config.siteDescription || t("common.adminDescription")
 
-    document.title = siteName
+    setSiteName(siteName)
 
     let metaDesc = document.querySelector('meta[name="description"]')
     if (!metaDesc) {

@@ -31,4 +31,21 @@ describe("DataList", () => {
 
     await expect.element(page.getByText("姓名")).toBeInTheDocument()
   })
+
+  it("names the table and scopes its column headers", async () => {
+    await page.viewport(1280, 800)
+    render(DataList, {
+      ...baseProps,
+      items: [{ id: "1" }],
+      columns: [{ key: "name", header: "姓名" }],
+    })
+
+    const table = page.getByRole("table", { name: "数据列表" })
+    await expect.element(table).toBeInTheDocument()
+
+    const header = await table
+      .getByRole("columnheader", { name: "姓名" })
+      .element()
+    expect(header.getAttribute("scope")).toBe("col")
+  })
 })

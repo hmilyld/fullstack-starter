@@ -16,6 +16,7 @@ import {
 import {
   buildMonthCells,
   formatDateTimeInput,
+  formatDayLabel,
   formatMonthLabel,
   nowParts,
   parseDateTimeInput,
@@ -292,6 +293,7 @@ export function DateTimeField({
               {weekdays.map((label) => (
                 <span
                   key={label}
+                  aria-hidden="true"
                   className="flex h-7 items-center justify-center text-xs text-muted-foreground"
                 >
                   {label}
@@ -316,7 +318,7 @@ export function DateTimeField({
                     data-date={cell.date}
                     tabIndex={cell.date === focusableDate ? 0 : -1}
                     aria-pressed={selected}
-                    aria-label={cell.date}
+                    aria-label={formatDayLabel(cell.date, locale)}
                     onClick={() => selectDay(cell.date)}
                     className={cn(
                       "mx-auto flex size-8 items-center justify-center rounded-md text-sm tabular-nums transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-11",

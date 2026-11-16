@@ -370,7 +370,12 @@ export function RolePermissionPicker({
           })}
         </div>
       ) : (
-        <div className="max-h-[min(50vh,440px)] scroll-pt-10 overflow-auto overscroll-contain rounded-xl border [&_[data-slot=table-container]]:overflow-visible">
+        <div
+          role="region"
+          aria-label={t("rolePermissions.tableLabel")}
+          tabIndex={0}
+          className="max-h-[min(50vh,440px)] scroll-pt-10 overflow-auto overscroll-contain rounded-xl border focus-visible:ring-2 focus-visible:ring-ring [&_[data-slot=table-container]]:overflow-visible"
+        >
           <Table className="min-w-[520px]">
             <TableHeader className="sticky top-0 z-10 bg-muted">
               <TableRow className="hover:bg-transparent">

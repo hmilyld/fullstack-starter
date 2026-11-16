@@ -29,7 +29,7 @@ withDefaults(
     :disabled="disabled || loading"
     :class="cn($attrs.class)"
   >
-    <Spinner v-if="loading" data-icon="inline-start" />
+    <Spinner v-if="loading" data-icon="inline-start" decorative />
     <slot />
   </Button>
 </template>

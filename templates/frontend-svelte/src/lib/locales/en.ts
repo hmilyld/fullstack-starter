@@ -46,6 +46,7 @@ const en = {
       density: "Table density",
       comfortable: "Comfortable",
       compact: "Compact",
+      region: "Data table",
     },
     bulk: {
       selected: "{{count}} {{entityName}} selected; bulk actions are available",
@@ -334,6 +335,7 @@ const en = {
     hint: "Selecting a menu selects all of its operations; selecting it again clears the group. Selecting one operation keeps the menu and shows an indeterminate state.",
     searchPlaceholder: "Search name or code…",
     searchAria: "Search permissions",
+    tableLabel: "Assignable permissions",
     selected: "{{selected}} / {{total}} selected",
     selectAll: "Select all",
     clear: "Clear",
