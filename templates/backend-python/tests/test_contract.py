@@ -517,6 +517,7 @@ async def test_system_config_shape(client, admin_headers) -> None:
         "manualReview",
         "defaultRoleId",
         "welcomeMessage",
+        "defaultLocale",
         "smtpEnabled",
         "smtpHost",
         "smtpPort",
@@ -529,6 +530,18 @@ async def test_system_config_shape(client, admin_headers) -> None:
     assert data["smtpPassword"] == "****", "SMTP 密码必须脱敏"
 
 
+async def test_system_config_rejects_unknown_locale(client, admin_headers) -> None:
+    response = await client.put(
+        "/api/system/config",
+        headers=admin_headers,
+        json={"defaultLocale": "fr"},
+    )
+    assert response.status_code == 422
+    payload = response.json()
+    _assert_envelope(payload)
+    assert payload["code"] == -1
+
+
 async def test_public_config_shape(client) -> None:
     response = await client.get("/api/public/config")
     data = response.json()["data"]
@@ -539,6 +552,7 @@ async def test_public_config_shape(client) -> None:
         "maintenanceMessage",
         "openRegistration",
         "manualReview",
+        "defaultLocale",
     }
 
 

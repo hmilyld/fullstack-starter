@@ -126,6 +126,7 @@ final class MessageCatalog {
           Map.entry("新密码不能为空", "New password is required."),
           Map.entry("用户列表不能为空", "User list cannot be empty."),
           Map.entry("路由必须以单个 / 开头", "Route must start with a single /."),
+          Map.entry("默认语言必须是 zh-CN 或 en", "Default language must be zh-CN or en."),
           Map.entry("别名不能为空", "Alias is required."),
           Map.entry("模型名称不能为空", "Model name is required."),
           Map.entry("API密钥不能为空", "API key is required."),

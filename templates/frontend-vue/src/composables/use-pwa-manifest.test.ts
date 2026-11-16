@@ -53,6 +53,7 @@ describe("usePwaManifest", () => {
       maintenanceMessage: "",
       openRegistration: true,
       manualReview: false,
+      defaultLocale: "zh-CN",
     }
     themeStore.setTheme("dark")
     await nextTick()

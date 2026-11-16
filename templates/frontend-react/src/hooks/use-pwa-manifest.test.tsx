@@ -16,6 +16,7 @@ vi.mock("@/lib/site-config", () => ({
       maintenanceMessage: "",
       openRegistration: true,
       manualReview: false,
+      defaultLocale: "zh-CN",
     },
   }),
 }))

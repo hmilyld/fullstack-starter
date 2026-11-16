@@ -36,6 +36,9 @@ public class SystemConfig {
   @Column(length = 500)
   private String welcomeMessage = "";
 
+  @Column(length = 20)
+  private String defaultLocale = "zh-CN";
+
   private Boolean smtpEnabled = false;
 
   @Column(length = 255)

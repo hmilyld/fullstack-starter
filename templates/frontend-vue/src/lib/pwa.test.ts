@@ -10,6 +10,7 @@ const config: PublicConfig = {
   maintenanceMessage: "",
   openRegistration: true,
   manualReview: false,
+  defaultLocale: "zh-CN",
 }
 
 describe("buildPwaManifest", () => {

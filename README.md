@@ -65,13 +65,13 @@ Dark mode and responsive layouts are built in, not an add-on:
 - **RBAC**: permission codes for both menus and operations; permission and menu catalogs are the source of truth and are checked for drift across Python and Java
 - **Menu management**: tree structure, cross-group dragging, save on drop, show/hide, permission-filtered sidebar
 - **Users and roles**: CRUD, paginated search, batch role assignment, password reset, automatic handover of users when a role is deleted
-- **System settings**: site configuration, email test, open registration, maintenance mode, manual review
+- **System settings**: site configuration, site default language, email test, open registration, maintenance mode, manual review
 - **AI models**: model and preset management, connection tests, default model lookup by alias
 - **Audit logs**: write operations and permission denials, filtered by user / status / action / time
 - **Data management**: AES-encrypted full export, same-version full import, global freeze during import, forced re-login afterwards
 - **List experience**: per-table column visibility and density (remembered), page size, sticky headers, multi-select bulk actions, card lists on phones
 - **Interaction details**: ⌘K command palette (with recent pages), appearance drawer (theme / sidebar variant), unsaved-changes warning
-- **Internationalization**: Chinese (default) and English runtime switch, persisted in the browser; API errors follow `Accept-Language`
+- **Internationalization**: Chinese (fallback default) and English runtime switch. Administrators set the site default language in system settings; a manual switch is stored in the browser and wins over the default. API errors follow `Accept-Language`
 - **PWA + Docker**: installable frontend; single-image deployment with Nginx and the backend
 
 ## Quick start

@@ -504,6 +504,7 @@ class ContractTest {
             "manualReview",
             "defaultRoleId",
             "welcomeMessage",
+            "defaultLocale",
             "smtpEnabled",
             "smtpHost",
             "smtpPort",
@@ -527,7 +528,8 @@ class ContractTest {
             "maintenanceEnabled",
             "maintenanceMessage",
             "openRegistration",
-            "manualReview");
+            "manualReview",
+            "defaultLocale");
   }
 
   @Test
@@ -818,6 +820,21 @@ class ContractTest {
     assertThat(json(user).get("data").get("roleId").asText())
         .as("删除角色后用户应转交到默认角色")
         .isEqualTo("user");
+  }
+
+  @Test
+  @Order(41)
+  void rejectsUnknownDefaultLocale() throws Exception {
+    MvcResult result =
+        call(
+            put("/api/system/config")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("defaultLocale", "fr"))),
+            adminToken());
+    assertThat(result.getResponse().getStatus()).isEqualTo(422);
+    JsonNode body = json(result);
+    assertEnvelope(body);
+    assertThat(body.get("code").asInt()).isEqualTo(-1);
   }
 
   private long createUserWithRole(String roleId) throws Exception {

@@ -94,6 +94,7 @@ export async function mockApi(page: Page) {
             maintenanceMessage: "",
             openRegistration: true,
             manualReview: false,
+            defaultLocale: "zh-CN",
           })
         case "/api/auth/login":
           return ok({ token: "e2e-token", user: authUser })
@@ -158,6 +159,7 @@ export async function mockApi(page: Page) {
             manualReview: false,
             defaultRoleId: "user",
             welcomeMessage: "",
+            defaultLocale: "zh-CN",
             smtpEnabled: false,
             smtpHost: "",
             smtpPort: 465,

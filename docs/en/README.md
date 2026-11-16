@@ -26,7 +26,7 @@ Sign in with the shared demo account `demo / hmilyld.com`.
 - ⚙️ **Choose a backend**: Python (FastAPI) or Java (Spring Boot)
 - 🔐 **Authentication built in**: login, registration, logout (Python uses JWT, Java uses Sa-Token), maintenance mode, and manual review
 - 🧩 **Complete modules**: users, roles, permissions, menus, system settings, AI models and presets, audit logs, data management, dashboard
-- 🌐 **Internationalization**: Chinese (default) and English runtime switch, persisted in the browser; API errors follow `Accept-Language`
+- 🌐 **Internationalization**: Chinese (fallback default) and English runtime switch. Administrators set the site default language in system settings; a manual switch is stored in the browser and wins over the default. API errors follow `Accept-Language`
 - 🐳 **Docker ready**: single-image deployment with an Nginx reverse proxy
 - 📊 **Works out of the box**: dashboard stats, user/role/permission CRUD, paginated search, personal settings
 - 🧭 **List experience**: per-table column visibility and row density (remembered), page size, sticky headers, multi-select bulk actions, a ⌘K command palette (with recent pages), an appearance drawer (theme / sidebar variant), and an unsaved-changes warning
@@ -43,7 +43,7 @@ Sign in with the shared demo account `demo / hmilyld.com`.
 | Role management | List + pagination + search + create/edit (wide dialog with a permission tree) + delete (preset roles cannot be deleted; users are handed over to the default role) |
 | Permission overview | Read-only view of menu permissions + operation permissions; operation permissions are maintained in Menu & Permissions; auto-synced with the permission catalog at startup |
 | Menu & permissions | Tree table for groups and menus, show/hide, cross-group dragging, save-on-drop ordering, operation permissions per menu, permission-filtered dynamic sidebar |
-| System settings | Read/write site configuration, email test, maintenance mode (blocks non-admin logins), open registration, manual review |
+| System settings | Read/write site configuration, site default language, email test, maintenance mode (blocks non-admin logins), open registration, manual review |
 | AI models | List / default / lookup by alias / detail / create / edit / delete / connection test |
 | AI model presets | Grouping, activate a preset, list / create / edit / delete |
 | Audit logs | Records of write operations and permission denials, filtered by user/status/action/time, paginated view |

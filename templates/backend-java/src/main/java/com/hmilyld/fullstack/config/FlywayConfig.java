@@ -18,9 +18,10 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 启动迁移策略：兼容「menu_items.hidden 列已存在、但 Flyway 未记账 V3」的数据库。
  *
- * <p>{@code V3__menu_hidden.sql} 用 {@code ALTER TABLE menu_items ADD COLUMN hidden} 加列，是整条迁移链里唯一
+ * <p>{@code V3__menu_hidden.sql} 用 {@code ALTER TABLE menu_items ADD COLUMN hidden} 加列，是早期迁移链里唯一
  * 不幂等的语句，因此当该列已经存在而 {@code flyway_schema_history} 里没有 V3 的成功记录时，Flyway 会重放 V3 并抛出 {@code duplicate
- * column name: hidden}，应用直接启动失败。这种状态至少有两种来源：
+ * column name: hidden}，应用直接启动失败。V6 的 {@code system_config.default_locale}
+ * 同样是非幂等加列，处理方式相同。这种状态至少有两种来源：
  *
  * <ul>
  *   <li>数据库由 Python 栈（Alembic）建出，随后改用 Java 栈启动：结构上已含该列，但没有 Flyway 历史表。
@@ -61,10 +62,17 @@ public class FlywayConfig {
   /** V5 会清空权限与授权，只对 Java 建出的库执行。 */
   private static final String V5_VERSION = "5";
 
+  /** V6 引入 system_config.default_locale 列，同样是不幂等加列。 */
+  private static final String V6_VERSION = "6";
+
+  private static final String SYSTEM_CONFIG_TABLE = "system_config";
+  private static final String DEFAULT_LOCALE_COLUMN = "default_locale";
+
   @Bean
   public FlywayMigrationStrategy migrateWithExistingSchemaSupport() {
     return flyway -> {
       adoptExistingMenuHiddenColumn(flyway);
+      adoptExistingDefaultLocaleColumn(flyway);
       flyway.migrate();
     };
   }
@@ -111,6 +119,47 @@ public class FlywayConfig {
       log.warn("检测到 Alembic 建出的数据库，跳过 V5__remove_seed_permissions.sql 以保留自建权限与自定义角色授权");
     }
     log.warn("menu_items.hidden 已存在，跳过 V3__menu_hidden.sql 并记为已应用");
+  }
+
+  /**
+   * 若 {@code system_config.default_locale} 已存在而 V6 未记账，则把 V6 对齐为已应用。
+   *
+   * <p>V6 与 V3 一样是非幂等加列。最典型的来源是 Python/Alembic 建出的数据库：上面的采纳逻辑会把它基线到 V3 并补记 V4/V5，随后 V6
+   * 会尝试重复加列。这里在正式迁移前补记 V6，其他数据库照常执行 V6。
+   */
+  private void adoptExistingDefaultLocaleColumn(Flyway flyway) {
+    String historyTable = flyway.getConfiguration().getTable();
+    if (!historyTable.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+      throw new IllegalStateException("非法的 Flyway 历史表名: " + historyTable);
+    }
+
+    MigrationInfo v6 = findMigration(flyway, V6_VERSION);
+    if (v6 == null || (v6.getState().isApplied() && !v6.getState().isFailed())) {
+      return;
+    }
+    // 全新数据库还没有历史表与 system_config，交给正常迁移路径。
+    if (!tableExists(flyway, historyTable)
+        || !columnExists(flyway, SYSTEM_CONFIG_TABLE, DEFAULT_LOCALE_COLUMN)) {
+      return;
+    }
+
+    // 列已存在说明结构已到 V6 水平，但历史可能停在 V3/V4。先把幂等的 V4 补齐，
+    // 否则随后补记 V5/V6 会因「V4 未应用」再次触发 Flyway 校验失败。
+    if (highestAppliedVersion(flyway).compareTo(MigrationVersion.fromVersion(V4_VERSION)) < 0) {
+      migrateTo(flyway, V4_VERSION);
+    }
+
+    // V6 不能先于 V5 记账；对于这类外部建出的库，跳过 V5 的清理也更安全。
+    MigrationInfo v5 = findMigration(flyway, V5_VERSION);
+    if (v5 != null && !v5.getState().isApplied()) {
+      deleteFailedRow(flyway, historyTable, V5_VERSION);
+      recordApplied(flyway, historyTable, v5);
+      log.warn("system_config.default_locale 已存在，跳过 V5__remove_seed_permissions.sql 并记为已应用");
+    }
+
+    deleteFailedRow(flyway, historyTable, V6_VERSION);
+    recordApplied(flyway, historyTable, v6);
+    log.warn("system_config.default_locale 已存在，跳过 V6__system_default_locale.sql 并记为已应用");
   }
 
   /** 把历史表基线到 V3；没有历史表时先建基线，空的旧历史表则丢弃后重建。 */

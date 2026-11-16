@@ -49,6 +49,7 @@ public class SystemConfigService {
     if (req.getManualReview() != null) config.setManualReview(req.getManualReview());
     if (req.getDefaultRoleId() != null) config.setDefaultRoleId(req.getDefaultRoleId());
     if (req.getWelcomeMessage() != null) config.setWelcomeMessage(req.getWelcomeMessage());
+    if (req.getDefaultLocale() != null) config.setDefaultLocale(req.getDefaultLocale());
     if (req.getSmtpEnabled() != null) config.setSmtpEnabled(req.getSmtpEnabled());
     if (req.getSmtpHost() != null) config.setSmtpHost(req.getSmtpHost());
     if (req.getSmtpPort() != null) config.setSmtpPort(req.getSmtpPort());
@@ -89,7 +90,8 @@ public class SystemConfigService {
             Boolean.TRUE.equals(config.getMaintenanceEnabled()),
             config.getMaintenanceMessage(),
             Boolean.TRUE.equals(config.getOpenRegistration()),
-            Boolean.TRUE.equals(config.getManualReview())));
+            Boolean.TRUE.equals(config.getManualReview()),
+            config.getDefaultLocale()));
   }
 
   public static SystemConfigResponse toResponse(SystemConfig config) {
@@ -103,6 +105,7 @@ public class SystemConfigService {
         Boolean.TRUE.equals(config.getManualReview()),
         config.getDefaultRoleId(),
         config.getWelcomeMessage(),
+        config.getDefaultLocale(),
         Boolean.TRUE.equals(config.getSmtpEnabled()),
         config.getSmtpHost(),
         config.getSmtpPort() == null ? 0 : config.getSmtpPort(),

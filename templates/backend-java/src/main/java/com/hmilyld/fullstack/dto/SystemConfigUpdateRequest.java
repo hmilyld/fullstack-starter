@@ -1,5 +1,6 @@
 package com.hmilyld.fullstack.dto;
 
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
@@ -13,6 +14,10 @@ public class SystemConfigUpdateRequest {
   private Boolean manualReview;
   private String defaultRoleId;
   private String welcomeMessage;
+
+  @Pattern(regexp = "zh-CN|en", message = "默认语言必须是 zh-CN 或 en")
+  private String defaultLocale;
+
   private Boolean smtpEnabled;
   private String smtpHost;
   private Integer smtpPort;

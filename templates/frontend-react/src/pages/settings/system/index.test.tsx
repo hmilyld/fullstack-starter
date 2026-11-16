@@ -17,6 +17,7 @@ const configData = {
   manualReview: false,
   defaultRoleId: "user",
   welcomeMessage: "",
+  defaultLocale: "zh-CN",
   smtpEnabled: false,
   smtpHost: "",
   smtpPort: 587,

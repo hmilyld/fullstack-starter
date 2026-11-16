@@ -406,6 +406,9 @@ const en = {
       descriptionHint: "Shown in the browser tab and search results.",
       keywords: "Keywords",
       keywordsHint: "Separate multiple keywords with commas.",
+      language: "Default language",
+      languageHint:
+        "Language new visitors see first; users can still switch it from the header.",
       save: "Save basic information",
       nameRequired: "Enter a site name",
     },

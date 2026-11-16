@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr
+
+SupportedLocale = Literal["zh-CN", "en"]
 
 
 class SystemConfigUpdate(BaseModel):
@@ -11,6 +15,7 @@ class SystemConfigUpdate(BaseModel):
     manualReview: bool | None = None
     defaultRoleId: str | None = None
     welcomeMessage: str | None = None
+    defaultLocale: SupportedLocale | None = None
     # 邮件配置
     smtpEnabled: bool | None = None
     smtpHost: str | None = None
@@ -32,6 +37,7 @@ class SystemConfigOut(BaseModel):
     manualReview: bool
     defaultRoleId: str
     welcomeMessage: str
+    defaultLocale: str
     # 邮件配置（密码脱敏）
     smtpEnabled: bool
     smtpHost: str
@@ -56,6 +62,7 @@ class SystemConfigOut(BaseModel):
             manualReview=config.manual_review,
             defaultRoleId=config.default_role_id,
             welcomeMessage=config.welcome_message,
+            defaultLocale=config.default_locale,
             smtpEnabled=config.smtp_enabled,
             smtpHost=config.smtp_host,
             smtpPort=config.smtp_port,
@@ -78,3 +85,4 @@ class PublicConfigOut(BaseModel):
     maintenanceMessage: str
     openRegistration: bool
     manualReview: bool
+    defaultLocale: str

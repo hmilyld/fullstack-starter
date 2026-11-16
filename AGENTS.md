@@ -101,7 +101,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 ### Internationalization (frontend-react / frontend-vue / frontend-svelte)
 
 - All three frontends use runtime catalogs: React `src/locales/{zh-CN,en}.ts` with `useTranslation()`, Vue `src/locales/{zh-CN,en}.ts` with `useI18n()`, and Svelte `src/lib/locales/{zh-CN,en}.ts` with `$t` / `translate()`. New or edited user-facing text must go through the catalog; do not hardcode UI strings.
-- The default locale is `zh-CN`; English is opt-in. Locale is stored in `app.locale`, applied to `document.documentElement.lang` and the PWA manifest, and never prefixed to routes.
+- The fallback locale is `zh-CN`; English is opt-in. Administrators set the site default in system settings (`system_config.default_locale`, exposed as `defaultLocale` by `/api/public/config`). A user who never switched follows the site default. An explicit switch is stored in `app.locale` and marked by `app.locale.explicit`, and wins over later default changes. A stored locale without the marker is legacy data from the previous auto-persisted default: `zh-CN` is treated as no preference, while `en` is treated as an explicit choice. Locale is applied to `document.documentElement.lang` and the PWA manifest, and never prefixed to routes.
 - Keep the catalog key structure aligned across React, Vue and Svelte; add or rename keys in all three `zh-CN`/`en` pairs together.
 - Built-in menu, group, role and operation labels resolve by code/id to catalog keys; custom names and API data remain as sent by the backend.
 - The clients send `Accept-Language` on API requests. Both backends localize API-visible exception/validation messages (default zh-CN, safe fallback for unmapped messages and user data).
