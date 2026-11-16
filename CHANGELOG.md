@@ -13,6 +13,15 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Generated projects and the demo image now serve hashed assets with an immutable cache policy, compress text responses with gzip, and set `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`; the SPA entry HTML stays uncached.
 - The frontend entry HTML declares the supported color schemes before first paint, reducing the white flash when dark mode is active, and adds the `mobile-web-app-capable` alias.
 - Loading spinners stay animated, at a slower rate, under `prefers-reduced-motion` instead of stopping completely.
+- React and Vue page titles now follow the active route and language (`页面 · 站点名`), matching the Svelte template, so every page no longer shares one browser-tab title.
+- Dialog and alert-dialog backdrops contain scroll gestures, so the page underneath no longer moves while a modal is open.
+- A loading button is announced once through `aria-busy`; the spinner inside it is decorative instead of a second live region.
+- Date picker days announce the full localized date, weekday included, and the weekday header row is no longer read twice.
+- Mobile card lists on list pages use list semantics instead of generic containers.
+
+### Changed
+
+- The three frontends self-host Inter and Manrope (latin and latin-ext subsets) and preload the latin master, replacing the runtime `@fontsource` import and shortening the font swap on first paint.
 
 ## [2.0.5] - 2026-11-16
 

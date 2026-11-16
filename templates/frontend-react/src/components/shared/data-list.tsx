@@ -112,13 +112,11 @@ export function DataList<T>({
         />
       ) : (
         <>
-          <div className="flex flex-col gap-2 md:hidden">
+          <ul role="list" className="flex flex-col gap-2 md:hidden">
             {items.map((item) => (
-              <React.Fragment key={getKey(item)}>
-                {renderCard(item)}
-              </React.Fragment>
+              <li key={getKey(item)}>{renderCard(item)}</li>
             ))}
-          </div>
+          </ul>
           <div
             data-density={density}
             className={cn(

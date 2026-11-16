@@ -86,11 +86,11 @@
   </EmptyState>
 {:else}
   {#if card}
-    <div class="flex flex-col gap-2 md:hidden">
+    <ul role="list" class="flex flex-col gap-2 md:hidden">
       {#each items as item (item.id)}
-        {@render card(item)}
+        <li>{@render card(item)}</li>
       {/each}
-    </div>
+    </ul>
   {/if}
   <div
     data-density={density}

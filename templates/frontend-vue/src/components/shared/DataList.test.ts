@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/vue"
+import { render, screen, within } from "@testing-library/vue"
 import { h } from "vue"
 import { describe, expect, it } from "vitest"
 
@@ -77,5 +77,13 @@ describe("DataList", () => {
     mountList({ items, error: "加载失败" })
     expect(screen.getByText("加载失败")).toBeInTheDocument()
     expect(screen.getByText("卡片 张三")).toBeInTheDocument()
+  })
+
+  it("表格暴露无障碍名称，列头声明作用域", () => {
+    mountList({ items })
+    const table = screen.getByRole("table", { name: "数据列表" })
+    expect(
+      within(table).getByRole("columnheader", { name: "姓名" })
+    ).toHaveAttribute("scope", "col")
   })
 })

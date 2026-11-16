@@ -93,11 +93,11 @@ const tableLabel = computed(() => props.label ?? t("common.table.region"))
   </EmptyState>
 
   <template v-else>
-    <div class="flex flex-col gap-2 md:hidden">
-      <template v-for="item in items" :key="item.id">
+    <ul role="list" class="flex flex-col gap-2 md:hidden">
+      <li v-for="item in items" :key="item.id">
         <slot name="card" :row="item" />
-      </template>
-    </div>
+      </li>
+    </ul>
     <div
       :data-density="density"
       :class="

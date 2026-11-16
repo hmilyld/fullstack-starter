@@ -91,6 +91,19 @@ export function formatMonthLabel(
   }).format(new Date(year, month - 1, 1))
 }
 
+/** 日历格子的完整日期文案（含星期），供读屏朗读 */
+export function formatDayLabel(
+  dateKey: string,
+  locale: DateTimeLocale = "zh-CN"
+) {
+  const [year, month, day] = dateKey.split("-").map(Number)
+  if (!year || !month || !day) return dateKey
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "full",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+}
+
 export function daysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate()
 }

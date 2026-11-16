@@ -9,6 +9,7 @@
   import {
     buildMonthCells,
     formatDateTimeInput,
+    formatDayLabel,
     formatMonthLabel,
     nowParts,
     parseDateTimeInput,
@@ -270,6 +271,7 @@
       <div class="grid grid-cols-7">
         {#each weekdays as label (label)}
           <span
+            aria-hidden="true"
             class="flex h-7 items-center justify-center text-xs text-muted-foreground"
           >
             {label}
@@ -291,7 +293,7 @@
             data-date={cell.date}
             tabindex={cell.date === focusableDate ? 0 : -1}
             aria-pressed={cell.date === dateKey}
-            aria-label={cell.date}
+            aria-label={formatDayLabel(cell.date, $locale)}
             class={cn(
               "mx-auto flex size-8 items-center justify-center rounded-md text-sm tabular-nums transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(pointer:coarse)]:size-11",
               !cell.inMonth && "text-muted-foreground",
