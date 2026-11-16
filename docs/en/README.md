@@ -8,6 +8,18 @@ A full-stack scaffolder — generate a system with a complete admin panel in one
 
 More screens (login, user management, settings, audit logs) are in the [root README](../../README.md); the docs site <https://fullstack.hmilyld.com/en/> covers each module.
 
+## Live demos
+
+The three frontends are deployed as public demo sites against the same Java backend:
+
+| Frontend | URL |
+|----------|-----|
+| React | <https://react.hmilyld.com> |
+| Vue | <https://vue.hmilyld.com> |
+| Svelte | <https://svelte.hmilyld.com> |
+
+Sign in with the shared demo account `demo / hmilyld.com`.
+
 ## Features
 
 - 🎨 **Choose a frontend**: React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui, with PWA; name, description and theme color adapt to site settings) or Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI, with PWA; name, description and theme color adapt to site settings) or Svelte 5 (SvelteKit 3 + Vite + TypeScript + Tailwind CSS v4 + shadcn-svelte + Bits UI, with PWA; name, description and theme color adapt to site settings)

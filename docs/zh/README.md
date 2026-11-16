@@ -8,6 +8,18 @@
 
 登录页 / 用户管理 / 系统设置 / 审计日志等界面见 [README](../../README.md)，文档站 <https://fullstack.hmilyld.com> 有逐模块说明。
 
+## 在线演示
+
+三套前端已部署为公开演示站，共用同一套 Java 后端：
+
+| 前端 | 地址 |
+|------|------|
+| React | <https://react.hmilyld.com> |
+| Vue | <https://vue.hmilyld.com> |
+| Svelte | <https://svelte.hmilyld.com> |
+
+演示账号：`demo / hmilyld.com`
+
 ## 功能
 
 - 🎨 **前端可选**：React 19 (Vite + TypeScript + Tailwind CSS v4 + shadcn/ui，含 PWA，站点名/描述/主题色自动适配) 、Vue 3 (Vite + TypeScript + Tailwind CSS v4 + shadcn-vue + Reka UI，含 PWA，站点名/描述/主题色自动适配) 或 Svelte 5 (SvelteKit 3 + Vite + TypeScript + Tailwind CSS v4 + shadcn-svelte + Bits UI，含 PWA，站点名/描述/主题色自动适配)

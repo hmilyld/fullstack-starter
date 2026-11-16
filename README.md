@@ -13,6 +13,18 @@ English ｜ [简体中文](https://github.com/hmilyld/fullstack-starter/blob/mai
 
 ![Dashboard](https://raw.githubusercontent.com/hmilyld/fullstack-starter/main/docs/images/dashboard.webp)
 
+## Live demos
+
+All three frontends are deployed against the same Java backend:
+
+| Frontend | URL |
+| -------- | --- |
+| React    | <https://react.hmilyld.com> |
+| Vue      | <https://vue.hmilyld.com> |
+| Svelte   | <https://svelte.hmilyld.com> |
+
+Sign in with the shared demo account `demo / hmilyld.com`.
+
 ## Six combinations
 
 |              | Python · FastAPI                                                                     | Java · Spring Boot                                                               |
