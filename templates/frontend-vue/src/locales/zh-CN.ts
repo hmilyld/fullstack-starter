@@ -312,6 +312,7 @@ const zhCN = {
     hint: "勾选菜单会同时选中其下全部操作，再次点击取消整组；单独勾选操作会保留菜单并显示半选。",
     searchPlaceholder: "搜索名称或编码…",
     searchAria: "搜索权限",
+    tableLabel: "可分配的权限",
     selected: "已选 {selected} / {total} 项",
     selectAll: "全选",
     clear: "清空",

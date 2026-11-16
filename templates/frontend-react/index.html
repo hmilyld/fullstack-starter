@@ -48,6 +48,21 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>管理系统</title>
+    <script>
+      // 首帧前应用已保存的主题，避免暗色模式白闪；与 ThemeProvider 共用同一个 storage key
+      try {
+        var storedTheme = localStorage.getItem("theme")
+        var prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches
+        var isDark =
+          storedTheme === "dark" || (storedTheme !== "light" && prefersDark)
+        document.documentElement.classList.add(isDark ? "dark" : "light")
+        document.documentElement.style.colorScheme = isDark ? "dark" : "light"
+      } catch (error) {
+        // 隐私模式禁用 localStorage 时保持默认浅色
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

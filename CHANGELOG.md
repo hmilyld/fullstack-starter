@@ -9,9 +9,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Fixed
 
-- Data tables in the three frontend templates now expose their structure to assistive technology: `<th>` carries `scope="col"`, every list table has an accessible caption, and a horizontally scrollable table container can receive keyboard focus.
-- Generated projects and the demo image now serve hashed assets with an immutable cache policy, compress text responses with gzip, and set `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`; the SPA entry HTML stays uncached.
-- The frontend entry HTML declares the supported color schemes before first paint, reducing the white flash when dark mode is active, and adds the `mobile-web-app-capable` alias.
+- Data tables in the three frontend templates now expose their structure to assistive technology: `<th>` carries `scope="col"`, list tables have an accessible caption, and a table container that can actually scroll becomes keyboard-focusable when it is given a label; the role permission picker's scrolling permission list is now reachable by keyboard.
+- Generated projects and the demo image now serve hashed assets with an immutable cache policy, compress text responses (including `text/javascript` and proxied JSON) with gzip, and set `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`; the SPA entry HTML stays uncached.
+- The frontend entry HTML declares the supported color schemes and applies the stored theme in an inline head script before the first paint, so dark mode no longer flashes white, and adds the `mobile-web-app-capable` alias.
 - Loading spinners stay animated, at a slower rate, under `prefers-reduced-motion` instead of stopping completely.
 - React and Vue page titles now follow the active route and language (`页面 · 站点名`), matching the Svelte template, so every page no longer shares one browser-tab title.
 - Dialog and alert-dialog backdrops contain scroll gestures, so the page underneath no longer moves while a modal is open.
@@ -21,7 +21,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
-- The three frontends self-host Inter and Manrope (latin and latin-ext subsets) and preload the latin master, replacing the runtime `@fontsource` import and shortening the font swap on first paint.
+- The three frontends self-host Inter and Manrope (latin and latin-ext subsets) and preload the latin master, replacing the runtime `@fontsource` import and shortening the font swap on first paint. Text in other scripts (Cyrillic, Greek, Vietnamese) now uses the system fallback instead of the bundled subsets.
 
 ## [2.0.5] - 2026-11-16
 

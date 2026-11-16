@@ -105,16 +105,29 @@ export function weekdayLabels(locale: DateTimeLocale = "zh-CN") {
 }
 
 /** 日历格子的完整日期文案（含星期），供读屏朗读 */
+const dayLabelFormatters = new Map<DateTimeLocale, Intl.DateTimeFormat>()
+
+function dayLabelFormatter(locale: DateTimeLocale) {
+  let formatter = dayLabelFormatters.get(locale)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      dateStyle: "full",
+      timeZone: "UTC",
+    })
+    dayLabelFormatters.set(locale, formatter)
+  }
+  return formatter
+}
+
 export function formatDayLabel(
   dateKey: string,
   locale: DateTimeLocale = "zh-CN"
 ) {
   const [year, month, day] = dateKey.split("-").map(Number)
   if (!year || !month || !day) return dateKey
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "full",
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(year, month - 1, day)))
+  return dayLabelFormatter(locale).format(
+    new Date(Date.UTC(year, month - 1, day))
+  )
 }
 
 export function daysInMonth(year: number, month: number) {

@@ -100,7 +100,7 @@
       density === "compact" && "[&_td]:py-1.5 [&_th]:h-9"
     )}
   >
-    <Table label={tableLabel} scrollable={false}>
+    <Table sticky label={tableLabel} scrollable={false}>
       <TableHeader
         class={cn(
           "[&_th]:border-b [&_th]:border-border [&_th]:bg-card",

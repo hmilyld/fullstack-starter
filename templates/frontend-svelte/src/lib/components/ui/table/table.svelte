@@ -5,7 +5,7 @@
   let {
     ref = $bindable(null),
     class: className,
-    sticky = true,
+    sticky = false,
     label,
     scrollable = true,
     children,
