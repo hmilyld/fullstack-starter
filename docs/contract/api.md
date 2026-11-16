@@ -127,6 +127,9 @@ Svelte 模板在 `templates/frontend-svelte/src/lib/types/` 保持同一套字�
 | POST | `/api/system/test-email` | `settings.edit` |
 | GET | `/api/public/config` | 匿名 |
 
+`defaultLocale` 是站点默认语言（`zh-CN` 或 `en`），只决定未手动切换语言的访客/用户首次进入时使用的语言；
+用户手动切换后以用户选择为准。更新时只接受这两个值，其他值返回 `422`。`/api/public/config` 同时返回该字段，供登录页等匿名场景应用。
+
 ### 仪表盘 `/api/dashboard`
 
 | 方法 | 路径 | 权限 |
@@ -220,12 +223,14 @@ Svelte 模板在 `templates/frontend-svelte/src/lib/types/` 保持同一套字�
 // SystemConfig（smtpPassword 恒为 "****"）
 { "siteName": "管理系统", "siteDescription": "", "keywords": "", "maintenanceEnabled": false,
   "maintenanceMessage": "", "openRegistration": true, "manualReview": false, "defaultRoleId": "user",
-  "welcomeMessage": "", "smtpEnabled": false, "smtpHost": "", "smtpPort": 587, "smtpUsername": "",
-  "smtpPassword": "****", "smtpFromName": "管理系统", "smtpFromEmail": "", "smtpUseSsl": true }
+  "welcomeMessage": "", "defaultLocale": "zh-CN", "smtpEnabled": false, "smtpHost": "", "smtpPort": 587,
+  "smtpUsername": "", "smtpPassword": "****", "smtpFromName": "管理系统", "smtpFromEmail": "",
+  "smtpUseSsl": true }
 
 // PublicConfig（SystemConfig 的子集）
 { "siteName": "管理系统", "siteDescription": "", "maintenanceEnabled": false,
-  "maintenanceMessage": "", "openRegistration": true, "manualReview": false }
+  "maintenanceMessage": "", "openRegistration": true, "manualReview": false,
+  "defaultLocale": "zh-CN" }
 
 // DashboardStats
 { "totalUsers": 5, "activeNow": 42, "revenue": "¥12,345", "growth": "+12%" }

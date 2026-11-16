@@ -17,6 +17,8 @@ class SystemConfig(Base):
     manual_review: Mapped[bool] = mapped_column(Boolean, default=False)
     default_role_id: Mapped[str] = mapped_column(String(50), default="user")
     welcome_message: Mapped[str] = mapped_column(Text, default="")
+    # 站点默认语言；用户手动切换后以用户选择为准
+    default_locale: Mapped[str] = mapped_column(String(20), default="zh-CN")
     # 邮件配置
     smtp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     smtp_host: Mapped[str] = mapped_column(String(255), default="")

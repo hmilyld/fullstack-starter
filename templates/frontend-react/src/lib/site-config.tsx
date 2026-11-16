@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { getPublicConfig } from "@/api/system"
 import type { PublicConfig } from "@/types/system"
 import { Skeleton } from "@/components/ui/skeleton"
+import { applySiteDefaultLocale } from "@/lib/i18n"
 
 type SiteConfigContextType = {
   config: PublicConfig | null
@@ -29,6 +30,8 @@ export function SiteConfigProvider({
       const res = await getPublicConfig()
       if (res.code === 0) {
         setConfig(res.data)
+        // 站点默认语言只影响尚未手动选择语言的用户。
+        await applySiteDefaultLocale(res.data.defaultLocale)
       }
     } catch {
       // 忽略错误

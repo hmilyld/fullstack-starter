@@ -23,6 +23,7 @@ _FIELD_MAPPING = {
     "manualReview": "manual_review",
     "defaultRoleId": "default_role_id",
     "welcomeMessage": "welcome_message",
+    "defaultLocale": "default_locale",
     "smtpEnabled": "smtp_enabled",
     "smtpHost": "smtp_host",
     "smtpPort": "smtp_port",
@@ -74,6 +75,7 @@ def public_out(config: SystemConfig) -> PublicConfigOut:
         maintenanceMessage=config.maintenance_message,
         openRegistration=bool(config.open_registration),
         manualReview=bool(config.manual_review),
+        defaultLocale=config.default_locale,
     )
 
 

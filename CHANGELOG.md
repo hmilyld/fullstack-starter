@@ -9,10 +9,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- A site default language in system settings (`defaultLocale`, `zh-CN` or `en`). New visitors use it, while a manual switch still wins and persists per browser.
 - Live demo links for the React, Vue and Svelte frontends (`react.hmilyld.com`, `vue.hmilyld.com`, `svelte.hmilyld.com`) and their shared `demo` account.
 
 ### Fixed
 
+- The site default language now applies to upgraded installs whose `zh-CN` value came from the previous auto-persisted default, while a stored `en` remains an explicit choice; unsupported `defaultLocale` values now return `422`.
 - Generated projects and their Docker Compose file now document the CORS allowlist needed behind a domain or HTTPS reverse proxy. Without `APP_CORS_ORIGINS` (Java) or `CORS_ORIGINS` (Python), the Java stack rejects login POST requests with `403 Invalid CORS request` because the browser's public `Origin` is not in the default localhost-only allowlist.
 
 ## [2.0.4] - 2026-11-16

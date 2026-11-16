@@ -2,6 +2,7 @@ import { defineStore } from "pinia"
 import { ref } from "vue"
 import { getPublicConfig } from "@/api/system"
 import type { PublicConfig } from "@/types/system"
+import { applySiteDefaultLocale } from "@/lib/i18n"
 
 export const useSiteConfigStore = defineStore("site-config", () => {
   const config = ref<PublicConfig | null>(null)
@@ -13,6 +14,8 @@ export const useSiteConfigStore = defineStore("site-config", () => {
       const res = await getPublicConfig()
       if (res.code === 0) {
         config.value = res.data
+        // 站点默认语言只影响尚未手动选择语言的用户。
+        await applySiteDefaultLocale(res.data.defaultLocale)
       }
     } catch {
       // 忽略错误，保留上一次的配置

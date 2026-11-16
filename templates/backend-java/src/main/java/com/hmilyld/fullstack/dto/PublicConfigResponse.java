@@ -7,4 +7,5 @@ public record PublicConfigResponse(
     boolean maintenanceEnabled,
     String maintenanceMessage,
     boolean openRegistration,
-    boolean manualReview) {}
+    boolean manualReview,
+    String defaultLocale) {}

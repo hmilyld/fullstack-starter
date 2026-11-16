@@ -42,6 +42,7 @@ import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useToast } from "@/composables/use-toast"
 import type { SystemConfig } from "@/types/system"
+import type { Locale } from "@/lib/i18n"
 import { translateOr } from "@/lib/label"
 
 type SaveKey = "site" | "maintenance" | "registration" | "default" | "smtp"
@@ -55,6 +56,11 @@ const SMTP_PRESETS = [
   { id: "aliyun", host: "smtp.mxhichina.com", port: 465, ssl: true },
   { id: "foxmail", host: "smtp.qq.com", port: 465, ssl: true },
 ] as const
+
+const LOCALE_OPTIONS: { value: Locale; label: string }[] = [
+  { value: "zh-CN", label: "简体中文" },
+  { value: "en", label: "English" },
+]
 
 const { t } = useI18n()
 const route = useRoute()
@@ -108,7 +114,7 @@ function isDirty(keys: (keyof SystemConfig)[]) {
 }
 
 const siteDirty = computed(() =>
-  isDirty(["siteName", "siteDescription", "keywords"])
+  isDirty(["siteName", "siteDescription", "keywords", "defaultLocale"])
 )
 const maintenanceDirty = computed(() =>
   isDirty(["maintenanceEnabled", "maintenanceMessage"])
@@ -182,6 +188,7 @@ async function handleSaveSite() {
     siteName: config.value.siteName,
     siteDescription: config.value.siteDescription,
     keywords: config.value.keywords,
+    defaultLocale: config.value.defaultLocale,
   })
   if (ok) await siteConfig.refresh()
 }
@@ -339,6 +346,31 @@ function applySmtpPreset(id: string) {
                   <FieldDescription>{{
                     t("systemPage.site.keywordsHint")
                   }}</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel>{{ t("systemPage.site.language") }}</FieldLabel>
+                  <Select v-model="config.defaultLocale">
+                    <SelectTrigger
+                      class="w-full"
+                      :aria-label="t('systemPage.site.language')"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem
+                          v-for="option in LOCALE_OPTIONS"
+                          :key="option.value"
+                          :value="option.value"
+                        >
+                          {{ option.label }}
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    {{ t("systemPage.site.languageHint") }}
+                  </FieldDescription>
                 </Field>
               </FieldGroup>
             </CardContent>

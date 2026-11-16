@@ -1,0 +1,69 @@
+import { afterEach, describe, expect, it } from "vitest"
+import { nextTick } from "vue"
+
+import i18n, {
+  applySiteDefaultLocale,
+  changeLocale,
+  currentLocale,
+  hasLocalePreference,
+  LOCALE_PREFERENCE_KEY,
+  LOCALE_STORAGE_KEY,
+} from "./i18n"
+
+describe("i18n", () => {
+  afterEach(() => {
+    changeLocale("zh-CN")
+    window.localStorage.removeItem(LOCALE_STORAGE_KEY)
+    window.localStorage.removeItem(LOCALE_PREFERENCE_KEY)
+  })
+
+  it("defaults to Chinese and switches to English", async () => {
+    expect(currentLocale()).toBe("zh-CN")
+    expect(i18n.global.t("auth.login.title")).toBe("欢迎回来")
+
+    changeLocale("en")
+    await nextTick()
+
+    expect(currentLocale()).toBe("en")
+    expect(i18n.global.t("auth.login.title")).toBe("Welcome back")
+    expect(document.documentElement.lang).toBe("en")
+    expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("en")
+    expect(window.localStorage.getItem(LOCALE_PREFERENCE_KEY)).toBe("1")
+  })
+
+  it("uses the site default until the user chooses a language", async () => {
+    window.localStorage.removeItem(LOCALE_STORAGE_KEY)
+    window.localStorage.removeItem(LOCALE_PREFERENCE_KEY)
+    await applySiteDefaultLocale("en")
+
+    expect(currentLocale()).toBe("en")
+    expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBeNull()
+
+    changeLocale("zh-CN")
+    await applySiteDefaultLocale("en")
+
+    expect(currentLocale()).toBe("zh-CN")
+  })
+
+  it("treats the legacy zh-CN default as no preference but keeps a legacy en choice", async () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN")
+    window.localStorage.removeItem(LOCALE_PREFERENCE_KEY)
+    expect(hasLocalePreference()).toBe(false)
+
+    await applySiteDefaultLocale("en")
+    expect(currentLocale()).toBe("en")
+
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "en")
+    window.localStorage.removeItem(LOCALE_PREFERENCE_KEY)
+    expect(hasLocalePreference()).toBe(true)
+  })
+
+  it("keeps a marked explicit choice even when the site default differs", async () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN")
+    window.localStorage.setItem(LOCALE_PREFERENCE_KEY, "1")
+
+    await applySiteDefaultLocale("en")
+
+    expect(currentLocale()).toBe("zh-CN")
+  })
+})

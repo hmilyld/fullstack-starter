@@ -118,6 +118,15 @@
 
   const toast = useToast()
 
+  const LOCALE_OPTIONS = [
+    { value: "zh-CN", label: "简体中文" },
+    { value: "en", label: "English" },
+  ] as const
+  const localeItems = LOCALE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }))
+
   let config = $state<SystemConfig | null>(null)
   let savedConfig = $state<SystemConfig | null>(null)
   let loading = $state(true)
@@ -171,7 +180,7 @@
   }
 
   const siteDirty = $derived(
-    isDirty(["siteName", "siteDescription", "keywords"])
+    isDirty(["siteName", "siteDescription", "keywords", "defaultLocale"])
   )
   const maintenanceDirty = $derived(
     isDirty(["maintenanceEnabled", "maintenanceMessage"])
@@ -259,6 +268,7 @@
       siteName: config.siteName,
       siteDescription: config.siteDescription,
       keywords: config.keywords,
+      defaultLocale: config.defaultLocale,
     })
     if (ok) await siteConfig.refresh()
   }
@@ -422,6 +432,38 @@
                 />
                 <FieldDescription
                   >{$t("systemPage.site.keywordsHint")}</FieldDescription
+                >
+              </Field>
+              <Field>
+                <FieldLabel>{$t("systemPage.site.language")}</FieldLabel>
+                <Select
+                  type="single"
+                  items={localeItems}
+                  value={config.defaultLocale}
+                  onValueChange={(value) => {
+                    if (config)
+                      config.defaultLocale =
+                        value as SystemConfig["defaultLocale"]
+                  }}
+                >
+                  <SelectTrigger
+                    class="w-full"
+                    aria-label={$t("systemPage.site.language")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {#each LOCALE_OPTIONS as option (option.value)}
+                        <SelectItem value={option.value} label={option.label}
+                          >{option.label}</SelectItem
+                        >
+                      {/each}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription
+                  >{$t("systemPage.site.languageHint")}</FieldDescription
                 >
               </Field>
             </FieldGroup>

@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n"
+
 export type SystemConfig = {
   siteName: string
   siteDescription: string
@@ -8,6 +10,7 @@ export type SystemConfig = {
   manualReview: boolean
   defaultRoleId: string
   welcomeMessage: string
+  defaultLocale: Locale
   // 邮件配置
   smtpEnabled: boolean
   smtpHost: string
@@ -26,4 +29,5 @@ export type PublicConfig = {
   maintenanceMessage: string
   openRegistration: boolean
   manualReview: boolean
+  defaultLocale: Locale
 }

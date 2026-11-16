@@ -8,14 +8,16 @@ export type Locale = "zh-CN" | "en"
 
 export const SUPPORTED_LOCALES: Locale[] = ["zh-CN", "en"]
 export const LOCALE_STORAGE_KEY = "app.locale"
+/** 用户主动切换语言的标记；旧版本每次启动都会写 app.locale，不能仅凭它判断用户选择。 */
+export const LOCALE_PREFERENCE_KEY = "app.locale.explicit"
 
-function readStoredLocale(): Locale {
+function readStoredLocale(): Locale | null {
   try {
-    return window.localStorage.getItem(LOCALE_STORAGE_KEY) === "en"
-      ? "en"
-      : "zh-CN"
+    const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+    if (!stored) return null
+    return stored === "en" ? "en" : "zh-CN"
   } catch {
-    return "zh-CN"
+    return null
   }
 }
 
@@ -23,11 +25,14 @@ function normalizeLocale(locale: string | undefined): Locale {
   return locale?.startsWith("en") ? "en" : "zh-CN"
 }
 
-function applyLocale(locale: string | undefined) {
-  const normalized = normalizeLocale(locale)
-  document.documentElement.lang = normalized
+function applyDocumentLocale(locale: Locale) {
+  document.documentElement.lang = locale
+}
+
+function persistLocale(locale: Locale) {
   try {
-    window.localStorage.setItem(LOCALE_STORAGE_KEY, normalized)
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+    window.localStorage.setItem(LOCALE_PREFERENCE_KEY, "1")
   } catch {
     // Private browsing may block localStorage; the in-memory language still works.
   }
@@ -35,7 +40,7 @@ function applyLocale(locale: string | undefined) {
 
 const i18n = createI18n({
   legacy: false,
-  locale: readStoredLocale(),
+  locale: readStoredLocale() ?? "zh-CN",
   fallbackLocale: "zh-CN",
   messages: {
     "zh-CN": zhCN,
@@ -47,11 +52,39 @@ const i18n = createI18n({
   fallbackWarn: false,
 })
 
-applyLocale(i18n.global.locale.value)
-watch(i18n.global.locale, applyLocale)
+watch(i18n.global.locale, (locale) =>
+  applyDocumentLocale(normalizeLocale(locale))
+)
+applyDocumentLocale(currentLocale())
 
 export function changeLocale(locale: Locale) {
+  persistLocale(locale)
   i18n.global.locale.value = locale
+}
+
+/** 用户是否手动选择过语言；未选择时才会采用站点默认语言。 */
+export function hasLocalePreference(): boolean {
+  try {
+    if (window.localStorage.getItem(LOCALE_PREFERENCE_KEY) === "1") return true
+    // 旧版本每次启动都会写入 app.locale：zh-CN 可能只是默认值，只有 en 一定来自用户切换。
+    return readStoredLocale() === "en"
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 应用站点默认语言，但不写入 localStorage。
+ * 用户手动切换过语言时保持用户选择。
+ */
+export function applySiteDefaultLocale(
+  locale: string | undefined
+): Promise<void> {
+  if (hasLocalePreference()) return Promise.resolve()
+  const normalized = normalizeLocale(locale)
+  if (normalized === currentLocale()) return Promise.resolve()
+  i18n.global.locale.value = normalized
+  return Promise.resolve()
 }
 
 export function currentLocale(): Locale {

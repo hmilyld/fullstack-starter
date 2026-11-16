@@ -36,7 +36,7 @@ class FlywayMigrationTest {
 
     try (Connection connection = open(database)) {
       assertThat(columnNames(connection, "menu_items")).containsOnlyOnce("hidden");
-      assertThat(successfulVersions(connection)).containsExactly("1", "2", "3", "4", "5");
+      assertThat(successfulVersions(connection)).containsExactly("1", "2", "3", "4", "5", "6");
     }
   }
 
@@ -80,7 +80,7 @@ class FlywayMigrationTest {
 
     try (Connection connection = open(database)) {
       assertThat(columnNames(connection, "menu_items")).containsOnlyOnce("hidden");
-      assertThat(successfulVersions(connection)).containsExactly("1", "2", "3", "4", "5");
+      assertThat(successfulVersions(connection)).containsExactly("1", "2", "3", "4", "5", "6");
       assertThat(hiddenValue(connection, "permissions")).as("启动迁移不应改写已有菜单的可见性").isZero();
     }
   }
@@ -105,7 +105,7 @@ class FlywayMigrationTest {
 
     try (Connection connection = open(database)) {
       assertThat(columnNames(connection, "menu_items")).containsOnlyOnce("hidden");
-      assertThat(successfulVersions(connection)).containsExactly("1", "2", "3", "4", "5");
+      assertThat(successfulVersions(connection)).containsExactly("1", "2", "3", "4", "5", "6");
     }
   }
 

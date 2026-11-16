@@ -379,6 +379,8 @@ const zhCN = {
       descriptionHint: "显示在浏览器标签和搜索结果中。",
       keywords: "关键词",
       keywordsHint: "多个关键词用英文逗号分隔。",
+      language: "默认语言",
+      languageHint: "新访客首次进入时使用的语言；用户仍可在右上角切换。",
       save: "保存基本信息",
       nameRequired: "请输入站点名称",
     },

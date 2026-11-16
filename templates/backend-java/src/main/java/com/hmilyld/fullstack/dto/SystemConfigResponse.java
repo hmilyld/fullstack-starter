@@ -11,6 +11,7 @@ public record SystemConfigResponse(
     boolean manualReview,
     String defaultRoleId,
     String welcomeMessage,
+    String defaultLocale,
     boolean smtpEnabled,
     String smtpHost,
     int smtpPort,

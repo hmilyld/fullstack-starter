@@ -32,7 +32,7 @@ public class SystemConfigController {
   @PutMapping("/config")
   @SaCheckPermission("settings.edit")
   public ApiResponse<SystemConfigResponse> updateConfig(
-      @RequestBody SystemConfigUpdateRequest req) {
+      @RequestBody @Valid SystemConfigUpdateRequest req) {
     return systemConfigService.updateConfig(req);
   }
 

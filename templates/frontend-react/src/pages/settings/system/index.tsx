@@ -39,7 +39,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { getRoles } from "@/api/role"
 import { getSystemConfig, testEmail, updateSystemConfig } from "@/api/system"
 import { useSiteConfig } from "@/lib/site-config"
-import { translate } from "@/lib/i18n"
+import { translate, type Locale } from "@/lib/i18n"
 import { appToast } from "@/lib/toast"
 import type { SystemConfig } from "@/types/system"
 
@@ -65,6 +65,11 @@ const SETTINGS_TABS = [
 
 type SmtpPresetId =
   "qq" | "net163" | "gmail" | "outlook" | "wecom" | "aliyun" | "foxmail"
+
+const LOCALE_OPTIONS: { value: Locale; label: string }[] = [
+  { value: "zh-CN", label: "简体中文" },
+  { value: "en", label: "English" },
+]
 
 const SMTP_PRESETS: {
   id: SmtpPresetId
@@ -193,7 +198,12 @@ export function SystemPage() {
     return keys.some((key) => config?.[key] !== savedConfig[key])
   }
 
-  const siteDirty = isDirty(["siteName", "siteDescription", "keywords"])
+  const siteDirty = isDirty([
+    "siteName",
+    "siteDescription",
+    "keywords",
+    "defaultLocale",
+  ])
   const maintenanceDirty = isDirty(["maintenanceEnabled", "maintenanceMessage"])
   const registrationDirty = isDirty(["openRegistration", "manualReview"])
   const defaultDirty = isDirty(["defaultRoleId", "welcomeMessage"])
@@ -247,6 +257,7 @@ export function SystemPage() {
       siteName: config!.siteName,
       siteDescription: config!.siteDescription,
       keywords: config!.keywords,
+      defaultLocale: config!.defaultLocale,
     })
     if (ok) await refreshSiteConfig()
   }
@@ -411,6 +422,34 @@ export function SystemPage() {
                   />
                   <FieldDescription>
                     {t("systemPage.site.keywordsHint")}
+                  </FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel>{t("systemPage.site.language")}</FieldLabel>
+                  <Select
+                    value={config.defaultLocale}
+                    onValueChange={(value) =>
+                      updateField("defaultLocale", value as Locale)
+                    }
+                  >
+                    <SelectTrigger
+                      className="w-full"
+                      aria-label={t("systemPage.site.language")}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {LOCALE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    {t("systemPage.site.languageHint")}
                   </FieldDescription>
                 </Field>
               </FieldGroup>
