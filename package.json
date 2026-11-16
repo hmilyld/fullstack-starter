@@ -1,6 +1,6 @@
 {
   "name": "@hmilyld/create-fullstack-app",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Scaffold a production-ready full-stack admin app with React, Vue or Svelte and FastAPI or Spring Boot.",
   "keywords": [
     "scaffolding",

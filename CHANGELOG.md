@@ -7,6 +7,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-11-16
+
 ### Fixed
 
 - Data tables in the three frontend templates now expose their structure to assistive technology: `<th>` carries `scope="col"`, list tables have an accessible caption, and a table container that can actually scroll becomes keyboard-focusable when it is given a label; the role permission picker's scrolling permission list is now reachable by keyboard.
@@ -89,7 +91,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Dashboard, users, roles, permissions, menus, system settings, AI models, audit logs and data management.
 - PWA support and single-image Docker deployment.
 
-[Unreleased]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.4...HEAD
+[Unreleased]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.6...HEAD
+[2.0.6]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.5...v2.0.6
+[2.0.5]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/hmilyld/fullstack-starter/compare/v2.0.0...v2.0.2
