@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { useMediaQuery } from "@/composables/use-media-query"
 import { usePwaManifest } from "@/composables/use-pwa-manifest"
 import { appError, clearAppError, setAppError } from "@/lib/app-error"
+import { setPageTitle, setSiteName } from "@/lib/page-title"
 import { useSiteConfigStore } from "@/stores/site-config"
 import { useThemeStore } from "@/stores/theme"
 
@@ -40,7 +41,7 @@ watch(
 watch(
   [() => siteConfig.config, locale],
   ([config]) => {
-    document.title = config?.siteName || t("pwa.defaultName")
+    setSiteName(config?.siteName || t("pwa.defaultName"))
     let metaDesc = document.querySelector('meta[name="description"]')
     if (!metaDesc) {
       metaDesc = document.createElement("meta")
@@ -51,6 +52,15 @@ watch(
       "content",
       config?.siteDescription || t("pwa.defaultDescription")
     )
+  },
+  { immediate: true }
+)
+
+// 页面标题跟随路由与当前语言，与站点名的组合逻辑放在 lib/page-title
+watch(
+  [() => route.meta.titleKey, locale],
+  ([titleKey]) => {
+    setPageTitle(typeof titleKey === "string" ? t(titleKey) : null)
   },
   { immediate: true }
 )

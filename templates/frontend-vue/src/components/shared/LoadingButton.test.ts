@@ -18,6 +18,7 @@ describe("LoadingButton", () => {
       "aria-busy",
       "true"
     )
-    expect(screen.getByRole("status")).toHaveAccessibleName("加载中")
+    // 按钮本身已用 aria-busy 表达状态，内部 spinner 作为装饰不重复播报
+    expect(screen.queryByRole("status")).toBeNull()
   })
 })

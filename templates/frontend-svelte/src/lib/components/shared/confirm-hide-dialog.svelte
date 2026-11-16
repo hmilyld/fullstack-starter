@@ -39,12 +39,13 @@
       <AlertDialogCancel>{$t("common.confirmHide.cancel")}</AlertDialogCancel>
       <AlertDialogAction
         disabled={loading}
+        aria-busy={loading}
         onclick={(event) => {
           event.preventDefault()
           onConfirm()
         }}
       >
-        {#if loading}<Spinner data-icon="inline-start" />{/if}
+        {#if loading}<Spinner data-icon="inline-start" decorative />{/if}
         {$t("common.confirmHide.confirm")}
       </AlertDialogAction>
     </AlertDialogFooter>

@@ -54,8 +54,9 @@ export function ConfirmDeleteDialog({
               onConfirm()
             }}
             disabled={loading}
+            aria-busy={loading}
           >
-            {loading && <Spinner data-icon="inline-start" />}
+            {loading && <Spinner data-icon="inline-start" decorative />}
             {t("common.confirmDelete.confirm")}
           </AlertDialogAction>
         </AlertDialogFooter>
