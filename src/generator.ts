@@ -452,21 +452,32 @@ function generateNginxConf(projectPath: string): Promise<void> {
     server_name localhost;
     client_max_body_size 1g;
 
-    # 压缩前端资源与接口 JSON
+    # 压缩前端资源与接口响应（两个后端都没有启用压缩，JSON 由 Nginx 处理）
     gzip on;
     gzip_vary on;
+    gzip_proxied any;
     gzip_min_length 1024;
-    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+    gzip_types text/plain text/css text/javascript application/javascript application/json image/svg+xml;
 
     # 安全响应头。注意：子 location 里一旦出现 add_header 就会覆盖这些 server 级配置，
-    # 因此 /assets/ 中重复声明；需要 CSP 时在这里追加即可。
+    # 因此 /assets/ 与 /_app/immutable/ 中重复声明；需要 CSP 时在这里追加即可。
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
-    # add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'" always;
+    # 入口 HTML 里有一段首帧主题脚本，启用 CSP 时 script-src 需要 'unsafe-inline' 或该脚本的 hash：
+    # add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'" always;
 
     # 带 hash 的构建产物可长期缓存；重复安全头，避免被本 location 覆盖
     location /assets/ {
+        root /usr/share/nginx/html;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    }
+
+    # SvelteKit 的哈希产物（React / Vue 不会命中，保留不会影响它们）
+    location /_app/immutable/ {
         root /usr/share/nginx/html;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
         add_header X-Content-Type-Options "nosniff" always;
