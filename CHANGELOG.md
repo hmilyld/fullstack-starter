@@ -7,6 +7,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [2.0.5] - 2026-11-16
+
 ### Added
 
 - A site default language in system settings (`defaultLocale`, `zh-CN` or `en`). New visitors use it, while a manual switch still wins and persists per browser.
