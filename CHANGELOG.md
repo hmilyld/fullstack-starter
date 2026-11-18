@@ -7,6 +7,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Fixed
+
+- Header dropdowns (language, theme and the account menu) no longer disturb the page scroll in the React, Vue and Svelte templates. Opening one while the page was scrolled down locked body scroll, which detached the sticky header and placed the menu off screen (the language menu appeared not to open) while the page seemed frozen; closing it then focused the trigger without `preventScroll` and scrolled back to the top. Anchored menus are now non-modal, and closing restores focus to the trigger without scrolling. Clicking outside an open menu now also reaches the element under the pointer instead of only dismissing the menu.
+
 ## [2.0.6] - 2026-11-16
 
 ### Fixed
