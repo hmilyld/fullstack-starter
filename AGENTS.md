@@ -121,6 +121,7 @@ Each stack follows its own idiomatic organization (do NOT unify them):
 - PWA icons live in `templates/frontend-react/public/icons/`, `templates/frontend-vue/public/icons/` and `templates/frontend-svelte/static/icons/` (SVG, 192/512 PNG, 512 maskable, 180 apple-touch). When changing the brand mark, regenerate all sizes and keep the app entry HTML, `vite.config.ts`, `src/lib/pwa.ts` and `DESIGN.md` in sync for all three templates.
 - List URL state uses `q` / `page`; audit filters use their own keys; AI presets use `presetQ` / `presetGroup`. Keep this contract in all three templates.
 - The account menu (`UserMenu`) belongs in the header top-right, not in the sidebar footer. Keep this location in all templates.
+- Anchored menus stay non-modal (`DropdownMenu` defaults to `modal={false}` in React/Vue and `preventScroll={false}` in Svelte). A modal menu sets `overflow: hidden` on `body`, which detaches every sticky element (header, table head) and positions the menu against the un-stuck anchor, so a scrolled page sees it off screen. Closing restores focus with `focus({ preventScroll: true })`; a plain focus on a sticky trigger scrolls the page to the top. Keep this behaviour when editing `ui/dropdown-menu`.
 
 ## Docker Architecture
 
