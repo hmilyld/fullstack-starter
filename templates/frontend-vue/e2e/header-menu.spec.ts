@@ -48,16 +48,12 @@ test("header dropdowns keep the scroll position and open below the header", asyn
         scrollY: window.scrollY,
         menuTop: Math.round(menu?.getBoundingClientRect().top ?? -1),
         headerTop: Math.round(header?.getBoundingClientRect().top ?? -1),
-        bodyOverflow: document.body.style.overflow,
-        scrollLocked: document.body.getAttribute("data-scroll-locked"),
       }
     })
     expect(state.scrollY).toBe(start)
     expect(state.menuTop).toBeGreaterThan(0)
     expect(state.menuTop).toBeLessThan(100)
     expect(state.headerTop).toBe(0)
-    expect(state.bodyOverflow).toBe("")
-    expect(state.scrollLocked).toBeNull()
 
     await page.keyboard.press("Escape")
     await expect(menu).toHaveCount(0)

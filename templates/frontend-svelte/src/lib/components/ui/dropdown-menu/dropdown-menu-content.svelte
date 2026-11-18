@@ -2,6 +2,7 @@
   import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui"
   import { cn, type WithoutChildrenOrChild } from "#lib/utils.js"
   import DropdownMenuPortal from "./dropdown-menu-portal.svelte"
+  import { getDropdownTriggerContext } from "./context.js"
   import type { ComponentProps } from "svelte"
 
   let {
@@ -20,27 +21,8 @@
     >
   } = $props()
 
-  // bits-ui 不暴露触发器，关闭时按打开前获得焦点的 trigger 恢复焦点
-  let restoreTarget = $state<HTMLElement | null>(null)
-  $effect(() => {
-    const active = document.activeElement
-    if (
-      active instanceof HTMLElement &&
-      active.hasAttribute("data-dropdown-menu-trigger")
-    ) {
-      restoreTarget = active
-    }
-    const record = (event: Event) => {
-      const target = event.target
-      if (!(target instanceof Element)) return
-      const trigger = target.closest<HTMLElement>(
-        "[data-dropdown-menu-trigger]"
-      )
-      if (trigger) restoreTarget = trigger
-    }
-    document.addEventListener("focusin", record, true)
-    return () => document.removeEventListener("focusin", record, true)
-  })
+  // root 常驻并持有触发器引用；与焦点/挂载时序无关，Safari 点击按钮不聚焦也能拿到
+  const triggerContext = getDropdownTriggerContext()
 
   /**
    * bits-ui restores focus to the trigger with a plain `focus()`, and a trigger
@@ -52,7 +34,7 @@
     onCloseAutoFocus?.(event)
     if (event.defaultPrevented) return
     event.preventDefault()
-    const trigger = restoreTarget
+    const trigger = triggerContext?.current
     if (!trigger?.isConnected) return
     const active = document.activeElement
     const focusWasInside =
